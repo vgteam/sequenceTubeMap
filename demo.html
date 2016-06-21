@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sequenceTubeMap.js Demo</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+<script src="sequenceTubeMap.js"></script>
+<style type="text/css">
+  .node {
+	fill: #fff;
+	stroke: #444;
+	stroke-width: 3px;
+  }
+  .link {
+    fill: none;
+    /*stroke: #ccc;*/
+    stroke-width: 7px;
+  }
+  .backgr {
+	fill: #fff;
+  fill-opacity: 0.8;
+	stroke: #fff;
+	stroke-width: 0px;
+  }
+  .linkArc {
+    stroke-width: 0px;
+  }
+  div {
+    /*background-color: lightgrey;
+    width: 300px;
+    padding: 25px;
+    border: 25px solid navy;*/
+    margin: 25px;
+}
+</style>
+</head>
+<body>
+  <div>
+    <h1>Displaying Sequence Graphs as Tube Maps - Demo</h1>
+    <hr/>
+    <p>
+      <button type="button" class="btn btn-primary" id="example1">Example 1</button> Only indels and polymorphisms
+    </p>
+    <p>
+      <button type="button" class="btn btn-primary" id="example2">Example 2</button> Inversions
+    </p>
+    <p>
+      <button type="button" class="btn btn-primary" id="example3">Example 3</button> Nested Inversions
+    </p>
+    <p>
+      <button type="button" class="btn btn-primary" id="example4" disabled="disabled">Example 4</button> Coming soon: Duplications
+    </p>
+    <p>
+      <button type="button" class="btn btn-primary" id="example5" disabled="disabled">Example 5</button> Coming soon: Translocations
+    </p>
+    <div id="chart0"></div>
+    <p>&nbsp;
+  </div>
+
+<script type="text/javascript">
+  /*jshint loopfunc: true */
+  /*jshint esversion: 6*/
+
+  document.getElementById("example1").onclick = function() {
+    createTubeMap(svg, inputNodes, inputTracks1);
+  };
+
+  document.getElementById("example2").onclick = function() {
+    createTubeMap(svg, inputNodes, inputTracks2);
+  };
+
+  document.getElementById("example3").onclick = function() {
+    createTubeMap(svg, inputNodes, inputTracks3);
+  };
+
+  document.getElementById("example4").onclick = function() {
+    createTubeMap(svg, inputNodes, inputTracks);
+  };
+
+  document.getElementById("example5").onclick = function() {
+    createTubeMap(svg, inputNodes, inputTracks);
+  };
+
+  var inputNodes = [
+  { name: "A", width: 1},
+  { name: "B", width: 2},
+  { name: "C", width: 1},
+  { name: "D", width: 3},
+  { name: "E", width: 1},
+  { name: "F", width: 1},
+  { name: "G", width: 3},
+  { name: "H", width: 1},
+  { name: "I", width: 1},
+  { name: "J", width: 3},
+  { name: "K", width: 1},
+  { name: "L", width: 1},
+  { name: "M", width: 1},
+  { name: "N", width: 1},
+  { name: "O", width: 1},
+  { name: "P", width: 2},
+  { name: "Q", width: 1},
+  { name: "R", width: 1},
+  { name: "S", width: 2},
+  { name: "T", width: 3},
+  { name: "U", width: 1},
+  { name: "V", width: 1},
+  { name: "W", width: 8},
+  { name: "X", width: 1},
+  { name: "Y", width: 1},
+  { name: "Z", width: 1},
+  { name: "AA", width: 1},
+  { name: "AB", width: 1},
+  { name: "AC", width: 1},
+  { name: "AD", width: 1},
+  { name: "AE", width: 1},
+  { name: "AF", width: 1},
+  { name: "AG", width: 3}
+];
+
+  var inputTracks1 = [
+    {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
+    {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"]},
+    {id: 2, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "Z", "AB", "AE", "AG"]},
+    {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
+    {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
+  ];
+
+  var inputTracks2 = [
+    {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
+    {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"]},
+    {id: 2, sequence: ["A", "B", "D", "-H", "-G", "-E", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "-AE", "-AB", "-Z", "AG"]},
+    {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "-P", "-N", "-M", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
+    {id: 4, sequence: ["B", "D", "F", "-J", "-I", "-G", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
+  ];
+
+  var inputTracks3 = [
+    {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
+    {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"]},
+    {id: 2, sequence: ["A", "B", "D", "-H", "G", "-E", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "-AE", "-AB", "-Z", "AG"]},
+    {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "-P", "-N", "-M", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
+    {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
+  ];
+
+  var svg = d3.select("#chart0") //Create SVG element
+    .append("svg")
+    .attr("width", 1400)
+    .attr("height", 300);
+
+  document.getElementById("example1").click();
+
+</script>
+</body>
+</html>
