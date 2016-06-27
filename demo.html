@@ -49,7 +49,7 @@
       <button type="button" class="btn btn-primary" id="example3">Example 3</button> Nested Inversions
     </p>
     <p>
-      <button type="button" class="btn btn-primary" id="example4" disabled="disabled">Example 4</button> Coming soon: Duplications
+      <button type="button" class="btn btn-primary" id="example4">Example 4</button> Coming soon: Duplications
     </p>
     <p>
       <button type="button" class="btn btn-primary" id="example5" disabled="disabled">Example 5</button> Coming soon: Translocations
@@ -75,7 +75,7 @@
   };
 
   document.getElementById("example4").onclick = function() {
-    createTubeMap(svg, inputNodes, inputTracks);
+    createTubeMap(svg, inputNodes, inputTracks4);
   };
 
   document.getElementById("example5").onclick = function() {
@@ -129,7 +129,7 @@
   var inputTracks2 = [
     {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
     {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"]},
-    {id: 2, sequence: ["A", "B", "D", "-H", "-G", "-E", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "-AE", "-AB", "-Z", "AG"]},
+    {id: 2, sequence: ["A", "B", "D", "-H", "-G", "-E", "J", "K", "M", "N", "P", "Q", "S", "AB", "V", "W", "X", "-AE", "-AA", "-Z", "AG"]},
     {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "-P", "-N", "-M", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
     {id: 4, sequence: ["B", "D", "F", "-J", "-I", "-G", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
   ];
@@ -137,8 +137,17 @@
   var inputTracks3 = [
     {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
     {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"]},
-    {id: 2, sequence: ["A", "B", "D", "-H", "G", "-E", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "-AE", "-AB", "-Z", "AG"]},
+    {id: 2, sequence: ["A", "B", "D", "-H", "G", "-E", "J", "K", "M", "N", "P", "Q", "S", "AB", "V", "W", "X", "-AE", "-AA", "-Z", "AG"]},
+    //{id: 2, sequence: ["A", "B", "D", "-H", "AB", "G", "-E", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "-AE", "-Z", "AG"]},
     {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "-P", "-N", "-M", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
+    {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
+  ];
+
+  var inputTracks4 = [
+    {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
+    {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "J", "N", "Q", "S", "U", "AA", "AE", "AG"]},
+    {id: 2, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "Z", "AB", "AE", "AG"]},
+    {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
     {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
   ];
 
@@ -147,7 +156,7 @@
     .attr("width", 1400)
     .attr("height", 300);
 
-  document.getElementById("example1").click();
+  document.getElementById("example3").click();
 
 </script>
 </body>

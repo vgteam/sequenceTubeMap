@@ -13,19 +13,22 @@ var edges = [];
 var arcs = [[], [], [], []];
 var maxLaneUsed = []; //remembers extra lanes that are being used by inversions, so that overlapping inversion doesn't use the same lane
 var minLaneUsed = [];
-var bestScore; //todo: get rid of this as global variable
+var bestScore; //TODO: get rid of this as global variable
 
-function createTubeMap(svg, inputNodes, inputTracks) {
+function createTubeMap(svg, iNodes, iTracks) {
+  var inputNodes = (JSON.parse(JSON.stringify(iNodes)));
+  var inputTracks = (JSON.parse(JSON.stringify(iTracks)));
+
   svg.selectAll("*").remove();
   edges = [];
   arcs = [[], [], [], []];
-  maxLaneUsed = []; //remembers extra lanes that are being used by inversions, so that overlapping inversion doesn't use the same lane
+  maxLaneUsed = [];
   minLaneUsed = [];
 
   numberOfNodes = inputNodes.length;
   numberOfTracks = inputTracks.length;
   nodeMap = generateNodeMap(inputNodes);
-  generateNodeSuccessors(inputNodes, inputTracks);
+  generateNodeSuccessors2(inputNodes, inputTracks);
   generateNodeOrder(inputNodes, inputTracks);
   generateNodeDegree(inputNodes, inputTracks);
   generateLaneAssignment(inputNodes, inputTracks);
@@ -54,17 +57,31 @@ function generateNodeMap(nodes) {   //map node names to node indices
 }
 
 function generateNodeSuccessors2(nodes, tracks) { //OLD VERSION: the names of the nodes coming directly after the current node
+  var i;
+  var currentNode;
+  var followerID;
+
   nodes.forEach(function(node) {
     node.successors = [];
   });
 
   tracks.forEach(function(track) {
-    for(var i = 0; i < track.sequence.length - 1; i++) {
-      var currentNode = nodes[nodeMap.get(track.sequence[i])];
+    for(i = 0; i < track.sequence.length - 1; i++) {
+      if (track.sequence[i].charAt(0) == '-') {
+        currentNode = nodes[nodeMap.get(track.sequence[i].substr(1))];
+      } else {
+        currentNode = nodes[nodeMap.get(track.sequence[i])];
+      }
+      if (track.sequence[i + 1].charAt(0) == '-') {
+        followerID = track.sequence[i + 1].substr(1);
+      } else {
+        followerID = track.sequence[i + 1];
+      }
+
       //console.log("davor: " + currentNode.successors.indexOf(track.sequence[i + 1]));
-      if (currentNode.successors.indexOf(track.sequence[i + 1]) === -1) {
+      if (currentNode.successors.indexOf(followerID) === -1) {
         //console.log(currentNode.successors.indexOf(track.sequence[i + 1]));
-        currentNode.successors.push(track.sequence[i + 1]);
+        currentNode.successors.push(followerID);
         //console.log("pushing " + track.sequence[i+1] + " to node " + currentNode.name);
       }
     }
@@ -180,18 +197,20 @@ function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes 
       }
       if (rightIndex < modifiedSequence.length) { //middle segment between two anchors
         //standard case: anchors are in correct order
-        if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) {
+        //but also for repeats and reverse orderings
+        //if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) {
           currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1;
           for (j = leftIndex + 1; j < rightIndex; j++) {
+            //console.log(modifiedSequence[j] + ": " + currentOrder + "; leftIndex: " + modifiedSequence[leftIndex]);
             nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder;
             currentOrder++;
           }
-          if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < currentOrder) {
-            increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])], currentOrder);
+          if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) {
+            if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < currentOrder) {
+              increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])], currentOrder);
+            }
           }
-        }
-        //TODO: repeats and reverse orderings
-
+        //}
       } else { //right end to the right of last anchor
         currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1;
         for (j = leftIndex + 1; j < modifiedSequence.length; j++) {
@@ -230,11 +249,16 @@ function increaseOrderForAllNodes(nodes, amount) {
 }
 
 function increaseOrderForSuccessors(nodes, currentNode, order) {
+  var oldOrder;
+
   if ((currentNode.hasOwnProperty("order")) && (currentNode.order < order)) {
+    oldOrder = currentNode.order;
     currentNode.order = order;
     //console.log("order(" + currentNode.name + ") = " + order);
     currentNode.successors.forEach(function(successor) {
-      increaseOrderForSuccessors(nodes, nodes[nodeMap.get(successor)], order + 1);
+      if (nodes[nodeMap.get(successor)].order > oldOrder) { //only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
+        increaseOrderForSuccessors(nodes, nodes[nodeMap.get(successor)], order + 1);
+      }
     });
   }
 }
@@ -259,6 +283,8 @@ function generateNodeDegree(nodes, tracks) {
 
 function generateNodeXCoords(nodes, tracks) {
   nodes.sort(compareNodesByOrder);
+  nodeMap = generateNodeMap(nodes);
+
   var currentX = 0;
   var nextX = offsetX + 40;
   var currentOrder = -1;
