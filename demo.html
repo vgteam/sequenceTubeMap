@@ -49,10 +49,10 @@
       <button type="button" class="btn btn-primary" id="example3">Example 3</button> Nested Inversions
     </p>
     <p>
-      <button type="button" class="btn btn-primary" id="example4">Example 4</button> Coming soon: Duplications
+      <button type="button" class="btn btn-primary" id="example4">Example 4</button> Duplications
     </p>
     <p>
-      <button type="button" class="btn btn-primary" id="example5" disabled="disabled">Example 5</button> Coming soon: Translocations
+      <button type="button" class="btn btn-primary" id="example5">Example 5</button> Translocations
     </p>
     <div id="chart0"></div>
     <p>&nbsp;
@@ -79,7 +79,7 @@
   };
 
   document.getElementById("example5").onclick = function() {
-    createTubeMap(svg, inputNodes, inputTracks);
+    createTubeMap(svg, inputNodes, inputTracks5);
   };
 
   var inputNodes = [
@@ -147,7 +147,15 @@
     {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
     {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "J", "N", "Q", "S", "U", "AA", "AE", "AG"]},
     {id: 2, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "Z", "AB", "AE", "AG"]},
-    {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
+    {id: 3, sequence: ["B", "C", "D", "E", "D", "E", "G", "H", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
+    {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
+  ];
+
+  var inputTracks5 = [
+    {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
+    {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "M", "J", "K", "N", "Q", "S", "U", "AA", "AE", "AG"]},
+    {id: 2, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "Z", "AB", "AE", "AG"]},
+    {id: 3, sequence: ["B", "C", "D", "H", "E", "G", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
     {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
   ];
 
@@ -156,7 +164,7 @@
     .attr("width", 1400)
     .attr("height", 300);
 
-  document.getElementById("example3").click();
+  document.getElementById("example4").click();
 
 </script>
 </body>

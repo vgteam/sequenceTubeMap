@@ -14,6 +14,7 @@ var arcs = [[], [], [], []];
 var maxLaneUsed = []; //remembers extra lanes that are being used by inversions, so that overlapping inversion doesn't use the same lane
 var minLaneUsed = [];
 var bestScore; //TODO: get rid of this as global variable
+var assignment = [];
 
 function createTubeMap(svg, iNodes, iTracks) {
   var inputNodes = (JSON.parse(JSON.stringify(iNodes)));
@@ -28,16 +29,21 @@ function createTubeMap(svg, iNodes, iTracks) {
   numberOfNodes = inputNodes.length;
   numberOfTracks = inputTracks.length;
   nodeMap = generateNodeMap(inputNodes);
-  generateNodeSuccessors2(inputNodes, inputTracks);
+  generateNodeSuccessors(inputNodes, inputTracks);
   generateNodeOrder(inputNodes, inputTracks);
   generateNodeDegree(inputNodes, inputTracks);
   generateLaneAssignment(inputNodes, inputTracks);
   generateNodeXCoords(inputNodes, inputTracks);
-  generateNodeYCoords(inputNodes, inputTracks);
-  generateEdges(inputNodes, inputTracks, edges);
+  generateNodeYCoords(inputNodes, assignment);
+  generateEdgesFromPath(inputNodes, inputTracks, edges);
 
+  console.log("Assignment:");
+  console.log(assignment);
+  console.log("Tracks:");
   console.log(inputTracks);
+  console.log("Nodes:");
   console.log(inputNodes);
+  console.log("Arcs:");
   console.log(arcs);
 
   drawEdges(edges);
@@ -56,7 +62,7 @@ function generateNodeMap(nodes) {   //map node names to node indices
   return nodeMap;
 }
 
-function generateNodeSuccessors2(nodes, tracks) { //OLD VERSION: the names of the nodes coming directly after the current node
+function generateNodeSuccessors(nodes, tracks) { //OLD VERSION: the names of the nodes coming directly after the current node
   var i;
   var currentNode;
   var followerID;
@@ -88,56 +94,6 @@ function generateNodeSuccessors2(nodes, tracks) { //OLD VERSION: the names of th
   });
 }
 
-function generateNodeSuccessors(nodes, tracks) { //the names of the nodes coming directly after the current node
-  var i;
-  var currentNode;
-
-  nodes.forEach(function(node) {
-    node.successors = [];
-  });
-
-  tracks.forEach(function(track) {
-    for(i = 0; i < track.sequence.length - 1; i++) {
-      if ((track.sequence[i].charAt(0) !== '-') && (track.sequence[i + 1].charAt(0) !== '-')) { //if both nodes are not inverted
-        currentNode = nodes[nodeMap.get(track.sequence[i])];
-        if (currentNode.successors.indexOf(track.sequence[i + 1]) === -1) { //if next node in sequence is not yet in successors[], add it
-          currentNode.successors.push(track.sequence[i + 1]);
-        }
-      }
-      if ((track.sequence[i].charAt(0) === '-') && (track.sequence[i + 1].charAt(0) === '-')) { //if both nodes are inverted
-        currentNode = nodes[nodeMap.get(track.sequence[i + 1].substr(1))];
-        if (currentNode.successors.indexOf(track.sequence[i].substr(1)) === -1) { //if next node in sequence is not yet in successors[], add it
-          currentNode.successors.push(track.sequence[i].substr(1));
-        }
-      }
-    }
-  });
-}
-
-function generateNodeOrderALT(nodes, tracks) { //OLD VERSION
-  tracks.forEach(function(track) {
-    var currentOrder = 0;
-    track.sequence.forEach(function(nodeName) {
-      var currentNode = nodes[nodeMap.get(nodeName)];
-      //console.log("order(" + currentNode.name + "): ");
-      if (currentNode.hasOwnProperty("order")) {
-        if (currentNode.order < currentOrder) {
-          //currentNode.order = currentOrder;
-          increaseOrderForSuccessors(nodes, currentNode, currentOrder);
-          currentOrder++;
-        } else {
-          currentOrder = currentNode.order + 1;
-        }
-      } else {
-        currentNode.order = currentOrder;
-        //console.log("(basic) order(" + currentNode.name + ") = " + currentOrder);
-        currentOrder++;
-      }
-    });
-  });
-}
-
-//TODO: cannot handle reverse ordering and repeats of nodes yet
 function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes from left to right, starting with first track and adding other tracks sequentially
   var modifiedSequence;
   var i;
@@ -304,135 +260,278 @@ function generateNodeXCoords(nodes, tracks) {
 }
 
 function generateLaneAssignment(nodes, tracks) {
+  var i;
+  var maxOrder;
+  var currentNodeId;
+  var currentNode;
+  var previousNode;
+  //var assignment = [];
+  var trackCode;
+  var found;
+
   //get order number of the last node
-  var maxOrder = -1;
+  maxOrder = -1;
   nodes.forEach(function(node) {
     if ((node.hasOwnProperty("order")) && (node.order > maxOrder)) maxOrder = node.order;
   });
 
-  //assign preliminary lane numbers to each track (-1 for track does not exist at thís order number, trackID for all other order numbers)
-  var empty = [];
+  //create objects to be filled
+  for (i = 0; i <= maxOrder; i++) assignment[i] = {};
+  tracks.forEach(function(track) {
+  	 track.lanes = [];
+  	 for (i = 0; i <= maxOrder; i++) track.lanes.push(-10);
+  });
+
+  //fill assignment object with info for each order number about which tracks run through which nodes and which tracks don't run through any node
   tracks.forEach(function(track, trackNo) {
-    track.lanes = [];
-    var modifiedSequence = uninvert(track.sequence);
-    var firstNode = nodes[nodeMap.get(modifiedSequence[0])];
-    var lastNode = nodes[nodeMap.get(modifiedSequence[modifiedSequence.length - 1])];
-    //var firstNode = nodes[nodeMap.get(track.sequence[0])];
-    //var lastNode = nodes[nodeMap.get(track.sequence[track.sequence.length - 1])];
-    for (var i = 0; i <= maxOrder; i++) {
-      if ((i < firstNode.order) || (i > lastNode.order)) track.lanes.push(-1);
-      else track.lanes.push(trackNo);
-    }
-    empty.push(true);
-  });
+    //add info for start of track
+    currentNodeId = track.sequence[0];
+    if (currentNodeId.charAt(0) == '-') currentNodeId = currentNodeId.substr(1);
+    currentNode = nodes[nodeMap.get(currentNodeId)];
+    if (!assignment[currentNode.order].hasOwnProperty(currentNodeId)) assignment[currentNode.order][currentNodeId] = [trackNo];
+    else assignment[currentNode.order][currentNodeId].push(trackNo);
 
-  for (var currentOrder = 0; currentOrder <= maxOrder; currentOrder++) {
-  //for (var currentOrder = 0; currentOrder <= 0; currentOrder++) {
-    var currentOrderNodes = nodes.filter(function (node) {
-      return node.order == currentOrder;
-    });
-    currentOrderNodes.sort(compareNodesByDegree).reverse();
-    var sortMe = [];
-    var partOfANode = [];
-    currentOrderNodes.forEach(function(node) {
-      sortMe.push(node.tracks);
-      node.tracks.forEach(function(trackName) {
-        partOfANode.push(trackName);
-      });
-    });
-    tracks.forEach(function(track) {
-      if ((track.lanes[currentOrder] != -1) && (partOfANode.indexOf(track.id) === -1)) sortMe.push([track.id]);
-    });
-    //console.log(sortMe);
-    bestScore = Number.MAX_SAFE_INTEGER;
-    generateSingleLaneAssignment(sortMe, empty, [], tracks, currentOrder, Number.MAX_SAFE_INTEGER);
-    //console.log(tracks);
-  }
-}
+    //add info for rest of track
+    trackCode = trackNo;
+    for (i = 1; i < track.sequence.length; i++) {
+      previousNode = currentNode;
+      currentNodeId = track.sequence[i];
+      if (currentNodeId.charAt(0) == '-') currentNodeId = currentNodeId.substr(1);
+      currentNode = nodes[nodeMap.get(currentNodeId)];
 
-function generateSingleLaneAssignment(sortMe, empty, sorted, tracks, currentOrder) {
-  var i;
-  var j;
+      if (currentNode.order <= previousNode.order) trackCode += 1000;
+      if (!assignment[currentNode.order].hasOwnProperty(currentNodeId)) assignment[currentNode.order][currentNodeId] = [trackCode];
+      else assignment[currentNode.order][currentNodeId].push(trackCode);
 
-  //var score = Number.MAX_SAFE_INTEGER;
-  if (sortMe.length > sorted.length) {
-    for (i = 0; i <= numberOfTracks - sortMe[sorted.length].length; i++) {
-      positionIsPossible = true;
-      for (j = i; j < i + sortMe[sorted.length].length; j++) {
-        if (!empty[j]) {
-          positionIsPossible = false;
-          break;
-        }
-      }
-      if (positionIsPossible) {
-        var newSorted = sorted.slice(0);
-        newSorted.push(i);
-        newEmpty = empty.slice(0);
-        for (j = i; j < i + sortMe[sorted.length].length; j++) {
-          newEmpty[j] = false;
-        }
-        generateSingleLaneAssignment(sortMe, newEmpty, newSorted, tracks, currentOrder);
-      }
-    }
-  } else { //end recursion
-    //calculate score
-    var score = 0;
-    //TODO: Start bei currentOrder = 0;
-    for (i = 0; i < sorted.length; i++) {
-      var prevPos = [];
-      for (j = 0; j < sortMe[i].length; j++) {
-        if (currentOrder > 0) {
-          prevPos.push(tracks[sortMe[i][j]].lanes[currentOrder - 1]);
-        } else {
-          prevPos.push(sortMe[i][j]);
-        }
-      }
-      prevPos.sort();
-      prevPos.forEach(function(pos, index) {
-        score += Math.abs(pos - (sorted[i] + index));
-      });
-    }
-
-    //if new minimum, set lane assignment
-    if (score < bestScore) {
-      bestScore = score;
-      //console.log("new best score: " + sortMe + "; " + sorted + "; " + score);
-      for (i = 0; i < sorted.length; i++) {
-        //var prevPos = [];
-        for (j = 0; j < sortMe[i].length; j++) {
-          //if (currentOrder > 0) {
-          //  prevPos.push(tracks[sortMe[i][j]].lanes[currentOrder - 1]);
-          //} else {
-          //  prevPos.push(tracks[sortMe[i][j]]);
-          //}
-          tracks[sortMe[i][j]].lanes[currentOrder] = sorted[i] + j;
-        }
-        //prevPos.sort();
-        //prevPos.forEach(function(pos, index) {
-          //score += Math.abs(pos - (sorted[i] + index));
-          //tracks[sortMe[i][j]].lanes[currentOrder] = (sorted[i] + index);
-          //tracks[sortMe[i][j]].lanes[currentOrder] = (sorted[i] + index);
-        //});
-      }
-    }
-  }
-}
-
-function generateNodeYCoords(nodes, globalTracks) {
-  nodes.forEach(function(node) {
-    if (node.hasOwnProperty("order")) {
-      var minLane = Number.MAX_SAFE_INTEGER;
-      node.tracks.forEach(function(track) {
-        globalTracks.forEach(function(globalTrack) {
-          if ((globalTrack.id === track) && (globalTrack.lanes[node.order] < minLane)) {
-            minLane = globalTrack.lanes[node.order];
+      /*if (!assignment[currentNode.order].hasOwnProperty(currentNodeId)) assignment[currentNode.order][currentNodeId] = [trackNo];
+      else {
+        for (var prop in assignment[currentNode.order]) { //for duplications and translocations create new artificial track number by adding 1000
+          if (assignment[currentNode.order][prop].indexOf(trackCode) !== -1) {
+            trackCode += 1000;
           }
-        });
-      });
-      node.yCoord = minLane;
-      node.y = offsetY + 110 + 22 * minLane;
+        }
+        assignment[currentNode.order][currentNodeId].push(trackCode);
+      }*/
+
+      //add "assignment = none" for order numbers between previous and current node
+      if ((currentNode.order > previousNode.order) && (track.sequence[i].charAt(0) !== '-') && (track.sequence[i - 1].charAt(0) !== '-')) {
+        for (j = previousNode.order + 1; j < currentNode.order; j++) {
+          if (!assignment[j].hasOwnProperty("none")) assignment[j].none = [trackCode];
+          else assignment[j].none.push(trackCode);
+        }
+      }
     }
   });
+  //console.log("Assignment");
+  //console.log(assignment);
+
+  //now generate the actual lane assignment for each order number
+  generateSingleLaneAssignment(0, assignment[0], {}, tracks);
+  for (i = 1; i <= maxOrder; i++) {
+    generateSingleLaneAssignment(i, assignment[i], assignment[i - 1], tracks);
+  }
+
+  //translate the lane assignment into a path for each track
+  tracks.forEach(function(track, trackNo) {
+    track.path = [];
+    trackCode = trackNo;
+
+    var index = 0;
+    var orientation;
+    currentNodeId = track.sequence[index];
+    if (currentNodeId.charAt(0) == '-') currentNodeId = currentNodeId.substr(1);
+    currentNode = nodes[nodeMap.get(currentNodeId)];
+
+    do {
+      found = false;
+      for (i = 0; i <= maxOrder; i++) {
+        if (assignment[i].hasOwnProperty(trackCode)) {
+          found = true;
+          orientation = true;
+          if (currentNode.order == i) {
+            if (track.sequence[index].charAt(0) == '-') orientation = false;
+            index++;
+            if (index < track.sequence.length) {
+              currentNodeId = track.sequence[index];
+              if (currentNodeId.charAt(0) == '-') currentNodeId = currentNodeId.substr(1);
+              currentNode = nodes[nodeMap.get(currentNodeId)];
+            }
+          }
+          track.path.push({order: i, lane: assignment[i][trackCode], isForward: orientation});
+
+        }
+      }
+      trackCode += 1000;
+    } while (found === true);
+
+
+
+    /*for (i = 0; i < track.sequence.length; i++) {
+      track.path.push({order: track.sequence[i]});
+    }
+    var o = {order: track.sequence[0]};
+    track.path.push(o);*/
+  });
+}
+
+function generateNodeYCoords(nodes, assignment) {
+  var i;
+  for (i = 0; i < assignment.length; i++) {
+    for (var property in assignment[i]) {
+      if ((isNaN(property)) && (property !== "none")) { //property is the name of a node
+        //console.log(property);
+        var min = Number.MAX_SAFE_INTEGER;
+        //console.log(assignment[i][property][0]);
+        for (var j = 0; j < assignment[i][property].length; j++) {
+          var trackID = assignment[i][property][j];
+          if (assignment[i][trackID] < min) min = assignment[i][trackID];
+        }
+        nodes[nodeMap.get(property)].yCoord = min;
+        nodes[nodeMap.get(property)].y = offsetY + 110 + 22 * min;
+      }
+    }
+  }
+}
+
+//picks the lane assignment with minimal lane changes between the previous(order-wise) lane assignment and this lane assignment
+function generateSingleLaneAssignment(currentOrder, assignment, previousAssignment, tracks) {
+  //TODO: switch out brute force algorithm for something else
+  var elements = [];
+  var score;
+  var minScore = Number.MAX_SAFE_INTEGER;
+  var minArrangement = [];
+  var i;
+
+  for (var prop in assignment) {
+    for (i = 0; i < assignment[prop].length; i++) {
+      elements.push(assignment[prop][i]);
+    }
+  }
+  elements.sort(sortNumber);
+  //console.log(currentOrder + ": " + elements);
+
+  do {
+    //console.log(currentOrder + ": " + elements);
+    score = calculateScore(elements, assignment, previousAssignment);
+    if (score < minScore) {
+      minScore = score;
+      minArrangement = elements.slice(0);
+    }
+  } while (getNextPermutation(elements));
+
+  //console.log("best arrangement (" + currentOrder + "): ");
+  //console.log(minArrangement);
+  //save best arrangement
+  for (i = 0; i < minArrangement.length; i++) {
+  	assignment[minArrangement[i]] = i;
+  	//console.log("track: " + tracks[minArrangement[0]]);
+  	//console.log("track: " + tracks);
+  	//tracks[minArrangement[i]].lanes[currentOrder] = i;
+  }
+  //tracks[sortMe[i][j]].lanes[currentOrder] = sorted[i] + j;
+
+  //init maxLaneUsed and minLaneUsed
+  maxLaneUsed[currentOrder] = minArrangement.length - 1;
+  minLaneUsed[currentOrder] = 0;
+
+}
+
+function sortNumber(a,b) {
+    return a - b;
+}
+
+function modulo(x) {
+  return function(element) {
+    return element % 1000 === x;
+  };
+}
+
+function calculateScore(elements, assignment2, previousAssignment) {
+  var i;
+  var score = 0;
+  var assignedNode;
+  var previousLaneNode;
+  var lanesLeftInNode = 0;
+  var nodeName;
+  var j;
+  var increasing;
+  var decreasing;
+
+  for (nodeName in assignment2) {
+    if ((assignment2.hasOwnProperty(nodeName)) && (isNaN(nodeName))) { //for each node
+      for (i = 0; i < numberOfTracks; i++) {
+        var tracks = assignment2[nodeName].filter(modulo(i));
+        if (tracks.length > 1) { //if a track runs through a node more than once
+          //console.log(tracks);
+          tracks.sort(sortNumber);
+          increasing = true;
+          decreasing = true;
+          for (j = 1; j < tracks.length; j++) {
+            if (elements.indexOf(tracks[j - 1]) + 1 !== elements.indexOf(tracks[j])) increasing = false;
+            if (elements.indexOf(tracks[j - 1]) - 1 !== elements.indexOf(tracks[j])) decreasing = false;
+          }
+          if ((!increasing) && (!decreasing)) return Number.MAX_SAFE_INTEGER; //
+          //console.log("found");
+        }
+      }
+
+    }
+  }
+
+  for (i = 0; i < elements.length; i++) {
+  	//possible regarding node assignment?
+  	for (nodeName in assignment2) {
+  	  if ((assignment2.hasOwnProperty(nodeName)) && (isNaN(nodeName))) {
+  	  	if (assignment2[nodeName].indexOf(elements[i]) !== -1) {
+  	  	  assignedNode = nodeName;
+  	  	  break;
+  	  	}
+  	  }
+  	}
+  	if (lanesLeftInNode > 0) {
+  	  if (previousLaneNode !== assignedNode) {
+  	  	return Number.MAX_SAFE_INTEGER;
+  	  } else {
+ 	    lanesLeftInNode--;
+  	  }
+  	} else {
+  	  previousLaneNode = assignedNode;
+  	  if (assignedNode !== "none") {
+	    lanesLeftInNode = assignment2[assignedNode].length - 1;
+  	  }
+   }
+
+  	//score
+  	if (previousAssignment.hasOwnProperty(elements[i])) {
+  	  score += Math.abs(previousAssignment[elements[i]] - i);
+  	}
+  }
+  //console.log("Score: " + score);
+  return score;
+}
+
+function getNextPermutation(array) {
+  var i = array.length - 1;
+  while ((i > 0) && (array[i - 1] >= array[i])) i--;
+  if (i === 0) return false;
+  //console.log("doing perm");
+  var j = array.length;
+  while (array[j - 1] < array[i - 1]) j--;
+  swap(array, i - 1, j - 1);
+  i++;
+  j = array.length;
+  while (i < j) {
+    swap(array, i - 1, j - 1);
+    i++;
+    j--;
+  }
+  return true;
+}
+
+function swap(array, i, j) {
+  var temp = array[i];
+  array[i] = array[j];
+  array[j] = temp;
 }
 
 function compareNodesByOrder(a, b) {
@@ -461,12 +560,11 @@ function compareNodesByDegree(a, b) {
   }
 }
 
-function generateEdges(nodes, tracks, edges) {
-  //get order number of the last node
-  var maxOrder = -1;
-  nodes.forEach(function(node) {
-    if ((node.hasOwnProperty("order")) && (node.order > maxOrder)) maxOrder = node.order;
-  });
+function generateEdgesFromPath(nodes, tracks, edges) {
+  var i;
+  var xStart;
+  var xEnd;
+  var y;
 
   //generate x coords where each order starts and ends
   var orderStartX = [];
@@ -479,222 +577,201 @@ function generateEdges(nodes, tracks, edges) {
     }
   });
 
-  //init maxLaneUsed and minLaneUsed
-  for (var i = 0; i <= maxOrder; i++) maxLaneUsed[i] = tracks.length - 1;
-  for (i = 0; i <= maxOrder; i++) minLaneUsed[i] = 0;
+  tracks.forEach(function(track, trackID) {
 
-  generateStartingEdges(nodes, tracks, edges);
-  generateEdgesWithinNodes(nodes, tracks, edges, orderStartX, orderEndX, maxOrder);
-  generateEdgesBetweenNodes(nodes, tracks, edges, orderStartX, orderEndX);
-  generateEndingEdges(nodes, tracks, edges);
-}
-
-function generateStartingEdges(nodes, tracks, edges) {
-  //TODO: add changes caused by reversals of next node
-  tracks.forEach(function(track, trackId) {
-    if (track.sequence[0].charAt(0) === '-') { //The track starts with an inversed node
+    //start of path
+    if (track.sequence[0].charAt(0) === '-') { //The track starts with an inversed node (TODO: change to isForward)
       //TODO: ADD STUFF HERE
     } else { //The track starts with a forward node
-      var node = nodes[nodeMap.get(track.sequence[0])];
-      var xStart = node.x - 20;
-      var xEnd = node.x + 20 * (node.width - 1);
-      var y = offsetY + 110 + 22 * track.lanes[node.order];
-      edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: y}, color: trackId});
+      xStart = orderStartX[track.path[0].order] - 20;
+      xEnd = orderEndX[track.path[0].order];
+      y = offsetY + 110 + 22 * track.path[0].lane;
+      edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: y}, color: trackID});
     }
-  });
-}
 
-function generateEndingEdges(nodes, tracks, edges) {
-  //TODO: add changes caused by reversals of next node
-  tracks.forEach(function(track, trackId) {
+    //middle of path
+    for (i = 1; i < track.path.length; i++) {
+
+      if ((track.path[i].isForward) && (track.path[i - 1].isForward)) {
+        if (track.path[i].order > track.path[i - 1].order) { //regular forward connection
+          xStart = orderEndX[track.path[i - 1].order];
+          xEnd = orderStartX[track.path[i].order];
+          y = offsetY + 110 + 22 * track.path[i - 1].lane;
+          yEnd = offsetY + 110 + 22 * track.path[i].lane;
+          edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: yEnd}, color: track.id});
+        } else { // repeat or translocation
+          generateBackwardsForwardToForward(track.path[i - 1].order, track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderStartX, orderEndX);
+        }
+      } else if ((! track.path[i].isForward) && (! track.path[i - 1].isForward) && (track.path[i].order + 1 === track.path[i - 1].order)) { //regular backward connection
+        xStart = orderEndX[track.path[i].order];
+        xEnd = orderStartX[track.path[i - 1].order];
+        y = offsetY + 110 + 22 * track.path[i].lane;
+        yEnd = offsetY + 110 + 22 * track.path[i - 1].lane;
+        edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: yEnd}, color: track.id});
+      } else if ((! track.path[i].isForward) && (track.path[i - 1].isForward)) { //forward to reverse connection
+        generateForwardToReverse(track.path[i - 1].order, track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderEndX);
+      } else if ((track.path[i].isForward) && (! track.path[i - 1].isForward)) { //reverse to forward connection
+        generateReverseToForward(track.path[i - 1].order, track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderStartX);
+      }
+
+      //edge within node
+      xStart = orderStartX[track.path[i].order];
+      xEnd = orderEndX[track.path[i].order];
+      y = offsetY + 110 + 22 * track.path[i].lane;
+      edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: y}, color: trackID});
+
+    }
+
+    //ending edges
     if (track.sequence[track.sequence.length - 1].charAt(0) === '-') { //The track ends with an inversed node
       //TODO: ADD STUFF HERE
     } else { //The track endss with a forward node
-      var node = nodes[nodeMap.get(track.sequence[track.sequence.length - 1])];
-      var xStart = node.x + 20 * (node.width - 1);
-      var xEnd = xStart + 20;
-      var y = offsetY + 110 + 22 * track.lanes[node.order];
-      edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: y}, color: trackId});
+      xStart = orderEndX[track.path[track.path.length - 1].order];
+      xEnd = xStart + 20;
+      y = offsetY + 110 + 22 * track.path[track.path.length - 1].lane;
+      edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: y}, color: trackID});
     }
+
+
   });
 }
 
-function generateEdgesWithinNodes(nodes, tracks, edges, orderStartX, orderEndX, maxOrder) {
-  tracks.forEach(function(track, trackId) {
-    var currentOrder = 0;
-    while (track.lanes[currentOrder] === -1) currentOrder++;
+function generateForwardToReverse(order1, order2, lane1, lane2, trackID, orderEndX) {
+  var temp;
+  var lane3;
+  var x;
+  var x2;
+  var y;
+  var y2;
+  var y3;
 
-    while((currentOrder <= maxOrder) && (track.lanes[currentOrder] != -1)) {
-      xStart = orderStartX[currentOrder];
-      xEnd = orderEndX[currentOrder];
-      y = offsetY + 110 + 22 * track.lanes[currentOrder];
-      edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: y}, color: trackId});
-      currentOrder++;
-    }
-  });
-}
-
-function generateEdgesBetweenNodes(nodes, tracks, edges, orderStartX, orderEndX) {
-  var node1;
-  var node2;
-  var lane;
-
-  tracks.forEach(function(track, trackId) {
-    for (var i = 0; i < track.sequence.length - 1; i++) {
-      if (track.sequence[i].charAt(0) !== '-') {
-        if (track.sequence[i + 1].charAt(0) !== '-') {
-          //standard forward link
-          generateForwardConnection(track, nodes[nodeMap.get(track.sequence[i])].order, nodes[nodeMap.get(track.sequence[i + 1])].order, orderStartX, orderEndX);
-        } else {
-          //inversion link type 1
-          node1 = nodes[nodeMap.get(track.sequence[i])];
-          node2 = nodes[nodeMap.get(track.sequence[i + 1].substring(1))];
-          if (node1.order > node2.order) {
-            temp = node1;
-            node1 = node2;
-            node2 = temp;
-          }
-          lane = getLane(node1.order + 1, node2.order, track.lanes[node1.order], track.lanes[node2.order]);
-          if (lane >= numberOfTracks) generateInversionConnectionType1Down(track, node1, node2, orderStartX, orderEndX, lane);
-          else generateInversionConnectionType1Up(track, node1, node2, orderStartX, orderEndX, lane);
-        }
-      } else {
-        if (track.sequence[i + 1].charAt(0) === '-') {
-          //standard backward link -> same as forward link, only have to switch the 2 nodes
-          //console.log(track.sequence2[i + 1].substring(1));
-          node1 = nodes[nodeMap.get(track.sequence[i + 1].substring(1))];
-          node2 = nodes[nodeMap.get(track.sequence[i].substring(1))];
-          generateForwardConnection(track, node1.order, node2.order, orderStartX, orderEndX);
-        } else {
-          //inversion link type 2
-          node2 = nodes[nodeMap.get(track.sequence[i + 1])];
-          node1 = nodes[nodeMap.get(track.sequence[i].substring(1))];
-          if (node1.order > node2.order) {
-            temp = node1;
-            node1 = node2;
-            node2 = temp;
-          }
-          lane = getLane(node1.order, node2.order - 1, track.lanes[node1.order], track.lanes[node2.order]);
-          if (lane >= numberOfTracks) generateInversionConnectionType2Down(track, node1, node2, orderStartX, orderEndX, lane);
-          else generateInversionConnectionType2Up(track, node1, node2, orderStartX, orderEndX, lane);
-        }
-      }
-    }
-  });
-}
-
-function generateForwardConnection(track, startingOrder, endingOrder, orderStartX, orderEndX) {
-  for (var i = startingOrder; i < endingOrder; i++) {
-    xStart = orderEndX[i];
-    xEnd = orderStartX[i + 1];
-    y = offsetY + 110 + 22 * track.lanes[i];
-    yEnd = offsetY + 110 + 22 * track.lanes[i +1];
-    edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: yEnd}, color: track.id});
+  if (order2 < order1) {
+    temp = order1;
+    order1 = order2;
+    order2 = temp;
+    temp = lane1;
+    lane1 = lane2;
+    lane2 = temp;
+  }
+  lane3 = getLane(order1 + 1, order2, lane1, lane2);
+  //console.log("track " + trackID + " from " + order1 + " to " + order2 + ": lane " + lane3);
+  x = orderEndX[order1] + 5;
+  x2 = orderEndX[order2] + 5;
+  y2 = offsetY + 110 + 22 * lane3 - 10;
+  if (lane3 >= numberOfTracks) { //downwards
+    y = offsetY + 110 + 22 * lane1 + 10;
+    y3 = offsetY + 110 + 22 * lane2 + 10;
+    edges.push({source: {x: x - 5, y: y - 10}, target: {x: x, y: y - 10}, color: trackID}); //right (elongate edge within node)
+    arcs[1].push({ x: x, y: y, color: trackID}); //from right to down
+    edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2}, color: trackID}); //down
+    arcs[3].push({ x: x + 20, y: y2, color: trackID}); //from down to right
+    edges.push({source: {x: x + 20, y: y2 + 10}, target: {x: x2, y: y2 + 10}, color: trackID}); //right
+    arcs[2].push({ x: x2, y: y2, color: trackID}); //from right to up
+    edges.push({source: {x: x2 + 10, y: y3}, target: {x: x2 + 10, y: y2}, color: trackID}); //up
+    arcs[1].push({ x: x2, y: y3, color: trackID}); //from up to left
+    edges.push({source: {x: x2 - 5, y: y3 - 10}, target: {x: x2, y: y3 -10}, color: trackID}); //left (elongate edge within node)
+  } else { //upwards
+    y = offsetY + 110 + 22 * lane1 - 10;
+    y3 = offsetY + 110 + 22 * lane2 - 10;
+    edges.push({source: {x: x - 5, y: y + 10}, target: {x: x, y: y + 10}, color: trackID}); //right (elongate edge within node)
+    arcs[2].push({ x: x, y: y, color: trackID}); //from right to up
+    edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2 + 20}, color: trackID}); //up
+    arcs[0].push({ x: x + 20, y: y2 + 20, color: trackID}); //from up to right
+    edges.push({source: {x: x + 20, y: y2 + 10}, target: {x: x2, y: y2 + 10}, color: trackID}); //right
+    arcs[1].push({ x: x2, y: y2 + 20, color: trackID}); //from right to down
+    edges.push({source: {x: x2 + 10, y: y3}, target: {x: x2 + 10, y: y2 + 20}, color: trackID}); //down
+    arcs[2].push({ x: x2, y: y3, color: trackID}); //from down to left
+    edges.push({source: {x: x2 - 5, y: y3 + 10}, target: {x: x2, y: y3 + 10}, color: trackID}); //left (elongate edge within node)
   }
 }
 
-function generateInversionConnectionType1Down(track, node1, node2, orderStartX, orderEndX, lane) {
-  var x = orderEndX[node1.order] + 5;
-  var y = offsetY + 110 + 22 * track.lanes[node1.order] + 10;
-  var y2 = offsetY + 110 + 22 * lane - 10;
-  var x2 = orderEndX[node2.order] + 5;
-  var y3 = offsetY + 110 + 22 * track.lanes[node2.order] + 10;
+function generateReverseToForward(order1, order2, lane1, lane2, trackID, orderStartX) {
+  var temp;
+  var lane3;
+  var x;
+  var x2;
+  var y;
+  var y2;
+  var y3;
 
-  edges.push({source: {x: x - 5, y: y - 10}, target: {x: x, y: y - 10}, color: track.id}); //right (elongate edge within node)
-
-  arcs[1].push({ x: x, y: y, color: track.id}); //from right to down
-
-  edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2}, color: track.id}); //down
-
-  arcs[3].push({ x: x + 20, y: y2, color: track.id}); //from down to right
-
-  edges.push({source: {x: x + 20, y: y2 + 10}, target: {x: x2, y: y2 + 10}, color: track.id}); //right
-
-  arcs[2].push({ x: x2, y: y2, color: track.id}); //from right to up
-
-  edges.push({source: {x: x2 + 10, y: y3}, target: {x: x2 + 10, y: y2}, color: track.id}); //up
-
-  arcs[1].push({ x: x2, y: y3, color: track.id}); //from up to left
-
-  edges.push({source: {x: x2 - 5, y: y3 - 10}, target: {x: x2, y: y3 -10}, color: track.id}); //left (elongate edge within node)
+  if (order2 < order1) {
+    temp = order1;
+    order1 = order2;
+    order2 = temp;
+    temp = lane1;
+    lane1 = lane2;
+    lane2 = temp;
+  }
+  lane3 = getLane(order1, order2 - 1, lane1, lane2);
+  //console.log("track " + trackID + " from " + order1 + " to " + order2 + ": lane " + lane3);
+  x = orderStartX[order1] - 35;
+  x2 = orderStartX[order2] - 35;
+  y2 = offsetY + 110 + 22 * lane3 - 10;
+  if (lane3 >= numberOfTracks) {
+    y = offsetY + 110 + 22 * lane1 + 10;
+    y3 = offsetY + 110 + 22 * lane2 + 10;
+    edges.push({source: {x: x + 30, y: y - 10}, target: {x: x + 35, y: y - 10}, color: trackID}); //left
+    arcs[0].push({ x: x + 30, y: y, color: trackID}); //from left to down
+    edges.push({source: {x: x + 20, y: y}, target: {x: x + 20, y: y2}, color: trackID}); //down
+    arcs[3].push({ x: x + 30, y: y2, color: trackID}); //from down to right
+    edges.push({source: {x: x + 30, y: y2 + 10}, target: {x: x2 + 10, y: y2 + 10}, color: trackID}); //right
+    arcs[2].push({ x: x2 + 10, y: y2, color: trackID}); //from right to up
+    edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2}, color: trackID}); //up
+    arcs[0].push({ x: x2 + 30, y: y3, color: trackID}); //from up to right
+    edges.push({source: {x: x2 + 30, y: y3 - 10}, target: {x: x2 + 35, y: y3 - 10}, color: trackID}); //right
+  } else {
+    y = offsetY + 110 + 22 * lane1 - 10;
+    y3 = offsetY + 110 + 22 * lane2 - 10;
+    edges.push({source: {x: x + 30, y: y + 10}, target: {x: x + 35, y: y + 10}, color: trackID}); //left
+    arcs[3].push({ x: x + 30, y: y, color: trackID}); //from left to up
+    edges.push({source: {x: x + 20, y: y}, target: {x: x + 20, y: y2 + 20}, color: trackID}); //up
+    arcs[0].push({ x: x + 30, y: y2 + 20, color: trackID}); //from up to right
+    edges.push({source: {x: x + 30, y: y2 + 10}, target: {x: x2 + 10, y: y2 + 10}, color: trackID}); //right
+    arcs[1].push({ x: x2 + 10, y: y2 + 20, color: trackID}); //from right to down
+    edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2 + 20}, color: trackID}); //down
+    arcs[3].push({ x: x2 + 30, y: y3, color: trackID}); //from down to right
+    edges.push({source: {x: x2 + 30, y: y3 + 10}, target: {x: x2 + 35, y: y3 + 10}, color: trackID}); //right
+  }
 }
 
-function generateInversionConnectionType1Up(track, node1, node2, orderStartX, orderEndX, lane) {
-  var x = orderEndX[node1.order] + 5;
-  var y = offsetY + 110 + 22 * track.lanes[node1.order] - 10;
-  var y2 = offsetY + 110 + 22 * lane - 10;
-  var x2 = orderEndX[node2.order] + 5;
-  var y3 = offsetY + 110 + 22 * track.lanes[node2.order] - 10;
+function generateBackwardsForwardToForward(order1, order2, lane1, lane2, trackID, orderStartX, orderEndX) {
+  var temp;
+  var lane3;
+  var x;
+  var x2;
+  var y;
+  var y2;
+  var y3;
 
-  edges.push({source: {x: x - 5, y: y + 10}, target: {x: x, y: y + 10}, color: track.id}); //right (elongate edge within node)
-
-  arcs[2].push({ x: x, y: y, color: track.id}); //from right to up
-
-  edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2 + 20}, color: track.id}); //up
-
-  arcs[0].push({ x: x + 20, y: y2 + 20, color: track.id}); //from up to right
-
-  edges.push({source: {x: x + 20, y: y2 + 10}, target: {x: x2, y: y2 + 10}, color: track.id}); //right
-
-  arcs[1].push({ x: x2, y: y2 + 20, color: track.id}); //from right to down
-
-  edges.push({source: {x: x2 + 10, y: y3}, target: {x: x2 + 10, y: y2 + 20}, color: track.id}); //down
-
-  arcs[2].push({ x: x2, y: y3, color: track.id}); //from down to left
-
-  edges.push({source: {x: x2 - 5, y: y3 + 10}, target: {x: x2, y: y3 + 10}, color: track.id}); //left (elongate edge within node)
-}
-
-function generateInversionConnectionType2Down(track, node1, node2, orderStartX, orderEndX, lane) {
-  var x = orderStartX[node1.order] - 35;
-  var y = offsetY + 110 + 22 * track.lanes[node1.order] + 10;
-  var y2 = offsetY + 110 + 22 * lane - 10;
-  var x2 = orderStartX[node2.order] - 35;
-  var y3 = offsetY + 110 + 22 * track.lanes[node2.order] + 10;
-
-  edges.push({source: {x: x + 30, y: y - 10}, target: {x: x + 35, y: y - 10}, color: track.id}); //left
-
-  arcs[0].push({ x: x + 30, y: y, color: track.id}); //from left to down
-
-  edges.push({source: {x: x + 20, y: y}, target: {x: x + 20, y: y2}, color: track.id}); //down
-
-  arcs[3].push({ x: x + 30, y: y2, color: track.id}); //from down to right
-
-  edges.push({source: {x: x + 30, y: y2 + 10}, target: {x: x2 + 10, y: y2 + 10}, color: track.id}); //right
-
-  arcs[2].push({ x: x2 + 10, y: y2, color: track.id}); //from right to up
-
-  edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2}, color: track.id}); //up
-
-  arcs[0].push({ x: x2 + 30, y: y3, color: track.id}); //from up to right
-
-  edges.push({source: {x: x2 + 30, y: y3 - 10}, target: {x: x2 + 35, y: y3 - 10}, color: track.id}); //right
-}
-
-function generateInversionConnectionType2Up(track, node1, node2, orderStartX, orderEndX, lane) {
-  var x = orderStartX[node1.order] - 35;
-  var y = offsetY + 110 + 22 * track.lanes[node1.order] - 10;
-  var y2 = offsetY + 110 + 22 * lane - 10;
-  var x2 = orderStartX[node2.order] - 35;
-  var y3 = offsetY + 110 + 22 * track.lanes[node2.order] - 10;
-
-  edges.push({source: {x: x + 30, y: y + 10}, target: {x: x + 35, y: y + 10}, color: track.id}); //left
-
-  arcs[3].push({ x: x + 30, y: y, color: track.id}); //from left to up
-
-  edges.push({source: {x: x + 20, y: y}, target: {x: x + 20, y: y2 + 20}, color: track.id}); //up
-
-  arcs[0].push({ x: x + 30, y: y2 + 20, color: track.id}); //from up to right
-
-  edges.push({source: {x: x + 30, y: y2 + 10}, target: {x: x2 + 10, y: y2 + 10}, color: track.id}); //right
-
-  arcs[1].push({ x: x2 + 10, y: y2 + 20, color: track.id}); //from right to down
-
-  edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2 + 20}, color: track.id}); //down
-
-  arcs[3].push({ x: x2 + 30, y: y3, color: track.id}); //from down to right
-
-  edges.push({source: {x: x2 + 30, y: y3 + 10}, target: {x: x2 + 35, y: y3 + 10}, color: track.id}); //right
+  lane3 = getLane(order2, order1, lane2, lane1);
+  x = orderEndX[order1] + 5;
+  x2 = orderStartX[order2] - 35;
+  y2 = offsetY + 110 + 22 * lane3 - 10;
+  if (lane3 >= numberOfTracks) { //downwards
+    y = offsetY + 110 + 22 * lane1 + 10;
+    y3 = offsetY + 110 + 22 * lane2 + 10;
+    edges.push({source: {x: x - 5, y: y - 10}, target: {x: x, y: y - 10}, color: trackID}); //right (elongate edge within node)
+    arcs[1].push({ x: x, y: y, color: trackID}); //from right to down
+    edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2}, color: trackID}); //down
+    arcs[2].push({ x: x, y: y2, color: trackID}); //from down to left
+    edges.push({source: {x: x2 + 30, y: y2 + 10}, target: {x: x, y: y2 + 10}, color: trackID}); //left
+    arcs[3].push({ x: x2 + 30, y: y2, color: trackID}); //from left to up
+    edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2}, color: trackID}); //up
+    arcs[0].push({ x: x2 + 30, y: y3, color: trackID}); //from up to right
+    edges.push({source: {x: x2 + 30, y: y3 - 10}, target: {x: x2 + 35, y: y3 - 10}, color: trackID});//right
+  } else { //upwards
+    y = offsetY + 110 + 22 * lane1 - 10;
+    y3 = offsetY + 110 + 22 * lane2 - 10;
+    edges.push({source: {x: x - 5, y: y + 10}, target: {x: x, y: y + 10}, color: trackID}); //right (elongate edge within node)
+    arcs[2].push({ x: x, y: y, color: trackID}); //from right to up
+    edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2 + 20}, color: trackID}); //up
+    arcs[1].push({ x: x, y: y2 + 20, color: trackID}); //from up to left
+    edges.push({source: {x: x2 + 30, y: y2 + 10}, target: {x: x, y: y2 + 10}, color: trackID}); //left
+    arcs[0].push({ x: x2 + 30, y: y2 + 20, color: trackID}); //from left to down
+    edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2 + 20}, color: trackID}); //down
+    arcs[3].push({ x: x2 + 30, y: y3, color: trackID}); //from down to right
+    edges.push({source: {x: x2 + 30, y: y3 + 10}, target: {x: x2 + 35, y: y3 + 10}, color: trackID}); //left
+  }
 }
 
 function getLane(order1, order2, lane1, lane2) {
