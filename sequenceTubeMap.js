@@ -15,6 +15,9 @@ var maxLaneUsed = []; //remembers extra lanes that are being used by inversions,
 var minLaneUsed = [];
 var bestScore; //TODO: get rid of this as global variable
 var assignment = [];
+var extraLeft = [];
+var extraRight = [];
+var maxOrder;
 
 function createTubeMap(svg, iNodes, iTracks) {
 
@@ -26,12 +29,16 @@ function createTubeMap(svg, iNodes, iTracks) {
   arcs = [[], [], [], []];
   maxLaneUsed = [];
   minLaneUsed = [];
+  assignment = [];
+  extraLeft = [];
+  extraRight = [];
 
   numberOfNodes = inputNodes.length;
   numberOfTracks = inputTracks.length;
   nodeMap = generateNodeMap(inputNodes);
   generateNodeSuccessors(inputNodes, inputTracks);
   generateNodeOrder(inputNodes, inputTracks);
+  maxOrder = getMaxOrder(inputNodes);
   generateNodeDegree(inputNodes, inputTracks);
   generateLaneAssignment(inputNodes, inputTracks);
   generateNodeXCoords(inputNodes, inputTracks);
@@ -158,7 +165,7 @@ function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes 
         //if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) {
           currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1;
           for (j = leftIndex + 1; j < rightIndex; j++) {
-            console.log(modifiedSequence[j] + ": " + currentOrder + "; leftIndex: " + modifiedSequence[leftIndex]);
+            //console.log(modifiedSequence[j] + ": " + currentOrder + "; leftIndex: " + modifiedSequence[leftIndex]);
             nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder;
             currentOrder++;
           }
@@ -180,6 +187,14 @@ function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes 
       }
     }
   }
+}
+
+function getMaxOrder(nodes) { //get order number of the last node
+  var max = -1;
+  nodes.forEach(function(node) {
+    if ((node.hasOwnProperty("order")) && (node.order > max)) max = node.order;
+  });
+  return max;
 }
 
 function uninvert(sequence) {
@@ -244,17 +259,21 @@ function generateNodeXCoords(nodes, tracks) {
   nodes.sort(compareNodesByOrder);
   nodeMap = generateNodeMap(nodes);
 
+  extra = calculateExtraSpace(nodes, tracks);
+
   var currentX = 0;
   var nextX = offsetX + 40;
   var currentOrder = -1;
   nodes.forEach(function(node, index) {
     if (node.hasOwnProperty("order")) {
       if (node.order > currentOrder) {
-        currentX = nextX;
+        //currentX = nextX;
+        currentX = nextX + 10 * extra[node.order];
         //if (node.order == 7) currentX += 10;
       }
       node.x = currentX;
       nextX = Math.max(nextX, currentX + 20 + 20 * node.width);
+      //nextX = Math.max(nextX, currentX + 20 + 20 * node.width + 20 * extra[currentOrder]);
       currentOrder = node.order;
     } else {
       console.log("Node " + node.name + " has no order property");
@@ -263,22 +282,56 @@ function generateNodeXCoords(nodes, tracks) {
   });
 }
 
+//two neighboring nodes have to be moved further apart if there is a lot going on in between them
+//-> edges turning to vertical orientation should not overlap
+function calculateExtraSpace(nodes, tracks) {
+  var i;
+  var leftSideEdges = [];
+  var rightSideEdges = [];
+  var extra = [];
+
+  for (i = 0; i <= maxOrder; i++) {
+    leftSideEdges.push(0);
+    rightSideEdges.push(0);
+  }
+
+  tracks.forEach(function(track, trackID) {
+    for (i = 1; i < track.path.length; i++) {
+      if ((track.path[i].isForward) && (track.path[i - 1].isForward) && (track.path[i].order <= track.path[i - 1].order)) { //repeat or translocation
+        rightSideEdges[track.path[i - 1].order]++;
+        leftSideEdges[track.path[i].order]++;
+      } else if ((! track.path[i].isForward) && (track.path[i - 1].isForward)) { //forward to reverse connection
+        rightSideEdges[track.path[i - 1].order]++;
+        rightSideEdges[track.path[i].order]++;
+      } else if ((track.path[i].isForward) && (! track.path[i - 1].isForward)) { //reverse to forward connection
+        leftSideEdges[track.path[i - 1].order]++;
+        leftSideEdges[track.path[i].order]++;
+      }
+    }
+  });
+
+  /*console.log("left side edges:");
+  console.log(leftSideEdges);
+  console.log("right side edges:");
+  console.log(rightSideEdges);*/
+
+  extra.push(Math.max(0, leftSideEdges[0] - 1));
+  for (i = 1; i <= maxOrder; i++) {
+    extra.push(Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1));
+  }
+
+  return extra;
+}
+
 function generateLaneAssignment(nodes, tracks) {
   var i;
   var j;
-  var maxOrder;
   var currentNodeId;
   var currentNode;
   var previousNode;
   //var assignment = [];
   var trackCode;
   var found;
-
-  //get order number of the last node
-  maxOrder = -1;
-  nodes.forEach(function(node) {
-    if ((node.hasOwnProperty("order")) && (node.order > maxOrder)) maxOrder = node.order;
-  });
 
   //create objects to be filled
   for (i = 0; i <= maxOrder; i++) assignment[i] = {};
@@ -430,6 +483,8 @@ function generateSingleLaneAssignment(currentOrder, assignment, previousAssignme
 
   //console.log("best arrangement (" + currentOrder + "): ");
   //console.log(minArrangement);
+  console.log("score(" + currentOrder + "): " + minScore);
+
   //save best arrangement
   for (i = 0; i < minArrangement.length; i++) {
   	assignment[minArrangement[i]] = i + topLane;
@@ -577,6 +632,11 @@ function generateEdgesFromPath(nodes, tracks, edges) {
   var y;
   var yEnd;
 
+  for (i = 0; i <= maxOrder; i++) {
+    extraLeft.push(0);
+    extraRight.push(0);
+  }
+
   //generate x coords where each order starts and ends
   var orderStartX = [];
   var orderEndX = [];
@@ -666,13 +726,13 @@ function generateForwardToReverse(order1, order2, lane1, lane2, trackID, orderEn
   }
   lane3 = getLane(order1 + 1, order2, lane1, lane2);
   //console.log("track " + trackID + " from " + order1 + " to " + order2 + ": lane " + lane3);
-  x = orderEndX[order1] + 5;
-  x2 = orderEndX[order2] + 5;
+  x = orderEndX[order1] + 5 + 10 * extraRight[order1];
+  x2 = orderEndX[order2] + 5 + 10 * extraRight[order2];
   y2 = offsetY + 110 + 22 * lane3 - 10;
   if (lane3 >= numberOfTracks) { //downwards
     y = offsetY + 110 + 22 * lane1 + 10;
     y3 = offsetY + 110 + 22 * lane2 + 10;
-    edges.push({source: {x: x - 5, y: y - 10}, target: {x: x, y: y - 10}, color: trackID}); //right (elongate edge within node)
+    edges.push({source: {x: x - 5 - 10 * extraRight[order1], y: y - 10}, target: {x: x, y: y - 10}, color: trackID}); //right (elongate edge within node)
     arcs[1].push({ x: x, y: y, color: trackID}); //from right to down
     edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2}, color: trackID}); //down
     arcs[3].push({ x: x + 20, y: y2, color: trackID}); //from down to right
@@ -680,11 +740,11 @@ function generateForwardToReverse(order1, order2, lane1, lane2, trackID, orderEn
     arcs[2].push({ x: x2, y: y2, color: trackID}); //from right to up
     edges.push({source: {x: x2 + 10, y: y3}, target: {x: x2 + 10, y: y2}, color: trackID}); //up
     arcs[1].push({ x: x2, y: y3, color: trackID}); //from up to left
-    edges.push({source: {x: x2 - 5, y: y3 - 10}, target: {x: x2, y: y3 -10}, color: trackID}); //left (elongate edge within node)
+    edges.push({source: {x: x2 - 5 - 10 * extraRight[order2], y: y3 - 10}, target: {x: x2, y: y3 -10}, color: trackID}); //left (elongate edge within node)
   } else { //upwards
     y = offsetY + 110 + 22 * lane1 - 10;
     y3 = offsetY + 110 + 22 * lane2 - 10;
-    edges.push({source: {x: x - 5, y: y + 10}, target: {x: x, y: y + 10}, color: trackID}); //right (elongate edge within node)
+    edges.push({source: {x: x - 5 - 10 * extraRight[order1], y: y + 10}, target: {x: x, y: y + 10}, color: trackID}); //right (elongate edge within node)
     arcs[2].push({ x: x, y: y, color: trackID}); //from right to up
     edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2 + 20}, color: trackID}); //up
     arcs[0].push({ x: x + 20, y: y2 + 20, color: trackID}); //from up to right
@@ -692,8 +752,10 @@ function generateForwardToReverse(order1, order2, lane1, lane2, trackID, orderEn
     arcs[1].push({ x: x2, y: y2 + 20, color: trackID}); //from right to down
     edges.push({source: {x: x2 + 10, y: y3}, target: {x: x2 + 10, y: y2 + 20}, color: trackID}); //down
     arcs[2].push({ x: x2, y: y3, color: trackID}); //from down to left
-    edges.push({source: {x: x2 - 5, y: y3 + 10}, target: {x: x2, y: y3 + 10}, color: trackID}); //left (elongate edge within node)
+    edges.push({source: {x: x2 - 5 - 10 * extraRight[order2], y: y3 + 10}, target: {x: x2, y: y3 + 10}, color: trackID}); //left (elongate edge within node)
   }
+  extraRight[order1]++;
+  extraRight[order2]++;
 }
 
 function generateReverseToForward(order1, order2, lane1, lane2, trackID, orderStartX) {
@@ -715,13 +777,15 @@ function generateReverseToForward(order1, order2, lane1, lane2, trackID, orderSt
   }
   lane3 = getLane(order1, order2 - 1, lane1, lane2);
   //console.log("track " + trackID + " from " + order1 + " to " + order2 + ": lane " + lane3);
-  x = orderStartX[order1] - 35;
-  x2 = orderStartX[order2] - 35;
+  //x = orderStartX[order1] - 35;
+  //x2 = orderStartX[order2] - 35;
+  x = orderStartX[order1] - 35 - 10 * extraLeft[order1];
+  x2 = orderStartX[order2] - 35 - 10 * extraLeft[order2];
   y2 = offsetY + 110 + 22 * lane3 - 10;
   if (lane3 >= numberOfTracks) {
     y = offsetY + 110 + 22 * lane1 + 10;
     y3 = offsetY + 110 + 22 * lane2 + 10;
-    edges.push({source: {x: x + 30, y: y - 10}, target: {x: x + 35, y: y - 10}, color: trackID}); //left
+    edges.push({source: {x: x + 30, y: y - 10}, target: {x: x + 35 + 10 * extraLeft[order1], y: y - 10}, color: trackID}); //left
     arcs[0].push({ x: x + 30, y: y, color: trackID}); //from left to down
     edges.push({source: {x: x + 20, y: y}, target: {x: x + 20, y: y2}, color: trackID}); //down
     arcs[3].push({ x: x + 30, y: y2, color: trackID}); //from down to right
@@ -729,11 +793,11 @@ function generateReverseToForward(order1, order2, lane1, lane2, trackID, orderSt
     arcs[2].push({ x: x2 + 10, y: y2, color: trackID}); //from right to up
     edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2}, color: trackID}); //up
     arcs[0].push({ x: x2 + 30, y: y3, color: trackID}); //from up to right
-    edges.push({source: {x: x2 + 30, y: y3 - 10}, target: {x: x2 + 35, y: y3 - 10}, color: trackID}); //right
+    edges.push({source: {x: x2 + 30, y: y3 - 10}, target: {x: x2 + 35 + 10 * extraLeft[order2], y: y3 - 10}, color: trackID}); //right
   } else {
     y = offsetY + 110 + 22 * lane1 - 10;
     y3 = offsetY + 110 + 22 * lane2 - 10;
-    edges.push({source: {x: x + 30, y: y + 10}, target: {x: x + 35, y: y + 10}, color: trackID}); //left
+    edges.push({source: {x: x + 30, y: y + 10}, target: {x: x + 35 + 10 * extraLeft[order1], y: y + 10}, color: trackID}); //left
     arcs[3].push({ x: x + 30, y: y, color: trackID}); //from left to up
     edges.push({source: {x: x + 20, y: y}, target: {x: x + 20, y: y2 + 20}, color: trackID}); //up
     arcs[0].push({ x: x + 30, y: y2 + 20, color: trackID}); //from up to right
@@ -741,8 +805,10 @@ function generateReverseToForward(order1, order2, lane1, lane2, trackID, orderSt
     arcs[1].push({ x: x2 + 10, y: y2 + 20, color: trackID}); //from right to down
     edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2 + 20}, color: trackID}); //down
     arcs[3].push({ x: x2 + 30, y: y3, color: trackID}); //from down to right
-    edges.push({source: {x: x2 + 30, y: y3 + 10}, target: {x: x2 + 35, y: y3 + 10}, color: trackID}); //right
+    edges.push({source: {x: x2 + 30, y: y3 + 10}, target: {x: x2 + 35 + 10 * extraLeft[order2], y: y3 + 10}, color: trackID}); //right
   }
+  extraLeft[order1]++;
+  extraLeft[order2]++;
 }
 
 function generateBackwardsForwardToForward(order1, order2, lane1, lane2, trackID, orderStartX, orderEndX) {
@@ -755,13 +821,13 @@ function generateBackwardsForwardToForward(order1, order2, lane1, lane2, trackID
   var y3;
 
   lane3 = getLane(order2, order1, lane2, lane1);
-  x = orderEndX[order1] + 5;
-  x2 = orderStartX[order2] - 35;
+  x = orderEndX[order1] + 5 + 10 * extraRight[order1];
+  x2 = orderStartX[order2] - 35 - 10 * extraLeft[order2];
   y2 = offsetY + 110 + 22 * lane3 - 10;
   if (lane3 >= numberOfTracks) { //downwards
     y = offsetY + 110 + 22 * lane1 + 10;
     y3 = offsetY + 110 + 22 * lane2 + 10;
-    edges.push({source: {x: x - 5, y: y - 10}, target: {x: x, y: y - 10}, color: trackID}); //right (elongate edge within node)
+    edges.push({source: {x: x - 5 - 10 * extraRight[order1], y: y - 10}, target: {x: x, y: y - 10}, color: trackID}); //right (elongate edge within node)
     arcs[1].push({ x: x, y: y, color: trackID}); //from right to down
     edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2}, color: trackID}); //down
     arcs[2].push({ x: x, y: y2, color: trackID}); //from down to left
@@ -769,11 +835,11 @@ function generateBackwardsForwardToForward(order1, order2, lane1, lane2, trackID
     arcs[3].push({ x: x2 + 30, y: y2, color: trackID}); //from left to up
     edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2}, color: trackID}); //up
     arcs[0].push({ x: x2 + 30, y: y3, color: trackID}); //from up to right
-    edges.push({source: {x: x2 + 30, y: y3 - 10}, target: {x: x2 + 35, y: y3 - 10}, color: trackID});//right
+    edges.push({source: {x: x2 + 30, y: y3 - 10}, target: {x: x2 + 35 + 10 * extraLeft[order2], y: y3 - 10}, color: trackID});//right
   } else { //upwards
     y = offsetY + 110 + 22 * lane1 - 10;
     y3 = offsetY + 110 + 22 * lane2 - 10;
-    edges.push({source: {x: x - 5, y: y + 10}, target: {x: x, y: y + 10}, color: trackID}); //right (elongate edge within node)
+    edges.push({source: {x: x - 5 - 10 * extraRight[order1], y: y + 10}, target: {x: x, y: y + 10}, color: trackID}); //right (elongate edge within node)
     arcs[2].push({ x: x, y: y, color: trackID}); //from right to up
     edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2 + 20}, color: trackID}); //up
     arcs[1].push({ x: x, y: y2 + 20, color: trackID}); //from up to left
@@ -781,8 +847,10 @@ function generateBackwardsForwardToForward(order1, order2, lane1, lane2, trackID
     arcs[0].push({ x: x2 + 30, y: y2 + 20, color: trackID}); //from left to down
     edges.push({source: {x: x2 + 20, y: y3}, target: {x: x2 + 20, y: y2 + 20}, color: trackID}); //down
     arcs[3].push({ x: x2 + 30, y: y3, color: trackID}); //from down to right
-    edges.push({source: {x: x2 + 30, y: y3 + 10}, target: {x: x2 + 35, y: y3 + 10}, color: trackID}); //left
+    edges.push({source: {x: x2 + 30, y: y3 + 10}, target: {x: x2 + 35 + 10 * extraLeft[order2], y: y3 + 10}, color: trackID}); //left
   }
+  extraRight[order1]++;
+  extraLeft[order2]++;
 }
 
 function getLane(order1, order2, lane1, lane2) {
