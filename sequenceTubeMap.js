@@ -17,6 +17,7 @@ var bestScore; //TODO: get rid of this as global variable
 var assignment = [];
 
 function createTubeMap(svg, iNodes, iTracks) {
+
   var inputNodes = (JSON.parse(JSON.stringify(iNodes)));
   var inputTracks = (JSON.parse(JSON.stringify(iTracks)));
 
@@ -157,7 +158,7 @@ function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes 
         //if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) {
           currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1;
           for (j = leftIndex + 1; j < rightIndex; j++) {
-            //console.log(modifiedSequence[j] + ": " + currentOrder + "; leftIndex: " + modifiedSequence[leftIndex]);
+            console.log(modifiedSequence[j] + ": " + currentOrder + "; leftIndex: " + modifiedSequence[leftIndex]);
             nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder;
             currentOrder++;
           }
@@ -238,16 +239,19 @@ function generateNodeDegree(nodes, tracks) {
 }
 
 function generateNodeXCoords(nodes, tracks) {
+  var index;
+
   nodes.sort(compareNodesByOrder);
   nodeMap = generateNodeMap(nodes);
 
   var currentX = 0;
   var nextX = offsetX + 40;
   var currentOrder = -1;
-  nodes.forEach(function(node) {
+  nodes.forEach(function(node, index) {
     if (node.hasOwnProperty("order")) {
       if (node.order > currentOrder) {
         currentX = nextX;
+        //if (node.order == 7) currentX += 10;
       }
       node.x = currentX;
       nextX = Math.max(nextX, currentX + 20 + 20 * node.width);
@@ -261,6 +265,7 @@ function generateNodeXCoords(nodes, tracks) {
 
 function generateLaneAssignment(nodes, tracks) {
   var i;
+  var j;
   var maxOrder;
   var currentNodeId;
   var currentNode;
@@ -401,6 +406,7 @@ function generateSingleLaneAssignment(currentOrder, assignment, previousAssignme
   var minScore = Number.MAX_SAFE_INTEGER;
   var minArrangement = [];
   var i;
+  var topLane;
 
   for (var prop in assignment) {
     for (i = 0; i < assignment[prop].length; i++) {
@@ -412,10 +418,13 @@ function generateSingleLaneAssignment(currentOrder, assignment, previousAssignme
 
   do {
     //console.log(currentOrder + ": " + elements);
-    score = calculateScore(elements, assignment, previousAssignment);
-    if (score < minScore) {
-      minScore = score;
-      minArrangement = elements.slice(0);
+    for (i = Math.min(0, numberOfTracks - elements.length); i < 1; i++) {  //check arrangements where the top lane < 0 too
+      score = calculateScore(elements, i, assignment, previousAssignment);
+      if (score < minScore) {
+        minScore = score;
+        minArrangement = elements.slice(0);
+        topLane = i;
+      }
     }
   } while (getNextPermutation(elements));
 
@@ -423,7 +432,7 @@ function generateSingleLaneAssignment(currentOrder, assignment, previousAssignme
   //console.log(minArrangement);
   //save best arrangement
   for (i = 0; i < minArrangement.length; i++) {
-  	assignment[minArrangement[i]] = i;
+  	assignment[minArrangement[i]] = i + topLane;
   	//console.log("track: " + tracks[minArrangement[0]]);
   	//console.log("track: " + tracks);
   	//tracks[minArrangement[i]].lanes[currentOrder] = i;
@@ -431,8 +440,8 @@ function generateSingleLaneAssignment(currentOrder, assignment, previousAssignme
   //tracks[sortMe[i][j]].lanes[currentOrder] = sorted[i] + j;
 
   //init maxLaneUsed and minLaneUsed
-  maxLaneUsed[currentOrder] = minArrangement.length - 1;
-  minLaneUsed[currentOrder] = 0;
+  maxLaneUsed[currentOrder] = topLane + minArrangement.length - 1;
+  minLaneUsed[currentOrder] = topLane;
 
 }
 
@@ -446,7 +455,7 @@ function modulo(x) {
   };
 }
 
-function calculateScore(elements, assignment2, previousAssignment) {
+function calculateScore(elements, topmostLane, assignment2, previousAssignment) {
   var i;
   var score = 0;
   var assignedNode;
@@ -503,7 +512,8 @@ function calculateScore(elements, assignment2, previousAssignment) {
 
   	//score
   	if (previousAssignment.hasOwnProperty(elements[i])) {
-  	  score += Math.abs(previousAssignment[elements[i]] - i);
+  	  //score += Math.abs(previousAssignment[elements[i]] - (topmostLane + i));
+      score += Math.pow(Math.abs(previousAssignment[elements[i]] - (topmostLane + i)), 1.01); //exponentiation so that 2 x lane change by 1 lane cheaper than 1 x lane change by two lines etc.
   	}
   }
   //console.log("Score: " + score);
@@ -565,6 +575,7 @@ function generateEdgesFromPath(nodes, tracks, edges) {
   var xStart;
   var xEnd;
   var y;
+  var yEnd;
 
   //generate x coords where each order starts and ends
   var orderStartX = [];

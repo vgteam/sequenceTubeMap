@@ -131,7 +131,9 @@
     {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"]},
     {id: 2, sequence: ["A", "B", "D", "-H", "-G", "-E", "J", "K", "M", "N", "P", "Q", "S", "AB", "V", "W", "X", "-AE", "-AA", "-Z", "AG"]},
     {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "-P", "-N", "-M", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
-    {id: 4, sequence: ["B", "D", "F", "-J", "-I", "-G", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
+    //{id: 4, sequence: ["B", "D", "F", "-J", "-I", "-G", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
+    {id: 4, sequence: ["B", "D", "F", "-J", "-I", "-G", "-E", "L", "M", "O", "P", "R", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
+    //{id: 4, sequence: ["B", "D", "-J", "-I", "-G", "-E", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
   ];
 
   var inputTracks3 = [
@@ -146,6 +148,8 @@
   var inputTracks4 = [
     {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
     {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "J", "N", "Q", "S", "U", "AA", "AE", "AG"]},
+    //{id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "J", "K", "J", "N", "Q", "S", "U", "AA", "AE", "AG"]}, //double repeat
+    //{id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "J", "K", "J", "J", "N", "Q", "S", "U", "AA", "AE", "AG"]}, //max. call stack size exceeded ???
     {id: 2, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "Z", "AB", "AE", "AG"]},
     {id: 3, sequence: ["B", "C", "D", "E", "D", "E", "G", "H", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
     {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
