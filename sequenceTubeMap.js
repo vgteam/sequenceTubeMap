@@ -261,6 +261,7 @@ function generateNodeDegree(nodes, tracks) {
 
 function generateNodeXCoords(nodes, tracks) {
   var index;
+  var extra;
 
   nodes.sort(compareNodesByOrder);
   nodeMap = generateNodeMap(nodes);
@@ -352,7 +353,7 @@ function generateLaneAssignmentNew(nodes, tracks) {
     currentNode = nodes[nodeMap.get(currentNodeId)];
 
     track.path2 = [];
-    track.path2.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward});
+    track.path2.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId});
     assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: 0, node: currentNodeId, isForward: currentNodeIsForward, lane: null});
 
     segmentNumber = 1;
@@ -370,60 +371,60 @@ function generateLaneAssignmentNew(nodes, tracks) {
 
       if (currentNode.order > previousNode.order) {
         if (! previousNodeIsForward) {
-          track.path2.push({order: previousNode.order, lane: null, isForward: true});
+          track.path2.push({order: previousNode.order, lane: null, isForward: true, node: null});
           assignment2[previousNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: true, lane: null});
           segmentNumber++;
         }
         for (j = previousNode.order + 1; j < currentNode.order; j++) {
-          track.path2.push({order: j, lane: null, isForward: true});
+          track.path2.push({order: j, lane: null, isForward: true, node: null});
           assignment2[j].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: true, lane: null});
           segmentNumber++;
         }
         if (! currentNodeIsForward) {
-          track.path2.push({order: currentNode.order, lane: null, isForward: true});
+          track.path2.push({order: currentNode.order, lane: null, isForward: true, node: null});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: true, lane: null});
           segmentNumber++;
-          track.path2.push({order: currentNode.order, lane: null, isForward: false});
+          track.path2.push({order: currentNode.order, lane: null, isForward: false, node: currentNodeId});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: false, lane: null});
           segmentNumber++;
         } else {
-          track.path2.push({order: currentNode.order, lane: null, isForward: true});
+          track.path2.push({order: currentNode.order, lane: null, isForward: true, node: currentNodeId});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: true, lane: null});
           segmentNumber++;
         }
       } else if (currentNode.order < previousNode.order) {
         if (previousNodeIsForward) {
-          track.path2.push({order: previousNode.order, lane: null, isForward: false});
+          track.path2.push({order: previousNode.order, lane: null, isForward: false, node: null});
           assignment2[previousNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: false, lane: null});
           segmentNumber++;
         }
         for (j = previousNode.order - 1; j > currentNode.order; j--) {
-          track.path2.push({order: j, lane: null, isForward: false});
+          track.path2.push({order: j, lane: null, isForward: false, node: null});
           assignment2[j].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: false, lane: null});
           segmentNumber++;
         }
         if (currentNodeIsForward) {
-          track.path2.push({order: currentNode.order, lane: null, isForward: false});
+          track.path2.push({order: currentNode.order, lane: null, isForward: false, node: null});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: false, lane: null});
           segmentNumber++;
-          track.path2.push({order: currentNode.order, lane: null, isForward: true});
+          track.path2.push({order: currentNode.order, lane: null, isForward: true, node: currentNodeId});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: true, lane: null});
           segmentNumber++;
         } else {
-          track.path2.push({order: currentNode.order, lane: null, isForward: false});
+          track.path2.push({order: currentNode.order, lane: null, isForward: false, node: currentNodeId});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: false, lane: null});
           segmentNumber++;
         }
       } else { //currentNode.order == previousNode.order
         if (currentNodeIsForward !== previousNodeIsForward) {
-          track.path2.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward});
+          track.path2.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: currentNodeIsForward, lane: null});
           segmentNumber++;
         } else {
-          track.path2.push({order: currentNode.order, lane: null, isForward: !currentNodeIsForward});
+          track.path2.push({order: currentNode.order, lane: null, isForward: !currentNodeIsForward, node: null});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: !currentNodeIsForward, lane: null});
           segmentNumber++;
-          track.path2.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward});
+          track.path2.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId});
           assignment2[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: currentNodeIsForward, lane: null});
           segmentNumber++;
         }
@@ -432,7 +433,7 @@ function generateLaneAssignmentNew(nodes, tracks) {
   });
 
   for (i = 0; i <= maxOrder; i++) {
-  //for (i = 0; i <= 0; i++) {
+  //for (i = 0; i <= 3; i++) {
   //console.log("order " + i);
     generateSingleLaneAssignmentNew(assignment2[i], i, nodes, tracks);
   }
@@ -605,33 +606,73 @@ function generateNodeYCoordsNew(nodes, assignment) {
 
 function generateSingleLaneAssignmentNew(assignment, order, nodes, tracks) {
   var perm = [];
+  var bestPerm = [];
   var i;
   var j;
   var score;
   var minScore = Number.MAX_SAFE_INTEGER;
+  var bestI;
+  var nodeName;
 
   for (i = 0; i < assignment.length; i++) {
     perm.push(i);
   }
 
-  //score = calculateScoreNew(perm, 0, assignment, nodes, tracks);
+  var sameOrderSegments = {};
+  var sameNodeSegments = {};
+  for (i = 0; i < numberOfTracks; i++) {
+    sameOrderSegments[tracks[i].id] = [];
+    sameNodeSegments[tracks[i].id] = {};
+  }
+  for (i = 0; i < assignment.length; i++) {
+    sameOrderSegments[assignment[i].trackNo].push(assignment[i].segmentNo);
+    if (! sameNodeSegments[assignment[i].trackNo].hasOwnProperty([assignment[i].node])) {
+      sameNodeSegments[assignment[i].trackNo][assignment[i].node] = [assignment[i].segmentNo];
+    } else {
+      sameNodeSegments[assignment[i].trackNo][assignment[i].node].push(assignment[i].segmentNo);
+      //console.log("pushing " + assignment[i].segmentNo);
+    }
+  }
+  for (i = 0; i < numberOfTracks; i++) {
+    sameOrderSegments[tracks[i].id].sort(function(a, b) {return a - b;});
+    for (nodeName in sameNodeSegments[i]) {
+      if (nodeName !== "null") {
+        if (sameNodeSegments[i].hasOwnProperty(nodeName)) {
+          if (sameNodeSegments[i][nodeName].length > 1) {
+            sameNodeSegments[i][nodeName].sort(function(a, b) {return a - b;});
+          }
+        }
+      }
+    }
+  }
+  //console.log(sameOrderSegments);
+  //for (i = 0; i < numberOfTracks; i++) {
+    //console.log(sameNodeSegments[i]);
+  //}
 
   do {
     for (i = Math.min(0, numberOfTracks - assignment.length); i <= Math.max(0, numberOfTracks - assignment.length); i++) {  //check arrangements where the top lane < 0 too
       //console.log(perm);
-      score = calculateScoreNew(perm, i, assignment, order, nodes, tracks);
+      for (j = 0; j < assignment.length; j++) {
+        assignment[j].lane = i + perm[j];
+        tracks[assignment[j].trackNo].path2[assignment[j].segmentNo].lane = i + perm[j];
+      }
+      score = calculateScoreNew(perm, i, assignment, order, nodes, tracks, sameOrderSegments, sameNodeSegments);
       //console.log("score: " + score);
       if (score < minScore) {
         //console.log("new min: " + score);
         //console.log(perm);
         minScore = score;
-        for (j = 0; j < assignment.length; j++) {
-          assignment[j].lane = i + perm[j];
-          tracks[assignment[j].trackNo].path2[assignment[j].segmentNo].lane = i + perm[j];
-        }
+        bestPerm = perm.slice();
+        bestI = i;
       }
     }
   } while (getNextPermutation(perm));
+  //console.log("order: " + order + ", best score: " + minScore);
+  for (j = 0; j < assignment.length; j++) {
+    assignment[j].lane = bestI + bestPerm[j];
+    tracks[assignment[j].trackNo].path2[assignment[j].segmentNo].lane = bestI + bestPerm[j];
+  }
 }
 
 //picks the lane assignment with minimal lane changes between the previous(order-wise) lane assignment and this lane assignment
@@ -693,9 +734,10 @@ function modulo(x) {
   };
 }
 
-function calculateScoreNew(perm, topmostLane, assignment, order, nodes, tracks) {
+function calculateScoreNew(perm, topmostLane, assignment, order, nodes, tracks, sameOrderSegments, sameNodeSegments) {
 
   var i;
+  var j;
   var nodeMinLane = {};
   var nodeMaxLane = {};
   var nodeNames = [];
@@ -707,6 +749,28 @@ function calculateScoreNew(perm, topmostLane, assignment, order, nodes, tracks) 
   var nextOrder;
   var nextLane;
 
+  //if a track runs through a node more than once, it has to be in neighboring lanes
+  for (i = 0; i < numberOfTracks; i++) {
+    //console.log(sameNodeSegments[i]);
+    //sameNodeSegments[i].forEach(function (nodeName) {
+    for (nodeName in sameNodeSegments[i]) {
+      if (nodeName !== "null") {
+        if (sameNodeSegments[i].hasOwnProperty(nodeName)) {
+          if (sameNodeSegments[i][nodeName].length > 1) {
+            //console.log("drin");
+            for (j = 1; j < sameNodeSegments[i][nodeName].length; j++) {
+              if (Math.abs(tracks[i].path2[sameNodeSegments[i][nodeName][j]].lane - tracks[i].path2[sameNodeSegments[i][nodeName][j - 1]].lane) > 1) {
+                return Number.MAX_SAFE_INTEGER;
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  //check if lane assignment violates node assignment
   for (i = 0; i < assignment.length; i++) {
     lane = topmostLane + perm[i];
     if (assignment[i].node !== null) {
@@ -727,6 +791,7 @@ function calculateScoreNew(perm, topmostLane, assignment, order, nodes, tracks) 
     }
   }
 
+  //calculate actual score
   result = 0;
   for (i = 0; i < assignment.length; i++) {
     //console.log(assignment[i]);
@@ -734,16 +799,29 @@ function calculateScoreNew(perm, topmostLane, assignment, order, nodes, tracks) 
       previousOrder = tracks[assignment[i].trackNo].path2[assignment[i].segmentNo - 1].order;
       if (previousOrder === order - 1) { //TODO: add case for same order
         previousLane = tracks[assignment[i].trackNo].path2[assignment[i].segmentNo - 1].lane;
-        result += Math.abs(previousLane - (topmostLane + perm[i]));
-      } else if (previousOrder === order) {
-
-      }
+        result += Math.pow(Math.abs(previousLane - (topmostLane + perm[i])), 1.01);
+      } /*else if (previousOrder === order) {
+        previousLane = tracks[assignment[i].trackNo].path2[assignment[i].segmentNo - 1].lane;
+        //if (Math.abs(previousLane - (topmostLane + perm[i])) > 1) return Number.MAX_SAFE_INTEGER;
+        result += Math.pow(Math.abs(previousLane - (topmostLane + perm[i])), 1.01);
+      }*/
     }
     if (assignment[i].segmentNo < tracks[assignment[i].trackNo].path2.length - 1) {
       nextOrder = tracks[assignment[i].trackNo].path2[assignment[i].segmentNo + 1].order;
       if (nextOrder === order - 1) { //TODO: add case for same order
         nextLane = tracks[assignment[i].trackNo].path2[assignment[i].segmentNo + 1].lane;
-        result += Math.abs(nextLane - (topmostLane + perm[i]));
+        result += Math.pow(Math.abs(nextLane - (topmostLane + perm[i])), 1.01);
+      }
+    }
+  }
+
+  //cost of multiple segments of same track
+  for (i = 0; i < numberOfTracks; i++) {
+    if (sameOrderSegments[i].length > 1) {
+      for (j = 1; j < sameOrderSegments[i].length; j++) {
+        //console.log(sameOrderSegments);
+        //console.log(tracks[i].path2[sameOrderSegments[i][j]]);
+        result += Math.pow(Math.abs(tracks[i].path2[sameOrderSegments[i][j]].lane - tracks[i].path2[sameOrderSegments[i][j - 1]].lane), 1.01);
       }
     }
   }
