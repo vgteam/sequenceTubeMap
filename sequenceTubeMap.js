@@ -41,7 +41,7 @@ function createTubeMap(svg, iNodes, iTracks) {
   generateNodeOrder(inputNodes, inputTracks);
   maxOrder = getMaxOrder(inputNodes);
   generateNodeDegree(inputNodes, inputTracks);
-  generateLaneAssignment(inputNodes, inputTracks);
+  //generateLaneAssignment(inputNodes, inputTracks);
   generateLaneAssignmentNew(inputNodes, inputTracks);
   generateNodeXCoords(inputNodes, inputTracks);
   //generateNodeYCoords(inputNodes, assignment);
@@ -266,7 +266,7 @@ function generateNodeXCoords(nodes, tracks) {
   nodes.sort(compareNodesByOrder);
   nodeMap = generateNodeMap(nodes);
 
-  extra = calculateExtraSpace(nodes, tracks);
+  extra = calculateExtraSpaceNew(nodes, tracks);
 
   var currentX = 0;
   var nextX = offsetX + 40;
@@ -291,6 +291,41 @@ function generateNodeXCoords(nodes, tracks) {
 
 //two neighboring nodes have to be moved further apart if there is a lot going on in between them
 //-> edges turning to vertical orientation should not overlap
+function calculateExtraSpaceNew(nodes, tracks) {
+  var i;
+  var leftSideEdges = [];
+  var rightSideEdges = [];
+  var extra = [];
+
+  for (i = 0; i <= maxOrder; i++) {
+    leftSideEdges.push(0);
+    rightSideEdges.push(0);
+  }
+
+  tracks.forEach(function(track, trackID) {
+    for (i = 1; i < track.path2.length; i++) {
+      if (track.path2[i].order === track.path2[i - 1].order) { //repeat or translocation
+        if (track.path2[i].isForward === true) leftSideEdges[track.path2[i].order]++;
+        else rightSideEdges[track.path2[i].order]++;
+      }
+    }
+  });
+
+  /*console.log("left side edges:");
+  console.log(leftSideEdges);
+  console.log("right side edges:");
+  console.log(rightSideEdges);*/
+
+  extra.push(Math.max(0, leftSideEdges[0] - 1));
+  for (i = 1; i <= maxOrder; i++) {
+    extra.push(Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1));
+  }
+
+  return extra;
+}
+
+//two neighboring nodes have to be moved further apart if there is a lot going on in between them
+//-> edges turning to vertical orientation should not overlap
 function calculateExtraSpace(nodes, tracks) {
   var i;
   var leftSideEdges = [];
@@ -307,6 +342,7 @@ function calculateExtraSpace(nodes, tracks) {
       if ((track.path[i].isForward) && (track.path[i - 1].isForward) && (track.path[i].order <= track.path[i - 1].order)) { //repeat or translocation
         rightSideEdges[track.path[i - 1].order]++;
         leftSideEdges[track.path[i].order]++;
+        console.log("track " + trackID + ": adding to rs " + track.path[i - 1].order + " and ls " + track.path[i].order);
       } else if ((! track.path[i].isForward) && (track.path[i - 1].isForward)) { //forward to reverse connection
         rightSideEdges[track.path[i - 1].order]++;
         rightSideEdges[track.path[i].order]++;
@@ -317,16 +353,17 @@ function calculateExtraSpace(nodes, tracks) {
     }
   });
 
-  /*console.log("left side edges:");
+  console.log("left side edges:");
   console.log(leftSideEdges);
   console.log("right side edges:");
-  console.log(rightSideEdges);*/
+  console.log(rightSideEdges);
 
   extra.push(Math.max(0, leftSideEdges[0] - 1));
   for (i = 1; i <= maxOrder; i++) {
     extra.push(Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1));
   }
 
+  console.log(extra);
   return extra;
 }
 
@@ -668,7 +705,7 @@ function generateSingleLaneAssignmentNew(assignment, order, nodes, tracks) {
       }
     }
   } while (getNextPermutation(perm));
-  //console.log("order: " + order + ", best score: " + minScore);
+  console.log("order: " + order + ", best score: " + minScore);
   for (j = 0; j < assignment.length; j++) {
     assignment[j].lane = bestI + bestPerm[j];
     tracks[assignment[j].trackNo].path2[assignment[j].segmentNo].lane = bestI + bestPerm[j];
@@ -1124,8 +1161,7 @@ function generateForwardToReverseNew(order, lane1, lane2, trackID, orderEndX) {
   edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2 - 20}, color: trackID}); //down
   arcs[2].push({ x: x, y: y2 - 20, color: trackID});
   edges.push({source: {x: x - 5 - 10 * extraRight[order], y: y2 - 10}, target: {x: x, y: y2 - 10}, color: trackID}); //right (elongate edge within node)
-  //extraRight[order1]++;
-  //extraRight[order2]++;
+  extraRight[order]++;
 }
 
 function generateReverseToForwardNew(order, lane1, lane2, trackID, orderStartX) {
@@ -1147,8 +1183,7 @@ function generateReverseToForwardNew(order, lane1, lane2, trackID, orderStartX) 
   edges.push({source: {x: x + 20, y: y}, target: {x: x + 20, y: y2 - 20}, color: trackID}); //down
   arcs[3].push({ x: x + 30, y: y2 - 20, color: trackID}); //from down to right
   edges.push({source: {x: x + 30, y: y2 - 10}, target: {x: x + 35 + 10 * extraLeft[order], y: y2 - 10}, color: trackID}); //right
-  //extraRight[order1]++;
-  //extraRight[order2]++;
+  extraLeft[order]++;
 }
 
 function generateForwardToReverse(order1, order2, lane1, lane2, trackID, orderEndX) {
