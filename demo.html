@@ -16,6 +16,7 @@
     fill: none;
     /*stroke: #ccc;*/
     stroke-width: 7px;
+
   }
   .backgr {
 	fill: #fff;
@@ -53,6 +54,7 @@
     </p>
     <p>
       <button type="button" class="btn btn-primary" id="example5">Example 5</button> Translocations
+      <!--<button type="button" class="btn btn-primary" onclick="test2to1()">Switch</button>-->
     </p>
     <div id="chart0"></div>
     <p>&nbsp;
@@ -63,6 +65,7 @@
   /*jshint esversion: 6*/
 
   document.getElementById("example1").onclick = function() {
+    //test1(svg, inputNodes, inputTracks1);
     createTubeMap(svg, inputNodes, inputTracks1);
   };
 
@@ -147,6 +150,7 @@
   ];
 
   var inputTracks4 = [
+    //{id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "J", "N", "Q", "S", "U", "AA", "AE", "AG"]},
     {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
     {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "J", "N", "Q", "S", "U", "AA", "AE", "AG"]},
     //{id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "J", "K", "J", "N", "Q", "S", "U", "AA", "AE", "AG"]}, //double repeat
