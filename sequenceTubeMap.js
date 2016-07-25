@@ -20,14 +20,9 @@ var svg;
 var currentInputNodes = [];
 var currentInputTracks = [];
 
-/*function test2to1() {
-  moveTrackToFirstPosition(svg, currentInputNodes, currentInputTracks, 1);
-}*/
-
 function moveTrackToFirstPosition(svg, inputNodes, inputTracks, index) {
   inputTracks.unshift(inputTracks[index]);
   inputTracks.splice(index + 1, 1);
-  console.log(inputTracks[4]);
   createTubeMap(svg, inputNodes, inputTracks);
 }
 
@@ -48,13 +43,10 @@ function createTubeMap(inputSvg, inputNodes, inputTracks) {
 
   numberOfNodes = nodes.length;
   numberOfTracks = tracks.length;
-  console.log("number of tracks: " + numberOfTracks);
+  //console.log("number of tracks: " + numberOfTracks);
   nodeMap = generateNodeMap(nodes);
-  console.log("generateNodeSuccessors");
   generateNodeSuccessors(nodes, tracks);
-  console.log("generateNodeOrder()");
   generateNodeOrder(nodes, tracks);
-  console.log("generateMaxOrder");
   maxOrder = getMaxOrder(nodes);
   generateNodeDegree(nodes, tracks);
   generateLaneAssignment(nodes, tracks);
@@ -211,32 +203,24 @@ function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes 
 
 function isSuccessor(first, second, nodes) { //checks if second is a successor of first
   var visitedNodes = [];
-  return isSuccessorHelper(first, second, visitedNodes, nodes);
+  return isSuccessorRecursive(first, second, visitedNodes, nodes);
 }
 
-function isSuccessorHelper(first, second, visitedNodes, nodes) {
+function isSuccessorRecursive(first, second, visitedNodes, nodes) {
   var i;
 
-  //console.log("checking " + first.name + " === " + second.name + "?");
-  //console.log(first.successors);
   if (first.name === second.name) {
-    //console.log("returning true");
     return true;
   }
-  //first.successors.forEach(function(successor) {
   for (i = 0; i < first.successors.length; i++) {
     //if(first.successors[i] === second.name) return true;
     if (visitedNodes.indexOf(first.successors[i]) === -1) {
       visitedNodes.push(first.successors[i]);
-      //console.log(first.name + "(" + i + ") pushed " + first.successors[i]);
-      if (isSuccessorHelper(nodes[nodeMap.get(first.successors[i])], second, visitedNodes, nodes)) {
-        //console.log(first.name + " received true");
+      if (isSuccessorRecursive(nodes[nodeMap.get(first.successors[i])], second, visitedNodes, nodes)) {
         return true;
       }
     }
   }
-  //});
-  //console.log (first.name + " returning false");
   return false;
 }
 
@@ -273,10 +257,10 @@ function increaseOrderForAllNodes(nodes, amount) { //increases the order-value o
 }
 
 function increaseOrderForSuccessors(nodes, currentNode, order) { //increases the order-value for currentNode and (if necessary) successor nodes recursively
-  console.log("increasing orders from " + currentNode.name + " to " + order);
+  //console.log("increasing orders from " + currentNode.name + " to " + order);
   var increasedOrders = {};
-  increaseOrderForSuccessorsRecursion(nodes, currentNode, order, increasedOrders);
-  console.log(increasedOrders);
+  increaseOrderForSuccessorsRecursive(nodes, currentNode, order, increasedOrders);
+  //console.log(increasedOrders);
   for (var nodeName in increasedOrders) {
     if (increasedOrders.hasOwnProperty(nodeName)) {
       nodes[nodeMap.get(nodeName)].order = increasedOrders[nodeName];
@@ -284,32 +268,16 @@ function increaseOrderForSuccessors(nodes, currentNode, order) { //increases the
   }
 }
 
-function increaseOrderForSuccessorsRecursion(nodes, currentNode, order, increasedOrders) {
+function increaseOrderForSuccessorsRecursive(nodes, currentNode, order, increasedOrders) {
   if ((currentNode.hasOwnProperty("order")) && (currentNode.order < order)) {
     if ((! increasedOrders.hasOwnProperty(currentNode.name)) || (increasedOrders[currentNode.name] < order)) {
       increasedOrders[currentNode.name] = order;
       currentNode.successors.forEach(function(successor) {
         if (nodes[nodeMap.get(successor)].order > currentNode.order) { //only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
-          increaseOrderForSuccessorsRecursion(nodes, nodes[nodeMap.get(successor)], order + 1, increasedOrders);
+          increaseOrderForSuccessorsRecursive(nodes, nodes[nodeMap.get(successor)], order + 1, increasedOrders);
         }
       });
     }
-  }
-}
-
-function increaseOrderForSuccessorsALT(nodes, currentNode, order) { //increases the order-value for currentNode and (if necessary) successor nodes recursively
-  //console.log("increasing order for successors: " + currentNode.name);
-  if ((currentNode.hasOwnProperty("order")) && (currentNode.order < order)) {
-    var oldOrder = currentNode.order;
-    //console.log("order(" + currentNode.name + "): " + oldOrder + " -> " + order);
-    currentNode.order = order;
-    currentNode.successors.forEach(function(successor) {
-      if (nodes[nodeMap.get(successor)].order > oldOrder) { //only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
-        //console.log(oldOrder + " -> " + nodes[nodeMap.get(successor)].name + "(" + nodes[nodeMap.get(successor)].order + ")");
-        //console.log(currentNode.name + "(" + oldOrder + " -> " + order + ") -> " + successor + "(" + nodes[nodeMap.get(successor)].order + ")");
-        increaseOrderForSuccessors(nodes, nodes[nodeMap.get(successor)], order + 1);
-      }
-    });
   }
 }
 
@@ -523,196 +491,111 @@ function generateNodeYCoords(nodes, assignment) { //calculates the concrete valu
 }
 
 function generateSingleLaneAssignment(assignment, order, nodes, tracks) {
-  var perm = [];
-  var bestPerm = [];
+  var topmostLane = 0;
+  var lanes = [];
+  var best = {};
+  var i;
+
+  best.score = Number.MAX_SAFE_INTEGER;
+  best.lanes = [];
+  for (i = Math.min(0, numberOfTracks - assignment.length); i <= Math.max(0, numberOfTracks - assignment.length); i++) {  //check arrangements where the top lane != 0 too
+    BranchAndBound(lanes, assignment, 0, null, 0, best, order, nodes, tracks, i);
+  }
+
+  //console.log("BEST LANES (" + order + "): " + best.score);
+  //console.log(best.lanes);
+  for (i = 0; i < assignment.length; i++) {
+    assignment[best.lanes[i]].lane = i + best.topmostLane;
+    tracks[assignment[best.lanes[i]].trackNo].path[assignment[best.lanes[i]].segmentNo].lane = i + best.topmostLane;
+  }
+}
+
+function checkSameTrackWithinNodeViolation(lanes, currentNode, currentTrack, assignment) { //TODO: might need change when scaling (precompute stuff and not iterate for every node)
+  var i = lanes.length -1;
+  //move to lower lane numbers as long as we are still in the same node and as long as all passed lanes belong to the same track
+  while ((i >= 0) && (assignment[lanes[i]].node === currentNode) && (assignment[lanes[i]].trackNo === currentTrack)) i--;
+  if ((i < 0) || (assignment[lanes[i]].node !== currentNode)) return false; //no violation, because node ends
+  i--; //move up another lane
+  while ((i >= 0) && (assignment[lanes[i]].node === currentNode)) { //move each lane in the node
+    if (assignment[lanes[i]].trackNo === currentTrack) {
+      return true; //if we find the same track here, there has been a gap and we have a violation
+    }
+    i--;
+  }
+  return false;
+}
+
+function BranchAndBound(lanes, assignment, currentScore, currentNode, lanesLeftInNode, best, order, nodes, tracks, topmostLane) {
   var i;
   var j;
-  var score;
-  var minScore = Number.MAX_SAFE_INTEGER;
-  var bestI;
-  var nodeName;
+  var newScore;
+  var newNode;
+  var newLanesLeftInNode;
 
-  for (i = 0; i < assignment.length; i++) {
-    perm.push(i);
-  }
-
-  var sameOrderSegments = {};
-  var sameNodeSegments = {};
-  for (i = 0; i < numberOfTracks; i++) {
-    sameOrderSegments[tracks[i].id] = [];
-    sameNodeSegments[tracks[i].id] = {};
-  }
-  for (i = 0; i < assignment.length; i++) {
-    sameOrderSegments[assignment[i].trackNo].push(assignment[i].segmentNo);
-    if (! sameNodeSegments[assignment[i].trackNo].hasOwnProperty([assignment[i].node])) {
-      sameNodeSegments[assignment[i].trackNo][assignment[i].node] = [assignment[i].segmentNo];
-    } else {
-      sameNodeSegments[assignment[i].trackNo][assignment[i].node].push(assignment[i].segmentNo);
-      //console.log("pushing " + assignment[i].segmentNo);
+  if (lanes.length === assignment.length) {
+    if (currentScore < best.score) {
+      best.score = currentScore;
+      best.lanes = lanes.slice(0);
+      best.topmostLane = topmostLane;
+      return;
     }
   }
-  for (i = 0; i < numberOfTracks; i++) {
-    sameOrderSegments[tracks[i].id].sort(function(a, b) {return a - b;});
-    for (nodeName in sameNodeSegments[i]) {
-      if (nodeName !== "null") {
-        if (sameNodeSegments[i].hasOwnProperty(nodeName)) {
-          if (sameNodeSegments[i][nodeName].length > 1) {
-            sameNodeSegments[i][nodeName].sort(function(a, b) {return a - b;});
-          }
+
+  for (i = 0; i < assignment.length; i++) {
+    if ((lanes.length === 0) || (lanes.indexOf(i) === -1)) {
+      //rule violation?
+      if ((currentNode !== null) && (lanesLeftInNode > 0)) {
+        if (assignment[i].node !== currentNode) continue; //this choice violates node assignment -> next
+        if (checkSameTrackWithinNodeViolation(lanes, assignment[i].node, assignment[i].trackNo, assignment)) continue;
+        newNode = currentNode;
+        newLanesLeftInNode = lanesLeftInNode - 1;
+      } else {
+        newNode = assignment[i].node;
+        if (newNode === null) newLanesLeftInNode = 0;
+        else newLanesLeftInNode = nodes[nodeMap.get(assignment[i].node)].degree - 1;
+      }
+
+      //score:
+      newScore = currentScore;
+      var assignedLane = lanes.length + topmostLane;
+      if (assignment[i].segmentNo === 0) { //track starts here
+        newScore += Math.pow(Math.abs(assignment[i].trackNo - assignedLane), 1.01);
+        if ((assignment[i].trackNo === 0) && (assignedLane > 0)) return; //force pivot track to start at lane 0
+      } else if (assignment[i].segmentNo > 0) {
+        previousOrder = tracks[assignment[i].trackNo].path[assignment[i].segmentNo - 1].order;
+        if (previousOrder === order - 1) { //TODO: add case for same order
+          previousLane = tracks[assignment[i].trackNo].path[assignment[i].segmentNo - 1].lane;
+          newScore += Math.pow(Math.abs(previousLane - assignedLane), 1.01);
         }
       }
-    }
-  }
-  //console.log(sameOrderSegments);
-  //for (i = 0; i < numberOfTracks; i++) {
-    //console.log(sameNodeSegments[i]);
-  //}
+      if (assignment[i].segmentNo < tracks[assignment[i].trackNo].path.length - 1) {
+        nextOrder = tracks[assignment[i].trackNo].path[assignment[i].segmentNo + 1].order;
+        if (nextOrder === order - 1) { //TODO: add case for same order
+          nextLane = tracks[assignment[i].trackNo].path[assignment[i].segmentNo + 1].lane;
+          newScore += Math.pow(Math.abs(nextLane - assignedLane), 1.01);
+        }
+      }
 
-  //var count =0;
-  console.log("Starting scoring with " + assignment.length + " lanes");
-  do {
-    for (i = Math.min(0, numberOfTracks - assignment.length); i <= Math.max(0, numberOfTracks - assignment.length); i++) {  //check arrangements where the top lane < 0 too
-      //console.log(perm);
-      for (j = 0; j < assignment.length; j++) {
-        assignment[j].lane = i + perm[j];
-        tracks[assignment[j].trackNo].path[assignment[j].segmentNo].lane = i + perm[j];
+      //cost of multiple segments of same track
+      var index = lanes.indexOf(i - 1);
+      if ((index !== -1) && (assignment[i].trackNo === assignment[i - 1].trackNo)) {
+        newScore += Math.pow(Math.abs((index + topmostLane) - assignedLane), 1.01);
       }
-      score = calculateScore(perm, i, assignment, order, nodes, tracks, sameOrderSegments, sameNodeSegments);
-      //console.log("score: " + score);
-      if (score < minScore) {
-        //console.log("new min: " + score);
-        //console.log(perm);
-        minScore = score;
-        bestPerm = perm.slice();
-        bestI = i;
+      index = lanes.indexOf(i + 1);
+      if ((index !== -1) && (assignment[i].trackNo === assignment[i + 1].trackNo)) {
+        newScore += Math.pow(Math.abs((index + topmostLane) - assignedLane), 1.01);
+      }
+
+      if (newScore < best.score) {
+        var newLanes = lanes.slice(0);
+        newLanes.push(i);
+        BranchAndBound(newLanes, assignment, newScore, newNode, newLanesLeftInNode, best, order, nodes, tracks, topmostLane);
       }
     }
-    //count++;
-    //if (count % 100 === 0) console.log("count: " + count);
-  } while (getNextPermutation(perm));
-  console.log("order: " + order + ", best score: " + minScore + ", width: " + assignment.length);
-  for (j = 0; j < assignment.length; j++) {
-    assignment[j].lane = bestI + bestPerm[j];
-    tracks[assignment[j].trackNo].path[assignment[j].segmentNo].lane = bestI + bestPerm[j];
   }
 }
 
 function sortNumber(a,b) { return a - b; }
-
-function calculateScore(perm, topmostLane, assignment, order, nodes, tracks, sameOrderSegments, sameNodeSegments) {
-  var i;
-  var j;
-  var nodeMinLane = {};
-  var nodeMaxLane = {};
-  var nodeNames = [];
-  var nodeName;
-  var lane;
-  var result;
-  var previousOrder;
-  var previousLane;
-  var nextOrder;
-  var nextLane;
-
-  //if a track runs through a node more than once, it has to be in neighboring lanes
-  for (i = 0; i < numberOfTracks; i++) {
-    //console.log(sameNodeSegments[i]);
-    //sameNodeSegments[i].forEach(function (nodeName) {
-    for (nodeName in sameNodeSegments[i]) {
-      if (nodeName !== "null") {
-        if (sameNodeSegments[i].hasOwnProperty(nodeName)) {
-          if (sameNodeSegments[i][nodeName].length > 1) {
-            //console.log("drin");
-            for (j = 1; j < sameNodeSegments[i][nodeName].length; j++) {
-              if (Math.abs(tracks[i].path[sameNodeSegments[i][nodeName][j]].lane - tracks[i].path[sameNodeSegments[i][nodeName][j - 1]].lane) > 1) {
-                return Number.MAX_SAFE_INTEGER;
-              }
-            }
-          }
-        }
-      }
-    }
-
-  }
-
-  //check if lane assignment violates node assignment
-  for (i = 0; i < assignment.length; i++) {
-    lane = topmostLane + perm[i];
-    if (assignment[i].node !== null) {
-      if (!nodeMinLane.hasOwnProperty(assignment[i].node)) {
-        nodeNames.push(assignment[i].node);
-        nodeMinLane[assignment[i].node] = lane;
-        nodeMaxLane[assignment[i].node] = lane;
-      } else {
-        if (lane < nodeMinLane[assignment[i].node]) nodeMinLane[assignment[i].node] = lane;
-        if (lane > nodeMaxLane[assignment[i].node]) nodeMaxLane[assignment[i].node] = lane;
-      }
-    }
-  }
-
-  for (i = 0; i < nodeNames.length; i++) {
-    if (nodeMaxLane[nodeNames[i]] - nodeMinLane[nodeNames[i]] + 1 !== nodes[nodeMap.get(nodeNames[i])].degree) {
-      return Number.MAX_SAFE_INTEGER;
-    }
-  }
-
-  //calculate actual score
-  result = 0;
-  for (i = 0; i < assignment.length; i++) {
-    //console.log(assignment[i]);
-    if (assignment[i].segmentNo === 0) { //track starts here
-      result += Math.pow(Math.abs(assignment[i].trackNo - (topmostLane + perm[i])), 1.01);
-      if ((assignment[i].trackNo === 0) && (topmostLane + perm[i] > 0)) return Number.MAX_SAFE_INTEGER; //force pivot track to start at lane 0
-    } else if (assignment[i].segmentNo > 0) {
-      previousOrder = tracks[assignment[i].trackNo].path[assignment[i].segmentNo - 1].order;
-      if (previousOrder === order - 1) { //TODO: add case for same order
-        previousLane = tracks[assignment[i].trackNo].path[assignment[i].segmentNo - 1].lane;
-        result += Math.pow(Math.abs(previousLane - (topmostLane + perm[i])), 1.01);
-      } /*else if (previousOrder === order) {
-        previousLane = tracks[assignment[i].trackNo].path[assignment[i].segmentNo - 1].lane;
-        //if (Math.abs(previousLane - (topmostLane + perm[i])) > 1) return Number.MAX_SAFE_INTEGER;
-        result += Math.pow(Math.abs(previousLane - (topmostLane + perm[i])), 1.01);
-      }*/
-    }
-    if (assignment[i].segmentNo < tracks[assignment[i].trackNo].path.length - 1) {
-      nextOrder = tracks[assignment[i].trackNo].path[assignment[i].segmentNo + 1].order;
-      if (nextOrder === order - 1) { //TODO: add case for same order
-        nextLane = tracks[assignment[i].trackNo].path[assignment[i].segmentNo + 1].lane;
-        result += Math.pow(Math.abs(nextLane - (topmostLane + perm[i])), 1.01);
-      }
-    }
-  }
-
-  //cost of multiple segments of same track
-  for (i = 0; i < numberOfTracks; i++) {
-    if (sameOrderSegments[i].length > 1) {
-      for (j = 1; j < sameOrderSegments[i].length; j++) {
-        //console.log(sameOrderSegments);
-        //console.log(tracks[i].path[sameOrderSegments[i][j]]);
-        result += Math.pow(Math.abs(tracks[i].path[sameOrderSegments[i][j]].lane - tracks[i].path[sameOrderSegments[i][j - 1]].lane), 1.01);
-      }
-    }
-  }
-
-  return result;
-}
-
-function getNextPermutation(array) {
-  var i = array.length - 1;
-  while ((i > 0) && (array[i - 1] >= array[i])) i--;
-  if (i === 0) return false;
-  //console.log("doing perm");
-  var j = array.length;
-  while (array[j - 1] < array[i - 1]) j--;
-  swap(array, i - 1, j - 1);
-  i++;
-  j = array.length;
-  while (i < j) {
-    swap(array, i - 1, j - 1);
-    i++;
-    j--;
-  }
-  return true;
-}
 
 function swap(array, i, j) {
   var temp = array[i];
@@ -1096,8 +979,7 @@ function drawTopRightEdgeArcs(arcs) {
     .data(arcs)
     .enter()
     .append("path")
-    //.attr("class", "linkArc")
-    .attr("class", function(d) {return "link arctrack" + d.color; })
+    .attr("class", function(d) {return "link topRightArctrack" + d.color; })
     .attr("d", topRightEdgeArc)
     //.style("stroke", function(d) { return color(d.color); })
     .on("mouseover", handleMouseOver)
@@ -1118,8 +1000,7 @@ function drawTopLeftEdgeArcs(arcs) {
     .data(arcs)
     .enter()
     .append("path")
-    //.attr("class", "linkArc")
-    .attr("class", function(d) {return "link arctrack" + d.color; })
+    .attr("class", function(d) {return "link topLeftArctrack" + d.color; })
     .attr("d", topLeftEdgeArc)
     //.style("stroke", function(d) { return color(d.color); })
     .on("mouseover", handleMouseOver)
@@ -1140,8 +1021,7 @@ function drawBottomRightEdgeArcs(arcs) {
     .data(arcs)
     .enter()
     .append("path")
-    //.attr("class", "linkArc")
-    .attr("class", function(d) {return "link arctrack" + d.color; })
+    .attr("class", function(d) {return "link bottomRightArctrack" + d.color; })
     .attr("d", bottomRightEdgeArc)
     //.style("stroke", function(d) { return color(d.color); })
     .on("mouseover", handleMouseOver)
@@ -1162,8 +1042,7 @@ function drawBottomLeftEdgeArcs(arcs) {
     .data(arcs)
     .enter()
     .append("path")
-    //.attr("class", "linkArc")
-    .attr("class", function(d) {return "link arctrack" + d.color; })
+    .attr("class", function(d) {return "link bottomLeftArctrack" + d.color; })
     .attr("d", bottomLeftEdgeArc)
     //.style("stroke", function(d) { return color(d.color); })
     .on("mouseover", handleMouseOver)
@@ -1173,39 +1052,103 @@ function drawBottomLeftEdgeArcs(arcs) {
     .attr("transform", function(d) {return "translate(" + d.x + ", " + d.y + ")"; });
 }
 
-function handleMouseOver(d, i) {  // Highlight track on mouseover
+function handleMouseOver() {  // Highlight track on mouseover
   var currentClass = d3.select(this).attr("class");
   currentClass = /track[0-9]*/.exec(currentClass);
   //console.log(currentClass[0]);
 
-  svg.selectAll(".arc" + currentClass)
-    //.attr("opacity", 0.5)
-    .style("fill", "000000");
-
   svg.selectAll("." + currentClass)
-    //.attr("opacity", 1);
-    .style("stroke", "#000000");
+    //.style("stroke", "#000000")
+    .style("stroke-width",  "10px");
+
+  var topRightArc = d3.svg.arc()
+    .innerRadius(5)
+    .outerRadius(15)
+    .startAngle(0 * Math.PI)
+    .endAngle(0.5 * Math.PI);
+
+  svg.selectAll(".topRightArc" + currentClass)
+    .attr("d", topRightArc);
+
+  var topLeftArc = d3.svg.arc()
+    .innerRadius(5)
+    .outerRadius(15)
+    .startAngle(0 * Math.PI)
+    .endAngle(-0.5 * Math.PI);
+
+  svg.selectAll(".topLeftArc" + currentClass)
+    .attr("d", topLeftArc);
+
+  var bottomRightArc = d3.svg.arc()
+    .innerRadius(5)
+    .outerRadius(15)
+    .startAngle(0.5 * Math.PI)
+    .endAngle(1 * Math.PI);
+
+  svg.selectAll(".bottomRightArc" + currentClass)
+    .attr("d", bottomRightArc);
+
+  var bottomLeftArc = d3.svg.arc()
+    .innerRadius(5)
+    .outerRadius(15)
+    .startAngle(1 * Math.PI)
+    .endAngle(1.5 * Math.PI);
+
+  svg.selectAll(".bottomLeftArc" + currentClass)
+    .attr("d", bottomLeftArc);
 }
 
-function handleMouseOut(d, i) {  // Restore original appearance on mouseout
+function handleMouseOut() {  // Restore original appearance on mouseout
   var currentClass = d3.select(this).attr("class");
   currentClass = /track[0-9]*/.exec(currentClass);
 
-  svg.selectAll(".arc" + currentClass)
-    //.attr("opacity", 0.5)
-    .style("fill", function(d) { return color(d.color); });
-
   svg.selectAll("." + currentClass)
-    .style("stroke", function(d) { return color(d.color); });
-    //.attr("opacity", 0.7);
+    //.style("stroke", function(d) { return color(d.color); });
+    .style("stroke-width",  "7px");
+
+  var topRightArc = d3.svg.arc()
+    .innerRadius(6)
+    .outerRadius(13)
+    .startAngle(0 * Math.PI)
+    .endAngle(0.5 * Math.PI);
+
+  svg.selectAll(".topRightArc" + currentClass)
+    .attr("d", topRightArc);
+
+  var topLeftArc = d3.svg.arc()
+    .innerRadius(6)
+    .outerRadius(13)
+    .startAngle(0 * Math.PI)
+    .endAngle(-0.5 * Math.PI);
+
+  svg.selectAll(".topLeftArc" + currentClass)
+    .attr("d", topLeftArc);
+
+  var bottomRightArc = d3.svg.arc()
+    .innerRadius(6)
+    .outerRadius(13)
+    .startAngle(0.5 * Math.PI)
+    .endAngle(1 * Math.PI);
+
+  svg.selectAll(".bottomRightArc" + currentClass)
+    .attr("d", bottomRightArc);
+
+  var bottomLeftArc = d3.svg.arc()
+    .innerRadius(6)
+    .outerRadius(13)
+    .startAngle(1 * Math.PI)
+    .endAngle(1.5 * Math.PI);
+
+  svg.selectAll(".bottomLeftArc" + currentClass)
+    .attr("d", bottomLeftArc);
 }
 
-function handleMouseClick(d, i) { // Move clicked track to first position
+function handleMouseClick() { // Move clicked track to first position
   var trackNo = d3.select(this).attr("class");
   trackNo = /[0-9]+/.exec(trackNo);
   var index = 0;
-  console.log("trackno: " + trackNo);
+  //console.log("trackno: " + trackNo);
   while ((index < 10) && (currentInputTracks[index].id != trackNo)) index++;
-  console.log("index: " + index);
+  //console.log("index: " + index);
   moveTrackToFirstPosition(svg, currentInputNodes, currentInputTracks, index);
 }
