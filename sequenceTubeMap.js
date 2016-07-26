@@ -90,29 +90,19 @@ var sequenceTubeMap = (function () {
     var i;
     var currentNode;
     var followerID;
+    var modifiedSequence = [];
 
     nodes.forEach(function(node) {
       node.successors = [];
     });
 
     tracks.forEach(function(track) {
-      for(i = 0; i < track.sequence.length - 1; i++) {
-        if (track.sequence[i].charAt(0) == '-') {
-          currentNode = nodes[nodeMap.get(track.sequence[i].substr(1))];
-        } else {
-          currentNode = nodes[nodeMap.get(track.sequence[i])];
-        }
-        if (track.sequence[i + 1].charAt(0) == '-') {
-          followerID = track.sequence[i + 1].substr(1);
-        } else {
-          followerID = track.sequence[i + 1];
-        }
-
-        //console.log("davor: " + currentNode.successors.indexOf(track.sequence[i + 1]));
+      modifiedSequence = uninvert(track.sequence);
+      for(i = 0; i < modifiedSequence.length - 1; i++) {
+        currentNode = nodes[nodeMap.get(modifiedSequence[i])];
+        followerID = modifiedSequence[i + 1];
         if (currentNode.successors.indexOf(followerID) === -1) {
-          //console.log(currentNode.successors.indexOf(track.sequence[i + 1]));
           currentNode.successors.push(followerID);
-          //console.log("pushing " + track.sequence[i+1] + " to node " + currentNode.name);
         }
       }
     });
@@ -166,6 +156,7 @@ var sequenceTubeMap = (function () {
 
     generateNodeOrderOfSingleTrack(uninvert(tracks[0].sequence), nodes); //calculate order values for all nodes of the first track
     for (i = 1; i < tracks.length; i++) {
+      console.log("Node order for track " + i + " " + tracks[i].id);
       modifiedSequence = uninvert(tracks[i].sequence);
       rightIndex = generateNodeOrderLeftEnd(modifiedSequence, nodes); //calculate order values for all nodes until the first anchor
       while (rightIndex < modifiedSequence.length) { //move right until the end of the sequence
@@ -261,7 +252,7 @@ var sequenceTubeMap = (function () {
   }
 
   function increaseOrderForSuccessors(nodes, currentNode, order) { //increases the order-value for currentNode and (if necessary) successor nodes recursively
-    //console.log("increasing orders from " + currentNode.name + " to " + order);
+    console.log("increasing orders from " + currentNode.name + " to " + order);
     var increasedOrders = {};
     increaseOrderForSuccessorsRecursive(nodes, currentNode, order, increasedOrders);
     //console.log(increasedOrders);
@@ -470,7 +461,7 @@ var sequenceTubeMap = (function () {
 
     for (i = 0; i <= maxOrder; i++) {
     //for (i = 0; i <= 3; i++) {
-    //console.log("order " + i);
+    console.log("order " + i + ":");
       generateSingleLaneAssignment(assignment[i], i, nodes, tracks); //this is where the lanes get assigned
     }
   }
@@ -500,14 +491,16 @@ var sequenceTubeMap = (function () {
     var best = {};
     var i;
 
+    console.log(assignment.length + " lanes");
+
     best.score = Number.MAX_SAFE_INTEGER;
     best.lanes = [];
     for (i = Math.min(0, numberOfTracks - assignment.length); i <= Math.max(0, numberOfTracks - assignment.length); i++) {  //check arrangements where the top lane != 0 too
       BranchAndBound(lanes, assignment, 0, null, 0, best, order, nodes, tracks, i);
     }
 
-    //console.log("BEST LANES (" + order + "): " + best.score);
-    //console.log(best.lanes);
+    console.log("BEST LANES (" + order + "): " + best.score);
+    console.log(best.lanes);
     for (i = 0; i < assignment.length; i++) {
       assignment[best.lanes[i]].lane = i + best.topmostLane;
       tracks[assignment[best.lanes[i]].trackNo].path[assignment[best.lanes[i]].segmentNo].lane = i + best.topmostLane;
@@ -1160,5 +1153,5 @@ var sequenceTubeMap = (function () {
   return {
     create: create
   };
-  
+
 })();
