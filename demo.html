@@ -66,6 +66,7 @@
 
   document.getElementById("example1").onclick = function() {
     sequenceTubeMap.create(svg, inputNodes, inputTracks1);
+    speedTest();
   };
 
   document.getElementById("example2").onclick = function() {
@@ -178,7 +179,7 @@
 
   var svg = d3.select("#chart0") //Create SVG element
     .append("svg")
-    .attr("width", 1400)
+    .attr("width", 1600)
     .attr("height", 300);
 
   document.getElementById("example4").click();
