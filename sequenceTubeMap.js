@@ -19,6 +19,7 @@ var sequenceTubeMap = (function () {
   var extraLeft = []; //info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
   var extraRight = []; //info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
   var maxOrder; //horizontal order of the rightmost node
+  var nextNodeIsAlwaysToTheRight = true;
 
   function create(inputSvg, nodes, tracks) {
     svg = inputSvg;
@@ -67,6 +68,12 @@ var sequenceTubeMap = (function () {
     createTubeMap();
   }
 
+  function switchAlwaysMoveRight() {
+    nextNodeIsAlwaysToTheRight = ! nextNodeIsAlwaysToTheRight;
+    createTubeMap();
+    console.log('SWITCHED 1');
+  }
+
   function createTubeMap() {
     //clear svg for (re-)drawing
     var nodes = (JSON.parse(JSON.stringify(inputNodes))); //deep copy (can add stuff to copy and leave original unchanged)
@@ -83,8 +90,7 @@ var sequenceTubeMap = (function () {
     //console.log("number of tracks: " + numberOfTracks);
     nodeMap = generateNodeMap(nodes);
     generateNodeSuccessors(nodes, tracks);
-    //generateNodeOrder(nodes, tracks);
-    generateNodeOrderNEW(nodes, tracks);
+    generateNodeOrder(nodes, tracks);
     maxOrder = getMaxOrder(nodes);
     generateNodeDegree(nodes, tracks);
     switchNodeOrientation(nodes, tracks);
@@ -131,8 +137,7 @@ var sequenceTubeMap = (function () {
     });
 
     tracks.forEach(function(track) {
-      //modifiedSequence = uninvert(track.sequence);
-      modifiedSequence = uninvertNEW(track.sequence);
+      modifiedSequence = uninvert(track.sequence);
       for(i = 0; i < modifiedSequence.length - 1; i++) {
         currentNode = nodes[nodeMap.get(modifiedSequence[i])];
         followerID = modifiedSequence[i + 1];
@@ -183,7 +188,7 @@ var sequenceTubeMap = (function () {
     return anchorIndex;
   }
 
-  function generateNodeOrderNEW(nodes, tracks) { //generate global sequence of nodes from left to right, starting with first track and adding other tracks sequentially
+  function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes from left to right, starting with first track and adding other tracks sequentially
     var modifiedSequence;
     var i;
     var j;
@@ -192,12 +197,11 @@ var sequenceTubeMap = (function () {
     var rightIndex;
     var leftIndex;
 
-    //generateNodeOrderOfSingleTrack(uninvert(tracks[0].sequence), nodes); //calculate order values for all nodes of the first track
     generateNodeOrderOfSingleTrack(tracks[0].sequence, nodes); //calculate order values for all nodes of the first track
 
     for (i = 1; i < tracks.length; i++) {
-      console.log("Node order for track " + i + " " + tracks[i].id);
-      modifiedSequence = uninvertNEW(tracks[i].sequence);
+      //console.log("Node order for track " + i + " " + tracks[i].id);
+      modifiedSequence = uninvert(tracks[i].sequence);
       //console.log(tracks[i].sequence);
       //console.log(modifiedSequence);
       rightIndex = generateNodeOrderLeftEnd(modifiedSequence, nodes); //calculate order values for all nodes until the first anchor
@@ -211,17 +215,11 @@ var sequenceTubeMap = (function () {
           currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1; //start with order value of leftAnchor + 1
           for (j = leftIndex + 1; j < rightIndex; j++) {
             nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; //assign order values
-            console.log(modifiedSequence[j] + " -> " + currentOrder);
+            //console.log(modifiedSequence[j] + " -> " + currentOrder);
             currentOrder++;
           }
 
           if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) { //if order-value of left anchor < order-value of right anchor
-            /*currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1; //start with order value of leftAnchor + 1
-            for (j = leftIndex + 1; j < rightIndex; j++) {
-              nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; //assign order values
-              //console.log(modifiedSequence[j] + " -> " + currentOrder);
-              currentOrder++;
-            }*/
             if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < currentOrder) { //and the right anchor now has a lower order-value than our newly added nodes
               increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])], currentOrder);
             }
@@ -229,79 +227,16 @@ var sequenceTubeMap = (function () {
             if (! isSuccessor(nodes[nodeMap.get(modifiedSequence[rightIndex])], nodes[nodeMap.get(modifiedSequence[leftIndex])], nodes)) { //no real reversal
               //console.log("hier");
               //console.log(isSuccessor(nodes[nodeMap.get(modifiedSequence[rightIndex])], nodes[nodeMap.get(modifiedSequence[leftIndex])], nodes));
-
-              /*currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1; //start with order value of leftAnchor + 1
-              for (j = leftIndex + 1; j < rightIndex; j++) {
-                nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; //assign order values
-                console.log(modifiedSequence[j] + " -> " + currentOrder);
-                currentOrder++;
-              }*/
-
               increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])], currentOrder);
             } else { //real reversal
-              /*currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order - 1; //start with order value of leftAnchor + 1
-              for (j = leftIndex + 1; j < rightIndex; j++) {
-                nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; //assign order values
-                console.log(modifiedSequence[j] + " -> " + currentOrder);
-                currentOrder--;
-              }*/
-
-
-            }
-          }
-
-        } else { //right segment to the right of last anchor
-          currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1;
-          for (j = leftIndex + 1; j < modifiedSequence.length; j++) {
-            currentNode = nodes[nodeMap.get(modifiedSequence[j])];
-            if (! currentNode.hasOwnProperty("order")) {
-              currentNode.order = currentOrder;
-              currentOrder++;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes from left to right, starting with first track and adding other tracks sequentially
-    var modifiedSequence;
-    var i;
-    var j;
-    var currentOrder;
-    var currentNode;
-    var rightIndex;
-    var leftIndex;
-
-    generateNodeOrderOfSingleTrack(uninvert(tracks[0].sequence), nodes); //calculate order values for all nodes of the first track
-    for (i = 1; i < tracks.length; i++) {
-      console.log("Node order for track " + i + " " + tracks[i].id);
-      modifiedSequence = uninvert(tracks[i].sequence);
-      console.log(tracks[i].sequence);
-      console.log(modifiedSequence);
-      rightIndex = generateNodeOrderLeftEnd(modifiedSequence, nodes); //calculate order values for all nodes until the first anchor
-      while (rightIndex < modifiedSequence.length) { //move right until the end of the sequence
-        //find next anchor node
-        leftIndex = rightIndex;
-        rightIndex++;
-        while ((rightIndex < modifiedSequence.length) && (! nodes[nodeMap.get(modifiedSequence[rightIndex])].hasOwnProperty("order"))) rightIndex++;
-
-        if (rightIndex < modifiedSequence.length) { //middle segment between two anchors
-          currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1; //start with order value of leftAnchor + 1
-          for (j = leftIndex + 1; j < rightIndex; j++) {
-            nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; //assign order values
-            console.log(modifiedSequence[j] + " -> " + currentOrder);
-            currentOrder++;
-          }
-          if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) { //if order-value of left anchor < order-value of right anchor
-            if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < currentOrder) { //and the right anchor now has a lower order-value than our newly added nodes
-              increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])], currentOrder);
-            }
-          } else { //potential node reversal: check for ordering conflict, if no conflict found move node at rightIndex further to the right in order to not create a track reversal
-            if (! isSuccessor(nodes[nodeMap.get(modifiedSequence[rightIndex])], nodes[nodeMap.get(modifiedSequence[leftIndex])], nodes)) {
-              //console.log("hier");
-              //console.log(isSuccessor(nodes[nodeMap.get(modifiedSequence[rightIndex])], nodes[nodeMap.get(modifiedSequence[leftIndex])], nodes));
-              increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])], currentOrder);
+              if (! nextNodeIsAlwaysToTheRight) {
+                currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order - 1; //start with order value of leftAnchor + 1
+                for (j = leftIndex + 1; j < rightIndex; j++) {
+                  nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; //assign order values
+                  //console.log(modifiedSequence[j] + " -> " + currentOrder);
+                  currentOrder--;
+                }
+              }
             }
           }
         } else { //right segment to the right of last anchor
@@ -353,24 +288,6 @@ var sequenceTubeMap = (function () {
                                 //the univerted sequence is how the nodes are arranged from left to right in the display
     var result = [];
     var i;
-    var stack = [];
-
-    for (i = 0; i < sequence.length; i++) {
-      if (sequence[i].charAt(0) !== '-') {
-        while (stack.length > 0) result.push(stack.pop());
-        result.push(sequence[i]);
-      } else {
-        stack.push(sequence[i].substr(1));
-      }
-    }
-    while (stack.length > 0) result.push(stack.pop());
-    return result;
-  }
-
-  function uninvertNEW(sequence) { //generates sequence "corrected" for inversions i.e. A B C -D -E -F G H becomes A B C F E D G H
-                                //the univerted sequence is how the nodes are arranged from left to right in the display
-    var result = [];
-    var i;
 
     for (i = 0; i < sequence.length; i++) {
       if (sequence[i].charAt(0) !== '-') {
@@ -389,10 +306,10 @@ var sequenceTubeMap = (function () {
   }
 
   function increaseOrderForSuccessors(nodes, currentNode, order) { //increases the order-value for currentNode and (if necessary) successor nodes recursively
-    console.log("increasing orders from " + currentNode.name + " to " + order);
+    //console.log("increasing orders from " + currentNode.name + " to " + order);
     var increasedOrders = {};
     increaseOrderForSuccessorsRecursive(nodes, currentNode, order, currentNode, increasedOrders);
-    console.log(increasedOrders);
+    //console.log(increasedOrders);
     for (var nodeName in increasedOrders) {
       if (increasedOrders.hasOwnProperty(nodeName)) {
         nodes[nodeMap.get(nodeName)].order = increasedOrders[nodeName];
@@ -412,42 +329,11 @@ var sequenceTubeMap = (function () {
         if (currentNode !== startingNode) {
           currentNode.predecessors.forEach(function(predecessor) {
             if (nodes[nodeMap.get(predecessor)].order > currentNode.order) { //only increase order of predecessors if they lie to the right of the currentNode (not for repeats/translocations)
-              console.log("predecessor: from " + currentNode.name + " to " + predecessor + " = " + (order + 1));
+              //console.log("predecessor: from " + currentNode.name + " to " + predecessor + " = " + (order + 1));
               increaseOrderForSuccessorsRecursive(nodes, nodes[nodeMap.get(predecessor)], order + 1, startingNode, increasedOrders);
             }
           });
         }
-      }
-    }
-  }
-
-  function increaseOrderForSuccessorsALT(nodes, currentNode, order) { //increases the order-value for currentNode and (if necessary) successor nodes recursively
-    console.log("increasing orders from " + currentNode.name + " to " + order);
-    var increasedOrders = {};
-    increaseOrderForSuccessorsRecursive(nodes, currentNode, order, increasedOrders);
-    console.log(increasedOrders);
-    for (var nodeName in increasedOrders) {
-      if (increasedOrders.hasOwnProperty(nodeName)) {
-        nodes[nodeMap.get(nodeName)].order = increasedOrders[nodeName];
-      }
-    }
-  }
-
-  function increaseOrderForSuccessorsRecursiveALT(nodes, currentNode, order, increasedOrders) {
-    if ((currentNode.hasOwnProperty("order")) && (currentNode.order < order)) {
-      if ((! increasedOrders.hasOwnProperty(currentNode.name)) || (increasedOrders[currentNode.name] < order)) {
-        increasedOrders[currentNode.name] = order;
-        currentNode.successors.forEach(function(successor) {
-          if (nodes[nodeMap.get(successor)].order > currentNode.order) { //only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
-            increaseOrderForSuccessorsRecursive(nodes, nodes[nodeMap.get(successor)], order + 1, increasedOrders);
-          }
-        });
-        currentNode.predecessors.forEach(function(predecessor) {
-          if (nodes[nodeMap.get(predecessor)].order > currentNode.order) { //only increase order of predecessors if they lie to the right of the currentNode (not for repeats/translocations)
-            console.log("predecessor: from " + currentNode.name + " to " + predecessor + " = " + (order + 1));
-            increaseOrderForSuccessorsRecursive(nodes, nodes[nodeMap.get(predecessor)], order + 1, increasedOrders);
-          }
-        });
       }
     }
   }
@@ -501,11 +387,7 @@ var sequenceTubeMap = (function () {
       //TODO: last element
     }
 
-    console.log("toSwitch: ");
-    console.log(toSwitch);
-
     tracks.forEach(function(track, trackIndex) {
-      //console.log(track);
       track.sequence.forEach(function(node, nodeIndex) {
         nodeName = node;
         if (nodeName.charAt(0) === "-") nodeName = nodeName.substr(1);
@@ -514,7 +396,6 @@ var sequenceTubeMap = (function () {
           else tracks[trackIndex].sequence[nodeIndex] = "-" + node;
         }
       });
-      //console.log(track);
     });
   }
 
@@ -841,19 +722,6 @@ var sequenceTubeMap = (function () {
       else return 0;
     }
   }
-
-  /*function compareNodesByDegree(a, b) {
-    if (a.hasOwnProperty("degree")) {
-      if (b.hasOwnProperty("degree")) {
-        if (a.degree < b.degree) return -1;
-        else if (a.degree > b.degree) return 1;
-        else return 0;
-      } else return -1;
-    } else {
-      if (b.hasOwnProperty("degree")) return 1;
-      else return 0;
-    }
-  }*/
 
   function generateEdgesFromPath(nodes, tracks, edges) {
     var i;
@@ -1380,7 +1248,8 @@ var sequenceTubeMap = (function () {
   }
 
   return {
-    create: create
+    create: create,
+    switch: switchAlwaysMoveRight
   };
 
 })();

@@ -16,7 +16,6 @@
     fill: none;
     /*stroke: #ccc;*/
     stroke-width: 7px;
-
   }
   .backgr {
 	fill: #fff;
@@ -33,29 +32,44 @@
     padding: 25px;
     border: 25px solid navy;*/
     margin: 25px;
-}
+  }
+  .floater {
+    float:left;
+  }
+  label {
+    font-weight: normal;
+  }
 </style>
 </head>
 <body>
   <div>
     <h1>Displaying Sequence Graphs as Tube Maps - Demo</h1>
     <hr/>
-    <p>
-      <button type="button" class="btn btn-primary" id="example1">Example 1</button> Only indels and polymorphisms
-    </p>
-    <p>
-      <button type="button" class="btn btn-primary" id="example2">Example 2</button> Inversions
-    </p>
-    <p>
-      <button type="button" class="btn btn-primary" id="example3">Example 3</button> Nested Inversions
-    </p>
-    <p>
-      <button type="button" class="btn btn-primary" id="example4">Example 4</button> Duplications
-    </p>
-    <p>
-      <button type="button" class="btn btn-primary" id="example5">Example 5</button> Translocations
-      <!--<button type="button" class="btn btn-primary" onclick="test2to1()">Switch</button>-->
-    </p>
+    <div>
+      <div class = "floater">
+        <p>
+          <button type="button" class="btn btn-primary" id="example1">Example 1</button> Only indels and polymorphisms
+        </p>
+        <p>
+          <button type="button" class="btn btn-primary" id="example2">Example 2</button> Inversions
+        </p>
+        <p>
+          <button type="button" class="btn btn-primary" id="example3">Example 3</button> Nested Inversions
+        </p>
+        <p>
+          <button type="button" class="btn btn-primary" id="example4">Example 4</button> Duplications
+        </p>
+        <p>
+          <button type="button" class="btn btn-primary" id="example5">Example 5</button> Translocations
+        </p>
+      </div>
+      <div class = "floater">
+        <h4>Options:</h4>
+        <form class="form-inline">
+          <label><input type="checkbox" id="checkbox1" value="first_checkbox" checked> Node arrangement: place new nodes to the right, even in inversions</label><br>
+        </form>
+      </div>
+    </div>
     <div id="chart0"></div>
     <p>&nbsp;
   </div>
@@ -82,6 +96,11 @@
 
   document.getElementById("example5").onclick = function() {
     sequenceTubeMap.create(svg, inputNodes, inputTracks5);
+  };
+
+  document.getElementById("checkbox1").onclick = function() {
+    sequenceTubeMap.switch();
+    console.log("SWITCHED")
   };
 
   var inputNodes = [
@@ -138,14 +157,6 @@
     {id: 4, sequence: ["B", "D", "F", "-J", "-I", "-G", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
     //{id: 4, sequence: ["B", "D", "F", "-J", "-I", "-G", "-E", "L", "M", "O", "P", "R", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
     //{id: 4, sequence: ["B", "D", "-J", "-I", "-G", "-E", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
-  ];
-
-  var inputTracks2_2 = [ //like inputTracks2, but put track with id 2 first and reverse inversion
-    {id: 2, sequence: ["A", "B", "D", "F", "H", "G", "E", "J", "K", "M", "N", "P", "Q", "S", "AB", "V", "W", "X", "-AE", "-AA", "-Z", "AG"]},
-    {id: 0, sequence: ["A", "B", "D", "-E", "-G", "-H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"]},
-    //{id: 1, sequence: ["A", "B", "D", "-E", "-G", "-H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"]},
-    {id: 3, sequence: ["B", "C", "D", "-E", "-G", "-H", "J", "L", "-P", "-N", "-M", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"]},
-    {id: 4, sequence: ["B", "D", "F", "-J", "-I", "G", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
   ];
 
   var inputTracks3 = [
