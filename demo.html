@@ -31,14 +31,26 @@
     width: 300px;
     padding: 25px;
     border: 25px solid navy;*/
-    margin: 25px;
+  /*  margin: 25px;*/
+  }
+  body {
+    margin: 25px
   }
   .floater {
     float:left;
   }
+  .left {
+    margin-top: 3px;
+  }
+  .right {
+    margin-left: 20px;
+  }
   label {
     font-weight: normal;
   }
+  /*#chart0 {
+    border: 1px solid black;
+  }*/
 </style>
 </head>
 <body>
@@ -46,7 +58,7 @@
     <h1>Displaying Sequence Graphs as Tube Maps - Demo</h1>
     <hr/>
     <div>
-      <div class = "floater">
+      <div class = "floater left">
         <p>
           <button type="button" class="btn btn-primary" id="example1">Example 1</button> Only indels and polymorphisms
         </p>
@@ -63,12 +75,13 @@
           <button type="button" class="btn btn-primary" id="example5">Example 5</button> Translocations
         </p>
       </div>
-      <div class = "floater">
+      <div class = "floater right">
         <h4>Options:</h4>
         <form class="form-inline">
           <label><input type="checkbox" id="checkbox1" value="first_checkbox" checked> Node arrangement: place new nodes to the right, even in inversions</label><br>
         </form>
       </div>
+      <div style="clear: both;"></div>
     </div>
     <div id="chart0"></div>
     <p>&nbsp;
@@ -100,7 +113,6 @@
 
   document.getElementById("checkbox1").onclick = function() {
     sequenceTubeMap.switch();
-    console.log("SWITCHED")
   };
 
   var inputNodes = [
@@ -189,9 +201,9 @@
   ];
 
   var svg = d3.select("#chart0") //Create SVG element
-    .append("svg")
-    .attr("width", 1600)
-    .attr("height", 500);
+    .append("svg");
+    //.attr("width", 1600)
+    //.attr("height", 500);
 
   document.getElementById("example4").click();
 

@@ -3,8 +3,8 @@
 
 var sequenceTubeMap = (function () {
 
-  const offsetX = 10;
-  const offsetY = 40;
+  var offsetX = 0;
+  var offsetY = 0;
   const color = d3.scale.category10().domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
   var svg;
@@ -71,7 +71,6 @@ var sequenceTubeMap = (function () {
   function switchAlwaysMoveRight() {
     nextNodeIsAlwaysToTheRight = ! nextNodeIsAlwaysToTheRight;
     createTubeMap();
-    console.log('SWITCHED 1');
   }
 
   function createTubeMap() {
@@ -95,7 +94,9 @@ var sequenceTubeMap = (function () {
     generateNodeDegree(nodes, tracks);
     switchNodeOrientation(nodes, tracks);
     generateLaneAssignment(nodes, tracks);
+
     generateNodeXCoords(nodes, tracks);
+    movePositionWithinSVG(nodes, tracks);
     generateEdgesFromPath(nodes, tracks, edges);
 
     console.log("Assignment:");
@@ -115,6 +116,28 @@ var sequenceTubeMap = (function () {
     if (arcs[2].length > 0) drawBottomRightEdgeArcs(arcs[2]);
     if (arcs[3].length > 0) drawBottomLeftEdgeArcs(arcs[3]);
     drawNodes(nodes);
+  }
+
+  function movePositionWithinSVG(nodes, tracks) {
+    var minLane = Number.MAX_SAFE_INTEGER;
+    var maxLane = Number.MIN_SAFE_INTEGER;
+    var maxX = Number.MIN_SAFE_INTEGER;
+    tracks.forEach(function (track) {
+      track.path.forEach(function (node) {
+        if (node.lane < minLane) minLane = node.lane;
+        if (node.lane > maxLane) maxLane = node.lane;
+      });
+    });
+    //console.log(minLane + ' ' + maxLane);
+    //offsetX = 0;
+    offsetY = -100 - 22 * minLane;
+    nodes.forEach(function(node) {
+      node.y = offsetY + 110 + 22 * node.yCoord;
+      if (node.x + 20 * node.width > maxX) maxX = node.x + 20 * node.width;
+    });
+    //console.log(maxX);
+    svg.attr("height", 20 + 22 * (maxLane - minLane));
+    svg.attr("width", maxX);
   }
 
   function generateNodeMap(nodes) { //map node names to node indices
@@ -410,7 +433,7 @@ var sequenceTubeMap = (function () {
     extra = calculateExtraSpace(nodes, tracks);
 
     currentX = 0;
-    nextX = offsetX + 40;
+    nextX = offsetX + 20;
     currentOrder = -1;
     nodes.forEach(function(node, index) {
       if (node.hasOwnProperty("order")) {
@@ -657,8 +680,10 @@ var sequenceTubeMap = (function () {
       //node.y = offsetY + 110 + 22 * node.yCoord;
       //console.log(node.name + "HIER " + nodeMap.get(node.name));
       if (node.name !== null) {
-        nodes[nodeMap.get(node.name)].yCoord2 = currentLane;
+        nodes[nodeMap.get(node.name)].yCoord = currentLane;
         nodes[nodeMap.get(node.name)].y = offsetY + 110 + 22 * currentLane;
+        //nodes[nodeMap.get(node.name)].y = offsetY + 90 + 22 * currentLane;
+
       }
 
       node.tracks.sort(compareByIdealLane);
@@ -677,7 +702,7 @@ var sequenceTubeMap = (function () {
       //console.log("move by " + moveBy);
       assignment.forEach(function(node) {
         if (node.name !== null) {
-          nodes[nodeMap.get(node.name)].yCoord2 -= moveBy;
+          nodes[nodeMap.get(node.name)].yCoord -= moveBy;
           nodes[nodeMap.get(node.name)].y -= 22 * moveBy;
         }
         node.tracks.forEach(function(track) {
