@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 <script type="text/javascript" src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script src="sequenceTubeMap.js"></script>
+<script src="vg2.js"></script>
 <style type="text/css">
   .node {
 	fill: #fff;
@@ -74,6 +75,9 @@
         <p>
           <button type="button" class="btn btn-primary" id="example5">Example 5</button> Translocations
         </p>
+        <p>
+          <button type="button" class="btn btn-primary" id="example6">Example 6</button> Parse json created by vg
+        </p>
       </div>
       <div class = "floater right">
         <h4>Options:</h4>
@@ -109,6 +113,14 @@
 
   document.getElementById("example5").onclick = function() {
     sequenceTubeMap.create(svg, inputNodes, inputTracks5);
+  };
+
+  document.getElementById("example6").onclick = function() {
+    console.log("VG:");
+    console.log(vg);
+    console.log(sequenceTubeMap.vgExtractNodes(vg));
+    console.log(sequenceTubeMap.vgExtractTracks(vg));
+    sequenceTubeMap.create(svg, sequenceTubeMap.vgExtractNodes(vg), sequenceTubeMap.vgExtractTracks(vg));
   };
 
   document.getElementById("checkbox1").onclick = function() {
@@ -205,7 +217,7 @@
     //.attr("width", 1600)
     //.attr("height", 500);
 
-  document.getElementById("example4").click();
+  document.getElementById("example6").click();
 
 </script>
 </body>

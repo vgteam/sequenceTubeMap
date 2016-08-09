@@ -110,12 +110,23 @@ var sequenceTubeMap = (function () {
     console.log("Edges:");
     console.log(edges);
 
+    removeUnusedNodes(nodes);
     drawEdges(edges);
     if (arcs[0].length > 0) drawTopLeftEdgeArcs(arcs[0]);
     if (arcs[1].length > 0) drawTopRightEdgeArcs(arcs[1]);
     if (arcs[2].length > 0) drawBottomRightEdgeArcs(arcs[2]);
     if (arcs[3].length > 0) drawBottomLeftEdgeArcs(arcs[3]);
     drawNodes(nodes);
+  }
+
+  function removeUnusedNodes(nodes) {
+    var i;
+    for (i = nodes.length - 1; i >= 0; i--) {
+      if (nodes[i].degree === 0) {
+        nodes.splice(i, 1);
+      }
+    }
+    numberOfNodes = nodes.length;
   }
 
   function movePositionWithinSVG(nodes, tracks) {
@@ -1174,6 +1185,8 @@ var sequenceTubeMap = (function () {
   function handleMouseOver() {  // Highlight track on mouseover
     var currentClass = d3.select(this).attr("class");
     currentClass = /track[0-9]*/.exec(currentClass);
+    //currentClass = /track[\S]*/.exec(currentClass);
+
     //console.log(currentClass[0]);
 
     svg.selectAll("." + currentClass)
@@ -1272,9 +1285,34 @@ var sequenceTubeMap = (function () {
     moveTrackToFirstPosition(index);
   }
 
+  function vgExtractNodes(vg) {
+    var result = [];
+    vg.node.forEach(function(node) {
+      //result.push({ name: "" + node.id, width: node.sequence.length});
+      result.push({ name: "" + node.id, width: 1});
+
+    });
+    return result;
+  }
+
+  function vgExtractTracks(vg) {
+    var result =[];
+    vg.path.forEach(function(path, index) {
+      var sequence = [];
+      path.mapping.forEach(function(pos) {
+        sequence.push("" + pos.position.node_id);
+      });
+      //result.push({id: path.name, sequence: sequence});
+      result.push({id: index, sequence: sequence});
+    });
+    return result;
+  }
+
   return {
     create: create,
-    switch: switchAlwaysMoveRight
+    switch: switchAlwaysMoveRight,
+    vgExtractNodes: vgExtractNodes,
+    vgExtractTracks: vgExtractTracks
   };
 
 })();
