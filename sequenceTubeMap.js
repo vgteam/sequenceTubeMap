@@ -1299,9 +1299,26 @@ var sequenceTubeMap = (function () {
     var result =[];
     vg.path.forEach(function(path, index) {
       var sequence = [];
+      var isCompletelyReverse = true;
       path.mapping.forEach(function(pos) {
-        sequence.push("" + pos.position.node_id);
+        if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
+          sequence.push("-" + pos.position.node_id);
+        } else {
+          sequence.push("" + pos.position.node_id);
+          isCompletelyReverse = false;
+        }
       });
+      //if ((path.mapping[0].position.hasOwnProperty('is_reverse')) && (path.mapping[0].position.is_reverse === true)) sequence.reverse();
+      if (isCompletelyReverse) {
+          console.log("completely reverse " + index);
+          console.log(sequence);
+          sequence.reverse();
+          sequence.forEach(function(node, index2) {
+            sequence[index2] = node.substr(1);
+          });
+          console.log(sequence);
+      }
+
       //result.push({id: path.name, sequence: sequence});
       result.push({id: index, sequence: sequence});
     });
