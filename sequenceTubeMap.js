@@ -1325,11 +1325,114 @@ var sequenceTubeMap = (function () {
     return result;
   }
 
+  function vgMergeNodes(nodes, tracks) {
+    var mergeForward = {};
+    var i, index;
+    var mergeBackward = {};
+    var nodeName;
+
+    tracks.forEach(function(track) {
+      for (i = 0; i < track.sequence.length; i++) {
+        if (track.sequence[i].charAt(0) !== '-') {  //forward Node
+          if (!mergeForward.hasOwnProperty(track.sequence[i])) {
+            if ((i < track.sequence.length - 1) && (track.sequence[i + 1].charAt(0) !== '-')) {
+              mergeForward[track.sequence[i]] = {mergeWith: track.sequence[i + 1], isPossible: true};
+            }
+          } else {
+            if ((i === track.sequence.length - 1) || (mergeForward[track.sequence[i]].mergeWith != track.sequence[i + 1])) {
+              mergeForward[track.sequence[i]].isPossible = false;
+            }
+          }
+        } else { //reverse Node
+          nodeName = track.sequence[i].substr(1);
+          if (!mergeForward.hasOwnProperty(nodeName)) {
+            if ((i > 0) && (track.sequence[i - 1].charAt(0) === '-')) {
+              mergeForward[nodeName] = {mergeWith: track.sequence[i - 1].substr(1), isPossible: true};
+            }
+          } else {
+            if ((i === 0) || (mergeForward[nodeName].mergeWith != track.sequence[i - 1].substr(1))) {
+              mergeForward[nodeName].isPossible = false;
+            }
+          }
+        }
+      }
+    });
+
+    console.log("Merge Forward: " + Object.keys(mergeForward).length);
+    console.log(mergeForward);
+
+    for (var prop in mergeForward) {
+      if (mergeForward.hasOwnProperty(prop)) {
+        if (mergeForward[prop].isPossible === true) {
+          mergeBackward[mergeForward[prop].mergeWith] = {mergeWith: prop, isPossible: true};
+        }
+      }
+    }
+
+    console.log("Merge Backward:" + Object.keys(mergeBackward).length);
+    console.log(mergeBackward);
+
+    tracks.forEach(function(track) {
+      for (i = 0; i < track.sequence.length; i++) {
+        if (track.sequence[i].charAt(0) !== '-') {  //forward Node
+          if (mergeBackward.hasOwnProperty(track.sequence[i])) {
+            if ((i === 0) || (mergeBackward[track.sequence[i]].mergeWith !== track.sequence[i - 1])) {
+              mergeBackward[track.sequence[i]].isPossible = false;
+            }
+          }
+        } else { //reverse Node
+          if (mergeBackward.hasOwnProperty(track.sequence[i].substr(1))) {
+            if ((i === track.sequence.length - 1) || (mergeBackward[track.sequence[i].substr(1)].mergeWith !== track.sequence[i + 1].substr(1))) {
+              mergeBackward[track.sequence[i].substr(1)].isPossible = false;
+            }
+          }
+        }
+      }
+    });
+
+    var count = 0;
+    for (prop in mergeBackward) {
+      if (mergeBackward.hasOwnProperty(prop)) {
+        if (mergeBackward[prop].isPossible === true) {
+          count++;
+          console.log("merge " + mergeBackward[prop].mergeWith + " with " + prop);
+        }
+      }
+    }
+    console.log(count + " merges");
+
+    //actually merge the nodes by removing the corresponding nodes from track data
+    tracks.forEach(function(track) {
+      for (i = track.sequence.length - 1; i >= 0; i--) {
+        nodeName = track.sequence[i];
+        if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
+        if ((mergeBackward.hasOwnProperty(nodeName)) && (mergeBackward[nodeName].isPossible === true)) {
+          track.sequence.splice(i, 1);
+        }
+      }
+    });
+
+    //remove the nodes from node-Array
+    for (prop in mergeBackward) {
+      if (mergeBackward.hasOwnProperty(prop)) {
+        if (mergeBackward[prop].isPossible === true) {
+          index = 0;
+          //console.log("looking for " + mergeBackward[prop])
+          while ((index < 1000) && (nodes[index].name !== prop)) index++;
+          nodes.splice(index, 1);
+        }
+      }
+    }
+
+    return {nodes: nodes, tracks: tracks};
+  }
+
   return {
     create: create,
     switch: switchAlwaysMoveRight,
     vgExtractNodes: vgExtractNodes,
-    vgExtractTracks: vgExtractTracks
+    vgExtractTracks: vgExtractTracks,
+    vgMergeNodes: vgMergeNodes
   };
 
 })();

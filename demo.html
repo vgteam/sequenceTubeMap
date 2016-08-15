@@ -122,7 +122,9 @@
       <hr/>
       <h4>Options:</h4>
       <form class="form-inline">
-        <label><input type="checkbox" id="checkbox1" value="first_checkbox" checked> Node arrangement: place new nodes to the right, even in inversions</label><br>
+        <label><input type="checkbox" id="nodePlacementCheckbox" value="first_checkbox" checked> Node arrangement: place new nodes to the right, even in inversions</label><br>
+        <label><input type="checkbox" id="redundantNodesCheckbox"> Remove redundant nodes (requires redraw)</label><br>
+
       </form>
       <br />
     </div>
@@ -165,18 +167,26 @@
 
   document.getElementById("parseButton").onclick = function() {
     $("#example1").removeClass("active");
-    console.log(document.getElementById("textarea1").value);
     var vg = JSON.parse(document.getElementById("textarea1").value);
-    console.log("VG:");
-    console.log(vg);
-    console.log(sequenceTubeMap.vgExtractNodes(vg));
-    console.log(sequenceTubeMap.vgExtractTracks(vg));
-    sequenceTubeMap.create(svg, sequenceTubeMap.vgExtractNodes(vg), sequenceTubeMap.vgExtractTracks(vg));
+    var nodes = sequenceTubeMap.vgExtractNodes(vg);
+    var tracks = sequenceTubeMap.vgExtractTracks(vg);
+    if (removeRedundantNodes) {
+      var NodesAndTracks = sequenceTubeMap.vgMergeNodes(nodes, tracks);
+      sequenceTubeMap.create(svg, NodesAndTracks.nodes, NodesAndTracks.tracks);
+    } else {
+      sequenceTubeMap.create(svg, nodes, tracks);
+    }
   };
 
-  document.getElementById("checkbox1").onclick = function() {
+  document.getElementById("nodePlacementCheckbox").onclick = function() {
     sequenceTubeMap.switch();
   };
+
+  document.getElementById("redundantNodesCheckbox").onclick = function() {
+    removeRedundantNodes = !removeRedundantNodes;
+  };
+
+  var removeRedundantNodes = false;
 
   var inputNodes = [
     { name: "A", width: 1},
@@ -283,11 +293,14 @@
   function displayVGjson(filename) {
     loadJSON(filename, function(response) {
       var vg = JSON.parse(response);
-      console.log("VG:");
-      console.log(vg);
-      console.log(sequenceTubeMap.vgExtractNodes(vg));
-      console.log(sequenceTubeMap.vgExtractTracks(vg));
-      sequenceTubeMap.create(svg, sequenceTubeMap.vgExtractNodes(vg), sequenceTubeMap.vgExtractTracks(vg));
+      var nodes = sequenceTubeMap.vgExtractNodes(vg);
+      var tracks = sequenceTubeMap.vgExtractTracks(vg);
+      if (removeRedundantNodes) {
+        var NodesAndTracks = sequenceTubeMap.vgMergeNodes(nodes, tracks);
+        sequenceTubeMap.create(svg, NodesAndTracks.nodes, NodesAndTracks.tracks);
+      } else {
+        sequenceTubeMap.create(svg, nodes, tracks);
+      }
     });
   }
 
