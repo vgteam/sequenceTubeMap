@@ -1288,8 +1288,10 @@ var sequenceTubeMap = (function () {
   function vgExtractNodes(vg) {
     var result = [];
     vg.node.forEach(function(node) {
+      //result.push({ name: "" + node.id, width: 1});
       //result.push({ name: "" + node.id, width: node.sequence.length});
-      result.push({ name: "" + node.id, width: 1});
+      result.push({ name: "" + node.id, width: (1 + Math.log2(node.sequence.length))});
+
 
     });
     return result;
