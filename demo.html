@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <title>sequenceTubeMap.js Demo</title>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">-->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
 <script type="text/javascript" src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script src="sequenceTubeMap.js"></script>
 <!--<script src="B-3106.js"></script>-->
@@ -53,46 +57,74 @@
   /*#chart0 {
     border: 1px solid black;
   }*/
+  .tab-content {
+    margin: 10px;
+    height: 210px;
+  }
 </style>
 </head>
 <body>
   <div>
-    <h1>Displaying Sequence Graphs as Tube Maps - Demo</h1>
-    <hr/>
-    <div>
-      <div class = "floater left">
-        <p>
-          <button type="button" class="btn btn-primary" id="example1">Example 1</button> Only indels and polymorphisms
-        </p>
-        <p>
-          <button type="button" class="btn btn-primary" id="example2">Example 2</button> Inversions
-        </p>
-        <p>
-          <button type="button" class="btn btn-primary" id="example3">Example 3</button> Nested Inversions
-        </p>
-        <p>
-          <button type="button" class="btn btn-primary" id="example4">Example 4</button> Duplications
-        </p>
-        <p>
-          <button type="button" class="btn btn-primary" id="example5">Example 5</button> Translocations
-        </p>
-        <p>
-          <button type="button" class="btn btn-primary" id="example6">Example 6</button> Parse json created by vg
-        </p>
+    <h1>Displaying Sequence Graphs as Tube Maps</h1>
+    <ul class="nav nav-tabs">
+      <li class="active"><a data-toggle="tab" href="#smallExamples">Small Examples</a></li>
+      <li><a data-toggle="tab" href="#realExamples">Examples from Real Data</a></li>
+      <li><a data-toggle="tab" href="#customData">Use Custom Data</a></li>
+    </ul>
+
+    <div class="tab-content">
+      <div id="smallExamples" class="tab-pane fade in active">
+        <!--<div>
+          <div class = "floater left">-->
+            <p>
+              <button type="button" class="btn btn-primary active" aria-pressed="true" id="example1">Example 1</button> Only indels and polymorphisms
+            </p>
+            <p>
+              <button type="button" class="btn btn-primary" id="example2">Example 2</button> Inversions
+            </p>
+            <p>
+              <button type="button" class="btn btn-primary" id="example3">Example 3</button> Nested Inversions
+            </p>
+            <p>
+              <button type="button" class="btn btn-primary" id="example4">Example 4</button> Duplications
+            </p>
+            <p>
+              <button type="button" class="btn btn-primary" id="example5">Example 5</button> Translocations
+            </p>
+          <!--</div>
+          <div style="clear: both;"></div>
+        </div>-->
       </div>
-      <div class = "floater right">
-        <h4>Options:</h4>
-        <form class="form-inline">
-          <label><input type="checkbox" id="checkbox1" value="first_checkbox" checked> Node arrangement: place new nodes to the right, even in inversions</label><br>
-        </form>
+
+      <div id="realExamples" class="tab-pane fade">
+        <!--<div>-->
+          <!--<div class = "floater left">-->
+            <p>
+              <button type="button" class="btn btn-primary" id="example6">Example 6</button> Parse json created by vg
+            </p>
+          <!--</div>
+          <div style="clear: both;"></div>-->
+        <!--</div>-->
+      </div>
+
+      <div id="customData" class="tab-pane fade">
         <form class="form-horizontal">
-          <textarea class="form-control" id="textarea1" rows="3"></textarea>
+          <textarea class="form-control" id="textarea1" rows="7" cols="90"></textarea>
         </form>
+        <br />
         <p>
           <button type="button" class="btn btn-primary" id="parseButton">Parse</button>
         </p>
       </div>
-      <div style="clear: both;"></div>
+    </div>
+
+    <div>
+      <hr/>
+      <h4>Options:</h4>
+      <form class="form-inline">
+        <label><input type="checkbox" id="checkbox1" value="first_checkbox" checked> Node arrangement: place new nodes to the right, even in inversions</label><br>
+      </form>
+      <br />
     </div>
     <div id="chart0"></div>
     <p>&nbsp;
@@ -107,26 +139,32 @@
   };
 
   document.getElementById("example2").onclick = function() {
+    $("#example1").removeClass("active");
     sequenceTubeMap.create(svg, inputNodes, inputTracks2);
   };
 
   document.getElementById("example3").onclick = function() {
+    $("#example1").removeClass("active");
     sequenceTubeMap.create(svg, inputNodes, inputTracks3);
   };
 
   document.getElementById("example4").onclick = function() {
+    $("#example1").removeClass("active");
     sequenceTubeMap.create(svg, inputNodes, inputTracks4);
   };
 
   document.getElementById("example5").onclick = function() {
+    $("#example1").removeClass("active");
     sequenceTubeMap.create(svg, inputNodes, inputTracks5);
   };
 
   document.getElementById("example6").onclick = function() {
+    $("#example1").removeClass("active");
     displayVGjson('B-3106.json');
   };
 
   document.getElementById("parseButton").onclick = function() {
+    $("#example1").removeClass("active");
     console.log(document.getElementById("textarea1").value);
     var vg = JSON.parse(document.getElementById("textarea1").value);
     console.log("VG:");
