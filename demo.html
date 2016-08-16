@@ -97,14 +97,15 @@
       </div>
 
       <div id="realExamples" class="tab-pane fade">
-        <!--<div>-->
-          <!--<div class = "floater left">-->
-            <p>
-              <button type="button" class="btn btn-primary" id="example6">Example 6</button> Parse json created by vg
-            </p>
-          <!--</div>
-          <div style="clear: both;"></div>-->
-        <!--</div>-->
+        <p>
+          <button type="button" class="btn btn-primary" id="example6">B-3106</button>
+        </p>
+        <p>
+          <button type="button" class="btn btn-primary" id="example7">C-3107</button>
+        </p>
+        <p>
+          <button type="button" class="btn btn-primary" id="example8">DRA-3122</button>
+        </p>
       </div>
 
       <div id="customData" class="tab-pane fade">
@@ -163,6 +164,16 @@
   document.getElementById("example6").onclick = function() {
     $("#example1").removeClass("active");
     displayVGjson('B-3106.json');
+  };
+
+  document.getElementById("example7").onclick = function() {
+    $("#example1").removeClass("active");
+    displayVGjson('C-3107.json');
+  };
+
+  document.getElementById("example8").onclick = function() {
+    $("#example1").removeClass("active");
+    displayVGjson('DRA-3122.json');
   };
 
   document.getElementById("parseButton").onclick = function() {

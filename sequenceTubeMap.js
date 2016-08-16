@@ -1420,7 +1420,7 @@ var sequenceTubeMap = (function () {
         if (mergeBackward[prop].isPossible === true) {
           index = 0;
           //console.log("looking for " + mergeBackward[prop])
-          while ((index < 1000) && (nodes[index].name !== prop)) index++;
+          while (nodes[index].name !== prop) index++;
           nodes.splice(index, 1);
         }
       }
