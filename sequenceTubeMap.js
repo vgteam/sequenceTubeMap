@@ -682,8 +682,9 @@ var sequenceTubeMap = (function () {
             index = track.segmentID - 1;
             //while (! ((tracks[track.trackID].path[index].order === order) && (tracks[track.trackID].path[index].hasOwnProperty("lane")))) index--;
             //while (! ((tracks[track.trackID].path[index].order === order) && (tracks[track.trackID].path[index].lane !== null))) index--;
-            while (tracks[track.trackID].path[index].order !== order - 1) index--;
-            track.idealLane = tracks[track.trackID].path[index].lane;
+            while ((index >=0 ) && (tracks[track.trackID].path[index].order !== order - 1)) index--;
+            if (index < 0) track.idealLane = track.trackID;
+            else track.idealLane = tracks[track.trackID].path[index].lane;
           }
         }
         node.idealLane += track.idealLane;
@@ -794,14 +795,15 @@ var sequenceTubeMap = (function () {
     tracks.forEach(function(track, trackID) {
 
       //start of path
-      if (track.sequence[0].charAt(0) === '-') { //The track starts with an inversed node (TODO: change to isForward)
-        //TODO: ADD STUFF HERE
+      if (track.sequence[0].charAt(0) === '-') { //The track starts with an inversed node
+        xStart = orderStartX[track.path[0].order];
+        xEnd = orderEndX[track.path[0].order] + 20;
       } else { //The track starts with a forward node
         xStart = orderStartX[track.path[0].order] - 20;
         xEnd = orderEndX[track.path[0].order];
+      }
         y = offsetY + 110 + 22 * track.path[0].lane;
         edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: y}, color: track.id});
-      }
 
       //middle of path
       for (i = 1; i < track.path.length; i++) {
@@ -836,13 +838,14 @@ var sequenceTubeMap = (function () {
 
       //ending edges
       if (!track.path[track.path.length - 1].isForward) { //The track ends with an inversed node
-        //TODO: ADD STUFF HERE
+        xStart = orderStartX[track.path[track.path.length - 1].order] - 20;
+        xEnd = orderStartX[track.path[track.path.length - 1].order];
       } else { //The track endss with a forward node
         xStart = orderEndX[track.path[track.path.length - 1].order];
         xEnd = xStart + 20;
+      }
         y = offsetY + 110 + 22 * track.path[track.path.length - 1].lane;
         edges.push({source: {x: xStart, y: y}, target: {x: xEnd, y: y}, color: track.id});
-      }
     });
   }
 
