@@ -10,8 +10,6 @@
 
 <script type="text/javascript" src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script src="sequenceTubeMap.js"></script>
-<!--<script src="B-3106.js"></script>-->
-<!--<script src="mod3.js"></script>-->
 <style type="text/css">
   .node {
 	fill: #fff;
@@ -42,15 +40,6 @@
   body {
     margin: 25px
   }
-  .floater {
-    float:left;
-  }
-  .left {
-    margin-top: 3px;
-  }
-  .right {
-    margin-left: 20px;
-  }
   label {
     font-weight: normal;
   }
@@ -59,7 +48,7 @@
   }*/
   .tab-content {
     margin: 10px;
-    height: 240px;
+    min-height: 280px;
   }
 </style>
 </head>
@@ -112,22 +101,12 @@
         <form class="form-horizontal">
           <textarea class="form-control" id="textarea1" rows="7" cols="90" placeholder="Paste json here or pick file..."></textarea><br />
           <input type="file" id="inputFile">
+          <label><input type="checkbox" id="redundantNodesCheckbox"> Remove redundant nodes (requires redraw)</label><br>
         </form><br />
         <p>
           <button type="button" class="btn btn-primary" id="parseButton">Parse</button>
         </p>
       </div>
-    </div>
-
-    <div>
-      <hr/>
-      <h4>Options:</h4>
-      <form class="form-inline">
-        <label><input type="checkbox" id="nodePlacementCheckbox" value="first_checkbox" checked> Node arrangement: place new nodes to the right, even in inversions</label><br>
-        <label><input type="checkbox" id="redundantNodesCheckbox"> Remove redundant nodes (requires redraw)</label><br>
-
-      </form>
-      <br />
     </div>
     <div id="chart0"></div>
     <p>&nbsp;
@@ -197,10 +176,6 @@
 		};
 		reader.readAsText(file);
   });
-
-  document.getElementById("nodePlacementCheckbox").onclick = function() {
-    sequenceTubeMap.switch();
-  };
 
   document.getElementById("redundantNodesCheckbox").onclick = function() {
     removeRedundantNodes = !removeRedundantNodes;
