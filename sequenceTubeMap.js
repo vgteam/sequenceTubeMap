@@ -86,18 +86,8 @@ var sequenceTubeMap = (function () {
     generateNodeDegree(nodes, tracks);
     generateNodeOrder(nodes, tracks);
     maxOrder = getMaxOrder(nodes);
-
-    for (var i = 0; i <= maxOrder; i++) {
-      console.log('order ' + i + ': ');
-      nodes.forEach(function(node) {
-        if (node.order === i) console.log(node.name);
-      });
-    }
-
-    //generateNodeDegree(nodes, tracks);
     switchNodeOrientation(nodes, tracks);
     generateLaneAssignment(nodes, tracks);
-
     generateNodeXCoords(nodes, tracks);
     movePositionWithinSVG(nodes, tracks);
     generateEdgesFromPath(nodes, tracks, edges);
@@ -114,12 +104,40 @@ var sequenceTubeMap = (function () {
     console.log(edges);
 
     removeUnusedNodes(nodes);
-    drawEdges(edges);
-    if (arcs[0].length > 0) drawTopLeftEdgeArcs(arcs[0]);
-    if (arcs[1].length > 0) drawTopRightEdgeArcs(arcs[1]);
-    if (arcs[2].length > 0) drawBottomRightEdgeArcs(arcs[2]);
-    if (arcs[3].length > 0) drawBottomLeftEdgeArcs(arcs[3]);
+    drawEdgesInOrder(edges, arcs);
     drawNodes(nodes);
+  }
+
+  function drawEdgesInOrder(edges, arcs) {
+    var color;
+    var filteredArcs;
+
+    for (color = 0; color < numberOfTracks; color++) {
+      drawEdges(edges.filter(filterByColor(color)), color);
+      if (arcs[0].length > 0) {
+        filteredArcs = arcs[0].filter(filterByColor(color));
+        if (filteredArcs.length > 0) drawTopLeftEdgeArcs(filteredArcs, color);
+      }
+      if (arcs[1].length > 0) {
+        filteredArcs = arcs[1].filter(filterByColor(color));
+        if (filteredArcs.length > 0) drawTopRightEdgeArcs(filteredArcs, color);
+      }
+      if (arcs[2].length > 0) {
+        filteredArcs = arcs[2].filter(filterByColor(color));
+        if (filteredArcs.length > 0) drawBottomRightEdgeArcs(filteredArcs, color);
+      }
+      if (arcs[3].length > 0) {
+        filteredArcs = arcs[3].filter(filterByColor(color));
+        if (filteredArcs.length > 0) drawBottomLeftEdgeArcs(filteredArcs, color);
+      }
+    }
+  }
+
+  function filterByColor(color) {
+    //console.log('c ' + color);
+    return function(edge) {
+      return edge.color === color;
+    };
   }
 
   function removeUnusedNodes(nodes) {
@@ -237,7 +255,7 @@ var sequenceTubeMap = (function () {
     generateNodeOrderOfSingleTrack(tracks[0].sequence, nodes); //calculate order values for all nodes of the first track
 
     for (i = 1; i < tracks.length; i++) {
-      console.log("Node order for track " + i + " " + tracks[i].id);
+      //console.log("Node order for track " + i + " " + tracks[i].id);
       modifiedSequence = uninvert(tracks[i].sequence);
       //modifiedSequence = tracks[i].sequence;
       //console.log(tracks[i].sequence);
@@ -259,14 +277,12 @@ var sequenceTubeMap = (function () {
 
           if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) { //if order-value of left anchor < order-value of right anchor
             if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < currentOrder) { //and the right anchor now has a lower order-value than our newly added nodes
-              console.log('first');
               increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])], modifiedSequence[rightIndex - 1], currentOrder);
             }
           } else { //potential node reversal: check for ordering conflict, if no conflict found move node at rightIndex further to the right in order to not create a track reversal
             if (! isSuccessor(nodes[nodeMap.get(modifiedSequence[rightIndex])], nodes[nodeMap.get(modifiedSequence[leftIndex])], nodes)) { //no real reversal
               //console.log("hier");
               //console.log(isSuccessor(nodes[nodeMap.get(modifiedSequence[rightIndex])], nodes[nodeMap.get(modifiedSequence[leftIndex])], nodes));
-              console.log('second');
               increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])],  modifiedSequence[rightIndex - 1], currentOrder);
             } else { //real reversal
               //if (! nextNodeIsAlwaysToTheRight) {
@@ -348,13 +364,13 @@ var sequenceTubeMap = (function () {
   }
 
   function increaseOrderForSuccessors(nodes, currentNode, tabuNode, order) { //increases the order-value for currentNode and (if necessary) successor nodes recursively
-    console.log("increasing orders from " + currentNode.name + " to " + order);
+    //console.log("increasing orders from " + currentNode.name + " to " + order);
     var increasedOrders = {};
     increaseOrderForSuccessorsRecursive(nodes, currentNode, order, currentNode, tabuNode, increasedOrders);
     //console.log(increasedOrders);
     for (var nodeName in increasedOrders) {
       if (increasedOrders.hasOwnProperty(nodeName)) {
-        console.log(nodeName + ': ' + nodes[nodeMap.get(nodeName)].order + ' -> ' + increasedOrders[nodeName]);
+        //console.log(nodeName + ': ' + nodes[nodeMap.get(nodeName)].order + ' -> ' + increasedOrders[nodeName]);
         nodes[nodeMap.get(nodeName)].order = increasedOrders[nodeName];
       }
     }
@@ -769,6 +785,19 @@ var sequenceTubeMap = (function () {
     }
   }
 
+  /*function compareEdgesByColor(a, b) {
+    if (a.hasOwnProperty("color")) {
+      if (b.hasOwnProperty("color")) {
+        if (a.color < b.color) return -1;
+        else if (a.color > b.color) return 1;
+        else return 0;
+      } else return -1;
+    } else {
+      if (b.hasOwnProperty("color")) return 1;
+      else return 0;
+    }
+  }*/
+
   function generateEdgesFromPath(nodes, tracks, edges) {
     var i;
     var xStart;
@@ -1089,7 +1118,8 @@ var sequenceTubeMap = (function () {
       .attr("height", 2);
   }
 
-  function drawEdges(edges) {
+  function drawEdges(edges, co) {
+    //console.log("drawing edges " + trackNo);
     //Create Paths for edges
     var diagonal = d3.svg.diagonal()
       .source(function(d) { return {"x":d.source.y, "y":d.source.x}; })
@@ -1097,7 +1127,8 @@ var sequenceTubeMap = (function () {
   	  .projection(function(d) { return [d.y, d.x]; });
 
     //Draw edges
-    var link = svg.selectAll(".link")
+    //var link = svg.selectAll(".link")
+    var link = svg.selectAll(".link" + co)
       .data(edges)
   	  .enter().append("path")
   	  //.attr("class", "link")
@@ -1108,16 +1139,18 @@ var sequenceTubeMap = (function () {
       .on("click", handleMouseClick)
   	  //.style("stroke", function(d, i) { return color(i); });
       .style("stroke", function(d) { return color(d.color); });
+
+      //console.log("done drawing " + trackNo);
   }
 
-  function drawTopRightEdgeArcs(arcs) {
+  function drawTopRightEdgeArcs(arcs, co) {
     var topRightEdgeArc = d3.svg.arc()
       .innerRadius(6)
       .outerRadius(13)
       .startAngle(0 * Math.PI)
       .endAngle(0.5 * Math.PI);
 
-    svg.selectAll(".topRightArc")
+    svg.selectAll(".topRightArc" + co)
       .data(arcs)
       .enter()
       .append("path")
@@ -1131,14 +1164,14 @@ var sequenceTubeMap = (function () {
       .attr("transform", function(d) {return "translate(" + d.x + ", " + d.y + ")"; });
   }
 
-  function drawTopLeftEdgeArcs(arcs) {
+  function drawTopLeftEdgeArcs(arcs, co) {
     var topLeftEdgeArc = d3.svg.arc()
       .innerRadius(6)
       .outerRadius(13)
       .startAngle(0 * Math.PI)
       .endAngle(-0.5 * Math.PI);
 
-    svg.selectAll(".topLeftArc")
+    svg.selectAll(".topLeftArc" + co)
       .data(arcs)
       .enter()
       .append("path")
@@ -1152,14 +1185,14 @@ var sequenceTubeMap = (function () {
       .attr("transform", function(d) {return "translate(" + d.x + ", " + d.y + ")"; });
   }
 
-  function drawBottomRightEdgeArcs(arcs) {
+  function drawBottomRightEdgeArcs(arcs, co) {
     var bottomRightEdgeArc = d3.svg.arc()
       .innerRadius(6)
       .outerRadius(13)
       .startAngle(0.5 * Math.PI)
       .endAngle(1 * Math.PI);
 
-    svg.selectAll(".bottomRightArc")
+    svg.selectAll(".bottomRightArc" + co)
       .data(arcs)
       .enter()
       .append("path")
@@ -1173,14 +1206,14 @@ var sequenceTubeMap = (function () {
       .attr("transform", function(d) {return "translate(" + d.x + ", " + d.y + ")"; });
   }
 
-  function drawBottomLeftEdgeArcs(arcs) {
+  function drawBottomLeftEdgeArcs(arcs, co) {
     var bottomLeftEdgeArc = d3.svg.arc()
       .innerRadius(6)
       .outerRadius(13)
       .startAngle(1 * Math.PI)
       .endAngle(1.5 * Math.PI);
 
-    svg.selectAll(".bottomLeftArc")
+    svg.selectAll(".bottomLeftArc" + co)
       .data(arcs)
       .enter()
       .append("path")
