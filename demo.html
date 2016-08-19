@@ -96,17 +96,22 @@
         <p>
           <button type="button" class="btn btn-primary" id="example8">DRA-3122</button>
         </p>
+        <form class="form-horizontal">
+          <label><input type="checkbox" id="redundantNodesCheckbox1"> Remove redundant nodes</label><br>
+        </form>
       </div>
 
       <div id="customData" class="tab-pane fade">
         <form class="form-horizontal">
           <textarea class="form-control" id="textarea1" rows="7" cols="90" placeholder="Paste json here or pick file..."></textarea><br />
           <input type="file" id="inputFile">
-          <label><input type="checkbox" id="redundantNodesCheckbox"> Remove redundant nodes (requires redraw)</label><br>
         </form><br />
         <p>
           <button type="button" class="btn btn-primary" id="parseButton">Parse</button>
         </p>
+        <form class="form-horizontal">
+          <label><input type="checkbox" id="redundantNodesCheckbox2"> Remove redundant nodes</label><br>
+        </form>
       </div>
     </div>
     <div id="chart0"></div>
@@ -161,12 +166,7 @@
     var vg = JSON.parse(document.getElementById("textarea1").value);
     var nodes = sequenceTubeMap.vgExtractNodes(vg);
     var tracks = sequenceTubeMap.vgExtractTracks(vg);
-    if (removeRedundantNodes) {
-      var NodesAndTracks = sequenceTubeMap.vgMergeNodes(nodes, tracks);
-      sequenceTubeMap.create(svg, NodesAndTracks.nodes, NodesAndTracks.tracks);
-    } else {
-      sequenceTubeMap.create(svg, nodes, tracks);
-    }
+    sequenceTubeMap.create(svg, nodes, tracks);
   };
 
   document.getElementById('inputFile').addEventListener('change', function(e) {
@@ -178,11 +178,17 @@
 		reader.readAsText(file);
   });
 
-  document.getElementById("redundantNodesCheckbox").onclick = function() {
-    removeRedundantNodes = !removeRedundantNodes;
+  document.getElementById("redundantNodesCheckbox1").onclick = function() {
+    document.getElementById("redundantNodesCheckbox2").checked = document.getElementById("redundantNodesCheckbox1").checked;
+    if (document.getElementById("redundantNodesCheckbox1").checked === true) sequenceTubeMap.setMergeNodesFlag(true);
+    else sequenceTubeMap.setMergeNodesFlag(false);
   };
 
-  var removeRedundantNodes = false;
+  document.getElementById("redundantNodesCheckbox2").onclick = function() {
+    document.getElementById("redundantNodesCheckbox1").checked = document.getElementById("redundantNodesCheckbox2").checked;
+    if (document.getElementById("redundantNodesCheckbox2").checked === true) sequenceTubeMap.setMergeNodesFlag(true);
+    else sequenceTubeMap.setMergeNodesFlag(false);
+  };
 
   var inputNodes = [
     { name: "A", width: 1},

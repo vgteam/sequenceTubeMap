@@ -19,6 +19,7 @@ var sequenceTubeMap = (function () {
   var extraLeft = []; //info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
   var extraRight = []; //info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
   var maxOrder; //horizontal order of the rightmost node
+  var mergeNodesFlag = false;
 
   function create(inputSvg, nodes, tracks) {
     svg = inputSvg;
@@ -67,6 +68,13 @@ var sequenceTubeMap = (function () {
     createTubeMap();
   }
 
+  function setMergeNodesFlag(value) {
+    if (mergeNodesFlag !== value) {
+      mergeNodesFlag = value;
+      createTubeMap();
+    }
+  }
+
   function createTubeMap() {
     //clear svg for (re-)drawing
     var nodes = (JSON.parse(JSON.stringify(inputNodes))); //deep copy (can add stuff to copy and leave original unchanged)
@@ -77,6 +85,12 @@ var sequenceTubeMap = (function () {
     assignment = [];
     extraLeft = [];
     extraRight = [];
+
+    if (mergeNodesFlag) {
+      var NodesAndTracks = mergeNodes(nodes, tracks);
+      nodes = NodesAndTracks.nodes;
+      tracks = NodesAndTracks.tracks;
+    }
 
     numberOfNodes = nodes.length;
     numberOfTracks = tracks.length;
@@ -1372,7 +1386,7 @@ var sequenceTubeMap = (function () {
     return result;
   }
 
-  function vgMergeNodes(nodes, tracks) {
+  function mergeNodes(nodes, tracks) {
     var mergeForward = {};
     var i, index;
     var mergeBackward = {};
@@ -1478,7 +1492,7 @@ var sequenceTubeMap = (function () {
     create: create,
     vgExtractNodes: vgExtractNodes,
     vgExtractTracks: vgExtractTracks,
-    vgMergeNodes: vgMergeNodes
+    setMergeNodesFlag: setMergeNodesFlag
   };
 
 })();
