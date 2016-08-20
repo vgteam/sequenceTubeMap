@@ -21,6 +21,11 @@ var sequenceTubeMap = (function () {
   var maxOrder; //horizontal order of the rightmost node
   var mergeNodesFlag = false;
 
+  // 0...scale node with linear with number of bases within node
+  // 1...scale node with log2 of number of bases within node
+  // 2...scale node with log10 of number of bases within node
+  var nodeWidthOption = 1;
+
   function create(inputSvg, nodes, tracks) {
     svg = inputSvg;
     //inputNodes = nodes.slice(0); //no deep copy necessary because inner stuff does not change
@@ -72,6 +77,15 @@ var sequenceTubeMap = (function () {
     if (mergeNodesFlag !== value) {
       mergeNodesFlag = value;
       createTubeMap();
+    }
+  }
+
+  function setNodeWidthOption(value) {
+    if ((value === 0) || (value === 1) || (value ===2)) {
+      if (nodeWidthOption !== value) {
+        nodeWidthOption = value;
+        createTubeMap();
+      }
     }
   }
 
@@ -1358,9 +1372,22 @@ var sequenceTubeMap = (function () {
   }
 
   function generateNodeWidth(nodes) {
-    nodes.forEach(function (node) {
-      if (node.hasOwnProperty("sequenceLength")) node.width = (1 + Math.log2(node.sequenceLength));
-    });
+    switch (nodeWidthOption) {
+      case 1:
+        nodes.forEach(function (node) {
+          if (node.hasOwnProperty("sequenceLength")) node.width = (1 + Math.log2(node.sequenceLength));
+        });
+        break;
+      case 2:
+        nodes.forEach(function (node) {
+          if (node.hasOwnProperty("sequenceLength")) node.width = (1 + Math.log10(node.sequenceLength));
+        });
+        break;
+      default:
+        nodes.forEach(function (node) {
+          if (node.hasOwnProperty("sequenceLength")) node.width = node.sequenceLength;
+        });
+    }
   }
 
   function vgExtractTracks(vg) {
@@ -1529,7 +1556,8 @@ var sequenceTubeMap = (function () {
     create: create,
     vgExtractNodes: vgExtractNodes,
     vgExtractTracks: vgExtractTracks,
-    setMergeNodesFlag: setMergeNodesFlag
+    setMergeNodesFlag: setMergeNodesFlag,
+    setNodeWidthOption: setNodeWidthOption
   };
 
 })();

@@ -96,15 +96,59 @@
         <p>
           <button type="button" class="btn btn-primary" id="example8">DRA-3122</button>
         </p>
-        <form class="form-horizontal">
+        <br />
+        <form class="form">
+          <p>
+            Node width proportional to...
+          </p>
+          <div class="radio">
+            <label>
+              <input type="radio" name="scalingRadios1" id="linear1" value="option1">
+              number of the node's base pairs
+            </label>
+          </div>
+          <div class="radio">
+            <label>
+              <input type="radio" name="scalingRadios1" id="log21" value="option2" checked>
+              log2 of the number of the node's base pairs
+            </label>
+          </div>
+          <div class="radio">
+            <label>
+              <input type="radio" name="scalingRadios1" id="log101" value="option3">
+              log10 of the number of the node's base pairs
+            </label>
+          </div>
           <label><input type="checkbox" id="redundantNodesCheckbox1"> Remove redundant nodes</label><br>
-        </form>
+        </form><br />
       </div>
 
       <div id="customData" class="tab-pane fade">
-        <form class="form-horizontal">
+        <form class="form">
           <textarea class="form-control" id="textarea1" rows="7" cols="90" placeholder="Paste json here or pick file..."></textarea><br />
-          <input type="file" id="inputFile">
+          <input type="file" id="inputFile"><br />
+          <p>
+            Node width proportional to...
+          </p>
+          <div class="radio">
+            <label>
+              <input type="radio" name="scalingRadios2" id="linear2" value="option1">
+              number of the node's base pairs
+            </label>
+          </div>
+          <div class="radio">
+            <label>
+              <input type="radio" name="scalingRadios2" id="log22" value="option2" checked>
+              log2 of the number of the node's base pairs
+            </label>
+          </div>
+          <div class="radio">
+            <label>
+              <input type="radio" name="scalingRadios2" id="log102" value="option3">
+              log10 of the number of the node's base pairs
+            </label>
+          </div>
+
         </form><br />
         <p>
           <button type="button" class="btn btn-primary" id="parseButton">Parse</button>
@@ -188,6 +232,36 @@
     document.getElementById("redundantNodesCheckbox1").checked = document.getElementById("redundantNodesCheckbox2").checked;
     if (document.getElementById("redundantNodesCheckbox2").checked === true) sequenceTubeMap.setMergeNodesFlag(true);
     else sequenceTubeMap.setMergeNodesFlag(false);
+  };
+
+  document.getElementById("linear1").onchange = function() {
+    document.getElementById("linear2").checked = true;
+    sequenceTubeMap.setNodeWidthOption(0);
+  };
+
+  document.getElementById("log21").onchange = function() {
+    document.getElementById("log22").checked = true;
+    sequenceTubeMap.setNodeWidthOption(1);
+  };
+
+  document.getElementById("log101").onchange = function() {
+    document.getElementById("log102").checked = true;
+    sequenceTubeMap.setNodeWidthOption(2);
+  };
+
+  document.getElementById("linear2").onchange = function() {
+    document.getElementById("linear1").checked = true;
+    sequenceTubeMap.setNodeWidthOption(0);
+  };
+
+  document.getElementById("log22").onchange = function() {
+    document.getElementById("log21").checked = true;
+    sequenceTubeMap.setNodeWidthOption(1);
+  };
+
+  document.getElementById("log102").onchange = function() {
+    document.getElementById("log101").checked = true;
+    sequenceTubeMap.setNodeWidthOption(2);
   };
 
   var inputNodes = [
