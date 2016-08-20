@@ -97,6 +97,7 @@ var sequenceTubeMap = (function () {
     //console.log("number of tracks: " + numberOfTracks);
     nodeMap = generateNodeMap(nodes);
     generateNodeSuccessors(nodes, tracks);
+    generateNodeWidth(nodes);
     generateNodeDegree(nodes, tracks);
     generateNodeOrder(nodes, tracks);
     maxOrder = getMaxOrder(nodes);
@@ -1346,14 +1347,20 @@ var sequenceTubeMap = (function () {
 
   function vgExtractNodes(vg) {
     var result = [];
-    vg.node.forEach(function(node) {
+    vg.node.forEach(function (node) {
       //result.push({ name: "" + node.id, width: 1});
       //result.push({ name: "" + node.id, width: node.sequence.length});
-      result.push({ name: "" + node.id, width: (1 + Math.log2(node.sequence.length))});
-
+      //result.push({ name: "" + node.id, width: (1 + Math.log2(node.sequence.length))});
+      result.push({ name: "" + node.id, sequenceLength: node.sequence.length});
 
     });
     return result;
+  }
+
+  function generateNodeWidth(nodes) {
+    nodes.forEach(function (node) {
+      if (node.hasOwnProperty("sequenceLength")) node.width = (1 + Math.log2(node.sequenceLength));
+    });
   }
 
   function vgExtractTracks(vg) {
@@ -1474,7 +1481,9 @@ var sequenceTubeMap = (function () {
     });
 
     //remove the nodes from node-Array
-    for (prop in mergeBackward) {
+
+    //console.log("Nodes: " + nodes.length);
+    /*for (prop in mergeBackward) {
       if (mergeBackward.hasOwnProperty(prop)) {
         if (mergeBackward[prop].isPossible === true) {
           index = 0;
@@ -1483,7 +1492,35 @@ var sequenceTubeMap = (function () {
           nodes.splice(index, 1);
         }
       }
+    }*/
+
+    var mergedIntoName;
+    var mergedIntoNode;
+    var nodeToBeMergedAway;
+    nodeMap = generateNodeMap(nodes);
+    for (prop in mergeBackward) {
+      if (mergeBackward.hasOwnProperty(prop)) {
+        if (mergeBackward[prop].isPossible === true) {
+          mergedIntoName = mergeBackward[prop].mergeWith;
+          mergedIntoNode = nodes[nodeMap.get(mergedIntoName)];
+          nodeToBeMergedAway = nodes[nodeMap.get(prop)];
+          mergedIntoNode.sequenceLength += nodeToBeMergedAway.sequenceLength;
+          while ((mergeBackward.hasOwnProperty(mergedIntoName)) && (mergeBackward[mergedIntoName].isPossible === true)) {
+            mergedIntoName = mergeBackward[mergedIntoName].mergeWith;
+            mergedIntoNode = nodes[nodeMap.get(mergedIntoName)];
+            mergedIntoNode.sequenceLength += nodeToBeMergedAway.sequenceLength;
+          }
+        }
+      }
     }
+
+
+    for (i = nodes.length - 1; i >= 0; i--) {
+      if ((mergeBackward.hasOwnProperty(nodes[i].name)) && (mergeBackward[nodes[i].name].isPossible === true)) {
+        nodes.splice(i, 1);
+      }
+    }
+    //console.log("Nodes: " + nodes.length);
 
     return {nodes: nodes, tracks: tracks};
   }
