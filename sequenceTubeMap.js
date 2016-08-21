@@ -958,7 +958,7 @@ var sequenceTubeMap = (function () {
       .data(nodes)
       .enter()
       .append("rect")
-      .attr("class", "backgr")
+      .attr("class", "tubeMapBackgr")
       .attr("x", function(d) { return d.x - 10; })
       .attr("y", function(d) { return d.y; })
       .attr("width", function(d) { return 20 * d.width; })
@@ -969,7 +969,7 @@ var sequenceTubeMap = (function () {
       .data(nodes)
       .enter()
       .append("rect")
-      .attr("class", "backgr")
+      .attr("class", "tubeMapBackgr")
       .attr("x", function(d) { return d.x; })
       .attr("y", function(d) { return d.y - 10; })
       .attr("width", function(d) { return (d.width - 1) * 20; })
@@ -980,7 +980,7 @@ var sequenceTubeMap = (function () {
       .data(nodes)
       .enter()
       .append("rect")
-      .attr("class", "backgr")
+      .attr("class", "tubeMapBackgr")
       .attr("x", function(d) { return d.x; })
       .attr("y", function(d) { return (d.y + (22 * (d.degree - 1))); })
       .attr("width", function(d) { return (d.width - 1) * 20; })
@@ -997,7 +997,7 @@ var sequenceTubeMap = (function () {
       .data(nodes)
       .enter()
       .append("path")
-      .attr("class", "backgr")
+      .attr("class", "tubeMapBackgr")
       .attr("d", topLeftSegment)
       .attr("transform", function(d) {return "translate(" + d.x + ", " + d.y + ")"; });
 
@@ -1012,7 +1012,7 @@ var sequenceTubeMap = (function () {
       .data(nodes)
       .enter()
       .append("path")
-      .attr("class", "backgr")
+      .attr("class", "tubeMapBackgr")
       .attr("d", topRightSegment)
       .attr("transform", function(d) {return "translate(" + (d.x + 20 * (d.width -1)) + ", " + d.y + ")"; });
 
@@ -1027,7 +1027,7 @@ var sequenceTubeMap = (function () {
       .data(nodes)
       .enter()
       .append("path")
-      .attr("class", "backgr")
+      .attr("class", "tubeMapBackgr")
       .attr("d", bottomLeftSegment)
       .attr("transform", function(d) {return "translate(" + d.x + ", " + (d.y + (22 * (d.degree - 1))) + ")"; });
 
@@ -1042,7 +1042,7 @@ var sequenceTubeMap = (function () {
       .data(nodes)
       .enter()
       .append("path")
-      .attr("class", "backgr")
+      .attr("class", "tubeMapBackgr")
       .attr("d", bottomRightSegment)
       .attr("transform", function(d) {return "translate(" + (d.x + 20 * (d.width -1)) + ", " + (d.y + (22 * (d.degree - 1))) + ")"; });
 
@@ -1157,11 +1157,11 @@ var sequenceTubeMap = (function () {
 
     //Draw edges
     //var link = svg.selectAll(".link")
-    var link = svg.selectAll(".link" + co)
+    var link = svg.selectAll(".tubeMapLink" + co)
       .data(edges)
   	  .enter().append("path")
   	  //.attr("class", "link")
-      .attr("class", function(d) {return "link track" + d.color; })
+      .attr("class", function(d) {return "tubeMapLink track" + d.color; })
   	  .attr("d", diagonal)
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut)
@@ -1183,7 +1183,7 @@ var sequenceTubeMap = (function () {
       .data(arcs)
       .enter()
       .append("path")
-      .attr("class", function(d) {return "link topRightArctrack" + d.color; })
+      .attr("class", function(d) {return "tubeMapLink topRightArctrack" + d.color; })
       .attr("d", topRightEdgeArc)
       //.style("stroke", function(d) { return color(d.color); })
       .on("mouseover", handleMouseOver)
@@ -1204,7 +1204,7 @@ var sequenceTubeMap = (function () {
       .data(arcs)
       .enter()
       .append("path")
-      .attr("class", function(d) {return "link topLeftArctrack" + d.color; })
+      .attr("class", function(d) {return "tubeMapLink topLeftArctrack" + d.color; })
       .attr("d", topLeftEdgeArc)
       //.style("stroke", function(d) { return color(d.color); })
       .on("mouseover", handleMouseOver)
@@ -1225,7 +1225,7 @@ var sequenceTubeMap = (function () {
       .data(arcs)
       .enter()
       .append("path")
-      .attr("class", function(d) {return "link bottomRightArctrack" + d.color; })
+      .attr("class", function(d) {return "tubeMapLink bottomRightArctrack" + d.color; })
       .attr("d", bottomRightEdgeArc)
       //.style("stroke", function(d) { return color(d.color); })
       .on("mouseover", handleMouseOver)
@@ -1246,7 +1246,7 @@ var sequenceTubeMap = (function () {
       .data(arcs)
       .enter()
       .append("path")
-      .attr("class", function(d) {return "link bottomLeftArctrack" + d.color; })
+      .attr("class", function(d) {return "tubeMapLink bottomLeftArctrack" + d.color; })
       .attr("d", bottomLeftEdgeArc)
       //.style("stroke", function(d) { return color(d.color); })
       .on("mouseover", handleMouseOver)
