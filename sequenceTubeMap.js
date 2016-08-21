@@ -1,11 +1,8 @@
-/*jshint loopfunc: true */
-/*jshint esversion: 6*/
-
 var sequenceTubeMap = (function () {
-
+'use strict';
   var offsetX = 0;
   var offsetY = 0;
-  const color = d3.scale.category10().domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  var color = d3.scale.category10().domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
   var svg;
   var inputNodes = [];
@@ -236,7 +233,9 @@ var sequenceTubeMap = (function () {
   }
 
   function generateNodeOrderOfSingleTrack(sequence, nodes) { //calculates order values for all nodes along a single track
-    currentOrder = 0;
+    var currentOrder = 0;
+    var currentNode;
+
     sequence.forEach(function(nodeName) {
       currentNode = nodes[nodeMap.get(nodeName)];
       if (! currentNode.hasOwnProperty("order")) { //default case
@@ -253,6 +252,7 @@ var sequenceTubeMap = (function () {
     var nodeNames = new Map();
     var currentOrder;
     var currentNode;
+    var j;
 
     while (! nodes[nodeMap.get(sequence[anchorIndex])].hasOwnProperty("order")) anchorIndex++; //anchor = first node in common with existing graph
     for (j = anchorIndex - 1; j >= 0; j--) { //count number of nodes to the left of anchorIndex counting repeated nodes only once
@@ -1257,6 +1257,7 @@ var sequenceTubeMap = (function () {
   }
 
   function handleMouseOver() {  // Highlight track on mouseover
+    /* jshint validthis: true */
     var currentClass = d3.select(this).attr("class");
     currentClass = /track[0-9]*/.exec(currentClass);
     //currentClass = /track[\S]*/.exec(currentClass);
@@ -1305,6 +1306,7 @@ var sequenceTubeMap = (function () {
   }
 
   function handleMouseOut() {  // Restore original appearance on mouseout
+    /* jshint validthis: true */
     var currentClass = d3.select(this).attr("class");
     currentClass = /track[0-9]*/.exec(currentClass);
 
@@ -1350,6 +1352,7 @@ var sequenceTubeMap = (function () {
   }
 
   function handleMouseClick() { // Move clicked track to first position
+    /* jshint validthis: true */
     var trackNo = d3.select(this).attr("class");
     trackNo = /[0-9]+/.exec(trackNo);
     var index = 0;
@@ -1561,3 +1564,4 @@ var sequenceTubeMap = (function () {
   };
 
 })();
+//}());
