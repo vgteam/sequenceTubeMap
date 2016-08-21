@@ -1534,11 +1534,19 @@ var sequenceTubeMap = (function () {
           mergedIntoName = mergeBackward[prop].mergeWith;
           mergedIntoNode = nodes[nodeMap.get(mergedIntoName)];
           nodeToBeMergedAway = nodes[nodeMap.get(prop)];
-          mergedIntoNode.sequenceLength += nodeToBeMergedAway.sequenceLength;
+          if (mergedIntoNode.hasOwnProperty("sequenceLength")) {
+            mergedIntoNode.sequenceLength += nodeToBeMergedAway.sequenceLength;
+          } else {
+            mergedIntoNode.width += nodeToBeMergedAway.width;
+          }
           while ((mergeBackward.hasOwnProperty(mergedIntoName)) && (mergeBackward[mergedIntoName].isPossible === true)) {
             mergedIntoName = mergeBackward[mergedIntoName].mergeWith;
             mergedIntoNode = nodes[nodeMap.get(mergedIntoName)];
-            mergedIntoNode.sequenceLength += nodeToBeMergedAway.sequenceLength;
+            if (mergedIntoNode.hasOwnProperty("sequenceLength")) {
+              mergedIntoNode.sequenceLength += nodeToBeMergedAway.sequenceLength;
+            } else {
+              mergedIntoNode.width += nodeToBeMergedAway.width;
+            }
           }
         }
       }
