@@ -84,7 +84,7 @@ var sequenceTubeMap = (function () {
     if ((value === 0) || (value === 1) || (value ===2)) {
       if (nodeWidthOption !== value) {
         nodeWidthOption = value;
-        createTubeMap();
+        if (svg !== undefined) createTubeMap();
       }
     }
   }
