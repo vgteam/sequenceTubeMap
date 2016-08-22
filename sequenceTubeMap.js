@@ -1,10 +1,8 @@
 var sequenceTubeMap = (function () {
 'use strict';
 
-  var offsetX = 0;
   var offsetY = 0;
   var color = d3.scale.category10().domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-
   var svg;
   var inputNodes = [];
   var inputTracks = [];
@@ -42,29 +40,25 @@ var sequenceTubeMap = (function () {
     inputTracks.unshift(inputTracks[index]); //add element to beginning
     inputTracks.splice(index + 1, 1); //remove 1 element from the middle
 
+    //the first track should have as few inversions as possible
+    //find out which nodes should be inverted
     currentSequence = inputTracks[0].sequence;
     for (i = 0; i < currentSequence.length; i++) {
-      //if (currentSequence[i].charAt(0) === '-') {
-        //currentSequence[i] = currentSequence[i].substr(1);
-        //nodesToInvert.push(currentSequence[i]);
       if (currentSequence[i].charAt(0) === '-') {
         nodeName = currentSequence[i].substr(1);
-        if ((currentSequence.indexOf(nodeName) === -1) || (currentSequence.indexOf(nodeName) > i)) {
+        if ((currentSequence.indexOf(nodeName) === -1) || (currentSequence.indexOf(nodeName) > i)) { //only if this inverted node is no repeat
           nodesToInvert.push(currentSequence[i].substr(1));
         }
       }
     }
 
-    //console.log('nodes to invert:');
-    //console.log(nodesToInvert);
-
+    //invert nodes
     for (i = 0; i < inputTracks.length; i++) {
       currentSequence = inputTracks[i].sequence;
       for (j = 0; j < currentSequence.length; j++) {
         if (currentSequence[j].charAt(0) !== '-') {
           if (nodesToInvert.indexOf(currentSequence[j]) !== -1) {
             currentSequence[j] = '-' + currentSequence[j];
-            //console.log('Track ' + i + '[' + j + '] CHANGED TO ' + currentSequence[j]);
           }
         } else {
           if (nodesToInvert.indexOf(currentSequence[j].substr(1)) !== -1) {
@@ -73,10 +67,11 @@ var sequenceTubeMap = (function () {
         }
       }
     }
-    //console.log(inputTracks);
+
     createTubeMap();
   }
 
+  //sets the flag for whether redundant nodes should be automatically removed or not
   function setMergeNodesFlag(value) {
     if (mergeNodesFlag !== value) {
       mergeNodesFlag = value;
@@ -84,6 +79,7 @@ var sequenceTubeMap = (function () {
     }
   }
 
+  //sets which option should be used for calculating the node width from its sequence length
   function setNodeWidthOption(value) {
     if ((value === 0) || (value === 1) || (value ===2)) {
       if (nodeWidthOption !== value) {
@@ -93,16 +89,17 @@ var sequenceTubeMap = (function () {
     }
   }
 
+  //main
   function createTubeMap() {
-    //clear svg for (re-)drawing
     var nodes = (JSON.parse(JSON.stringify(inputNodes))); //deep copy (can add stuff to copy and leave original unchanged)
     var tracks = (JSON.parse(JSON.stringify(inputTracks)));
-    svg.selectAll('*').remove();
+
     edges = [];
     arcs = [[], [], [], []];
     assignment = [];
     extraLeft = [];
     extraRight = [];
+    svg.selectAll('*').remove(); //clear svg for (re-)drawing
 
     if (mergeNodesFlag) {
       var NodesAndTracks = mergeNodes(nodes, tracks);
@@ -112,7 +109,6 @@ var sequenceTubeMap = (function () {
 
     numberOfNodes = nodes.length;
     numberOfTracks = tracks.length;
-    //console.log('number of tracks: ' + numberOfTracks);
     nodeMap = generateNodeMap(nodes);
     generateNodeSuccessors(nodes, tracks);
     generateNodeWidth(nodes);
@@ -122,25 +118,14 @@ var sequenceTubeMap = (function () {
     switchNodeOrientation(nodes, tracks);
     generateLaneAssignment(nodes, tracks);
     generateNodeXCoords(nodes, tracks);
-    movePositionWithinSVG(nodes, tracks);
+    alignSVG(nodes, tracks);
     generateEdgesFromPath(nodes, tracks, edges);
-
-    console.log('Assignment:');
-    console.log(assignment);
-    console.log('Tracks:');
-    console.log(tracks);
-    console.log('Nodes:');
-    console.log(nodes);
-    console.log('Arcs:');
-    console.log(arcs);
-    console.log('Edges:');
-    console.log(edges);
-
     removeUnusedNodes(nodes);
     drawEdgesInOrder(edges, arcs);
     drawNodes(nodes);
   }
 
+  //to have consistent z-indices (correct overlapping behavior) the tracks are drawn sequentially by color
   function drawEdgesInOrder(edges, arcs) {
     var color;
     var filteredArcs;
@@ -167,14 +152,15 @@ var sequenceTubeMap = (function () {
   }
 
   function filterByColor(color) {
-    //console.log('c ' + color);
     return function(edge) {
       return edge.color === color;
     };
   }
 
+  //remove nodes with no tracks moving through them to avoid d3.js errors
   function removeUnusedNodes(nodes) {
     var i;
+
     for (i = nodes.length - 1; i >= 0; i--) {
       if (nodes[i].degree === 0) {
         nodes.splice(i, 1);
@@ -183,37 +169,41 @@ var sequenceTubeMap = (function () {
     numberOfNodes = nodes.length;
   }
 
-  function movePositionWithinSVG(nodes, tracks) {
+  //align visualization to the top and left within svg and resize svg to correct size
+  function alignSVG(nodes, tracks) {
     var minLane = Number.MAX_SAFE_INTEGER;
     var maxLane = Number.MIN_SAFE_INTEGER;
     var maxX = Number.MIN_SAFE_INTEGER;
+
     tracks.forEach(function (track) {
       track.path.forEach(function (node) {
         if (node.lane < minLane) minLane = node.lane;
         if (node.lane > maxLane) maxLane = node.lane;
       });
     });
-    //console.log(minLane + ' ' + maxLane);
-    //offsetX = 0;
+
     offsetY = -100 - 22 * minLane;
     nodes.forEach(function(node) {
       node.y = offsetY + 110 + 22 * node.yCoord;
       if (node.x + 20 * node.width > maxX) maxX = node.x + 20 * node.width;
     });
-    //console.log(maxX);
+
     svg.attr('height', 20 + 22 * (maxLane - minLane));
     svg.attr('width', maxX);
   }
 
-  function generateNodeMap(nodes) { //map node names to node indices
+  //map node names to node indices
+  function generateNodeMap(nodes) {
     var nodeMap = new Map();
+
     nodes.forEach(function(node, index) {
       nodeMap.set(node.name, index);
     });
     return nodeMap;
   }
 
-  function generateNodeSuccessors(nodes, tracks) { //adds a successor-array to each node containing the names of the nodes coming directly after the current node
+  //adds a successor-array to each node containing the names of the nodes coming directly after the current node
+  function generateNodeSuccessors(nodes, tracks) {
     var i;
     var currentNode;
     var followerID;
@@ -239,23 +229,23 @@ var sequenceTubeMap = (function () {
     });
   }
 
-  function generateNodeOrderOfSingleTrack(sequence, nodes) { //calculates order values for all nodes along a single track
+  //calculates order values for all nodes along a single track
+  function generateNodeOrderOfSingleTrack(sequence, nodes) {
     var currentOrder = 0;
     var currentNode;
 
     sequence.forEach(function(nodeName) {
       if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
       currentNode = nodes[nodeMap.get(nodeName)];
-      if (! currentNode.hasOwnProperty('order')) { //default case
+      if (! currentNode.hasOwnProperty('order')) {
         currentNode.order = currentOrder;
         currentOrder++;
-      } else { //track has a repeat revisiting a node
-        //currentOrder = currentNode.order + 1;
       }
     });
   }
 
-  function generateNodeOrderLeftEnd(sequence, nodes) { //calculate the order-value of nodes contained in sequence which are to the left of the first node which already has an order-value
+  //calculate the order-value of nodes contained in sequence which are to the left of the first node which already has an order-value
+  function generateNodeOrderLeftEnd(sequence, nodes) {
     var anchorIndex = 0;
     var nodeNames = new Map();
     var currentOrder;
@@ -263,9 +253,11 @@ var sequenceTubeMap = (function () {
     var j;
 
     while (! nodes[nodeMap.get(sequence[anchorIndex])].hasOwnProperty('order')) anchorIndex++; //anchor = first node in common with existing graph
+
     for (j = anchorIndex - 1; j >= 0; j--) { //count number of nodes to the left of anchorIndex counting repeated nodes only once
       nodeNames.set(sequence[j], true);
     }
+
     currentOrder = nodes[nodeMap.get(sequence[anchorIndex])].order - nodeNames.size; //order of first node
     for (j = 0; j < anchorIndex; j++) { //assign order to nodes
       currentNode = nodes[nodeMap.get(sequence[j])];
@@ -274,13 +266,16 @@ var sequenceTubeMap = (function () {
         currentOrder++;
       }
     }
+
     if (nodes[nodeMap.get(sequence[0])].order < 0) {
       increaseOrderForAllNodes(nodes, -nodes[nodeMap.get(sequence[0])].order);
     }
+
     return anchorIndex;
   }
 
-  function generateNodeOrder(nodes, tracks) { //generate global sequence of nodes from left to right, starting with first track and adding other tracks sequentially
+  //generate global sequence of nodes from left to right, starting with first track and adding other tracks sequentially
+  function generateNodeOrder(nodes, tracks) {
     var modifiedSequence;
     var i;
     var j;
@@ -292,13 +287,10 @@ var sequenceTubeMap = (function () {
     generateNodeOrderOfSingleTrack(tracks[0].sequence, nodes); //calculate order values for all nodes of the first track
 
     for (i = 1; i < tracks.length; i++) {
-      //console.log('Node order for track ' + i + ' ' + tracks[i].id);
       modifiedSequence = uninvert(tracks[i].sequence);
-      //modifiedSequence = tracks[i].sequence;
-      //console.log(tracks[i].sequence);
-      //console.log(modifiedSequence);
       rightIndex = generateNodeOrderLeftEnd(modifiedSequence, nodes); //calculate order values for all nodes until the first anchor
       while (rightIndex < modifiedSequence.length) { //move right until the end of the sequence
+
         //find next anchor node
         leftIndex = rightIndex;
         rightIndex++;
@@ -308,7 +300,6 @@ var sequenceTubeMap = (function () {
           currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1; //start with order value of leftAnchor + 1
           for (j = leftIndex + 1; j < rightIndex; j++) {
             nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; //assign order values
-            //console.log(modifiedSequence[j] + ' -> ' + currentOrder);
             currentOrder++;
           }
 
@@ -318,17 +309,12 @@ var sequenceTubeMap = (function () {
             }
           } else { //potential node reversal: check for ordering conflict, if no conflict found move node at rightIndex further to the right in order to not create a track reversal
             if (! isSuccessor(nodes[nodeMap.get(modifiedSequence[rightIndex])], nodes[nodeMap.get(modifiedSequence[leftIndex])], nodes)) { //no real reversal
-              //console.log('hier');
-              //console.log(isSuccessor(nodes[nodeMap.get(modifiedSequence[rightIndex])], nodes[nodeMap.get(modifiedSequence[leftIndex])], nodes));
               increaseOrderForSuccessors(nodes, nodes[nodeMap.get(modifiedSequence[rightIndex])],  modifiedSequence[rightIndex - 1], currentOrder);
             } else { //real reversal
-              //if (! nextNodeIsAlwaysToTheRight) {
               if ((tracks[i].sequence[leftIndex].charAt(0) === '-') || ((nodes[nodeMap.get(modifiedSequence[leftIndex + 1])].degree < 2) && (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < nodes[nodeMap.get(modifiedSequence[leftIndex])].order))) {
-              //if (nodes[nodeMap.get(modifiedSequence[leftIndex + 1])].degree < 2) {
                 currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order - 1; //start with order value of leftAnchor + 1
                 for (j = leftIndex + 1; j < rightIndex; j++) {
                   nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; //assign order values
-                  //console.log(modifiedSequence[j] + ' -> ' + currentOrder);
                   currentOrder--;
                 }
               }
@@ -348,19 +334,19 @@ var sequenceTubeMap = (function () {
     }
   }
 
-  function isSuccessor(first, second, nodes) { //checks if second is a successor of first
+  //checks if second is a successor of first
+  function isSuccessor(first, second, nodes) {
     var visitedNodes = [];
+
     return isSuccessorRecursive(first, second, visitedNodes, nodes);
   }
 
   function isSuccessorRecursive(first, second, visitedNodes, nodes) {
     var i;
 
-    if (first.name === second.name) {
-      return true;
-    }
+    if (first.name === second.name) return true;
+
     for (i = 0; i < first.successors.length; i++) {
-      //if(first.successors[i] === second.name) return true;
       if (visitedNodes.indexOf(first.successors[i]) === -1) {
         visitedNodes.push(first.successors[i]);
         if (isSuccessorRecursive(nodes[nodeMap.get(first.successors[i])], second, visitedNodes, nodes)) {
@@ -368,18 +354,23 @@ var sequenceTubeMap = (function () {
         }
       }
     }
+
     return false;
   }
 
-  function getMaxOrder(nodes) { //get order number of the rightmost node
+  //get order number of the rightmost node
+  function getMaxOrder(nodes) {
     var max = -1;
+
     nodes.forEach(function(node) {
       if ((node.hasOwnProperty('order')) && (node.order > max)) max = node.order;
     });
+
     return max;
   }
 
-  function uninvert(sequence) { //generates sequence keeping the order but removing all '-'s from nodes
+  //generates sequence keeping the order but removing all '-'s from nodes
+  function uninvert(sequence) {
     var result = [];
     var i;
 
@@ -393,21 +384,20 @@ var sequenceTubeMap = (function () {
     return result;
   }
 
-  function increaseOrderForAllNodes(nodes, amount) { //increases the order-value of all nodes by amount
-    console.log('increase for all');
+  //increases the order-value of all nodes by amount
+  function increaseOrderForAllNodes(nodes, amount) {
     nodes.forEach(function(node) {
       if (node.hasOwnProperty('order')) node.order += amount;
     });
   }
 
-  function increaseOrderForSuccessors(nodes, currentNode, tabuNode, order) { //increases the order-value for currentNode and (if necessary) successor nodes recursively
-    //console.log('increasing orders from ' + currentNode.name + ' to ' + order);
+  //increases the order-value for currentNode and (if necessary) successor nodes recursively
+  function increaseOrderForSuccessors(nodes, currentNode, tabuNode, order) {
     var increasedOrders = {};
+
     increaseOrderForSuccessorsRecursive(nodes, currentNode, order, currentNode, tabuNode, increasedOrders);
-    //console.log(increasedOrders);
     for (var nodeName in increasedOrders) {
       if (increasedOrders.hasOwnProperty(nodeName)) {
-        //console.log(nodeName + ': ' + nodes[nodeMap.get(nodeName)].order + ' -> ' + increasedOrders[nodeName]);
         nodes[nodeMap.get(nodeName)].order = increasedOrders[nodeName];
       }
     }
@@ -425,7 +415,6 @@ var sequenceTubeMap = (function () {
         if (currentNode !== startingNode) {
           currentNode.predecessors.forEach(function(predecessor) {
             if ((nodes[nodeMap.get(predecessor)].order > currentNode.order) && (predecessor !== tabuNode)) { //only increase order of predecessors if they lie to the right of the currentNode (not for repeats/translocations)
-              //console.log('predecessor: from ' + currentNode.name + ' to ' + predecessor + ' = ' + (order + 1));
               increaseOrderForSuccessorsRecursive(nodes, nodes[nodeMap.get(predecessor)], order + 1, startingNode, tabuNode, increasedOrders);
             }
           });
@@ -434,13 +423,12 @@ var sequenceTubeMap = (function () {
     }
   }
 
-  function generateNodeDegree(nodes, tracks) { //calculates the node degree: the number of tracks passing through the node / the node height
+  //calculates the node degree: the number of tracks passing through the node / the node height
+  function generateNodeDegree(nodes, tracks) {
     nodes.forEach(function(node) { node.tracks = []; });
 
     tracks.forEach(function(track) {
-      //console.log(track.id);
       track.sequence.forEach(function(nodeName) {
-      //nodes[nodeMap.get(nodeName)].tracks=[];
       var noMinusName = nodeName;
       if (noMinusName.charAt(0) === '-') noMinusName = noMinusName.substr(1);
       nodes[nodeMap.get(noMinusName)].tracks.push(track.id);
@@ -452,35 +440,45 @@ var sequenceTubeMap = (function () {
     });
   }
 
+  //if more tracks pass through a specific node in reverse direction than in
+  //regular direction, switch its orientation
+  //(does not apply to the first track's nodes, these are always oriented as
+  //dictated by the first track)
   function switchNodeOrientation(nodes, tracks) {
     var toSwitch = {};
     var i, j;
     var nodeName, prevNode, nextNode, currentNode;
 
     for (i = 1; i < tracks.length; i++) {
-      //TODO: first element
-      for (j = 1; j < tracks[i].sequence.length - 1; j++) {
+      for (j = 0; j < tracks[i].sequence.length; j++) {
         nodeName = tracks[i].sequence[j];
         if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
         currentNode = nodes[nodeMap.get(nodeName)];
         if (tracks[0].sequence.indexOf(nodeName) === -1) { //do not change orientation for nodes which are part of the pivot track
-          if (tracks[i].sequence[j - 1].charAt(0) !== '-') prevNode = nodes[nodeMap.get(tracks[i].sequence[j - 1])];
-          else prevNode = nodes[nodeMap.get(tracks[i].sequence[j - 1].substr(1))];
-          if (tracks[i].sequence[j + 1].charAt(0) !== '-') nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1])];
-          else nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1].substr(1))];
-          if ((prevNode.order < currentNode.order) && (currentNode.order < nextNode.order)) {
+
+          if (j > 0) {
+            if (tracks[i].sequence[j - 1].charAt(0) !== '-') prevNode = nodes[nodeMap.get(tracks[i].sequence[j - 1])];
+            else prevNode = nodes[nodeMap.get(tracks[i].sequence[j - 1].substr(1))];
+          }
+
+          if (j < tracks[i].sequence.length - 1) {
+            if (tracks[i].sequence[j + 1].charAt(0) !== '-') nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1])];
+            else nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1].substr(1))];
+          }
+
+          if (((j === 0) || (prevNode.order < currentNode.order)) && ((j === tracks[i].sequence.length - 1) || (currentNode.order < nextNode.order))) {
             if (! toSwitch.hasOwnProperty(nodeName)) toSwitch[nodeName] = 0;
             if (tracks[i].sequence[j].charAt(0) === '-') toSwitch[nodeName] += 1;
             else toSwitch[nodeName] -= 1;
           }
-          if ((prevNode.order > currentNode.order) && (currentNode.order > nextNode.order)) {
+
+          if (((j === 0) || (prevNode.order > currentNode.order)) && ((j === tracks[i].sequence.length - 1) || (currentNode.order > nextNode.order))) {
             if (! toSwitch.hasOwnProperty(nodeName)) toSwitch[nodeName] = 0;
             if (tracks[i].sequence[j].charAt(0) === '-') toSwitch[nodeName] -= 1;
             else toSwitch[nodeName] += 1;
           }
         }
       }
-      //TODO: last element
     }
 
     tracks.forEach(function(track, trackIndex) {
@@ -495,19 +493,17 @@ var sequenceTubeMap = (function () {
     });
   }
 
-  function generateNodeXCoords(nodes, tracks) { //calculates the concrete values for the nodes' x-coordinates
+  //calculates the concrete values for the nodes' x-coordinates
+  function generateNodeXCoords(nodes, tracks) {
+    var currentX = 0;
+    var nextX = 20;
+    var currentOrder = -1;
     var extra;
-    var currentX;
-    var nextX;
-    var currentOrder;
 
     nodes.sort(compareNodesByOrder);
     nodeMap = generateNodeMap(nodes);
     extra = calculateExtraSpace(nodes, tracks);
 
-    currentX = 0;
-    nextX = offsetX + 20;
-    currentOrder = -1;
     nodes.forEach(function(node, index) {
       if (node.hasOwnProperty('order')) {
         if (node.order > currentOrder) {
@@ -516,15 +512,14 @@ var sequenceTubeMap = (function () {
         }
         node.x = currentX;
         nextX = Math.max(nextX, currentX + 20 + 20 * node.width);
-      } else {
-        console.log('Node ' + node.name + ' has no order property');
       }
     });
   }
 
-  function calculateExtraSpace(nodes, tracks) { //calculates additional horizontal space needed between two nodes
-    //two neighboring nodes have to be moved further apart if there is a lot going on in between them
-    //-> edges turning to vertical orientation should not overlap
+  //calculates additional horizontal space needed between two nodes
+  //two neighboring nodes have to be moved further apart if there is a lot going on in between them
+  //-> edges turning to vertical orientation should not overlap
+  function calculateExtraSpace(nodes, tracks) {
     var i;
     var leftSideEdges = [];
     var rightSideEdges = [];
@@ -544,11 +539,6 @@ var sequenceTubeMap = (function () {
       }
     });
 
-    /*console.log('left side edges:');
-    console.log(leftSideEdges);
-    console.log('right side edges:');
-    console.log(rightSideEdges);*/
-
     extra.push(Math.max(0, leftSideEdges[0] - 1));
     for (i = 1; i <= maxOrder; i++) {
       extra.push(Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1));
@@ -557,7 +547,8 @@ var sequenceTubeMap = (function () {
     return extra;
   }
 
-  function generateLaneAssignment(nodes, tracks) { //create and fill assignment-variable, which contains info about tracks and lanes for each order-value
+  //create and fill assignment-variable, which contains info about tracks and lanes for each order-value
+  function generateLaneAssignment(nodes, tracks) {
     var i;
     var j;
     var segmentNumber;
@@ -589,7 +580,6 @@ var sequenceTubeMap = (function () {
 
       track.path = [];
       track.path.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId});
-      //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: 0, node: currentNodeId, isForward: currentNodeIsForward, lane: null});
       addToAssignment(currentNode.order, currentNodeId, trackNo, 0, prevSegmentPerOrderPerTrack);
 
       segmentNumber = 1;
@@ -608,72 +598,59 @@ var sequenceTubeMap = (function () {
         if (currentNode.order > previousNode.order) {
           if (! previousNodeIsForward) {
             track.path.push({order: previousNode.order, lane: null, isForward: true, node: null});
-            //assignment[previousNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: true, lane: null});
             addToAssignment(previousNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           }
           for (j = previousNode.order + 1; j < currentNode.order; j++) {
             track.path.push({order: j, lane: null, isForward: true, node: null});
-            //assignment[j].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: true, lane: null});
             addToAssignment(j, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           }
           if (! currentNodeIsForward) {
             track.path.push({order: currentNode.order, lane: null, isForward: true, node: null});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: true, lane: null});
             addToAssignment(currentNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
             track.path.push({order: currentNode.order, lane: null, isForward: false, node: currentNodeId});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: false, lane: null});
             addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           } else {
             track.path.push({order: currentNode.order, lane: null, isForward: true, node: currentNodeId});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: true, lane: null});
             addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           }
         } else if (currentNode.order < previousNode.order) {
           if (previousNodeIsForward) {
             track.path.push({order: previousNode.order, lane: null, isForward: false, node: null});
-            //assignment[previousNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: false, lane: null});
             addToAssignment(previousNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           }
           for (j = previousNode.order - 1; j > currentNode.order; j--) {
             track.path.push({order: j, lane: null, isForward: false, node: null});
-            //assignment[j].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: false, lane: null});
             addToAssignment(j, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           }
           if (currentNodeIsForward) {
             track.path.push({order: currentNode.order, lane: null, isForward: false, node: null});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: false, lane: null});
             addToAssignment(currentNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
             track.path.push({order: currentNode.order, lane: null, isForward: true, node: currentNodeId});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: true, lane: null});
             addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           } else {
             track.path.push({order: currentNode.order, lane: null, isForward: false, node: currentNodeId});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: false, lane: null});
             addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           }
         } else { //currentNode.order === previousNode.order
           if (currentNodeIsForward !== previousNodeIsForward) {
             track.path.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: currentNodeIsForward, lane: null});
             addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           } else {
             track.path.push({order: currentNode.order, lane: null, isForward: !currentNodeIsForward, node: null});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: null, isForward: !currentNodeIsForward, lane: null});
             addToAssignment(currentNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
             track.path.push({order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId});
-            //assignment[currentNode.order].push({trackNo: trackNo, segmentNo: segmentNumber, node: currentNodeId, isForward: currentNodeIsForward, lane: null});
             addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
             segmentNumber++;
           }
@@ -682,8 +659,6 @@ var sequenceTubeMap = (function () {
     });
 
     for (i = 0; i <= maxOrder; i++) {
-    //for (i = 0; i <= 3; i++) {
-    //console.log('order ' + i + ':');
       generateSingleLaneAssignment(assignment[i], i, nodes, tracks); //this is where the lanes get assigned
     }
   }
@@ -699,7 +674,6 @@ var sequenceTubeMap = (function () {
 
     if (nodeID === null) {
       assignment[order].push({type: 'single', name: null, tracks: [{trackID: trackNo, segmentID: segmentID, compareToFromSame: compareToFromSame}]});
-      //console.log('HIER: ' + assignment[order][assignment[order].length - 1].tracks[0]);
       prevSegmentPerOrderPerTrack[order][trackNo] = assignment[order][assignment[order].length - 1].tracks[0];
     } else {
       for (i = 0; i < assignment[order].length; i++) {
@@ -716,13 +690,15 @@ var sequenceTubeMap = (function () {
     }
   }
 
+  //assigns the optimal lanes for a single horizontal position (=order)
+  //first an ideal lane is calculated for each track (which is ~ the lane of its predecessor)
+  //then the nodes are sorted by their average ideal lane
+  //and the whole construct is then moved up or down if necessary
   function generateSingleLaneAssignment(assignment, order, nodes, tracks) {
     var i, j, index, currentLane;
 
-    //for (i = 0; i < assignment.length; i++) {
     assignment.forEach(function(node) {
       node.idealLane = 0;
-      //for (j = 0: j < assignment[i].tracks.length) {
       node.tracks.forEach(function(track) {
         if (track.segmentID === 0) {
           track.idealLane = track.trackID;
@@ -733,8 +709,6 @@ var sequenceTubeMap = (function () {
             track.idealLane = tracks[track.trackID].path[track.segmentID + 1].lane;
           } else {
             index = track.segmentID - 1;
-            //while (! ((tracks[track.trackID].path[index].order === order) && (tracks[track.trackID].path[index].hasOwnProperty('lane')))) index--;
-            //while (! ((tracks[track.trackID].path[index].order === order) && (tracks[track.trackID].path[index].lane !== null))) index--;
             while ((index >=0 ) && (tracks[track.trackID].path[index].order !== order - 1)) index--;
             if (index < 0) track.idealLane = track.trackID;
             else track.idealLane = tracks[track.trackID].path[index].lane;
@@ -750,19 +724,13 @@ var sequenceTubeMap = (function () {
     var totalLanes = 0;
     assignment.sort(compareByIdealLane);
     assignment.forEach(function(node) {
-      //node.yCoord = assignment[i][j].lane;
-      //node.y = offsetY + 110 + 22 * node.yCoord;
-      //console.log(node.name + 'HIER ' + nodeMap.get(node.name));
       if (node.name !== null) {
         nodes[nodeMap.get(node.name)].yCoord = currentLane;
         nodes[nodeMap.get(node.name)].y = offsetY + 110 + 22 * currentLane;
-        //nodes[nodeMap.get(node.name)].y = offsetY + 90 + 22 * currentLane;
-
       }
 
       node.tracks.sort(compareByIdealLane);
       node.tracks.forEach(function(track) {
-        //console.log('Track ' + track.trackID + ' (' + track.segmentID + ') --> Lane ' + currentLane);
         track.lane = currentLane;
         tracks[track.trackID].path[track.segmentID].lane = currentLane;
         sumOfLaneChanges += currentLane - track.idealLane;
@@ -773,14 +741,12 @@ var sequenceTubeMap = (function () {
 
     var moveBy = Math.round(sumOfLaneChanges / totalLanes - 0.000001);
     if ((moveBy !== 0) && (totalLanes > numberOfTracks)) {
-      //console.log('move by ' + moveBy);
       assignment.forEach(function(node) {
         if (node.name !== null) {
           nodes[nodeMap.get(node.name)].yCoord -= moveBy;
           nodes[nodeMap.get(node.name)].y -= 22 * moveBy;
         }
         node.tracks.forEach(function(track) {
-          //console.log('Track ' + track.trackID + ' (' + track.segmentID + ') --> Lane ' + currentLane);
           track.lane -= moveBy;
           tracks[track.trackID].path[track.segmentID].lane -= moveBy;
         });
@@ -801,14 +767,6 @@ var sequenceTubeMap = (function () {
     }
   }
 
-  function sortNumber(a,b) { return a - b; }
-
-  function swap(array, i, j) {
-    var temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-
   function compareNodesByOrder(a, b) {
     if (a.hasOwnProperty('order')) {
       if (b.hasOwnProperty('order')) {
@@ -822,19 +780,8 @@ var sequenceTubeMap = (function () {
     }
   }
 
-  /*function compareEdgesByColor(a, b) {
-    if (a.hasOwnProperty('color')) {
-      if (b.hasOwnProperty('color')) {
-        if (a.color < b.color) return -1;
-        else if (a.color > b.color) return 1;
-        else return 0;
-      } else return -1;
-    } else {
-      if (b.hasOwnProperty('color')) return 1;
-      else return 0;
-    }
-  }*/
-
+  //transforms the info in the tracks' path attribute into actual coordinates
+  //and saves them in 'edges'
   function generateEdgesFromPath(nodes, tracks, edges) {
     var i;
     var xStart;
@@ -915,6 +862,7 @@ var sequenceTubeMap = (function () {
     });
   }
 
+  //calculates coordinates for first type of track reversal
   function generateForwardToReverse(order, lane1, lane2, trackID, orderEndX) {
     var temp;
     var x;
@@ -929,7 +877,6 @@ var sequenceTubeMap = (function () {
     }
     y = offsetY + 110 + 22 * lane1 + 10;
     y2 = offsetY + 110 + 22 * lane2 + 10;
-    //console.log('order: ' + order + ', lane1: ' + lane1 + ', lane2: ' + lane2);
     edges.push({source: {x: x - 5 - 10 * extraRight[order], y: y - 10}, target: {x: x, y: y - 10}, color: trackID}); //right (elongate edge within node)
     arcs[1].push({ x: x, y: y, color: trackID}); //from right to down
     edges.push({source: {x: x + 10, y: y}, target: {x: x + 10, y: y2 - 20}, color: trackID}); //down
@@ -938,6 +885,7 @@ var sequenceTubeMap = (function () {
     extraRight[order]++;
   }
 
+  //calculates coordinates for second type of track reversal
   function generateReverseToForward(order, lane1, lane2, trackID, orderStartX) {
     var temp;
     var x;
@@ -960,6 +908,8 @@ var sequenceTubeMap = (function () {
     extraLeft[order]++;
   }
 
+  //calls d3.js functions to draw the nodes which consist of multiple elements
+  //to get the correct look and transparency
   function drawNodes(nodes) {
     //Draw central white rectangle for node background
     svg.selectAll('.nodeBackgroundRect')
@@ -1155,8 +1105,9 @@ var sequenceTubeMap = (function () {
       .attr('height', 2);
   }
 
+  //calls d3.js functions to draw the tracks/edges
   function drawEdges(edges, co) {
-    //console.log('drawing edges ' + trackNo);
+
     //Create Paths for edges
     var diagonal = d3.svg.diagonal()
       .source(function(d) { return {'x':d.source.y, 'y':d.source.x}; })
@@ -1164,22 +1115,18 @@ var sequenceTubeMap = (function () {
   	  .projection(function(d) { return [d.y, d.x]; });
 
     //Draw edges
-    //var link = svg.selectAll('.link')
     var link = svg.selectAll('.tubeMapLink' + co)
       .data(edges)
   	  .enter().append('path')
-  	  //.attr('class', 'link')
       .attr('class', function(d) {return 'tubeMapLink track' + d.color; })
   	  .attr('d', diagonal)
       .on('mouseover', handleMouseOver)
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
-  	  //.style('stroke', function(d, i) { return color(i); });
       .style('stroke', function(d) { return color(d.color); });
-
-      //console.log('done drawing ' + trackNo);
   }
 
+  //calls d3.js functions to draw the tracks top right 90 degree angles
   function drawTopRightEdgeArcs(arcs, co) {
     var topRightEdgeArc = d3.svg.arc()
       .innerRadius(6)
@@ -1193,7 +1140,6 @@ var sequenceTubeMap = (function () {
       .append('path')
       .attr('class', function(d) {return 'tubeMapLink topRightArctrack' + d.color; })
       .attr('d', topRightEdgeArc)
-      //.style('stroke', function(d) { return color(d.color); })
       .on('mouseover', handleMouseOver)
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
@@ -1201,6 +1147,7 @@ var sequenceTubeMap = (function () {
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
   }
 
+  //calls d3.js functions to draw the tracks top left 90 degree angles
   function drawTopLeftEdgeArcs(arcs, co) {
     var topLeftEdgeArc = d3.svg.arc()
       .innerRadius(6)
@@ -1214,7 +1161,6 @@ var sequenceTubeMap = (function () {
       .append('path')
       .attr('class', function(d) {return 'tubeMapLink topLeftArctrack' + d.color; })
       .attr('d', topLeftEdgeArc)
-      //.style('stroke', function(d) { return color(d.color); })
       .on('mouseover', handleMouseOver)
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
@@ -1222,6 +1168,7 @@ var sequenceTubeMap = (function () {
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
   }
 
+  //calls d3.js functions to draw the tracks bottom right 90 degree angles
   function drawBottomRightEdgeArcs(arcs, co) {
     var bottomRightEdgeArc = d3.svg.arc()
       .innerRadius(6)
@@ -1235,7 +1182,6 @@ var sequenceTubeMap = (function () {
       .append('path')
       .attr('class', function(d) {return 'tubeMapLink bottomRightArctrack' + d.color; })
       .attr('d', bottomRightEdgeArc)
-      //.style('stroke', function(d) { return color(d.color); })
       .on('mouseover', handleMouseOver)
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
@@ -1243,6 +1189,7 @@ var sequenceTubeMap = (function () {
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
   }
 
+  //calls d3.js functions to draw the tracks bottom left 90 degree angles
   function drawBottomLeftEdgeArcs(arcs, co) {
     var bottomLeftEdgeArc = d3.svg.arc()
       .innerRadius(6)
@@ -1256,7 +1203,6 @@ var sequenceTubeMap = (function () {
       .append('path')
       .attr('class', function(d) {return 'tubeMapLink bottomLeftArctrack' + d.color; })
       .attr('d', bottomLeftEdgeArc)
-      //.style('stroke', function(d) { return color(d.color); })
       .on('mouseover', handleMouseOver)
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
@@ -1264,13 +1210,11 @@ var sequenceTubeMap = (function () {
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
   }
 
-  function handleMouseOver() {  // Highlight track on mouseover
+  // Highlight track on mouseover
+  function handleMouseOver() {
     /* jshint validthis: true */
     var currentClass = d3.select(this).attr('class');
     currentClass = /track[0-9]*/.exec(currentClass);
-    //currentClass = /track[\S]*/.exec(currentClass);
-
-    //console.log(currentClass[0]);
 
     svg.selectAll('.' + currentClass)
       //.style('stroke', '#000000')
@@ -1313,13 +1257,13 @@ var sequenceTubeMap = (function () {
       .attr('d', bottomLeftArc);
   }
 
-  function handleMouseOut() {  // Restore original appearance on mouseout
+  // Restore original appearance on mouseout
+  function handleMouseOut() {
     /* jshint validthis: true */
     var currentClass = d3.select(this).attr('class');
     currentClass = /track[0-9]*/.exec(currentClass);
 
     svg.selectAll('.' + currentClass)
-      //.style('stroke', function(d) { return color(d.color); });
       .style('stroke-width',  '7px');
 
     var topRightArc = d3.svg.arc()
@@ -1359,29 +1303,26 @@ var sequenceTubeMap = (function () {
       .attr('d', bottomLeftArc);
   }
 
+  // Move clicked track to first position
   function handleMouseClick() { // Move clicked track to first position
     /* jshint validthis: true */
     var trackNo = d3.select(this).attr('class');
     trackNo = /[0-9]+/.exec(trackNo);
     var index = 0;
-    //console.log('trackno: ' + trackNo);
     while ((index < 10) && (inputTracks[index].id != trackNo)) index++;
-    //console.log('index: ' + index);
     moveTrackToFirstPosition(index);
   }
 
+  //extract info about nodes from vg-json
   function vgExtractNodes(vg) {
     var result = [];
     vg.node.forEach(function (node) {
-      //result.push({ name: '' + node.id, width: 1});
-      //result.push({ name: '' + node.id, width: node.sequence.length});
-      //result.push({ name: '' + node.id, width: (1 + Math.log2(node.sequence.length))});
       result.push({ name: '' + node.id, sequenceLength: node.sequence.length});
-
     });
     return result;
   }
 
+  //calculated node widths depending on sequence lengths and chosen calculation method
   function generateNodeWidth(nodes) {
     switch (nodeWidthOption) {
       case 1:
@@ -1401,6 +1342,7 @@ var sequenceTubeMap = (function () {
     }
   }
 
+  //extract track info from vg-json
   function vgExtractTracks(vg) {
     var result =[];
     vg.path.forEach(function(path, index) {
@@ -1414,28 +1356,29 @@ var sequenceTubeMap = (function () {
           isCompletelyReverse = false;
         }
       });
-      //if ((path.mapping[0].position.hasOwnProperty('is_reverse')) && (path.mapping[0].position.is_reverse === true)) sequence.reverse();
       if (isCompletelyReverse) {
-          console.log('completely reverse ' + index);
-          console.log(sequence);
           sequence.reverse();
           sequence.forEach(function(node, index2) {
             sequence[index2] = node.substr(1);
           });
-          console.log(sequence);
       }
-
-      //result.push({id: path.name, sequence: sequence});
       result.push({id: index, sequence: sequence});
     });
     return result;
   }
 
+  //remove redundant nodes
+  //two nodes A and B can be merged if all tracks leaving A go directly into B
+  //and all tracks entering B come directly from A
+  //(plus no inversions involved)
   function mergeNodes(nodes, tracks) {
     var mergeForward = {};
     var i, index;
     var mergeBackward = {};
     var nodeName;
+    var mergedIntoName;
+    var mergedIntoNode;
+    var nodeToBeMergedAway;
 
     tracks.forEach(function(track) {
       for (i = 0; i < track.sequence.length; i++) {
@@ -1464,9 +1407,6 @@ var sequenceTubeMap = (function () {
       }
     });
 
-    console.log('Merge Forward: ' + Object.keys(mergeForward).length);
-    console.log(mergeForward);
-
     for (var prop in mergeForward) {
       if (mergeForward.hasOwnProperty(prop)) {
         if (mergeForward[prop].isPossible === true) {
@@ -1474,9 +1414,6 @@ var sequenceTubeMap = (function () {
         }
       }
     }
-
-    console.log('Merge Backward:' + Object.keys(mergeBackward).length);
-    console.log(mergeBackward);
 
     tracks.forEach(function(track) {
       for (i = 0; i < track.sequence.length; i++) {
@@ -1496,17 +1433,6 @@ var sequenceTubeMap = (function () {
       }
     });
 
-    var count = 0;
-    for (prop in mergeBackward) {
-      if (mergeBackward.hasOwnProperty(prop)) {
-        if (mergeBackward[prop].isPossible === true) {
-          count++;
-          console.log('merge ' + mergeBackward[prop].mergeWith + ' with ' + prop);
-        }
-      }
-    }
-    console.log(count + ' merges');
-
     //actually merge the nodes by removing the corresponding nodes from track data
     tracks.forEach(function(track) {
       for (i = track.sequence.length - 1; i >= 0; i--) {
@@ -1518,23 +1444,7 @@ var sequenceTubeMap = (function () {
       }
     });
 
-    //remove the nodes from node-Array
-
-    //console.log('Nodes: ' + nodes.length);
-    /*for (prop in mergeBackward) {
-      if (mergeBackward.hasOwnProperty(prop)) {
-        if (mergeBackward[prop].isPossible === true) {
-          index = 0;
-          //console.log('looking for ' + mergeBackward[prop])
-          while (nodes[index].name !== prop) index++;
-          nodes.splice(index, 1);
-        }
-      }
-    }*/
-
-    var mergedIntoName;
-    var mergedIntoNode;
-    var nodeToBeMergedAway;
+    //update sequenceLength property of the nodes which are increasing in size
     nodeMap = generateNodeMap(nodes);
     for (prop in mergeBackward) {
       if (mergeBackward.hasOwnProperty(prop)) {
@@ -1560,13 +1470,12 @@ var sequenceTubeMap = (function () {
       }
     }
 
-
+    //remove the nodes from node-array
     for (i = nodes.length - 1; i >= 0; i--) {
       if ((mergeBackward.hasOwnProperty(nodes[i].name)) && (mergeBackward[nodes[i].name].isPossible === true)) {
         nodes.splice(i, 1);
       }
     }
-    //console.log('Nodes: ' + nodes.length);
 
     return {nodes: nodes, tracks: tracks};
   }
@@ -1580,4 +1489,3 @@ var sequenceTubeMap = (function () {
   };
 
 })();
-//}());
