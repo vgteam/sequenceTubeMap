@@ -171,9 +171,9 @@ var sequenceTubeMap = (function () {
 
   //align visualization to the top and left within svg and resize svg to correct size
   function alignSVG(nodes, tracks) {
-    var minLane = Number.MAX_SAFE_INTEGER;
-    var maxLane = Number.MIN_SAFE_INTEGER;
-    var maxX = Number.MIN_SAFE_INTEGER;
+    var minLane = 9007199254740991;
+    var maxLane = -9007199254740991;
+    var maxX = -9007199254740991;
 
     tracks.forEach(function (track) {
       track.path.forEach(function (node) {
