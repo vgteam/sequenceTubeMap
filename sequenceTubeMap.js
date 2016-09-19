@@ -1327,12 +1327,12 @@ var sequenceTubeMap = (function () {
     switch (nodeWidthOption) {
       case 1:
         nodes.forEach(function (node) {
-          if (node.hasOwnProperty('sequenceLength')) node.width = (1 + Math.log2(node.sequenceLength));
+          if (node.hasOwnProperty('sequenceLength')) node.width = (1 + Math.log(node.sequenceLength) / Math.log(2));
         });
         break;
       case 2:
         nodes.forEach(function (node) {
-          if (node.hasOwnProperty('sequenceLength')) node.width = (1 + Math.log10(node.sequenceLength));
+          if (node.hasOwnProperty('sequenceLength')) node.width = (1 + Math.log(node.sequenceLength) / Math.log(10));
         });
         break;
       default:
