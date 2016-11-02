@@ -1,6 +1,9 @@
+/*jshint loopfunc:true */
+
 var sequenceTubeMap = (function () {
 'use strict';
 
+  var DEBUG = false;
   var offsetY = 0;
   var color = d3.scale.category10().domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
   var svg;
@@ -123,6 +126,11 @@ var sequenceTubeMap = (function () {
     removeUnusedNodes(nodes);
     drawEdgesInOrder(edges, arcs);
     drawNodes(nodes);
+
+    if (DEBUG) {
+      console.log('number of tracks: ' + numberOfTracks);
+      console.log('number of nodes: ' + numberOfNodes);
+    }
   }
 
   //to have consistent z-indices (correct overlapping behavior) the tracks are drawn sequentially by color
@@ -287,6 +295,7 @@ var sequenceTubeMap = (function () {
     generateNodeOrderOfSingleTrack(tracks[0].sequence, nodes); //calculate order values for all nodes of the first track
 
     for (i = 1; i < tracks.length; i++) {
+      if (DEBUG) console.log('generating order for track ' + (i + 1));
       modifiedSequence = uninvert(tracks[i].sequence);
       rightIndex = generateNodeOrderLeftEnd(modifiedSequence, nodes); //calculate order values for all nodes until the first anchor
       while (rightIndex < modifiedSequence.length) { //move right until the end of the sequence
@@ -392,33 +401,38 @@ var sequenceTubeMap = (function () {
   }
 
   //increases the order-value for currentNode and (if necessary) successor nodes recursively
-  function increaseOrderForSuccessors(nodes, currentNode, tabuNode, order) {
+  function increaseOrderForSuccessors(nodes, startingNode, tabuNode, order) {
     var increasedOrders = {};
+    var queue = [];
+    queue.push([startingNode, order]);
 
-    increaseOrderForSuccessorsRecursive(nodes, currentNode, order, currentNode, tabuNode, increasedOrders);
+    while (queue.length > 0) {
+      var current = queue.shift();
+      var currentNode = current[0];
+      order = current[1];
+
+      if ((currentNode.hasOwnProperty('order')) && (currentNode.order < order)) {
+        if ((! increasedOrders.hasOwnProperty(currentNode.name)) || (increasedOrders[currentNode.name] < order)) {
+          increasedOrders[currentNode.name] = order;
+          currentNode.successors.forEach(function(successor) {
+            if ((nodes[nodeMap.get(successor)].order > currentNode.order) && (successor !== tabuNode)) { //only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
+              queue.push([nodes[nodeMap.get(successor)], order + 1]);
+            }
+          });
+          if (currentNode !== startingNode) {
+            currentNode.predecessors.forEach(function(predecessor) {
+              if ((nodes[nodeMap.get(predecessor)].order > currentNode.order) && (predecessor !== tabuNode)) { //only increase order of predecessors if they lie to the right of the currentNode (not for repeats/translocations)
+                queue.push([nodes[nodeMap.get(predecessor)], order + 1]);
+              }
+            });
+          }
+        }
+      }
+    }
+
     for (var nodeName in increasedOrders) {
       if (increasedOrders.hasOwnProperty(nodeName)) {
         nodes[nodeMap.get(nodeName)].order = increasedOrders[nodeName];
-      }
-    }
-  }
-
-  function increaseOrderForSuccessorsRecursive(nodes, currentNode, order, startingNode, tabuNode, increasedOrders) {
-    if ((currentNode.hasOwnProperty('order')) && (currentNode.order < order)) {
-      if ((! increasedOrders.hasOwnProperty(currentNode.name)) || (increasedOrders[currentNode.name] < order)) {
-        increasedOrders[currentNode.name] = order;
-        currentNode.successors.forEach(function(successor) {
-          if ((nodes[nodeMap.get(successor)].order > currentNode.order) && (successor !== tabuNode)) { //only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
-            increaseOrderForSuccessorsRecursive(nodes, nodes[nodeMap.get(successor)], order + 1, startingNode, tabuNode, increasedOrders);
-          }
-        });
-        if (currentNode !== startingNode) {
-          currentNode.predecessors.forEach(function(predecessor) {
-            if ((nodes[nodeMap.get(predecessor)].order > currentNode.order) && (predecessor !== tabuNode)) { //only increase order of predecessors if they lie to the right of the currentNode (not for repeats/translocations)
-              increaseOrderForSuccessorsRecursive(nodes, nodes[nodeMap.get(predecessor)], order + 1, startingNode, tabuNode, increasedOrders);
-            }
-          });
-        }
       }
     }
   }
