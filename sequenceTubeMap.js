@@ -931,6 +931,10 @@ var sequenceTubeMap = (function () {
       .enter()
       .append('rect')
       .attr('class', 'tubeMapBackgr')
+      .style('fill', '#fff')
+      .style('fill-opacity', '0.8')
+      .style('stroke', '#fff')
+      .style('stroke-width', '0px')
       .attr('x', function(d) { return d.x - 10; })
       .attr('y', function(d) { return d.y; })
       .attr('width', function(d) { return 20 * d.width; })
@@ -942,6 +946,10 @@ var sequenceTubeMap = (function () {
       .enter()
       .append('rect')
       .attr('class', 'tubeMapBackgr')
+      .style('fill', '#fff')
+      .style('fill-opacity', '0.8')
+      .style('stroke', '#fff')
+      .style('stroke-width', '0px')
       .attr('x', function(d) { return d.x; })
       .attr('y', function(d) { return d.y - 10; })
       .attr('width', function(d) { return (d.width - 1) * 20; })
@@ -953,6 +961,10 @@ var sequenceTubeMap = (function () {
       .enter()
       .append('rect')
       .attr('class', 'tubeMapBackgr')
+      .style('fill', '#fff')
+      .style('fill-opacity', '0.8')
+      .style('stroke', '#fff')
+      .style('stroke-width', '0px')
       .attr('x', function(d) { return d.x; })
       .attr('y', function(d) { return (d.y + (22 * (d.degree - 1))); })
       .attr('width', function(d) { return (d.width - 1) * 20; })
@@ -970,6 +982,10 @@ var sequenceTubeMap = (function () {
       .enter()
       .append('path')
       .attr('class', 'tubeMapBackgr')
+      .style('fill', '#fff')
+      .style('fill-opacity', '0.8')
+      .style('stroke', '#fff')
+      .style('stroke-width', '0px')
       .attr('d', topLeftSegment)
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
 
@@ -985,6 +1001,10 @@ var sequenceTubeMap = (function () {
       .enter()
       .append('path')
       .attr('class', 'tubeMapBackgr')
+      .style('fill', '#fff')
+      .style('fill-opacity', '0.8')
+      .style('stroke', '#fff')
+      .style('stroke-width', '0px')
       .attr('d', topRightSegment)
       .attr('transform', function(d) {return 'translate(' + (d.x + 20 * (d.width -1)) + ', ' + d.y + ')'; });
 
@@ -1000,6 +1020,10 @@ var sequenceTubeMap = (function () {
       .enter()
       .append('path')
       .attr('class', 'tubeMapBackgr')
+      .style('fill', '#fff')
+      .style('fill-opacity', '0.8')
+      .style('stroke', '#fff')
+      .style('stroke-width', '0px')
       .attr('d', bottomLeftSegment)
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + (d.y + (22 * (d.degree - 1))) + ')'; });
 
@@ -1015,6 +1039,10 @@ var sequenceTubeMap = (function () {
       .enter()
       .append('path')
       .attr('class', 'tubeMapBackgr')
+      .style('fill', '#fff')
+      .style('fill-opacity', '0.8')
+      .style('stroke', '#fff')
+      .style('stroke-width', '0px')
       .attr('d', bottomRightSegment)
       .attr('transform', function(d) {return 'translate(' + (d.x + 20 * (d.width -1)) + ', ' + (d.y + (22 * (d.degree - 1))) + ')'; });
 
@@ -1137,7 +1165,9 @@ var sequenceTubeMap = (function () {
       .on('mouseover', handleMouseOver)
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
-      .style('stroke', function(d) { return color(d.color); });
+      .style('fill', 'none')
+      .style('stroke', function(d) { return color(d.color); })
+      .style('stroke-width', '7px');
   }
 
   //calls d3.js functions to draw the tracks top right 90 degree angles
@@ -1158,6 +1188,7 @@ var sequenceTubeMap = (function () {
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
       .style('fill', function(d) { return color(d.color); })
+      .style('stroke-width', '7px')
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
   }
 
@@ -1179,6 +1210,7 @@ var sequenceTubeMap = (function () {
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
       .style('fill', function(d) { return color(d.color); })
+      .style('stroke-width', '7px')
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
   }
 
@@ -1200,6 +1232,7 @@ var sequenceTubeMap = (function () {
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
       .style('fill', function(d) { return color(d.color); })
+      .style('stroke-width', '7px')
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
   }
 
@@ -1221,6 +1254,7 @@ var sequenceTubeMap = (function () {
       .on('mouseout', handleMouseOut)
       .on('click', handleMouseClick)
       .style('fill', function(d) { return color(d.color); })
+      .style('stroke-width', '7px')
       .attr('transform', function(d) {return 'translate(' + d.x + ', ' + d.y + ')'; });
   }
 

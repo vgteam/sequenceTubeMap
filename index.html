@@ -8,7 +8,6 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script type="text/javascript" src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script src="sequenceTubeMap.js"></script>
-<link rel="stylesheet" type="text/css" href="sequenceTubeMapStyle.css">
 
 <style type="text/css">
 
@@ -174,10 +173,14 @@
     </div>
 
     <br />
-    <div id="chart0"></div>
+    <div id="chart0">
+      <svg id="svg">
+      </svg>
+    </div>
     <p class="footer"><br /><br /><br />
       Hover over a track to highlight.<br />
-      Click on a track to move it to the top and rearrange the visualization according to the clicked track's sequence.
+      Click on a track to move it to the top and rearrange the visualization according to the clicked track's sequence.<br />
+      <!--<a href="index.html" id="downloadLink">Save image</a>-->
     </p>
       &nbsp;
   </div>
@@ -186,26 +189,31 @@
 
   document.getElementById("example1").onclick = function() {
     sequenceTubeMap.create(svg, inputNodes, inputTracks1);
+    makeSaveable();
   };
 
   document.getElementById("example2").onclick = function() {
     $("#example1").removeClass("active");
     sequenceTubeMap.create(svg, inputNodes, inputTracks2);
+    makeSaveable();
   };
 
   document.getElementById("example3").onclick = function() {
     $("#example1").removeClass("active");
     sequenceTubeMap.create(svg, inputNodes, inputTracks3);
+    makeSaveable();
   };
 
   document.getElementById("example4").onclick = function() {
     $("#example1").removeClass("active");
     sequenceTubeMap.create(svg, inputNodes, inputTracks4);
+    makeSaveable();
   };
 
   document.getElementById("example5").onclick = function() {
     $("#example1").removeClass("active");
     sequenceTubeMap.create(svg, inputNodes, inputTracks5);
+    makeSaveable();
   };
 
   document.getElementById("example6").onclick = function() {
@@ -234,6 +242,7 @@
     var nodes = sequenceTubeMap.vgExtractNodes(vg);
     var tracks = sequenceTubeMap.vgExtractTracks(vg);
     sequenceTubeMap.create(svg, nodes, tracks);
+    makeSaveable();
   };
 
   document.getElementById('inputFile').addEventListener('change', function(e) {
@@ -363,8 +372,9 @@
     {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"]}
   ];
 
-  var svg = d3.select("#chart0") //Create SVG element
-    .append("svg");
+  //var svg = d3.select("#chart0") //Create SVG element
+  //  .append("svg");
+  var svg = d3.select("#svg"); //Create SVG element
 
   function loadJSON(filename, callback) {
     var xobj = new XMLHttpRequest();
@@ -384,10 +394,41 @@
       var nodes = sequenceTubeMap.vgExtractNodes(vg);
       var tracks = sequenceTubeMap.vgExtractTracks(vg);
         sequenceTubeMap.create(svg, nodes, tracks);
+        makeSaveable();
     });
   }
 
+  function makeSaveable() {
+    /*
+    //get svg element.
+    var svgN = document.getElementById("svg");
+
+    //get svg source.
+    var serializer = new XMLSerializer();
+    var source = serializer.serializeToString(svgN);
+
+    //add name spaces.
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+    }
+
+    //add xml declaration
+    source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+    //convert svg source to URI data scheme.
+    var url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(source);
+
+    //set url value to a element's href attribute.
+    document.getElementById("downloadLink").href = url;
+    //you can download svg file by right click menu.
+    */
+  }
+
   document.getElementById("example1").click();
+  makeSaveable();
 
 </script>
 </body>
