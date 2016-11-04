@@ -1145,6 +1145,18 @@ var sequenceTubeMap = (function () {
       .attr('y', function(d) { return (d.y + 8 + (22 * (d.degree - 1))); })
       .attr('width', function(d) { return (d.width - 1) * 20; })
       .attr('height', 2);
+
+    //TODO: turn labeling on/off
+    svg.selectAll('text')
+      .data(nodes)
+      .enter()
+      .append('text')
+      .attr('x', function(d) { return d.x - 4; })
+      .attr('y', function(d) { return d.y + 4; })
+      .text(function(d) { return d.seq; })
+      .attr('font-family', 'Courier, "Lucida Console", monospace')
+      .attr('font-size', '14px')
+      .attr('fill', 'black');
   }
 
   //calls d3.js functions to draw the tracks/edges
@@ -1365,7 +1377,7 @@ var sequenceTubeMap = (function () {
   function vgExtractNodes(vg) {
     var result = [];
     vg.node.forEach(function (node) {
-      result.push({ name: '' + node.id, sequenceLength: node.sequence.length});
+      result.push({ name: '' + node.id, sequenceLength: node.sequence.length, seq: node.sequence});
     });
     return result;
   }
