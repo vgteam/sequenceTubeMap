@@ -19,11 +19,12 @@ var sequenceTubeMap = (function () {
   var extraRight = []; //info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
   var maxOrder; //horizontal order of the rightmost node
   var mergeNodesFlag = false;
+  var stepX = 8.401; //node width in pixels increases by this amount per base; actual value chosen empirically to match node label's text width
 
   // 0...scale node width linear with number of bases within node
   // 1...scale node width with log2 of number of bases within node
   // 2...scale node width with log10 of number of bases within node
-  var nodeWidthOption = 1;
+  var nodeWidthOption = 0;
 
   //public function to fill the svg with a visualization of the data in nodes and tracks
   function create(inputSvg, nodes, tracks) {
@@ -193,7 +194,7 @@ var sequenceTubeMap = (function () {
     offsetY = -100 - 22 * minLane;
     nodes.forEach(function(node) {
       node.y = offsetY + 110 + 22 * node.yCoord;
-      if (node.x + 20 * node.width > maxX) maxX = node.x + 20 * node.width;
+      maxX = Math.max(maxX, node.x + 20 + Math.round(stepX * (node.width - 1)));
     });
 
     svg.attr('height', 20 + 22 * (maxLane - minLane));
@@ -525,7 +526,7 @@ var sequenceTubeMap = (function () {
           currentX = nextX + 10 * extra[node.order];
         }
         node.x = currentX;
-        nextX = Math.max(nextX, currentX + 20 + 20 * node.width);
+        nextX = Math.max(nextX, currentX + 40 + Math.round(stepX * (node.width - 1)));
       }
     });
   }
@@ -814,8 +815,8 @@ var sequenceTubeMap = (function () {
     nodes.forEach(function(node) {
       if (node.hasOwnProperty('order')) {
         orderStartX[node.order] = node.x;
-        if (orderEndX[node.order] === undefined) orderEndX[node.order] = node.x + 20 * (node.width - 1);
-        else orderEndX[node.order] = Math.max(orderEndX[node.order], node.x + 20 * (node.width - 1));
+        if (orderEndX[node.order] === undefined) orderEndX[node.order] = node.x + Math.round(stepX * (node.width - 1));
+        else orderEndX[node.order] = Math.max(orderEndX[node.order], node.x + Math.round(stepX * (node.width - 1)));
       }
     });
 
@@ -925,6 +926,7 @@ var sequenceTubeMap = (function () {
   //calls d3.js functions to draw the nodes which consist of multiple elements
   //to get the correct look and transparency
   function drawNodes(nodes) {
+
     //Draw central white rectangle for node background
     svg.selectAll('.nodeBackgroundRect')
       .data(nodes)
@@ -937,7 +939,7 @@ var sequenceTubeMap = (function () {
       .style('stroke-width', '0px')
       .attr('x', function(d) { return d.x - 10; })
       .attr('y', function(d) { return d.y; })
-      .attr('width', function(d) { return 20 * d.width; })
+      .attr('width', function(d) { return 20 + Math.round(stepX * (d.width - 1)); })
       .attr('height', function(d) { return (d.degree - 1) * 22; });
 
     //Draw top white rectangle for node background
@@ -952,7 +954,7 @@ var sequenceTubeMap = (function () {
       .style('stroke-width', '0px')
       .attr('x', function(d) { return d.x; })
       .attr('y', function(d) { return d.y - 10; })
-      .attr('width', function(d) { return (d.width - 1) * 20; })
+      .attr('width', function(d) { return Math.round(stepX * (d.width - 1)); })
       .attr('height', 10);
 
     //Draw bottom white rectangle for node background
@@ -967,7 +969,7 @@ var sequenceTubeMap = (function () {
       .style('stroke-width', '0px')
       .attr('x', function(d) { return d.x; })
       .attr('y', function(d) { return (d.y + (22 * (d.degree - 1))); })
-      .attr('width', function(d) { return (d.width - 1) * 20; })
+      .attr('width', function(d) { return Math.round(stepX * (d.width - 1)); })
       .attr('height', 8);
 
     //Draw top-left circle segment (white background) for nodes
@@ -1006,7 +1008,7 @@ var sequenceTubeMap = (function () {
       .style('stroke', '#fff')
       .style('stroke-width', '0px')
       .attr('d', topRightSegment)
-      .attr('transform', function(d) {return 'translate(' + (d.x + 20 * (d.width -1)) + ', ' + d.y + ')'; });
+      .attr('transform', function(d) {return 'translate(' + (d.x + Math.round(stepX * (d.width - 1))) + ', ' + d.y + ')'; });
 
     //Draw bottom-left circle segment (white background) for nodes
     var bottomLeftSegment = d3.svg.arc()
@@ -1044,7 +1046,7 @@ var sequenceTubeMap = (function () {
       .style('stroke', '#fff')
       .style('stroke-width', '0px')
       .attr('d', bottomRightSegment)
-      .attr('transform', function(d) {return 'translate(' + (d.x + 20 * (d.width -1)) + ', ' + (d.y + (22 * (d.degree - 1))) + ')'; });
+      .attr('transform', function(d) {return 'translate(' + (d.x + Math.round(stepX * (d.width - 1))) + ', ' + (d.y + (22 * (d.degree - 1))) + ')'; });
 
     //Draw top-left arc for nodes
     var topLeftArc = d3.svg.arc()
@@ -1074,7 +1076,7 @@ var sequenceTubeMap = (function () {
       .append('path')
       .attr('class', 'arc')
       .attr('d', topRightArc)
-      .attr('transform', function(d) {return 'translate(' + (d.x + 20 * (d.width -1)) + ', ' + d.y + ')'; });
+      .attr('transform', function(d) {return 'translate(' + (d.x + Math.round(stepX * (d.width - 1))) + ', ' + d.y + ')'; });
 
     //Draw bottom-left arc for nodes
     var bottomLeftArc = d3.svg.arc()
@@ -1104,9 +1106,9 @@ var sequenceTubeMap = (function () {
       .append('path')
       .attr('class', 'arc')
       .attr('d', bottomRightArc)
-      .attr('transform', function(d) {return 'translate(' + (d.x + 20 * (d.width -1)) + ', ' + (d.y + (22 * (d.degree - 1))) + ')'; });
+      .attr('transform', function(d) {return 'translate(' + (d.x + Math.round(stepX * (d.width -1))) + ', ' + (d.y + (22 * (d.degree - 1))) + ')'; });
 
-    svg.selectAll('.arcLinkLeft') //linke Verbindung zw. Halbkreisen
+    svg.selectAll('.arcLinkLeft') //left straight line connection between arcs
       .data(nodes)
       .enter()
       .append('rect')
@@ -1116,47 +1118,49 @@ var sequenceTubeMap = (function () {
       .attr('width', 2)
       .attr('height', function(d) { return (d.degree - 1) * 22; });
 
-    svg.selectAll('.arcLinkRight') //rechte Verbindung zw. Halbkreisen
+    svg.selectAll('.arcLinkRight') //right straight line connection between arcs
       .data(nodes)
       .enter()
       .append('rect')
       .attr('class', 'arc')
-      .attr('x', function(d) { return d.x + 8 + 20 * (d.width -1); })
+      .attr('x', function(d) { return d.x + 8 + Math.round(stepX * (d.width -1)); })
       .attr('y', function(d) { return d.y; })
       .attr('width', 2)
       .attr('height', function(d) { return (d.degree - 1) * 22; });
 
-    svg.selectAll('.arcLinkTop') //top Verbindung zw. Halbkreisen
+    svg.selectAll('.arcLinkTop') //top straight line connection between arcs
       .data(nodes)
       .enter()
       .append('rect')
       .attr('class', 'arc')
       .attr('x', function(d) { return d.x; })
       .attr('y', function(d) { return d.y - 10; })
-      .attr('width', function(d) { return (d.width - 1) * 20; })
+      .attr('width', function(d) { return Math.round((d.width - 1) * stepX); })
       .attr('height', 2);
 
-    svg.selectAll('.arcLinkBottom') //bottom Verbindung zw. Halbkreisen
+    svg.selectAll('.arcLinkBottom') //bottom straight line connection between arcs
       .data(nodes)
       .enter()
       .append('rect')
       .attr('class', 'arc')
       .attr('x', function(d) { return d.x; })
       .attr('y', function(d) { return (d.y + 8 + (22 * (d.degree - 1))); })
-      .attr('width', function(d) { return (d.width - 1) * 20; })
+      .attr('width', function(d) { return Math.round((d.width - 1) * stepX); })
       .attr('height', 2);
 
-    //TODO: turn labeling on/off
-    svg.selectAll('text')
-      .data(nodes)
-      .enter()
-      .append('text')
-      .attr('x', function(d) { return d.x - 4; })
-      .attr('y', function(d) { return d.y + 4; })
-      .text(function(d) { return d.seq; })
-      .attr('font-family', 'Courier, "Lucida Console", monospace')
-      .attr('font-size', '14px')
-      .attr('fill', 'black');
+    //seqence labels for nodes
+    if (nodeWidthOption == 0) {
+      svg.selectAll('text')
+        .data(nodes)
+        .enter()
+        .append('text')
+        .attr('x', function(d) { return d.x - 4; })
+        .attr('y', function(d) { return d.y + 4; })
+        .text(function(d) { return d.seq; })
+        .attr('font-family', 'Courier, "Lucida Console", monospace')
+        .attr('font-size', '14px')
+        .attr('fill', 'black');
+    }
   }
 
   //calls d3.js functions to draw the tracks/edges
@@ -1517,6 +1521,7 @@ var sequenceTubeMap = (function () {
           } else {
             mergedIntoNode.width += nodeToBeMergedAway.width;
           }
+          mergedIntoNode.seq = mergedIntoNode.seq + nodeToBeMergedAway.seq;
           while ((mergeBackward.hasOwnProperty(mergedIntoName)) && (mergeBackward[mergedIntoName].isPossible === true)) {
             mergedIntoName = mergeBackward[mergedIntoName].mergeWith;
             mergedIntoNode = nodes[nodeMap.get(mergedIntoName)];
@@ -1525,6 +1530,7 @@ var sequenceTubeMap = (function () {
             } else {
               mergedIntoNode.width += nodeToBeMergedAway.width;
             }
+            mergedIntoNode.seq = mergedIntoNode.seq + nodeToBeMergedAway.seq;
           }
         }
       }
