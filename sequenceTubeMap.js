@@ -199,6 +199,13 @@ var sequenceTubeMap = (function () {
 
     svg.attr('height', 20 + 22 * (maxLane - minLane));
     svg.attr('width', maxX);
+
+    //enable Pan + Zoom
+    svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 1]).on("zoom", function () {
+        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+        //svg.attr("transform", "scale(" + d3.event.scale + ")");
+      }))
+      .append("g");
   }
 
   //map node names to node indices
@@ -1149,7 +1156,7 @@ var sequenceTubeMap = (function () {
       .attr('height', 2);
 
     //seqence labels for nodes
-    if (nodeWidthOption == 0) {
+    if (nodeWidthOption === 0) {
       svg.selectAll('text')
         .data(nodes)
         .enter()
