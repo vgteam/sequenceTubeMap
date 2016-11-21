@@ -13,7 +13,11 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 }));
 
 // Whitelist the following IPs
-var ips = ['127.0.0.1', '::1', '169.233.209.206', '::ffff:169.233.209.206'];
+//var ips = ['127.0.0.1', '::1', '169.233.209.206', '::ffff:169.233.209.206'];
+var ips = ['127.0.0.1', '::1',
+  ['169.233.207.1', '169.233.210.1'],
+  ['::ffff:169.233.207.1', '::ffff:169.233.210.1'],
+  ['::ffff:128.114.59.1', '::ffff:128.114.60.1']];
 
 // Create the server
 app.use(ipfilter(ips, {mode: 'allow'}));
@@ -49,7 +53,27 @@ app.post('/vg_trace', function(req, res) {
         var fs = require("fs");
         var jsonfile = fs.readFileSync("./vg_data/out3.json");
         var obj = JSON.parse(jsonfile);
-        return res.json(obj);
+
+        var lineReader = require('readline').createInterface({
+          input: fs.createReadStream('./vg_data/out3.json.annotation')
+        });
+
+        var i = 0;
+        lineReader.on('line', function (line) {
+          line = line.replace(/\s+/g, ' ');
+          var arr = line.split(' ');
+          if (obj.path[i].name == arr[0]) {
+            obj.path[i].freq = arr[1];
+          } else {
+            console.log('Mismatch');
+          }
+          i++;
+        });
+
+        lineReader.on('close', function () {
+          return res.json(obj);
+        });
+
     });
 });
 

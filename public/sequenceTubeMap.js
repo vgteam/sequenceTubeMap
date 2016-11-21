@@ -166,8 +166,12 @@ var sequenceTubeMap = (function () {
 
     offsetY = 12 - 22 * minLane;
     nodes.forEach(function(node) {
-      node.y = offsetY + 22 * node.topLane;
-      maxX = Math.max(maxX, node.x + 20 + Math.round(stepX * (node.width - 1)));
+      if (node.hasOwnProperty('topLane')) {
+        node.y = offsetY + 22 * node.topLane;
+      }
+      if (node.hasOwnProperty('x')) {
+        maxX = Math.max(maxX, node.x + 20 + Math.round(stepX * (node.width - 1)));
+      }
     });
 
     //enable Pan + Zoom
@@ -779,7 +783,8 @@ var sequenceTubeMap = (function () {
   function calculateTrackWidth(tracks) {
     tracks.forEach(function(track) {
       if (track.hasOwnProperty('freq')) { //custom track width
-        track.width = track.freq;
+        //track.width = track.freq;
+        track.width = (Math.log(track.freq) + 1) * 2;
       } else { //default track width
         track.width = 7;
       }
@@ -1110,7 +1115,7 @@ var sequenceTubeMap = (function () {
             sequence[index2] = node.substr(1);
           });
       }
-      result.push({id: index, sequence: sequence});
+      result.push({id: index, sequence: sequence, freq: path.freq});
     });
     return result;
   }
