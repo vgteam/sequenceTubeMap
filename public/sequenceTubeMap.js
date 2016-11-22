@@ -20,6 +20,7 @@ var sequenceTubeMap = (function () {
   var maxOrder; //horizontal order of the rightmost node
   var mergeNodesFlag = true;
   var stepX = 8.401; //node width in pixels increases by this amount per base; actual value chosen empirically to match node label's text width
+  var clickableNodesFlag = false;
 
   // 0...scale node width linear with number of bases within node
   // 1...scale node width with log2 of number of bases within node
@@ -27,7 +28,9 @@ var sequenceTubeMap = (function () {
   var nodeWidthOption = 0;
 
   //public function to fill the svg with a visualization of the data in nodes and tracks
-  function create(inputSvg, nodes, tracks) {
+  function create(inputSvg, nodes, tracks, clickableNodes) {
+    if (typeof(clickableNodes)==='undefined') clickableNodesFlag = false;
+    else clickableNodesFlag = clickableNodes;
     svgID = inputSvg;
     svg = d3.select(inputSvg);
     inputNodes = (JSON.parse(JSON.stringify(nodes))); //deep copy
@@ -175,9 +178,13 @@ var sequenceTubeMap = (function () {
     });
 
     //enable Pan + Zoom
-    svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
+    /*svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
         svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
       }))
+      .append("g");*/
+    svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
+        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+      })).on('dblclick.zoom', null)
       .append("g");
 
     //this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
@@ -994,7 +1001,11 @@ var sequenceTubeMap = (function () {
       .data(nodes)
       .enter()
       .append('path')
+      .attr('id', function(d) {return d.name; })
       .attr('d', function(d) { return d.d; })
+      .on('mouseover', nodeMouseOver)
+      .on('mouseout', nodeMouseOut)
+      .on('dblclick', nodeDoubleClick)
       .style('fill', '#fff')
       .style('fill-opacity', '0.8')
       .style('stroke', 'black')
@@ -1035,35 +1046,57 @@ var sequenceTubeMap = (function () {
       .attr('class', function(d) {return 'track' + d.id; })
   	  .attr('d', function(d) { return d.d; })
       .attr('trackID', function(d) {return d.id; })
-      .on('mouseover', handleMouseOver)
-      .on('mouseout', handleMouseOut)
-      .on('click', handleMouseClick)
+      .on('mouseover', trackMouseOver)
+      .on('mouseout', trackMouseOut)
+      .on('dblclick', trackDoubleClick)
       .style('fill', 'none')
       .style('stroke', function(d) { return color(d.color); })
       .style('stroke-width', function(d) { return d.width + 'px'; });
   }
 
   // Highlight track on mouseover
-  function handleMouseOver() {
+  function trackMouseOver() {
     /* jshint validthis: true */
     var trackID = d3.select(this).attr('trackID');
     d3.select('.track' + trackID + 'Highlight').style('stroke-opacity', '1');
   }
 
-  // Restore original appearance on mouseout
-  function handleMouseOut() {
+  // Highlight node on mouseover
+  function nodeMouseOver() {
+    /* jshint validthis: true */
+    d3.select(this).style('stroke-width', '4px');
+  }
+
+  // Restore original track appearance on mouseout
+  function trackMouseOut() {
     /* jshint validthis: true */
     var trackID = d3.select(this).attr('trackID');
     d3.select('.track' + trackID + 'Highlight').style('stroke-opacity', '0');
   }
 
+  // Restore original node appearance on mouseout
+  function nodeMouseOut() {
+    /* jshint validthis: true */
+    d3.select(this).style('stroke-width', '2px');
+  }
+
   // Move clicked track to first position
-  function handleMouseClick() { // Move clicked track to first position
+  function trackDoubleClick() { // Move clicked track to first position
     /* jshint validthis: true */
     var trackID = d3.select(this).attr('trackID');
     var index = 0;
     while (inputTracks[index].id != trackID) index++;
     moveTrackToFirstPosition(index);
+  }
+
+  // Redraw with current node moved to beginning
+  function nodeDoubleClick() { // Move clicked track to first position
+    /* jshint validthis: true */
+    var nodeID = d3.select(this).attr('id');
+    if (clickableNodesFlag) {
+      document.getElementById("nodeID").value = nodeID;
+      document.getElementById("postButton").click();
+    }
   }
 
   //extract info about nodes from vg-json

@@ -333,7 +333,7 @@
       //console.log(JSON.stringify(response));
       var nodes = sequenceTubeMap.vgExtractNodes(response);
       var tracks = sequenceTubeMap.vgExtractTracks(response);
-      sequenceTubeMap.create("#svg", nodes, tracks);
+      sequenceTubeMap.create("#svg", nodes, tracks, true);
       document.getElementById("loader").style.display = "none";
     });
   }
