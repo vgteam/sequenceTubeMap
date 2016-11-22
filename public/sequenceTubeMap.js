@@ -1024,7 +1024,8 @@ var sequenceTubeMap = (function () {
         .text(function(d) { return d.seq; })
         .attr('font-family', 'Courier, "Lucida Console", monospace')
         .attr('font-size', '14px')
-        .attr('fill', 'black');
+        .attr('fill', 'black')
+        .style('pointer-events', 'none');
     }
   }
 
