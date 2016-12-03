@@ -105,6 +105,8 @@ var sequenceTubeMap = (function () {
     var tracks = (JSON.parse(JSON.stringify(inputTracks)));
 
     svgPaths = [];
+    trackRectangles = [];
+    trackCurves = [];
     assignment = [];
     extraLeft = [];
     extraRight = [];
@@ -125,10 +127,11 @@ var sequenceTubeMap = (function () {
     generateNodeOrder(nodes, tracks);
     maxOrder = getMaxOrder(nodes);
     switchNodeOrientation(nodes, tracks);
+    calculateTrackWidth(tracks);
     generateLaneAssignment(nodes, tracks);
     generateNodeXCoords(nodes, tracks);
     alignSVG(nodes, tracks);
-    calculateTrackWidth(tracks);
+    //calculateTrackWidth(tracks);
     generateEdgesFromPath(nodes, tracks);
     generateSVGShapesFromPath(nodes, tracks);
     removeUnusedNodes(nodes);
@@ -183,7 +186,7 @@ var sequenceTubeMap = (function () {
     offsetY = 12 - 22 * minLane;
     nodes.forEach(function(node) {
       if (node.hasOwnProperty('topLane')) {
-        node.y = offsetY + 22 * node.topLane;
+        //node.y = offsetY + 22 * node.topLane;
       }
       if (node.hasOwnProperty('x')) {
         maxX = Math.max(maxX, node.x + 20 + Math.round(stepX * (node.width - 1)));
@@ -202,8 +205,10 @@ var sequenceTubeMap = (function () {
 
     //this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
     var svg2 = d3.select(svgID);
-    svg2.attr('height', 24 + 22 * (maxLane - minLane));
-    svg2.attr('width', maxX);
+    //svg2.attr('height', 24 + 22 * (maxLane - minLane));
+    //svg2.attr('width', maxX);
+    svg2.attr('height', 500);
+    svg2.attr('width', Math.max(maxX, 2000));
   }
 
   //map node names to node indices
@@ -742,21 +747,38 @@ var sequenceTubeMap = (function () {
     currentLane = 0;
     var sumOfLaneChanges = 0;
     var totalLanes = 0;
+    var currentY = offsetY + 20;
+    var prevNameIsNull = false;
     assignment.sort(compareByIdealLane);
     assignment.forEach(function(node) {
       if (node.name !== null) {
         nodes[nodeMap.get(node.name)].topLane = currentLane;
-        nodes[nodeMap.get(node.name)].y = offsetY + 22 * currentLane;
+        if (prevNameIsNull) currentY -= 10;
+        //nodes[nodeMap.get(node.name)].y = offsetY + 22 * currentLane;
+        nodes[nodeMap.get(node.name)].y = currentY;
+        nodes[nodeMap.get(node.name)].contentHeight = 0;
+
+        prevNameIsNull = false;
+      } else {
+        if (prevNameIsNull) currentY -= 25;
+        else if (currentY > offsetY + 20) currentY -= 10;
+        prevNameIsNull = true;
       }
 
       node.tracks.sort(compareByIdealLane);
       node.tracks.forEach(function(track) {
         track.lane = currentLane;
         tracks[track.trackID].path[track.segmentID].lane = currentLane;
+        tracks[track.trackID].path[track.segmentID].y = currentY;
         sumOfLaneChanges += currentLane - track.idealLane;
         totalLanes++;
         currentLane++;
+        currentY += tracks[track.trackID].width;
+        if (node.name !== null) {
+          nodes[nodeMap.get(node.name)].contentHeight += tracks[track.trackID].width;
+        }
       });
+      currentY += 25;
     });
 
     var moveBy = Math.round(sumOfLaneChanges / totalLanes - 0.000001);
@@ -923,11 +945,11 @@ var sequenceTubeMap = (function () {
     });
 
     //DEBUG: calculate dummy y-coordinates
-    tracks.forEach(function(track) {
+    /*tracks.forEach(function(track) {
       track.path.forEach(function(segment) {
         segment.y = offsetY + 22 * segment.lane - track.width / 2;
       });
-    });
+    });*/
 
     tracks.forEach(function(track, trackID) {
 
@@ -955,7 +977,8 @@ var sequenceTubeMap = (function () {
         }
         if (xEnd !== xStart) {
           //addSVGLine(svgPaths[trackID], xEnd, yStart);
-          trackRectangles.push([xStart, yStart, xEnd, yStart + track.width, trackColor]);
+          //trackRectangles.push([xStart, yStart, xEnd, yStart + track.width, trackColor]);
+          trackRectangles.push([Math.min(xStart, xEnd), yStart, Math.max(xStart, xEnd), yStart + track.width, trackColor]);
         }
 
         if (track.path[i].order - 1 === track.path[i - 1].order) { //regular forward connection
@@ -980,11 +1003,13 @@ var sequenceTubeMap = (function () {
           if (track.path[i - 1].isForward) {
             //generateForwardToReverse(track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderEndX, track.width);
             xStart = orderEndX[track.path[i].order];
-            yStart = offsetY + 22 * track.path[i].lane;
+            //yStart = offsetY + 22 * track.path[i].lane;
+            yEnd = track.path[i].y;
           } else {
             //generateReverseToForward(track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderStartX, track.width);
             xStart = orderStartX[track.path[i].order];
-            yStart = offsetY + 22 * track.path[i].lane;
+            //yStart = offsetY + 22 * track.path[i].lane;
+            yEnd = track.path[i].y;
           }
         }
       }
@@ -1062,7 +1087,7 @@ var sequenceTubeMap = (function () {
   }
 
   //draws nodes by building svg-path for border and filling it with transparent white
-  function drawNodes(nodes) {
+  function drawNodesOLD(nodes) {
     var x;
     var y;
 
@@ -1108,6 +1133,76 @@ var sequenceTubeMap = (function () {
       //left straight
       if (node.degree > 1) {
         y -= (node.degree - 1) * 22;
+        node.d += ' L ' + x + ' ' + y;
+      }
+
+    });
+
+    svg.selectAll('.node')
+      .data(nodes)
+      .enter()
+      .append('path')
+      .attr('id', function(d) {return d.name; })
+      .attr('d', function(d) { return d.d; })
+      .on('mouseover', nodeMouseOver)
+      .on('mouseout', nodeMouseOut)
+      .on('dblclick', nodeDoubleClick)
+      .style('fill', '#fff')
+      .style('fill-opacity', '0.8')
+      .style('stroke', 'black')
+      .style('stroke-width', '2px');
+  }
+
+  //draws nodes by building svg-path for border and filling it with transparent white
+  function drawNodes(nodes) {
+    var x;
+    var y;
+
+    nodes.forEach(function(node, index) {
+      //top left arc
+      node.d = 'M ' + (node.x - 9) + ' ' + node.y + ' Q ' + (node.x - 9) + ' ' + (node.y - 9) + ' ' + node.x + ' ' + (node.y - 9);
+      x = node.x;
+      y = node.y - 9;
+
+      //top straight
+      if (node.width > 1) {
+        x += Math.round((node.width - 1) * stepX);
+        node.d += ' L ' + x + ' ' + y;
+      }
+
+      //top right arc
+      node.d += ' Q ' + (x + 9) + ' ' + y + ' ' + (x + 9) + ' ' + (y + 9);
+      x += 9;
+      y += 9;
+
+      //right straight
+      if (node.contentHeight > 0) {
+        //y += (node.degree - 1) * 22;
+        y += node.contentHeight - 0;
+        node.d += ' L ' + x + ' ' + y;
+      }
+
+      //bottom right arc
+      node.d += ' Q ' + x + ' ' + (y + 9) + ' ' + (x - 9) + ' ' + (y + 9);
+      x -= 9;
+      y += 9;
+
+      //bottom straight
+      if (node.width > 1) {
+        x -= Math.round((node.width - 1) * stepX);
+        node.d += ' L ' + x + ' ' + y;
+      }
+
+      //bottom left arc
+      node.d += ' Q ' + (x - 9) + ' ' + y + ' ' + (x - 9) + ' ' + (y - 9);
+      x -= 9;
+      y -= 9;
+
+      //left straight
+      //if (node.degree > 1) {
+      if (node.contentHeight > 0) {
+        //y -= (node.degree - 1) * 22;
+        y -= node.contentHeight - 0;
         node.d += ' L ' + x + ' ' + y;
       }
 
