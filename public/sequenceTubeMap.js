@@ -32,6 +32,7 @@ var sequenceTubeMap = (function () {
   var trackCorners = [];
 
   var maxYCoordinate = 0;
+  var minYCoordinate = 0;
 
   //public function to fill the svg with a visualization of the data in nodes and tracks
   function create(inputSvg, nodes, tracks, clickableNodes) {
@@ -115,6 +116,7 @@ var sequenceTubeMap = (function () {
     extraLeft = [];
     extraRight = [];
     maxYCoordinate = 0;
+    minYCoordinate = 0;
     svg.selectAll('*').remove(); //clear svg for (re-)drawing
 
     if (mergeNodesFlag) {
@@ -202,21 +204,59 @@ var sequenceTubeMap = (function () {
       }
     });
 
+    var zoom = d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
+        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+      });
+
     //enable Pan + Zoom
     /*svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
         svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
       }))
       .append("g");*/
-    svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
-        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
-      })).on('dblclick.zoom', null)
-      .append("g");
+
+    //svg.attr('transform', 'translate(0, 50) scale(1)');
+
+    //svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
+  //      svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+  //    })).on('dblclick.zoom', null)
+    //  .append("g");
+
+    //svg = svg.call(zoom.translateBy, 0, 50).on('dblclick.zoom', null).append('g');
+    //svg = svg.call(zoom.translate([0, 50])).on('dblclick.zoom', null).append('g');
+    svg = svg.call(zoom).on('dblclick.zoom', null).append('g');
+
+    zoom.translate([0, - minYCoordinate + 15]);
+    zoom.event(svg);
+
+// activate the zoom event
+// pass in the transition with duration 500ms
+//zoomListener.event(rootSvg.transition().duration(500));
+
+
+
+      /*svg.call(zoom
+      .x(x.domain([-width / 2, width / 2]))
+      .y(y.domain([-height / 2, height / 2]))
+      .event);*/
+
+    /*var zoom = d3.behavior.zoom()
+      .x(x)
+      .y(y)
+      .scaleExtent([1, 10])
+      .on("zoom", zoomed);*/
+
+    //svg.call(d3.behavior.zoom()
+      //.x(x.domain([0, Math.max(maxX, $(svgID).parent().width())]))
+      //.y(y.domain([-50, maxYCoordinate]))
+      //.event);
 
     //this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
     var svg2 = d3.select(svgID);
     //svg2.attr('height', 24 + 22 * (maxLane - minLane));
     //svg2.attr('height', 500);
-    svg2.attr('height', maxYCoordinate + 20);
+    //svg2.attr('height', maxYCoordinate + 20);
+    svg2.attr('height', maxYCoordinate - minYCoordinate + 30);
+
     svg2.attr('width', Math.max(maxX, $(svgID).parent().width()));
 
   }
@@ -737,16 +777,24 @@ var sequenceTubeMap = (function () {
       node.tracks.forEach(function(track) {
         if (track.segmentID === 0) {
           track.idealLane = track.trackID;
+          track.idealY = null;
         } else {
           if (tracks[track.trackID].path[track.segmentID - 1].order === order - 1) {
             track.idealLane = tracks[track.trackID].path[track.segmentID - 1].lane;
+            track.idealY = tracks[track.trackID].path[track.segmentID - 1].y;
           } else if ((track.segmentID < tracks[track.trackID].path.length - 1) && (tracks[track.trackID].path[track.segmentID + 1].order === order - 1)) {
             track.idealLane = tracks[track.trackID].path[track.segmentID + 1].lane;
+            track.idealY = tracks[track.trackID].path[track.segmentID + 1].y;
           } else {
             index = track.segmentID - 1;
             while ((index >=0 ) && (tracks[track.trackID].path[index].order !== order - 1)) index--;
-            if (index < 0) track.idealLane = track.trackID;
-            else track.idealLane = tracks[track.trackID].path[index].lane;
+            if (index < 0) {
+              track.idealLane = track.trackID;
+              track.idealY = null;
+            } else {
+              track.idealLane = tracks[track.trackID].path[index].lane;
+              track.idealY = tracks[track.trackID].path[index].y;
+            }
           }
         }
         node.idealLane += track.idealLane;
@@ -756,6 +804,7 @@ var sequenceTubeMap = (function () {
 
     currentLane = 0;
     var sumOfLaneChanges = 0;
+    var potentialAdjustmentValues = new Set();
     var totalLanes = 0;
     var currentY = offsetY + 20;
     var prevNameIsNull = false;
@@ -783,6 +832,7 @@ var sequenceTubeMap = (function () {
         tracks[track.trackID].path[track.segmentID].lane = currentLane;
         tracks[track.trackID].path[track.segmentID].y = currentY;
         sumOfLaneChanges += currentLane - track.idealLane;
+        if (track.idealY !== null) potentialAdjustmentValues.add(track.idealY - currentY);
         totalLanes++;
         currentLane++;
         currentY += tracks[track.trackID].width;
@@ -794,7 +844,7 @@ var sequenceTubeMap = (function () {
       currentY += 25;
     });
 
-    var moveBy = Math.round(sumOfLaneChanges / totalLanes - 0.000001);
+    /*var moveBy = Math.round(sumOfLaneChanges / totalLanes - 0.000001);
     if ((moveBy !== 0) && (totalLanes > numberOfTracks)) {
       assignment.forEach(function(node) {
         if (node.name !== null) {
@@ -806,7 +856,43 @@ var sequenceTubeMap = (function () {
           tracks[track.trackID].path[track.segmentID].lane -= moveBy;
         });
       });
-    }
+    }*/
+
+    //vertical Adjustment
+    var verticalAdjustment = 0;
+    var minAdjustmentCost = Number.MAX_SAFE_INTEGER;
+    //for (var moveBy of potentialAdjustmentValues) {
+    potentialAdjustmentValues.forEach(function(moveBy) {
+      console.log(moveBy + ': ' + getVerticalAdjustmentCost(tracks, assignment, moveBy));
+      if (getVerticalAdjustmentCost(tracks, assignment, moveBy) < minAdjustmentCost) {
+        minAdjustmentCost = getVerticalAdjustmentCost(tracks, assignment, moveBy);
+        verticalAdjustment = moveBy;
+      }
+    });
+    //console.log(potentialAdjustmentValues);
+    console.log('order: ' + order + ': ' + verticalAdjustment);
+
+    assignment.forEach(function(node) {
+      if (node.name !== null) {
+        nodes[nodeMap.get(node.name)].y += verticalAdjustment;
+      }
+      node.tracks.forEach(function(track) {
+        tracks[track.trackID].path[track.segmentID].y += verticalAdjustment;
+      });
+    });
+  }
+
+  function getVerticalAdjustmentCost(tracks, assignment, moveBy) {
+    var result = 0;
+    assignment.forEach(function(node) {
+      node.tracks.forEach(function(track) {
+        if (track.idealY !== null) {
+          console.log(track.idealY, tracks[track.trackID].path[track.segmentID].y);
+          result += Math.abs(track.idealY - moveBy - tracks[track.trackID].path[track.segmentID].y);
+        }
+      });
+    });
+    return result;
   }
 
   function compareByIdealLane(a, b) {
@@ -1035,6 +1121,7 @@ var sequenceTubeMap = (function () {
           }
         }
         maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
+        minYCoordinate = Math.min(minYCoordinate, yStart);
       }
 
       //ending edges
