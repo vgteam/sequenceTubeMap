@@ -863,14 +863,14 @@ var sequenceTubeMap = (function () {
     var minAdjustmentCost = Number.MAX_SAFE_INTEGER;
     //for (var moveBy of potentialAdjustmentValues) {
     potentialAdjustmentValues.forEach(function(moveBy) {
-      console.log(moveBy + ': ' + getVerticalAdjustmentCost(tracks, assignment, moveBy));
+      //console.log(moveBy + ': ' + getVerticalAdjustmentCost(tracks, assignment, moveBy));
       if (getVerticalAdjustmentCost(tracks, assignment, moveBy) < minAdjustmentCost) {
         minAdjustmentCost = getVerticalAdjustmentCost(tracks, assignment, moveBy);
         verticalAdjustment = moveBy;
       }
     });
     //console.log(potentialAdjustmentValues);
-    console.log('order: ' + order + ': ' + verticalAdjustment);
+    //console.log('order: ' + order + ': ' + verticalAdjustment);
 
     assignment.forEach(function(node) {
       if (node.name !== null) {
@@ -887,8 +887,8 @@ var sequenceTubeMap = (function () {
     assignment.forEach(function(node) {
       node.tracks.forEach(function(track) {
         if (track.idealY !== null) {
-          console.log(track.idealY, tracks[track.trackID].path[track.segmentID].y);
-          result += Math.abs(track.idealY - moveBy - tracks[track.trackID].path[track.segmentID].y);
+          //console.log(track.idealY, tracks[track.trackID].path[track.segmentID].y);
+          result += Math.abs(track.idealY - moveBy - tracks[track.trackID].path[track.segmentID].y) * tracks[track.trackID].width;
         }
       });
     });
