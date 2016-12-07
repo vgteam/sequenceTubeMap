@@ -83,6 +83,7 @@ var sequenceTubeMap = (function () {
         }
       }
     }
+    svg = d3.select(svgID);
     createTubeMap();
   }
 
@@ -157,6 +158,7 @@ var sequenceTubeMap = (function () {
     console.log(assignment);
     //drawEdges(svgPaths);
     alignSVG(nodes, tracks);
+    defineSVGPatterns();
     drawTrackRectangles(trackRectangles);
     drawTrackCurves(trackCurves);
     drawTrackRectangles(trackVerticalRectangles);
@@ -1082,7 +1084,7 @@ var sequenceTubeMap = (function () {
         if (xEnd !== xStart) {
           //addSVGLine(svgPaths[trackID], xEnd, yStart);
           //trackRectangles.push([xStart, yStart, xEnd, yStart + track.width, trackColor]);
-          trackRectangles.push([Math.min(xStart, xEnd), yStart, Math.max(xStart, xEnd), yStart + track.width - 1, trackColor]);
+          trackRectangles.push([Math.min(xStart, xEnd), yStart, Math.max(xStart, xEnd), yStart + track.width - 1, trackColor, track.id]);
         }
 
         if (track.path[i].order - 1 === track.path[i - 1].order) { //regular forward connection
@@ -1091,7 +1093,7 @@ var sequenceTubeMap = (function () {
           //yEnd = offsetY + 22 * track.path[i].lane;
           yEnd = track.path[i].y;
           //addSVGCurve(svgPaths[trackID], xStart, yStart, xEnd, yEnd);
-          trackCurves.push([xStart, yStart, xEnd + 1, yEnd, track.width, trackColor, Math.abs(track.path[i].lane - track.path[i - 1].lane)]);
+          trackCurves.push([xStart, yStart, xEnd + 1, yEnd, track.width, trackColor, Math.abs(track.path[i].lane - track.path[i - 1].lane), track.id]);
           xStart = xEnd;
           yStart = yEnd;
         } else if (track.path[i].order + 1 === track.path[i - 1].order) { //regular backward connection
@@ -1100,7 +1102,7 @@ var sequenceTubeMap = (function () {
           //yEnd = offsetY + 22 * track.path[i].lane;
           yEnd = track.path[i].y;
           //addSVGCurve(svgPaths[trackID], xStart, yStart, xEnd, yEnd);
-          trackCurves.push([xStart + 1, yStart, xEnd, yEnd, track.width, trackColor, Math.abs(track.path[i].lane - track.path[i - 1].lane)]);
+          trackCurves.push([xStart + 1, yStart, xEnd, yEnd, track.width, trackColor, Math.abs(track.path[i].lane - track.path[i - 1].lane), track.id]);
           xStart = xEnd;
           yStart = yEnd;
         } else { //change of direction
@@ -1108,14 +1110,14 @@ var sequenceTubeMap = (function () {
             yEnd = track.path[i].y;
             //generateForwardToReverse(track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderEndX, track.width);
             //generateForwardToReverseNew(x, yStart, yEnd, trackWidth, trackColor);
-            generateForwardToReverseNew(xEnd, yStart, yEnd, track.width, trackColor);
+            generateForwardToReverseNew(xEnd, yStart, yEnd, track.width, trackColor, track.id);
             xStart = orderEndX[track.path[i].order];
             //yStart = offsetY + 22 * track.path[i].lane;
             //yEnd = track.path[i].y;
             yStart = track.path[i].y;
           } else {
             yEnd = track.path[i].y;
-            generateReverseToForwardNew(xEnd, yStart, yEnd, track.width, trackColor);
+            generateReverseToForwardNew(xEnd, yStart, yEnd, track.width, trackColor, track.id);
             //generateReverseToForward(track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderStartX, track.width);
             xStart = orderStartX[track.path[i].order];
             //yStart = offsetY + 22 * track.path[i].lane;
@@ -1134,7 +1136,7 @@ var sequenceTubeMap = (function () {
         xEnd = orderEndX[track.path[track.path.length - 1].order] + 20;
       }
       //addSVGLine(svgPaths[trackID], xEnd, yStart);
-      trackRectangles.push([xStart, yStart, xEnd, yStart + track.width - 1, trackColor]);
+      trackRectangles.push([xStart, yStart, xEnd, yStart + track.width - 1, trackColor, trackID]);
     });
   }
 
@@ -1173,52 +1175,52 @@ var sequenceTubeMap = (function () {
     extraRight[order]++;
   }
 
-  function generateForwardToReverseNew(x, yStart, yEnd, trackWidth, trackColor) {
+  function generateForwardToReverseNew(x, yStart, yEnd, trackWidth, trackColor, trackID) {
     var yTop = Math.min(yStart, yEnd) ;
     var yBottom = Math.max(yStart, yEnd);
     var radius = 7;
 
-    trackRectangles.push([x, yStart, x + 5, yStart + trackWidth - 1, trackColor]); //elongate incoming rectangle a bit to the right
-    trackVerticalRectangles.push([x + 5 + radius, yTop + trackWidth + radius - 1, x + 5 + radius + Math.min(7, trackWidth) - 1, yBottom - radius + 1, trackColor]); //vertical rectangle
-    trackRectangles.push([x, yEnd, x + 5, yEnd + trackWidth - 1, trackColor]); //elongate outgoing rectangle a bit to the right
+    trackRectangles.push([x, yStart, x + 5, yStart + trackWidth - 1, trackColor, trackID]); //elongate incoming rectangle a bit to the right
+    trackVerticalRectangles.push([x + 5 + radius, yTop + trackWidth + radius - 1, x + 5 + radius + Math.min(7, trackWidth) - 1, yBottom - radius + 1, trackColor, trackID]); //vertical rectangle
+    trackRectangles.push([x, yEnd, x + 5, yEnd + trackWidth - 1, trackColor, trackID]); //elongate outgoing rectangle a bit to the right
 
     var d = 'M ' + (x + 5) + ' ' + yBottom;
     d += ' Q ' + (x + 5 + radius) + ' ' + yBottom + ' ' + (x + 5 + radius) + ' ' + (yBottom - radius);
     d += ' H ' + (x + 5 + radius + Math.min(7, trackWidth));
     d += ' Q ' + (x + 5 + radius + Math.min(7, trackWidth)) + ' ' + (yBottom + trackWidth) + ' ' + (x + 5) + ' ' + (yBottom + trackWidth);
     d += ' Z ';
-    trackCorners.push([d, trackColor]);
+    trackCorners.push([d, trackColor, trackID]);
 
     d = 'M ' + (x + 5) + ' ' + yTop;
     d += ' Q ' + (x + 5 + radius + Math.min(7, trackWidth)) + ' ' + yTop + ' ' + (x + 5 + radius + Math.min(7, trackWidth)) + ' ' + (yTop + trackWidth + radius);
     d += ' H ' + (x + 5 + radius);
     d += ' Q ' + (x + 5 + radius) + ' ' + (yTop + trackWidth) + ' ' + (x + 5) + ' ' + (yTop + trackWidth);
     d += ' Z ';
-    trackCorners.push([d, trackColor]);
+    trackCorners.push([d, trackColor, trackID]);
   }
 
-  function generateReverseToForwardNew(x, yStart, yEnd, trackWidth, trackColor) {
+  function generateReverseToForwardNew(x, yStart, yEnd, trackWidth, trackColor, trackID) {
     var yTop = Math.min(yStart, yEnd) ;
     var yBottom = Math.max(yStart, yEnd);
     var radius = 7;
 
-    trackRectangles.push([x - 6, yStart, x, yStart + trackWidth - 1, trackColor]); //elongate incoming rectangle a bit to the left
-    trackVerticalRectangles.push([x - 5 - radius - Math.min(7, trackWidth), yTop + trackWidth + radius - 1, x - 5 - radius - 1, yBottom - radius + 1, trackColor]); //vertical rectangle
-    trackRectangles.push([x - 6, yEnd, x, yEnd + trackWidth - 1, trackColor]); //elongate outgoing rectangle a bit to the left
+    trackRectangles.push([x - 6, yStart, x, yStart + trackWidth - 1, trackColor, trackID]); //elongate incoming rectangle a bit to the left
+    trackVerticalRectangles.push([x - 5 - radius - Math.min(7, trackWidth), yTop + trackWidth + radius - 1, x - 5 - radius - 1, yBottom - radius + 1, trackColor, trackID]); //vertical rectangle
+    trackRectangles.push([x - 6, yEnd, x, yEnd + trackWidth - 1, trackColor, trackID]); //elongate outgoing rectangle a bit to the left
 
     var d = 'M ' + (x - 5) + ' ' + yBottom;
     d += ' Q ' + (x - 5 - radius) + ' ' + yBottom + ' ' + (x - 5 - radius) + ' ' + (yBottom - radius);
     d += ' H ' + (x - 5 - radius -  Math.min(7, trackWidth));
     d += ' Q ' + (x - 5 - radius - Math.min(7, trackWidth)) + ' ' + (yBottom + trackWidth) + ' ' + (x - 5) + ' ' + (yBottom + trackWidth);
     d += ' Z ';
-    trackCorners.push([d, trackColor]);
+    trackCorners.push([d, trackColor, trackID]);
 
     d = 'M ' + (x - 5) + ' ' + yTop;
     d += ' Q ' + (x - 5 - radius - Math.min(7, trackWidth)) + ' ' + yTop + ' ' + (x - 5 - radius - Math.min(7, trackWidth)) + ' ' + (yTop + trackWidth + radius);
     d += ' H ' + (x - 5 - radius);
     d += ' Q ' + (x - 5 - radius) + ' ' + (yTop + trackWidth) + ' ' + (x - 5) + ' ' + (yTop + trackWidth);
     d += ' Z ';
-    trackCorners.push([d, trackColor]);
+    trackCorners.push([d, trackColor, trackID]);
   }
 
   //calculates coordinates for second type of track reversal
@@ -1438,13 +1440,35 @@ var sequenceTubeMap = (function () {
       .style('fill', function(d) { return color(d[4]); })
       //.style('fill', 'None')
       //.style('stroke', function(d) { return color(d[4]); })
-      .style('stroke-width', '0px');
+      //.style('stroke-width', '0px');
+      .attr('trackID', function(d) {return d[5]; })
+      .attr('class', function(d) {return 'track' + d[5]; })
+      .attr('color', function(d) { return d[4]; })
+      .on('mouseover', trackMouseOver)
+      .on('mouseout', trackMouseOut)
+      .on('dblclick', trackDoubleClick);
   }
 
   function compareCurvesByLineChanges(a, b) {
     if (a[6] < b[6]) return -1;
     else if (a[6] > b[6]) return 1;
     else return 0;
+  }
+
+  function defineSVGPatterns() {
+    var pattern = svg.append("defs")
+	    .append("pattern")
+		  .attr({ id:"pattern1", width:"7", height:"7", patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"});
+    pattern.append("rect")
+  	  .attr({ x:'0', y:'0', width:"7", height:"7", fill:"#FFFFFF" });
+    pattern.append("rect")
+	    .attr({ x:'0', y:'0', width:"3", height:"3", fill:"#505050" });
+    pattern.append("rect")
+	    .attr({ x:'0', y:'4', width:"3", height:"3", fill:"#505050" });
+    pattern.append("rect")
+		  .attr({ x:'4', y:'0', width:"3", height:"3", fill:"#505050" });
+    pattern.append("rect")
+  		.attr({ x:'4', y:'4', width:"3", height:"3", fill:"#505050" });
   }
 
   function drawTrackCurves(trackCurves) {
@@ -1461,27 +1485,19 @@ var sequenceTubeMap = (function () {
       curve.push(d);
     });
 
-    var pattern = svg.append("defs")
-	    .append("pattern")
-		  .attr({ id:"pattern1", width:"7", height:"7", patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"});
-      pattern.append("rect")
-		    .attr({ x:'0', y:'0', width:"3", height:"3", fill:"#505050" });
-      pattern.append("rect")
-		    .attr({ x:'0', y:'4', width:"3", height:"3", fill:"#505050" });
-      pattern.append("rect")
-  		  .attr({ x:'4', y:'0', width:"3", height:"3", fill:"#505050" });
-      pattern.append("rect")
-    		.attr({ x:'4', y:'4', width:"3", height:"3", fill:"#505050" });
-
     svg.selectAll('trackCurves')
       .data(trackCurves)
       .enter().append('path')
-      .attr("d", function(d) { return d[7]; })
-      //.style('fill', function(d) { return color(d[5]); })
-      //.style('fill', 'url(#hash4_4)')
-      .style('fill', 'url(#pattern1)')
-      //.style('stroke', function(d) { return color(d[5]); })
-      .style('stroke-width', '0px');
+      .attr("d", function(d) { return d[8]; })
+      .style('fill', function(d) { return color(d[5]); })
+      //.style('fill', 'url(#pattern1)')
+      .attr('trackID', function(d) {return d[7]; })
+      .attr('class', function(d) {return 'track' + d[7]; })
+      .attr('color', function(d) { return d[5]; })
+      .on('mouseover', trackMouseOver)
+      .on('mouseout', trackMouseOut)
+      .on('dblclick', trackDoubleClick);
+      //.style('stroke-width', '0px');
   }
 
   function drawTrackCorners(trackCorners) {
@@ -1491,15 +1507,23 @@ var sequenceTubeMap = (function () {
       .attr("d", function(d) { return d[0]; })
       //.style('fill', 'none')
       .style('fill', function(d) { return color(d[1]); })
-      .style('stroke', function(d) { return color(d[1]); })
-      .style('stroke-width', '0px');
+      //.style('stroke', function(d) { return color(d[1]); })
+      //.style('stroke-width', '0px');
+      .attr('trackID', function(d) {return d[2]; })
+      .attr('class', function(d) {return 'track' + d[2]; })
+      .attr('color', function(d) { return d[1]; })
+      .on('mouseover', trackMouseOver)
+      .on('mouseout', trackMouseOut)
+      .on('dblclick', trackDoubleClick);
   }
 
   // Highlight track on mouseover
   function trackMouseOver() {
     /* jshint validthis: true */
     var trackID = d3.select(this).attr('trackID');
-    d3.select('.track' + trackID + 'Highlight').style('stroke-opacity', '1');
+    console.log(trackID);
+    //d3.select('.track' + trackID + 'Highlight').style('stroke-opacity', '1');
+    d3.selectAll('.track' + trackID).style('fill', 'url(#pattern1)');
   }
 
   // Highlight node on mouseover
@@ -1512,7 +1536,9 @@ var sequenceTubeMap = (function () {
   function trackMouseOut() {
     /* jshint validthis: true */
     var trackID = d3.select(this).attr('trackID');
-    d3.select('.track' + trackID + 'Highlight').style('stroke-opacity', '0');
+    //d3.select('.track' + trackID + 'Highlight').style('stroke-opacity', '0');
+    var col = d3.select(this).attr('color');
+    d3.selectAll('.track' + trackID).style('fill', color(col));
   }
 
   // Restore original node appearance on mouseout
@@ -1527,6 +1553,7 @@ var sequenceTubeMap = (function () {
     var trackID = d3.select(this).attr('trackID');
     var index = 0;
     while (inputTracks[index].id != trackID) index++;
+    console.log('moving index: ' + index);
     moveTrackToFirstPosition(index);
   }
 
