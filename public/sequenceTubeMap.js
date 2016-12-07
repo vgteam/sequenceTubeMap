@@ -30,6 +30,7 @@ var sequenceTubeMap = (function () {
   var trackRectangles = [];
   var trackCurves = [];
   var trackCorners = [];
+  var trackVerticalRectangles = []; //stored separately from horizontal rectangles. This allows drawing them in a separate step -> avoids issues with wrong overlapping
 
   var maxYCoordinate = 0;
   var minYCoordinate = 0;
@@ -112,6 +113,7 @@ var sequenceTubeMap = (function () {
     trackRectangles = [];
     trackCurves = [];
     trackCorners = [];
+    trackVerticalRectangles = [];
     assignment = [];
     extraLeft = [];
     extraRight = [];
@@ -157,6 +159,7 @@ var sequenceTubeMap = (function () {
     alignSVG(nodes, tracks);
     drawTrackRectangles(trackRectangles);
     drawTrackCurves(trackCurves);
+    drawTrackRectangles(trackVerticalRectangles);
     drawTrackCorners(trackCorners);
     drawNodes(nodes);
     if (nodeWidthOption === 0) drawLabels(nodes);
@@ -828,7 +831,7 @@ var sequenceTubeMap = (function () {
       node.tracks.sort(compareByIdealLane);
       node.tracks.forEach(function(track) {
         track.lane = currentLane;
-        if (track.trackID == prevTrack) currentY += 10;
+        if ((track.trackID == prevTrack) && (node.name === null) && (prevNameIsNull)) currentY += 10;
         tracks[track.trackID].path[track.segmentID].lane = currentLane;
         tracks[track.trackID].path[track.segmentID].y = currentY;
         sumOfLaneChanges += currentLane - track.idealLane;
@@ -1088,7 +1091,7 @@ var sequenceTubeMap = (function () {
           //yEnd = offsetY + 22 * track.path[i].lane;
           yEnd = track.path[i].y;
           //addSVGCurve(svgPaths[trackID], xStart, yStart, xEnd, yEnd);
-          trackCurves.push([xStart, yStart, xEnd + 1, yEnd, track.width, trackColor]);
+          trackCurves.push([xStart, yStart, xEnd + 1, yEnd, track.width, trackColor, Math.abs(track.path[i].lane - track.path[i - 1].lane)]);
           xStart = xEnd;
           yStart = yEnd;
         } else if (track.path[i].order + 1 === track.path[i - 1].order) { //regular backward connection
@@ -1097,7 +1100,7 @@ var sequenceTubeMap = (function () {
           //yEnd = offsetY + 22 * track.path[i].lane;
           yEnd = track.path[i].y;
           //addSVGCurve(svgPaths[trackID], xStart, yStart, xEnd, yEnd);
-          trackCurves.push([xStart + 1, yStart, xEnd, yEnd, track.width, trackColor]);
+          trackCurves.push([xStart + 1, yStart, xEnd, yEnd, track.width, trackColor, Math.abs(track.path[i].lane - track.path[i - 1].lane)]);
           xStart = xEnd;
           yStart = yEnd;
         } else { //change of direction
@@ -1176,7 +1179,7 @@ var sequenceTubeMap = (function () {
     var radius = 7;
 
     trackRectangles.push([x, yStart, x + 5, yStart + trackWidth - 1, trackColor]); //elongate incoming rectangle a bit to the right
-    trackRectangles.push([x + 5 + radius, yTop + trackWidth + radius - 1, x + 5 + radius + Math.min(7, trackWidth) - 1, yBottom - radius + 1, trackColor]); //vertical rectangle
+    trackVerticalRectangles.push([x + 5 + radius, yTop + trackWidth + radius - 1, x + 5 + radius + Math.min(7, trackWidth) - 1, yBottom - radius + 1, trackColor]); //vertical rectangle
     trackRectangles.push([x, yEnd, x + 5, yEnd + trackWidth - 1, trackColor]); //elongate outgoing rectangle a bit to the right
 
     var d = 'M ' + (x + 5) + ' ' + yBottom;
@@ -1200,7 +1203,7 @@ var sequenceTubeMap = (function () {
     var radius = 7;
 
     trackRectangles.push([x - 6, yStart, x, yStart + trackWidth - 1, trackColor]); //elongate incoming rectangle a bit to the left
-    trackRectangles.push([x - 5 - radius - Math.min(7, trackWidth), yTop + trackWidth + radius - 1, x - 5 - radius - 1, yBottom - radius + 1, trackColor]); //vertical rectangle
+    trackVerticalRectangles.push([x - 5 - radius - Math.min(7, trackWidth), yTop + trackWidth + radius - 1, x - 5 - radius - 1, yBottom - radius + 1, trackColor]); //vertical rectangle
     trackRectangles.push([x - 6, yEnd, x, yEnd + trackWidth - 1, trackColor]); //elongate outgoing rectangle a bit to the left
 
     var d = 'M ' + (x - 5) + ' ' + yBottom;
@@ -1438,7 +1441,15 @@ var sequenceTubeMap = (function () {
       .style('stroke-width', '0px');
   }
 
+  function compareCurvesByLineChanges(a, b) {
+    if (a[6] < b[6]) return -1;
+    else if (a[6] > b[6]) return 1;
+    else return 0;
+  }
+
   function drawTrackCurves(trackCurves) {
+    trackCurves.sort(compareCurvesByLineChanges);
+
     trackCurves.forEach(function(curve) {
       var xMiddle = (curve[0] + curve[2]) / 2;
       var d = 'M ' + curve[0] + ' ' + curve[1];
@@ -1450,12 +1461,25 @@ var sequenceTubeMap = (function () {
       curve.push(d);
     });
 
+    var pattern = svg.append("defs")
+	    .append("pattern")
+		  .attr({ id:"pattern1", width:"7", height:"7", patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"});
+      pattern.append("rect")
+		    .attr({ x:'0', y:'0', width:"3", height:"3", fill:"#505050" });
+      pattern.append("rect")
+		    .attr({ x:'0', y:'4', width:"3", height:"3", fill:"#505050" });
+      pattern.append("rect")
+  		  .attr({ x:'4', y:'0', width:"3", height:"3", fill:"#505050" });
+      pattern.append("rect")
+    		.attr({ x:'4', y:'4', width:"3", height:"3", fill:"#505050" });
+
     svg.selectAll('trackCurves')
       .data(trackCurves)
       .enter().append('path')
-      .attr("d", function(d) { return d[6]; })
-      //.style('fill', 'none')
-      .style('fill', function(d) { return color(d[5]); })
+      .attr("d", function(d) { return d[7]; })
+      //.style('fill', function(d) { return color(d[5]); })
+      //.style('fill', 'url(#hash4_4)')
+      .style('fill', 'url(#pattern1)')
       //.style('stroke', function(d) { return color(d[5]); })
       .style('stroke-width', '0px');
   }
