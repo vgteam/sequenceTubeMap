@@ -953,7 +953,7 @@ var sequenceTubeMap = (function () {
       } else { //The track ends with a forward node
         xEnd = orderEndX[track.path[track.path.length - 1].order] + 20;
       }
-      trackRectangles.push([xStart, yStart, xEnd, yStart + track.width - 1, trackColor, trackID]);
+      trackRectangles.push([xStart, yStart, xEnd, yStart + track.width - 1, trackColor, track.id]);
     });
   }
 
