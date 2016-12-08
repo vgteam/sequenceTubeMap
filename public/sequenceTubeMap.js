@@ -13,7 +13,6 @@ var sequenceTubeMap = (function () {
   var numberOfNodes;
   var numberOfTracks;
   var nodeMap; //maps node names to node indices
-  var svgPaths = []; //contains coordinates for the paths through the graph
   var assignment = []; //contains info about lane assignments sorted by order
   var extraLeft = []; //info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
   var extraRight = []; //info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
@@ -27,6 +26,7 @@ var sequenceTubeMap = (function () {
   // 2...scale node width with log10 of number of bases within node
   var nodeWidthOption = 0;
 
+  //Variables for storing info which can be directly translated into drawing instructions
   var trackRectangles = [];
   var trackCurves = [];
   var trackCorners = [];
@@ -35,7 +35,7 @@ var sequenceTubeMap = (function () {
   var maxYCoordinate = 0;
   var minYCoordinate = 0;
 
-  //public function to fill the svg with a visualization of the data in nodes and tracks
+  //public function to fill the svg with a visualization of the data contained in nodes and tracks variables
   function create(inputSvg, nodes, tracks, clickableNodes) {
     if (typeof(clickableNodes)==='undefined') clickableNodesFlag = false;
     else clickableNodesFlag = clickableNodes;
@@ -110,7 +110,6 @@ var sequenceTubeMap = (function () {
     var nodes = (JSON.parse(JSON.stringify(inputNodes))); //deep copy (can add stuff to copy and leave original unchanged)
     var tracks = (JSON.parse(JSON.stringify(inputTracks)));
 
-    svgPaths = [];
     trackRectangles = [];
     trackCurves = [];
     trackCorners = [];
@@ -140,23 +139,14 @@ var sequenceTubeMap = (function () {
     calculateTrackWidth(tracks);
     generateLaneAssignment(nodes, tracks);
     generateNodeXCoords(nodes, tracks);
-    //alignSVG(nodes, tracks);
-    //calculateTrackWidth(tracks);
-    generateEdgesFromPath(nodes, tracks);
     generateSVGShapesFromPath(nodes, tracks);
     removeUnusedNodes(nodes);
-    console.log('svgPaths:');
-    console.log(svgPaths);
-    //console.log(JSON.stringify(svgPaths));
     console.log('tracks:');
     console.log(tracks);
-    //console.log(JSON.stringify(tracks));
     console.log('Nodes:');
     console.log(nodes);
-    //console.log(JSON.stringify(nodes));
     console.log('Lane assignment:');
     console.log(assignment);
-    //drawEdges(svgPaths);
     alignSVG(nodes, tracks);
     defineSVGPatterns();
     drawTrackRectangles(trackRectangles);
@@ -165,7 +155,6 @@ var sequenceTubeMap = (function () {
     drawTrackCorners(trackCorners);
     drawNodes(nodes);
     if (nodeWidthOption === 0) drawLabels(nodes);
-
 
     if (DEBUG) {
       console.log('number of tracks: ' + numberOfTracks);
@@ -187,83 +176,29 @@ var sequenceTubeMap = (function () {
 
   //align visualization to the top and left within svg and resize svg to correct size
   function alignSVG(nodes, tracks) {
-    //var minLane = 9007199254740991;
-    //var maxLane = -9007199254740991;
     var maxX = -9007199254740991;
 
-    /*tracks.forEach(function (track) {
-      track.path.forEach(function (node) {
-        if (node.lane < minLane) minLane = node.lane;
-        if (node.lane > maxLane) maxLane = node.lane;
-      });
-    });*/
-
-    //offsetY = 12 - 22 * minLane;
-
     nodes.forEach(function(node) {
-      //if (node.hasOwnProperty('topLane')) {
-        //node.y = offsetY + 22 * node.topLane;
-      //}
       if (node.hasOwnProperty('x')) {
         maxX = Math.max(maxX, node.x + 20 + Math.round(stepX * (node.width - 1)));
       }
     });
 
+    //enable Pan + Zoom
     var zoom = d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
         svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
       });
-
-    //enable Pan + Zoom
-    /*svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
-        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
-      }))
-      .append("g");*/
-
-    //svg.attr('transform', 'translate(0, 50) scale(1)');
-
-    //svg = svg.call(d3.behavior.zoom().scaleExtent([0.1, 5]).on("zoom", function () {
-  //      svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
-  //    })).on('dblclick.zoom', null)
-    //  .append("g");
-
-    //svg = svg.call(zoom.translateBy, 0, 50).on('dblclick.zoom', null).append('g');
-    //svg = svg.call(zoom.translate([0, 50])).on('dblclick.zoom', null).append('g');
     svg = svg.call(zoom).on('dblclick.zoom', null).append('g');
 
+    //translate so that top of drawing is visible
     zoom.translate([0, - minYCoordinate + 15]);
     zoom.event(svg);
 
-// activate the zoom event
-// pass in the transition with duration 500ms
-//zoomListener.event(rootSvg.transition().duration(500));
-
-
-
-      /*svg.call(zoom
-      .x(x.domain([-width / 2, width / 2]))
-      .y(y.domain([-height / 2, height / 2]))
-      .event);*/
-
-    /*var zoom = d3.behavior.zoom()
-      .x(x)
-      .y(y)
-      .scaleExtent([1, 10])
-      .on("zoom", zoomed);*/
-
-    //svg.call(d3.behavior.zoom()
-      //.x(x.domain([0, Math.max(maxX, $(svgID).parent().width())]))
-      //.y(y.domain([-50, maxYCoordinate]))
-      //.event);
-
+    //resize svg depending on drawing size
     //this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
     var svg2 = d3.select(svgID);
-    //svg2.attr('height', 24 + 22 * (maxLane - minLane));
-    //svg2.attr('height', 500);
-    //svg2.attr('height', maxYCoordinate + 20);
     svg2.attr('height', maxYCoordinate - minYCoordinate + 30);
-
     svg2.attr('width', Math.max(maxX, $(svgID).parent().width()));
-
   }
 
   //map node names to node indices
@@ -770,12 +705,9 @@ var sequenceTubeMap = (function () {
     }
   }
 
-  //assigns the optimal lanes for a single horizontal position (=order)
-  //first an ideal lane is calculated for each track (which is ~ the lane of its predecessor)
-  //then the nodes are sorted by their average ideal lane
-  //and the whole construct is then moved up or down if necessary
-  function generateSingleLaneAssignment(assignment, order, nodes, tracks) {
-    var i, j, index, currentLane;
+  //looks at assignment and sets idealY and idealLane by looking at where the tracks come from
+  function getIdealLanesAndCoords(assignment, order, tracks) {
+    var index;
 
     assignment.forEach(function(node) {
       node.idealLane = 0;
@@ -806,20 +738,29 @@ var sequenceTubeMap = (function () {
       });
       node.idealLane /= node.tracks.length;
     });
+  }
 
-    currentLane = 0;
+  //assigns the optimal lanes for a single horizontal position (=order)
+  //first an ideal lane is calculated for each track (which is ~ the lane of its predecessor)
+  //then the nodes are sorted by their average ideal lane
+  //and the whole construct is then moved up or down if necessary
+  function generateSingleLaneAssignment(assignment, order, nodes, tracks) {
+    var i, j;
+    var currentLane = 0;
     var sumOfLaneChanges = 0;
     var potentialAdjustmentValues = new Set();
     var totalLanes = 0;
     var currentY = offsetY + 20;
     var prevNameIsNull = false;
     var prevTrack = -1;
+
+    getIdealLanesAndCoords(assignment, order, tracks);
     assignment.sort(compareByIdealLane);
+
     assignment.forEach(function(node) {
       if (node.name !== null) {
         nodes[nodeMap.get(node.name)].topLane = currentLane;
         if (prevNameIsNull) currentY -= 10;
-        //nodes[nodeMap.get(node.name)].y = offsetY + 22 * currentLane;
         nodes[nodeMap.get(node.name)].y = currentY;
         nodes[nodeMap.get(node.name)].contentHeight = 0;
 
@@ -849,33 +790,20 @@ var sequenceTubeMap = (function () {
       currentY += 25;
     });
 
-    /*var moveBy = Math.round(sumOfLaneChanges / totalLanes - 0.000001);
-    if ((moveBy !== 0) && (totalLanes > numberOfTracks)) {
-      assignment.forEach(function(node) {
-        if (node.name !== null) {
-          nodes[nodeMap.get(node.name)].topLane -= moveBy;
-          nodes[nodeMap.get(node.name)].y -= 22 * moveBy;
-        }
-        node.tracks.forEach(function(track) {
-          track.lane -= moveBy;
-          tracks[track.trackID].path[track.segmentID].lane -= moveBy;
-        });
-      });
-    }*/
+    adjustVertically(assignment, potentialAdjustmentValues, tracks, nodes);
+  }
 
-    //vertical Adjustment
+  //moves all tracks at a single horizontal location (=order) up/down to minimize lane changes
+  function adjustVertically(assignment, potentialAdjustmentValues, tracks, nodes) {
     var verticalAdjustment = 0;
     var minAdjustmentCost = Number.MAX_SAFE_INTEGER;
-    //for (var moveBy of potentialAdjustmentValues) {
+
     potentialAdjustmentValues.forEach(function(moveBy) {
-      //console.log(moveBy + ': ' + getVerticalAdjustmentCost(tracks, assignment, moveBy));
       if (getVerticalAdjustmentCost(tracks, assignment, moveBy) < minAdjustmentCost) {
         minAdjustmentCost = getVerticalAdjustmentCost(tracks, assignment, moveBy);
         verticalAdjustment = moveBy;
       }
     });
-    //console.log(potentialAdjustmentValues);
-    //console.log('order: ' + order + ': ' + verticalAdjustment);
 
     assignment.forEach(function(node) {
       if (node.name !== null) {
@@ -887,12 +815,12 @@ var sequenceTubeMap = (function () {
     });
   }
 
+  //calculates cost of vertical adjustment as vertical distance * width of track
   function getVerticalAdjustmentCost(tracks, assignment, moveBy) {
     var result = 0;
     assignment.forEach(function(node) {
       node.tracks.forEach(function(track) {
         if (track.idealY !== null) {
-          //console.log(track.idealY, tracks[track.trackID].path[track.segmentID].y);
           result += Math.abs(track.idealY - moveBy - tracks[track.trackID].path[track.segmentID].y) * tracks[track.trackID].width;
         }
       });
@@ -940,93 +868,7 @@ var sequenceTubeMap = (function () {
   }
 
   //transforms the info in the tracks' path attribute into actual coordinates
-  //and saves them in 'svgPaths'
-  function generateEdgesFromPath(nodes, tracks) {
-    var i;
-    var xStart;
-    var xEnd;
-    var yStart;
-    var yEnd;
-
-    for (i = 0; i <= maxOrder; i++) {
-      extraLeft.push(0);
-      extraRight.push(0);
-    }
-
-    //generate x coords where each order starts and ends
-    var orderStartX = [];
-    var orderEndX = [];
-    nodes.forEach(function(node) {
-      if (node.hasOwnProperty('order')) {
-        orderStartX[node.order] = node.x;
-        if (orderEndX[node.order] === undefined) orderEndX[node.order] = node.x + Math.round(stepX * (node.width - 1));
-        else orderEndX[node.order] = Math.max(orderEndX[node.order], node.x + Math.round(stepX * (node.width - 1)));
-      }
-    });
-
-    tracks.forEach(function(track, trackID) {
-
-      //start of path
-      yStart = offsetY + 22 * track.path[0].lane;
-      if (track.sequence[0].charAt(0) === '-') { //The track starts with an inversed node
-        xStart = orderEndX[track.path[0].order] + 20;
-      } else { //The track starts with a forward node
-        xStart = orderStartX[track.path[0].order] - 20;
-      }
-      svgPaths.push({d: 'M ' + xStart + ' ' + yStart, color: (track.id % 10), width: track.width, id: track.id});
-
-      //middle of path
-      for (i = 1; i < track.path.length; i++) {
-
-        if  (track.path[i].lane === track.path[i - 1].lane) continue;
-        if (track.path[i - 1].isForward) {
-          xEnd = orderEndX[track.path[i - 1].order];
-        } else {
-          xEnd = orderStartX[track.path[i - 1].order];
-        }
-        if (xEnd !== xStart) {
-          addSVGLine(svgPaths[trackID], xEnd, yStart);
-        }
-
-        if (track.path[i].order - 1 === track.path[i - 1].order) { //regular forward connection
-          xStart = xEnd;
-          xEnd = orderStartX[track.path[i].order];
-          yEnd = offsetY + 22 * track.path[i].lane;
-          addSVGCurve(svgPaths[trackID], xStart, yStart, xEnd, yEnd);
-          xStart = xEnd;
-          yStart = yEnd;
-        } else if (track.path[i].order + 1 === track.path[i - 1].order) { //regular backward connection
-          xStart = xEnd;
-          xEnd = orderEndX[track.path[i].order];
-          yEnd = offsetY + 22 * track.path[i].lane;
-          addSVGCurve(svgPaths[trackID], xStart, yStart, xEnd, yEnd);
-          xStart = xEnd;
-          yStart = yEnd;
-        } else { //change of direction
-          if (track.path[i - 1].isForward) {
-            generateForwardToReverse(track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderEndX, track.width);
-            xStart = orderEndX[track.path[i].order];
-            yStart = offsetY + 22 * track.path[i].lane;
-          } else {
-            generateReverseToForward(track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderStartX, track.width);
-            xStart = orderStartX[track.path[i].order];
-            yStart = offsetY + 22 * track.path[i].lane;
-          }
-        }
-      }
-
-      //ending edges
-      if (!track.path[track.path.length - 1].isForward) { //The track ends with an inversed node
-        xEnd = orderStartX[track.path[track.path.length - 1].order] - 20;
-      } else { //The track ends with a forward node
-        xEnd = orderEndX[track.path[track.path.length - 1].order] + 20;
-      }
-      addSVGLine(svgPaths[trackID], xEnd, yStart);
-    });
-  }
-
-  //transforms the info in the tracks' path attribute into actual coordinates
-  //and saves them in 'XXX'
+  //and saves them in trackRectangles and trackCurves
   function generateSVGShapesFromPath(nodes, tracks) {
     var i;
     var xStart;
@@ -1050,31 +892,20 @@ var sequenceTubeMap = (function () {
       }
     });
 
-    //DEBUG: calculate dummy y-coordinates
-    /*tracks.forEach(function(track) {
-      track.path.forEach(function(segment) {
-        segment.y = offsetY + 22 * segment.lane - track.width / 2;
-      });
-    });*/
-
     tracks.forEach(function(track, trackID) {
-
       var trackColor = track.id % 10;
 
       //start of path
-      //yStart = offsetY + 22 * track.path[0].lane;
       yStart = track.path[0].y;
       if (track.sequence[0].charAt(0) === '-') { //The track starts with an inversed node
         xStart = orderEndX[track.path[0].order] + 20;
       } else { //The track starts with a forward node
         xStart = orderStartX[track.path[0].order] - 20;
       }
-      //svgPaths.push({d: 'M ' + xStart + ' ' + yStart, color: (track.id % 10), width: track.width, id: track.id});
 
       //middle of path
       for (i = 1; i < track.path.length; i++) {
 
-        //if  (track.path[i].lane === track.path[i - 1].lane) continue;
         if  (track.path[i].y === track.path[i - 1].y) continue;
         if (track.path[i - 1].isForward) {
           xEnd = orderEndX[track.path[i - 1].order];
@@ -1082,46 +913,33 @@ var sequenceTubeMap = (function () {
           xEnd = orderStartX[track.path[i - 1].order];
         }
         if (xEnd !== xStart) {
-          //addSVGLine(svgPaths[trackID], xEnd, yStart);
-          //trackRectangles.push([xStart, yStart, xEnd, yStart + track.width, trackColor]);
           trackRectangles.push([Math.min(xStart, xEnd), yStart, Math.max(xStart, xEnd), yStart + track.width - 1, trackColor, track.id]);
         }
 
         if (track.path[i].order - 1 === track.path[i - 1].order) { //regular forward connection
           xStart = xEnd;
           xEnd = orderStartX[track.path[i].order];
-          //yEnd = offsetY + 22 * track.path[i].lane;
           yEnd = track.path[i].y;
-          //addSVGCurve(svgPaths[trackID], xStart, yStart, xEnd, yEnd);
           trackCurves.push([xStart, yStart, xEnd + 1, yEnd, track.width, trackColor, Math.abs(track.path[i].lane - track.path[i - 1].lane), track.id]);
           xStart = xEnd;
           yStart = yEnd;
         } else if (track.path[i].order + 1 === track.path[i - 1].order) { //regular backward connection
           xStart = xEnd;
           xEnd = orderEndX[track.path[i].order];
-          //yEnd = offsetY + 22 * track.path[i].lane;
           yEnd = track.path[i].y;
-          //addSVGCurve(svgPaths[trackID], xStart, yStart, xEnd, yEnd);
           trackCurves.push([xStart + 1, yStart, xEnd, yEnd, track.width, trackColor, Math.abs(track.path[i].lane - track.path[i - 1].lane), track.id]);
           xStart = xEnd;
           yStart = yEnd;
         } else { //change of direction
           if (track.path[i - 1].isForward) {
             yEnd = track.path[i].y;
-            //generateForwardToReverse(track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderEndX, track.width);
-            //generateForwardToReverseNew(x, yStart, yEnd, trackWidth, trackColor);
-            generateForwardToReverseNew(xEnd, yStart, yEnd, track.width, trackColor, track.id);
+            generateForwardToReverse(xEnd, yStart, yEnd, track.width, trackColor, track.id);
             xStart = orderEndX[track.path[i].order];
-            //yStart = offsetY + 22 * track.path[i].lane;
-            //yEnd = track.path[i].y;
             yStart = track.path[i].y;
           } else {
             yEnd = track.path[i].y;
-            generateReverseToForwardNew(xEnd, yStart, yEnd, track.width, trackColor, track.id);
-            //generateReverseToForward(track.path[i].order, track.path[i - 1].lane, track.path[i].lane, trackID, orderStartX, track.width);
+            generateReverseToForward(xEnd, yStart, yEnd, track.width, trackColor, track.id);
             xStart = orderStartX[track.path[i].order];
-            //yStart = offsetY + 22 * track.path[i].lane;
-
             yStart = track.path[i].y;
           }
         }
@@ -1135,7 +953,6 @@ var sequenceTubeMap = (function () {
       } else { //The track ends with a forward node
         xEnd = orderEndX[track.path[track.path.length - 1].order] + 20;
       }
-      //addSVGLine(svgPaths[trackID], xEnd, yStart);
       trackRectangles.push([xStart, yStart, xEnd, yStart + track.width - 1, trackColor, trackID]);
     });
   }
@@ -1150,7 +967,7 @@ var sequenceTubeMap = (function () {
   }
 
   //calculates coordinates for first type of track reversal
-  function generateForwardToReverse(order, lane1, lane2, trackID, orderEndX, width) {
+  /*function generateForwardToReverseOLD(order, lane1, lane2, trackID, orderEndX, width) {
     var x;
     var y;
     var y2;
@@ -1173,9 +990,9 @@ var sequenceTubeMap = (function () {
 
     addSVGLine(svgPaths[trackID], x, y2 - 10);
     extraRight[order]++;
-  }
+  }*/
 
-  function generateForwardToReverseNew(x, yStart, yEnd, trackWidth, trackColor, trackID) {
+  function generateForwardToReverse(x, yStart, yEnd, trackWidth, trackColor, trackID) {
     var yTop = Math.min(yStart, yEnd) ;
     var yBottom = Math.max(yStart, yEnd);
     var radius = 7;
@@ -1199,7 +1016,7 @@ var sequenceTubeMap = (function () {
     trackCorners.push([d, trackColor, trackID]);
   }
 
-  function generateReverseToForwardNew(x, yStart, yEnd, trackWidth, trackColor, trackID) {
+  function generateReverseToForward(x, yStart, yEnd, trackWidth, trackColor, trackID) {
     var yTop = Math.min(yStart, yEnd) ;
     var yBottom = Math.max(yStart, yEnd);
     var radius = 7;
@@ -1208,6 +1025,7 @@ var sequenceTubeMap = (function () {
     trackVerticalRectangles.push([x - 5 - radius - Math.min(7, trackWidth), yTop + trackWidth + radius - 1, x - 5 - radius - 1, yBottom - radius + 1, trackColor, trackID]); //vertical rectangle
     trackRectangles.push([x - 6, yEnd, x, yEnd + trackWidth - 1, trackColor, trackID]); //elongate outgoing rectangle a bit to the left
 
+    //Path for bottom 90 degree bend
     var d = 'M ' + (x - 5) + ' ' + yBottom;
     d += ' Q ' + (x - 5 - radius) + ' ' + yBottom + ' ' + (x - 5 - radius) + ' ' + (yBottom - radius);
     d += ' H ' + (x - 5 - radius -  Math.min(7, trackWidth));
@@ -1215,6 +1033,7 @@ var sequenceTubeMap = (function () {
     d += ' Z ';
     trackCorners.push([d, trackColor, trackID]);
 
+    //Path for top 90 degree bend
     d = 'M ' + (x - 5) + ' ' + yTop;
     d += ' Q ' + (x - 5 - radius - Math.min(7, trackWidth)) + ' ' + yTop + ' ' + (x - 5 - radius - Math.min(7, trackWidth)) + ' ' + (yTop + trackWidth + radius);
     d += ' H ' + (x - 5 - radius);
@@ -1224,7 +1043,7 @@ var sequenceTubeMap = (function () {
   }
 
   //calculates coordinates for second type of track reversal
-  function generateReverseToForward(order, lane1, lane2, trackID, orderStartX, width) {
+  /*function generateReverseToForwardOLD(order, lane1, lane2, trackID, orderStartX, width) {
     var x;
     var y;
     var y2;
@@ -1247,74 +1066,7 @@ var sequenceTubeMap = (function () {
 
     addSVGLine(svgPaths[trackID], x + 35 + 10 * extraLeft[order], y2 - 10);
     extraLeft[order]++;
-  }
-
-  //draws nodes by building svg-path for border and filling it with transparent white
-  function drawNodesOLD(nodes) {
-    var x;
-    var y;
-
-    nodes.forEach(function(node, index) {
-      //top left arc
-      node.d = 'M ' + (node.x - 9) + ' ' + node.y + ' Q ' + (node.x - 9) + ' ' + (node.y - 9) + ' ' + node.x + ' ' + (node.y - 9);
-      x = node.x;
-      y = node.y - 9;
-
-      //top straight
-      if (node.width > 1) {
-        x += Math.round((node.width - 1) * stepX);
-        node.d += ' L ' + x + ' ' + y;
-      }
-
-      //top right arc
-      node.d += ' Q ' + (x + 9) + ' ' + y + ' ' + (x + 9) + ' ' + (y + 9);
-      x += 9;
-      y += 9;
-
-      //right straight
-      if (node.degree > 1) {
-        y += (node.degree - 1) * 22;
-        node.d += ' L ' + x + ' ' + y;
-      }
-
-      //bottom right arc
-      node.d += ' Q ' + x + ' ' + (y + 9) + ' ' + (x - 9) + ' ' + (y + 9);
-      x -= 9;
-      y += 9;
-
-      //bottom straight
-      if (node.width > 1) {
-        x -= Math.round((node.width - 1) * stepX);
-        node.d += ' L ' + x + ' ' + y;
-      }
-
-      //bottom left arc
-      node.d += ' Q ' + (x - 9) + ' ' + y + ' ' + (x - 9) + ' ' + (y - 9);
-      x -= 9;
-      y -= 9;
-
-      //left straight
-      if (node.degree > 1) {
-        y -= (node.degree - 1) * 22;
-        node.d += ' L ' + x + ' ' + y;
-      }
-
-    });
-
-    svg.selectAll('.node')
-      .data(nodes)
-      .enter()
-      .append('path')
-      .attr('id', function(d) {return d.name; })
-      .attr('d', function(d) { return d.d; })
-      .on('mouseover', nodeMouseOver)
-      .on('mouseout', nodeMouseOut)
-      .on('dblclick', nodeDoubleClick)
-      .style('fill', '#fff')
-      .style('fill-opacity', '0.8')
-      .style('stroke', 'black')
-      .style('stroke-width', '2px');
-  }
+  }*/
 
   //draws nodes by building svg-path for border and filling it with transparent white
   function drawNodes(nodes) {
@@ -1403,32 +1155,6 @@ var sequenceTubeMap = (function () {
     }
   }
 
-  //function drawEdges(edges, co) {
-  function drawEdges(svgPaths) {
-    svg.selectAll('highlights')
-      .data(svgPaths)
-  	  .enter().append('path')
-      .attr('class', function(d) {return 'track' + d.id + 'Highlight'; })
-  	  .attr('d', function(d) { return d.d; })
-      .style('fill', 'none')
-      .style('stroke', 'black')
-      .style('stroke-opacity', '0')
-      .style('stroke-width', function(d) { return (d.width + 4) + 'px'; });
-
-    svg.selectAll('tracks')
-      .data(svgPaths)
-  	  .enter().append('path')
-      .attr('class', function(d) {return 'track' + d.id; })
-  	  .attr('d', function(d) { return d.d; })
-      .attr('trackID', function(d) {return d.id; })
-      .on('mouseover', trackMouseOver)
-      .on('mouseout', trackMouseOut)
-      .on('dblclick', trackDoubleClick)
-      .style('fill', 'none')
-      .style('stroke', function(d) { return color(d.color); })
-      .style('stroke-width', function(d) { return d.width + 'px'; });
-  }
-
   function drawTrackRectangles(trackRectangles) {
     svg.selectAll('trackRectangles')
       .data(trackRectangles)
@@ -1438,9 +1164,6 @@ var sequenceTubeMap = (function () {
       .attr("width", function(d) { return d[2] - d[0] + 1; })
       .attr("height", function(d) { return d[3] - d[1] + 1; })
       .style('fill', function(d) { return color(d[4]); })
-      //.style('fill', 'None')
-      //.style('stroke', function(d) { return color(d[4]); })
-      //.style('stroke-width', '0px');
       .attr('trackID', function(d) {return d[5]; })
       .attr('class', function(d) {return 'track' + d[5]; })
       .attr('color', function(d) { return d[4]; })
@@ -1481,7 +1204,6 @@ var sequenceTubeMap = (function () {
       d += ' V ' + (curve[3] + curve[4]);
       d += ' C ' + xMiddle + ' ' + (curve[3] + curve[4]) + ' ' + xMiddle + ' ' + (curve[1] + curve[4]) + ' ' + curve[0] + ' ' + (curve[1] + curve[4]);
       d += ' Z';
-      //console.log(d);
       curve.push(d);
     });
 
@@ -1490,14 +1212,12 @@ var sequenceTubeMap = (function () {
       .enter().append('path')
       .attr("d", function(d) { return d[8]; })
       .style('fill', function(d) { return color(d[5]); })
-      //.style('fill', 'url(#pattern1)')
       .attr('trackID', function(d) {return d[7]; })
       .attr('class', function(d) {return 'track' + d[7]; })
       .attr('color', function(d) { return d[5]; })
       .on('mouseover', trackMouseOver)
       .on('mouseout', trackMouseOut)
       .on('dblclick', trackDoubleClick);
-      //.style('stroke-width', '0px');
   }
 
   function drawTrackCorners(trackCorners) {
@@ -1505,10 +1225,7 @@ var sequenceTubeMap = (function () {
       .data(trackCorners)
       .enter().append('path')
       .attr("d", function(d) { return d[0]; })
-      //.style('fill', 'none')
       .style('fill', function(d) { return color(d[1]); })
-      //.style('stroke', function(d) { return color(d[1]); })
-      //.style('stroke-width', '0px');
       .attr('trackID', function(d) {return d[2]; })
       .attr('class', function(d) {return 'track' + d[2]; })
       .attr('color', function(d) { return d[1]; })
@@ -1521,8 +1238,6 @@ var sequenceTubeMap = (function () {
   function trackMouseOver() {
     /* jshint validthis: true */
     var trackID = d3.select(this).attr('trackID');
-    console.log(trackID);
-    //d3.select('.track' + trackID + 'Highlight').style('stroke-opacity', '1');
     d3.selectAll('.track' + trackID).style('fill', 'url(#pattern1)');
   }
 
@@ -1536,7 +1251,6 @@ var sequenceTubeMap = (function () {
   function trackMouseOut() {
     /* jshint validthis: true */
     var trackID = d3.select(this).attr('trackID');
-    //d3.select('.track' + trackID + 'Highlight').style('stroke-opacity', '0');
     var col = d3.select(this).attr('color');
     d3.selectAll('.track' + trackID).style('fill', color(col));
   }

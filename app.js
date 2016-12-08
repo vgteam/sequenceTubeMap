@@ -13,7 +13,6 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 }));
 
 // Whitelist the following IPs
-//var ips = ['127.0.0.1', '::1', '169.233.209.206', '::ffff:169.233.209.206'];
 var ips = ['127.0.0.1', '::1',
   ['169.233.207.1', '169.233.210.1'],
   ['::ffff:169.233.207.1', '::ffff:169.233.251.1'],
