@@ -6,6 +6,7 @@ var sequenceTubeMap = (function () {
   var DEBUG = false;
   var offsetY = 0;
   var color = d3.scale.category10().domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  var numberOfColors = 10;
   var svgID; //the (html-tag) ID of the svg
   var svg; //the svg
   var inputNodes = [];
@@ -100,7 +101,10 @@ var sequenceTubeMap = (function () {
     if ((value === 0) || (value === 1) || (value ===2)) {
       if (nodeWidthOption !== value) {
         nodeWidthOption = value;
-        if (svg !== undefined) createTubeMap();
+        if (svg !== undefined) {
+          svg = d3.select(svgID);
+          createTubeMap();
+        }
       }
     }
   }
@@ -151,8 +155,10 @@ var sequenceTubeMap = (function () {
     defineSVGPatterns();
     drawTrackRectangles(trackRectangles);
     drawTrackCurves(trackCurves);
-    drawTrackRectangles(trackVerticalRectangles);
-    drawTrackCorners(trackCorners);
+    //drawTrackRectangles(trackVerticalRectangles);
+    drawReversalsByColor(trackCorners, trackVerticalRectangles);
+    //drawTrackCorners(trackCorners);
+    //drawTrackRectangles(trackVerticalRectangles);
     drawNodes(nodes);
     if (nodeWidthOption === 0) drawLabels(nodes);
 
@@ -893,7 +899,7 @@ var sequenceTubeMap = (function () {
     });
 
     tracks.forEach(function(track, trackID) {
-      var trackColor = track.id % 10;
+      var trackColor = track.id % numberOfColors;
 
       //start of path
       yStart = track.path[0].y;
@@ -933,12 +939,12 @@ var sequenceTubeMap = (function () {
         } else { //change of direction
           if (track.path[i - 1].isForward) {
             yEnd = track.path[i].y;
-            generateForwardToReverse(xEnd, yStart, yEnd, track.width, trackColor, track.id);
+            generateForwardToReverse(xEnd, yStart, yEnd, track.width, trackColor, track.id, track.path[i].order);
             xStart = orderEndX[track.path[i].order];
             yStart = track.path[i].y;
           } else {
             yEnd = track.path[i].y;
-            generateReverseToForward(xEnd, yStart, yEnd, track.width, trackColor, track.id);
+            generateReverseToForward(xEnd, yStart, yEnd, track.width, trackColor, track.id, track.path[i].order);
             xStart = orderStartX[track.path[i].order];
             yStart = track.path[i].y;
           }
@@ -966,40 +972,15 @@ var sequenceTubeMap = (function () {
     svgPath.d += ' C ' + xMiddle + ' ' + yStart + ' ' + xMiddle + ' ' + yEnd + ' ' + xEnd + ' ' + yEnd;
   }
 
-  //calculates coordinates for first type of track reversal
-  /*function generateForwardToReverseOLD(order, lane1, lane2, trackID, orderEndX, width) {
-    var x;
-    var y;
-    var y2;
-
-    x = orderEndX[order] + 5 + 10 * extraRight[order];
-    y = offsetY + 22 * lane1 + 10;
-    y2 = offsetY + 22 * lane2 + 10;
-
-    addSVGLine(svgPaths[trackID], x, y - 10);
-
-    if (lane2 > lane1) {
-      svgPaths[trackID].d = svgPaths[trackID].d + ' Q ' + (x + 10) + ' ' + (y - 10) + ' ' + (x + 10) + ' ' + y;
-      addSVGLine(svgPaths[trackID], x + 10, y2 - 20);
-      svgPaths[trackID].d = svgPaths[trackID].d + ' Q ' + (x + 10) + ' ' + (y2 - 10) + ' ' + x + ' ' + (y2 - 10);
-    } else {
-      svgPaths[trackID].d = svgPaths[trackID].d + ' Q ' + (x + 10) + ' ' + (y - 10) + ' ' + (x + 10) + ' ' + (y - 20);
-      addSVGLine(svgPaths[trackID], x + 10, y2);
-      svgPaths[trackID].d = svgPaths[trackID].d + ' Q ' + (x + 10) + ' ' + (y2 - 10) + ' ' + x + ' ' + (y2 - 10);
-    }
-
-    addSVGLine(svgPaths[trackID], x, y2 - 10);
-    extraRight[order]++;
-  }*/
-
-  function generateForwardToReverse(x, yStart, yEnd, trackWidth, trackColor, trackID) {
+  function generateForwardToReverse(x, yStart, yEnd, trackWidth, trackColor, trackID, order) {
+    x += 10 * extraRight[order];
     var yTop = Math.min(yStart, yEnd) ;
     var yBottom = Math.max(yStart, yEnd);
     var radius = 7;
 
-    trackRectangles.push([x, yStart, x + 5, yStart + trackWidth - 1, trackColor, trackID]); //elongate incoming rectangle a bit to the right
+    trackVerticalRectangles.push([x - 10 * extraRight[order], yStart, x + 5, yStart + trackWidth - 1, trackColor, trackID]); //elongate incoming rectangle a bit to the right
     trackVerticalRectangles.push([x + 5 + radius, yTop + trackWidth + radius - 1, x + 5 + radius + Math.min(7, trackWidth) - 1, yBottom - radius + 1, trackColor, trackID]); //vertical rectangle
-    trackRectangles.push([x, yEnd, x + 5, yEnd + trackWidth - 1, trackColor, trackID]); //elongate outgoing rectangle a bit to the right
+    trackVerticalRectangles.push([x - 10 * extraRight[order], yEnd, x + 5, yEnd + trackWidth - 1, trackColor, trackID]); //elongate outgoing rectangle a bit to the right
 
     var d = 'M ' + (x + 5) + ' ' + yBottom;
     d += ' Q ' + (x + 5 + radius) + ' ' + yBottom + ' ' + (x + 5 + radius) + ' ' + (yBottom - radius);
@@ -1014,16 +995,18 @@ var sequenceTubeMap = (function () {
     d += ' Q ' + (x + 5 + radius) + ' ' + (yTop + trackWidth) + ' ' + (x + 5) + ' ' + (yTop + trackWidth);
     d += ' Z ';
     trackCorners.push([d, trackColor, trackID]);
+    extraRight[order]++;
   }
 
-  function generateReverseToForward(x, yStart, yEnd, trackWidth, trackColor, trackID) {
+  function generateReverseToForward(x, yStart, yEnd, trackWidth, trackColor, trackID, order) {
     var yTop = Math.min(yStart, yEnd) ;
     var yBottom = Math.max(yStart, yEnd);
     var radius = 7;
+    x -= 10 * extraLeft[order];
 
-    trackRectangles.push([x - 6, yStart, x, yStart + trackWidth - 1, trackColor, trackID]); //elongate incoming rectangle a bit to the left
+    trackVerticalRectangles.push([x - 6, yStart, x + 10 * extraLeft[order], yStart + trackWidth - 1, trackColor, trackID]); //elongate incoming rectangle a bit to the left
     trackVerticalRectangles.push([x - 5 - radius - Math.min(7, trackWidth), yTop + trackWidth + radius - 1, x - 5 - radius - 1, yBottom - radius + 1, trackColor, trackID]); //vertical rectangle
-    trackRectangles.push([x - 6, yEnd, x, yEnd + trackWidth - 1, trackColor, trackID]); //elongate outgoing rectangle a bit to the left
+    trackVerticalRectangles.push([x - 6, yEnd, x + 10 * extraLeft[order], yEnd + trackWidth - 1, trackColor, trackID]); //elongate outgoing rectangle a bit to the left
 
     //Path for bottom 90 degree bend
     var d = 'M ' + (x - 5) + ' ' + yBottom;
@@ -1040,33 +1023,32 @@ var sequenceTubeMap = (function () {
     d += ' Q ' + (x - 5 - radius) + ' ' + (yTop + trackWidth) + ' ' + (x - 5) + ' ' + (yTop + trackWidth);
     d += ' Z ';
     trackCorners.push([d, trackColor, trackID]);
+    extraLeft[order]++;
   }
 
-  //calculates coordinates for second type of track reversal
-  /*function generateReverseToForwardOLD(order, lane1, lane2, trackID, orderStartX, width) {
-    var x;
-    var y;
-    var y2;
+  //to avoid problems with wrong overlapping of tracks, draw them in order of their color
+  function drawReversalsByColor(corners, rectangles) {
+    var color;
 
-    y = offsetY + 22 * lane1 + 10;
-    y2 = offsetY + 22 * lane2 + 10;
-    x = orderStartX[order] - 35 - 10 * extraLeft[order];
-
-    addSVGLine(svgPaths[trackID], x + 30, y - 10);
-
-    if (lane2 > lane1) {
-      svgPaths[trackID].d = svgPaths[trackID].d + ' Q ' + (x + 20) + ' ' + (y - 10) + ' ' + (x + 20) + ' ' + y;
-      addSVGLine(svgPaths[trackID], x + 20, y2 - 20);
-      svgPaths[trackID].d = svgPaths[trackID].d + ' Q ' + (x + 20) + ' ' + (y2 - 10) + ' ' + (x + 30) + ' ' + (y2 - 10);
-    } else {
-      svgPaths[trackID].d = svgPaths[trackID].d + ' Q ' + (x + 20) + ' ' + (y - 10) + ' ' + (x + 20) + ' ' + (y - 20);
-      addSVGLine(svgPaths[trackID], x + 20, y2);
-      svgPaths[trackID].d = svgPaths[trackID].d + ' Q ' + (x + 20) + ' ' + (y2 - 10) + ' ' + (x + 30) + ' ' + (y2 - 10);
+    for (color = 0; color < numberOfColors; color++) {
+      drawTrackRectangles(rectangles.filter(filterRectByColor(color)));
+      drawTrackCorners(corners.filter(filterCornerByColor(color)));
     }
+  }
 
-    addSVGLine(svgPaths[trackID], x + 35 + 10 * extraLeft[order], y2 - 10);
-    extraLeft[order]++;
-  }*/
+  function filterRectByColor(color) {
+    //console.log('c ' + color);
+    return function(item) {
+      return item[4] === color;
+    };
+  }
+
+  function filterCornerByColor(color) {
+    //console.log('c ' + color);
+    return function(item) {
+      return item[1] === color;
+    };
+  }
 
   //draws nodes by building svg-path for border and filling it with transparent white
   function drawNodes(nodes) {
