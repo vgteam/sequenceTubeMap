@@ -92,6 +92,7 @@ var sequenceTubeMap = (function () {
   function setMergeNodesFlag(value) {
     if (mergeNodesFlag !== value) {
       mergeNodesFlag = value;
+      svg = d3.select(svgID);
       createTubeMap();
     }
   }
