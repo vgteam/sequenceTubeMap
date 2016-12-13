@@ -19,7 +19,6 @@ var sequenceTubeMap = (function () {
   var extraRight = []; //info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
   var maxOrder; //horizontal order of the rightmost node
   var mergeNodesFlag = true;
-  var stepX = 8.401; //node width in pixels increases by this amount per base; actual value chosen empirically to match node label's text width
   var clickableNodesFlag = false;
 
   // 0...scale node width linear with number of bases within node
@@ -85,7 +84,6 @@ var sequenceTubeMap = (function () {
         }
       }
     }
-    //svg = d3.select(svgID);
     createTubeMap();
   }
 
@@ -99,7 +97,6 @@ var sequenceTubeMap = (function () {
         inputTracks[i].hidden = true;
       }
     }
-    //svg = d3.select(svgID);
     createTubeMap();
   }
 
@@ -180,13 +177,9 @@ var sequenceTubeMap = (function () {
     defineSVGPatterns();
     drawTrackRectangles(trackRectangles);
     drawTrackCurves(trackCurves);
-    //drawTrackRectangles(trackVerticalRectangles);
     drawReversalsByColor(trackCorners, trackVerticalRectangles);
-    //drawTrackCorners(trackCorners);
-    //drawTrackRectangles(trackVerticalRectangles);
     drawNodes(nodes);
     if (nodeWidthOption === 0) drawLabels(nodes);
-    //drawLegend(tracks);
 
     if (DEBUG) {
       console.log('number of tracks: ' + numberOfTracks);
@@ -214,7 +207,7 @@ var sequenceTubeMap = (function () {
 
     nodes.forEach(function(node) {
       if (node.hasOwnProperty('x')) {
-        maxX = Math.max(maxX, node.x + 20 + Math.round(stepX * (node.width - 1)));
+        maxX = Math.max(maxX, node.x + 20 + node.pixelWidth);
       }
     });
 
@@ -560,7 +553,7 @@ var sequenceTubeMap = (function () {
           currentX = nextX + 10 * extra[node.order];
         }
         node.x = currentX;
-        nextX = Math.max(nextX, currentX + 40 + Math.round(stepX * (node.width - 1)));
+        nextX = Math.max(nextX, currentX + 40 + node.pixelWidth);
       }
     });
   }
@@ -921,8 +914,8 @@ var sequenceTubeMap = (function () {
     nodes.forEach(function(node) {
       if (node.hasOwnProperty('order')) {
         orderStartX[node.order] = node.x;
-        if (orderEndX[node.order] === undefined) orderEndX[node.order] = node.x + Math.round(stepX * (node.width - 1));
-        else orderEndX[node.order] = Math.max(orderEndX[node.order], node.x + Math.round(stepX * (node.width - 1)));
+        if (orderEndX[node.order] === undefined) orderEndX[node.order] = node.x + node.pixelWidth;
+        else orderEndX[node.order] = Math.max(orderEndX[node.order], node.x + node.pixelWidth);
       }
     });
 
@@ -1093,7 +1086,7 @@ var sequenceTubeMap = (function () {
 
       //top straight
       if (node.width > 1) {
-        x += Math.round((node.width - 1) * stepX);
+        x += node.pixelWidth;
         node.d += ' L ' + x + ' ' + y;
       }
 
@@ -1116,7 +1109,7 @@ var sequenceTubeMap = (function () {
 
       //bottom straight
       if (node.width > 1) {
-        x -= Math.round((node.width - 1) * stepX);
+        x -= node.pixelWidth;
         node.d += ' L ' + x + ' ' + y;
       }
 
@@ -1247,9 +1240,6 @@ var sequenceTubeMap = (function () {
   }
 
   function drawLegend(tracks) {
-    //var legendDiv = $('#legendDiv');
-
-
     var content = '<table class="table table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th><th>Show Exons</th></tr></thead>';
     for (var i = 0; i < tracks.length; i++) {
       var trackColor = color(tracks[i].id % numberOfColors);
@@ -1338,6 +1328,19 @@ var sequenceTubeMap = (function () {
       default:
         nodes.forEach(function (node) {
           if (node.hasOwnProperty('sequenceLength')) node.width = node.sequenceLength;
+
+          //get width of node's text label by writing label, measuring it and removing label
+          svg.append('text')
+            .attr('x', 0)
+            .attr('y', 100)
+            .attr('id', 'dummytext')
+            .text(node.seq.substr(1))
+            .attr('font-family', 'Courier, "Lucida Console", monospace')
+            .attr('font-size', '14px')
+            .attr('fill', 'black')
+            .style('pointer-events', 'none');
+          node.pixelWidth = Math.round(document.getElementById('dummytext').getComputedTextLength());
+          $('#dummytext').remove();
         });
     }
   }
@@ -1367,7 +1370,6 @@ var sequenceTubeMap = (function () {
       track.sequence = sequence;
       if (path.hasOwnProperty('freq')) track.freq = path.freq;
       if (path.hasOwnProperty('name')) track.name = path.name;
-      //result.push({id: index, sequence: sequence, freq: path.freq});
       result.push(track);
     });
     return result;

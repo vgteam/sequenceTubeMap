@@ -330,6 +330,7 @@
     var w1 = $("#svg").width();
     var w2 = $("#chart0").width();
     var w = Math.min(w1, w2);
+    $('#legendDiv').html('');
     document.getElementById("loader").setAttribute("style","left:" + (w / 2 - 25) + "px");
     //document.getElementById("loader").style.display = "block";
     $("#example1").removeClass("active");
