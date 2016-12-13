@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>sequenceTubeMap.js Demo</title>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script type="text/javascript" src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
@@ -38,36 +39,40 @@
     font-size: 85%;
   }
 
+  .table-nonfluid {
+    width: auto !important;
+  }
+
   #chart0 {
     overflow: auto;
     width: 100%;
     position: relative;
   }
 
-#loader {
-  border: 5px solid #f3f3f3;
-  -webkit-animation: spin 1s linear infinite;
-  animation: spin 1s linear infinite;
-  border-top: 5px solid #555;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  #loader {
+    border: 5px solid #f3f3f3;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    border-top: 5px solid #555;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
 
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  margin: -25px 0 0 0px;
-}
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    margin: -25px 0 0 0px;
+  }
 
-@-webkit-keyframes spin {
-  0% { -webkit-transform: rotate(0deg); }
-  100% { -webkit-transform: rotate(360deg); }
-}
+  @-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+  }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 
 </style>
 </head>
@@ -249,6 +254,8 @@
     </div>
 
     <br />
+    <div id="legendDiv">
+    </div>
     <div id="chart0">
       <div id="loader" style="display:none;"></div>
       <svg id="svg">
@@ -474,11 +481,11 @@
 
   var inputTracks1 = [
     //{id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"], freq: 4},
-    {id: 0, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"], freq: 3000},
-    {id: 1, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"], freq: 15},
-    {id: 2, sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "Z", "AB", "AE", "AG"], freq: 300},
-    {id: 3, sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"], freq: 4},
-    {id: 4, sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"], freq: 2}
+    {id: 0, name: "Track A", sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "U", "W", "X", "Z", "AA", "AE", "AG"], freq: 3000},
+    {id: 1, name: "Track B", sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "Q", "S", "U", "AA", "AE", "AG"], freq: 15},
+    {id: 2, name: "Track C", sequence: ["A", "B", "D", "E", "G", "H", "J", "K", "M", "N", "P", "Q", "S", "V", "W", "X", "Z", "AB", "AE", "AG"], freq: 300},
+    {id: 3, name: "Track D", sequence: ["B", "C", "D", "E", "G", "H", "J", "L", "M", "N", "P", "R", "S", "U", "W", "Y", "Z", "AC", "AF", "AG"], freq: 4},
+    {id: 4, name: "Track E", sequence: ["B", "D", "F", "G", "I", "J", "L", "M", "O", "P", "Q", "S", "T", "V", "W", "Y", "Z", "AD", "AF", "AG"], freq: 2}
   ];
 
   var inputTracks2 = [

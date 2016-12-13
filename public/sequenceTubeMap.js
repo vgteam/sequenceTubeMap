@@ -44,7 +44,8 @@ var sequenceTubeMap = (function () {
     svg = d3.select(inputSvg);
     inputNodes = (JSON.parse(JSON.stringify(nodes))); //deep copy
     inputTracks = (JSON.parse(JSON.stringify(tracks)));
-    createTubeMap();
+    var tr = createTubeMap();
+    drawLegend(tr);
   }
 
   //moves a specific track to the top, un-inverts all its inversions and starts the redrawing
@@ -84,7 +85,21 @@ var sequenceTubeMap = (function () {
         }
       }
     }
-    svg = d3.select(svgID);
+    //svg = d3.select(svgID);
+    createTubeMap();
+  }
+
+  function changeTrackVisibility(trackID) {
+    var i = 0;
+    while ((i < inputTracks.length) && (inputTracks[i].id !== trackID)) i++;
+    if (i < inputTracks.length) {
+      if (inputTracks[i].hasOwnProperty('hidden')) {
+        inputTracks[i].hidden = !inputTracks[i].hidden;
+      } else {
+        inputTracks[i].hidden = true;
+      }
+    }
+    //svg = d3.select(svgID);
     createTubeMap();
   }
 
@@ -115,6 +130,14 @@ var sequenceTubeMap = (function () {
     var nodes = (JSON.parse(JSON.stringify(inputNodes))); //deep copy (can add stuff to copy and leave original unchanged)
     var tracks = (JSON.parse(JSON.stringify(inputTracks)));
 
+    for (var i = tracks.length - 1; i >= 0; i--) {
+      if (tracks[i].hasOwnProperty('hidden')) {
+        if (tracks[i].hidden === true) {
+          tracks.splice(i, 1);
+        }
+      }
+    }
+
     trackRectangles = [];
     trackCurves = [];
     trackCorners = [];
@@ -124,6 +147,7 @@ var sequenceTubeMap = (function () {
     extraRight = [];
     maxYCoordinate = 0;
     minYCoordinate = 0;
+    svg = d3.select(svgID);
     svg.selectAll('*').remove(); //clear svg for (re-)drawing
 
     if (mergeNodesFlag) {
@@ -162,11 +186,14 @@ var sequenceTubeMap = (function () {
     //drawTrackRectangles(trackVerticalRectangles);
     drawNodes(nodes);
     if (nodeWidthOption === 0) drawLabels(nodes);
+    //drawLegend(tracks);
 
     if (DEBUG) {
       console.log('number of tracks: ' + numberOfTracks);
       console.log('number of nodes: ' + numberOfNodes);
     }
+
+    return tracks;
   }
 
   //remove nodes with no tracks moving through them to avoid d3.js errors
@@ -953,6 +980,8 @@ var sequenceTubeMap = (function () {
         maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
         minYCoordinate = Math.min(minYCoordinate, yStart);
       }
+      maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
+      minYCoordinate = Math.min(minYCoordinate, yStart);
 
       //ending edges
       if (!track.path[track.path.length - 1].isForward) { //The track ends with an inversed node
@@ -1217,6 +1246,26 @@ var sequenceTubeMap = (function () {
       .on('dblclick', trackDoubleClick);
   }
 
+  function drawLegend(tracks) {
+    //var legendDiv = $('#legendDiv');
+
+
+    var content = '<table class="table table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th><th>Show Exons</th></tr></thead>';
+    for (var i = 0; i < tracks.length; i++) {
+      var trackColor = color(tracks[i].id % numberOfColors);
+      content += '<tr><td><span style="color: ' + trackColor + '"><i class="fa fa-square" aria-hidden="true"></i></span></td>';
+      if (tracks[i].hasOwnProperty('name')) {
+        content += '<td>' + tracks[i].name + '</td>';
+      } else {
+        content += '<td>' + tracks[i].id + '</td>';
+      }
+      content += '<td><input type="checkbox" checked=true onclick="sequenceTubeMap.changeTrackVisibility(' + i + ');"></td>';
+      content += '<td><input type="checkbox"></td></tr>';
+    }
+    content += '</table';
+    $('#legendDiv').html(content);
+  }
+
   // Highlight track on mouseover
   function trackMouseOver() {
     /* jshint validthis: true */
@@ -1313,7 +1362,13 @@ var sequenceTubeMap = (function () {
             sequence[index2] = node.substr(1);
           });
       }
-      result.push({id: index, sequence: sequence, freq: path.freq});
+      var track = {};
+      track.id = index;
+      track.sequence = sequence;
+      if (path.hasOwnProperty('freq')) track.freq = path.freq;
+      if (path.hasOwnProperty('name')) track.name = path.name;
+      //result.push({id: index, sequence: sequence, freq: path.freq});
+      result.push(track);
     });
     return result;
   }
@@ -1438,7 +1493,8 @@ var sequenceTubeMap = (function () {
     vgExtractNodes: vgExtractNodes,
     vgExtractTracks: vgExtractTracks,
     setMergeNodesFlag: setMergeNodesFlag,
-    setNodeWidthOption: setNodeWidthOption
+    setNodeWidthOption: setNodeWidthOption,
+    changeTrackVisibility: changeTrackVisibility
   };
 
 })();
