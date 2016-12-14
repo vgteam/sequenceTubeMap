@@ -13,13 +13,13 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 }));
 
 // Whitelist the following IPs
-var ips = ['127.0.0.1', '::1',
+/*var ips = ['127.0.0.1', '::1',
   ['169.233.136.1', '169.233.251.1'],
   ['::ffff:169.233.136.1', '::ffff:169.233.251.1'],
   ['::ffff:128.114.59.1', '::ffff:128.114.60.1']];
 
 // Create the server
-app.use(ipfilter(ips, {mode: 'allow'}));
+app.use(ipfilter(ips, {mode: 'allow'}));*/
 
 app.use(express.static('public'));
 

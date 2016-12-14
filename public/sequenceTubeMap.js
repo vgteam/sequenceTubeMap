@@ -1134,13 +1134,16 @@ var sequenceTubeMap = (function () {
       .append('path')
       .attr('id', function(d) {return d.name; })
       .attr('d', function(d) { return d.d; })
+      //.attr('title', function(d) { return d.name; })
       .on('mouseover', nodeMouseOver)
       .on('mouseout', nodeMouseOut)
       .on('dblclick', nodeDoubleClick)
       .style('fill', '#fff')
       .style('fill-opacity', '0.8')
       .style('stroke', 'black')
-      .style('stroke-width', '2px');
+      .style('stroke-width', '2px')
+      .append("svg:title")
+          .text(function(d) { return d.name; });
   }
 
   //draw seqence labels for nodes
@@ -1318,11 +1321,13 @@ var sequenceTubeMap = (function () {
       case 1:
         nodes.forEach(function (node) {
           if (node.hasOwnProperty('sequenceLength')) node.width = (1 + Math.log(node.sequenceLength) / Math.log(2));
+          node.pixelWidth = Math.round((node.width - 1) * 8.401);
         });
         break;
       case 2:
         nodes.forEach(function (node) {
           if (node.hasOwnProperty('sequenceLength')) node.width = (1 + Math.log(node.sequenceLength) / Math.log(10));
+          node.pixelWidth = Math.round((node.width - 1) * 8.401);
         });
         break;
       default:
