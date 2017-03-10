@@ -2,26 +2,15 @@
 
 var spawn = require('child_process').spawn;
 var express = require('express');
-var app = express();
-
-var ipfilter = require('express-ipfilter').IpFilter;
-
 var bodyParser = require('body-parser');
+
+var app = express();
 app.use( bodyParser.json() );       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
 
-// Whitelist the following IPs
-/*var ips = ['127.0.0.1', '::1',
-  ['169.233.136.1', '169.233.251.1'],
-  ['::ffff:169.233.136.1', '::ffff:169.233.251.1'],
-  ['::ffff:128.114.59.1', '::ffff:128.114.60.1']];
-
-// Create the server
-app.use(ipfilter(ips, {mode: 'allow'}));*/
-
-app.use(express.static('public'));
+//app.use(express.static('public'));
 
 app.post('/vg_trace', function(req, res) {
     var nodeID = req.body.nodeID;
@@ -35,8 +24,6 @@ app.post('/vg_trace', function(req, res) {
     child.stderr.on('data', (data) => {
         console.log('err data: ' + data);
     });
-
-    //child.stdout.pipe(res);
 
     child.stdout.on('data', (data) => {
         //result += data.toString();
