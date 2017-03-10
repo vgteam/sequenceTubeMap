@@ -31,8 +31,8 @@ gulp.task('scripts', () => {
     entries: 'app/scripts/main.js',
     transform: babelify,
     debug: true,
-    // noParse: ['/Users/wolfgang/Dropbox/Websites/webappES6/app/scripts/cactus-data.js'],
-    exclude: [require.resolve('./app/scripts/cactus-data.js')],
+    //alt// noParse: ['/Users/wolfgang/Dropbox/Websites/webappES6/app/scripts/cactus-data.js'],
+    //exclude: [require.resolve('./app/scripts/cactus-data.js')],
   });
   console.log(require.resolve('./app/scripts/cactus-data.js'));
 
@@ -84,6 +84,11 @@ gulp.task('fonts', () => {
   return gulp.src(require('main-bower-files')('**/*.{eot,svg,ttf,woff,woff2}', function (err) {})
     .concat('app/fonts/**/*'))
     .pipe($.if(dev, gulp.dest('.tmp/fonts'), gulp.dest('dist/fonts')));
+});
+
+gulp.task('copyfonts', () => {
+  gulp.src('./bower_components/bootstrap/fonts/*.{ttf,woff,woff2,eot,svg}')
+    .pipe(gulp.dest('dist/fonts'));
 });
 
 gulp.task('extras', () => {
@@ -162,7 +167,7 @@ gulp.task('wiredep', () => {
     .pipe(gulp.dest('app'));
 });
 
-gulp.task('build', ['lint', 'html', 'images', 'fonts', 'extras'], () => {
+gulp.task('build', ['lint', 'html', 'images', 'fonts', 'extras', 'copyfonts'], () => {
   return gulp.src('dist/**/*').pipe($.size({title: 'build', gzip: true}));
 });
 

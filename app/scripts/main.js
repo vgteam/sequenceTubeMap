@@ -7,7 +7,8 @@
 
 import * as tubeMap from './tubemap';
 import * as data from './demo-data';
-// import * as cactus from './cactus-data';
+import * as cactus from './cactus-data';
+// import * as cactus from './cactus-data-small';
 
 document.getElementById('example1').onclick = function () {
   tubeMap.create('#svg', data.inputNodes, data.inputTracks1, false, data.bed1);
@@ -253,17 +254,17 @@ document.getElementById('simpleReadsExample').onclick = function () {
 
 document.getElementById('cactusWithReads').onclick = function () {
   $('#example1').removeClass('active');
-  const vg = JSON.parse(cactus);
+  const vg = JSON.parse(cactus.cactus);
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
-  const reads = tubeMap.vgExtractReads(tracks, cactusReads.split('\n'));
+  const reads = tubeMap.vgExtractReads(tracks, cactus.cactusReads.split('\n'));
   // const reads = tubeMap.vgExtractReads(tracks, cactusReadSmall.split('\n'));
   tubeMap.create('#svg', nodes, tracks, false, null, reads);
 };
 
 document.getElementById('cactusWithoutReads').onclick = function () {
   $('#example1').removeClass('active');
-  const vg = JSON.parse(cactus);
+  const vg = JSON.parse(cactus.cactus);
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
   tubeMap.create('#svg', nodes, tracks, false);
