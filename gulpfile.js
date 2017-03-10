@@ -86,9 +86,14 @@ gulp.task('fonts', () => {
     .pipe($.if(dev, gulp.dest('.tmp/fonts'), gulp.dest('dist/fonts')));
 });
 
-gulp.task('copyfonts', () => {
+gulp.task('copyStuff', () => {
+  // copy bootstrap fonts
   gulp.src('./bower_components/bootstrap/fonts/*.{ttf,woff,woff2,eot,svg}')
     .pipe(gulp.dest('dist/fonts'));
+
+  // copy files in exampeData directory
+  gulp.src('app/exampleData/*')
+    .pipe(gulp.dest('dist/exampleData'));
 });
 
 gulp.task('extras', () => {
