@@ -77,7 +77,8 @@ document.getElementById('postButton').onclick = function () {
 
   $.ajax({
     type: 'POST',
-    url: 'http://138.68.24.125:3000/vg_trace',
+    // url: 'http://138.68.24.125:3000/vg_trace',
+    url: 'https://api.wbeyer.com/vg_trace',
     crossDomain: true,
     data: { nodeID, distance },
     dataType: 'json',
