@@ -10,7 +10,6 @@
 /* eslint no-mixed-operators: ["error", {"allowSamePrecedence": true}] */
 
 /* added these for faster publish -> TODO: remove again */
-/* eslint prefer-template: "off" */
 /* eslint no-continue: "off" */
 /* eslint no-loop-func: "off" */
 /* eslint no-restricted-syntax: "off" */
@@ -1386,17 +1385,17 @@ function generateForwardToReverse(x, yStart, yEnd, trackWidth, trackColor, track
     type,
   }); // elongate outgoing rectangle a bit to the right
 
-  let d = 'M ' + (x + 5) + ' ' + yBottom;
-  d += ' Q ' + (x + 5 + radius) + ' ' + yBottom + ' ' + (x + 5 + radius) + ' ' + (yBottom - radius);
-  d += ' H ' + (x + 5 + radius + Math.min(7, trackWidth));
-  d += ' Q ' + (x + 5 + radius + Math.min(7, trackWidth)) + ' ' + (yBottom + trackWidth) + ' ' + (x + 5) + ' ' + (yBottom + trackWidth);
+  let d = `M ${x + 5} ${yBottom}`;
+  d += ` Q ${x + 5 + radius} ${yBottom} ${x + 5 + radius} ${yBottom - radius}`;
+  d += ` H ${x + 5 + radius + Math.min(7, trackWidth)}`;
+  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${yBottom + trackWidth} ${x + 5} ${yBottom + trackWidth}`;
   d += ' Z ';
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
 
-  d = 'M ' + (x + 5) + ' ' + yTop;
-  d += ' Q ' + (x + 5 + radius + Math.min(7, trackWidth)) + ' ' + yTop + ' ' + (x + 5 + radius + Math.min(7, trackWidth)) + ' ' + (yTop + trackWidth + radius);
-  d += ' H ' + (x + 5 + radius);
-  d += ' Q ' + (x + 5 + radius) + ' ' + (yTop + trackWidth) + ' ' + (x + 5) + ' ' + (yTop + trackWidth);
+  d = `M ${x + 5} ${yTop}`;
+  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${yTop} ${x + 5 + radius + Math.min(7, trackWidth)} ${yTop + trackWidth + radius}`;
+  d += ` H ${x + 5 + radius}`;
+  d += ` Q ${x + 5 + radius} ${yTop + trackWidth} ${x + 5} ${yTop + trackWidth}`;
   d += ' Z ';
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
   extraRight[order] += 1;
@@ -1437,18 +1436,18 @@ function generateReverseToForward(x, yStart, yEnd, trackWidth, trackColor, track
   }); // elongate outgoing rectangle a bit to the left
 
   // Path for bottom 90 degree bend
-  let d = 'M ' + (x - 5) + ' ' + yBottom;
-  d += ' Q ' + (x - 5 - radius) + ' ' + yBottom + ' ' + (x - 5 - radius) + ' ' + (yBottom - radius);
-  d += ' H ' + (x - 5 - radius - Math.min(7, trackWidth));
-  d += ' Q ' + (x - 5 - radius - Math.min(7, trackWidth)) + ' ' + (yBottom + trackWidth) + ' ' + (x - 5) + ' ' + (yBottom + trackWidth);
+  let d = `M ${x - 5} ${yBottom}`;
+  d += ` Q ${x - 5 - radius} ${yBottom} ${x - 5 - radius} ${yBottom - radius}`;
+  d += ` H ${x - 5 - radius - Math.min(7, trackWidth)}`;
+  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${yBottom + trackWidth} ${x - 5} ${yBottom + trackWidth}`;
   d += ' Z ';
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
 
   // Path for top 90 degree bend
-  d = 'M ' + (x - 5) + ' ' + yTop;
-  d += ' Q ' + (x - 5 - radius - Math.min(7, trackWidth)) + ' ' + yTop + ' ' + (x - 5 - radius - Math.min(7, trackWidth)) + ' ' + (yTop + trackWidth + radius);
-  d += ' H ' + (x - 5 - radius);
-  d += ' Q ' + (x - 5 - radius) + ' ' + (yTop + trackWidth) + ' ' + (x - 5) + ' ' + (yTop + trackWidth);
+  d = `M ${x - 5} ${yTop}`;
+  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${yTop} ${x - 5 - radius - Math.min(7, trackWidth)} ${yTop + trackWidth + radius}`;
+  d += ` H ${x - 5 - radius}`;
+  d += ` Q ${x - 5 - radius} ${yTop + trackWidth} ${x - 5} ${yTop + trackWidth}`;
   d += ' Z ';
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
   extraLeft[order] += 1;
@@ -1485,18 +1484,18 @@ function drawNodes() {
 
   nodes.forEach((node) => {
     // top left arc
-    node.d = 'M ' + (node.x - 9) + ' ' + node.y + ' Q ' + (node.x - 9) + ' ' + (node.y - 9) + ' ' + node.x + ' ' + (node.y - 9);
+    node.d = `M ${node.x - 9} ${node.y} Q ${node.x - 9} ${node.y - 9} ${node.x} ${node.y - 9}`;
     x = node.x;
     y = node.y - 9;
 
     // top straight
     if (node.width > 1) {
       x += node.pixelWidth;
-      node.d += ' L ' + x + ' ' + y;
+      node.d += ` L ${x} ${y}`;
     }
 
     // top right arc
-    node.d += ' Q ' + (x + 9) + ' ' + y + ' ' + (x + 9) + ' ' + (y + 9);
+    node.d += ` Q ${x + 9} ${y} ${x + 9} ${y + 9}`;
     x += 9;
     y += 9;
 
@@ -1504,22 +1503,22 @@ function drawNodes() {
     if (node.contentHeight > 0) {
       // y += (node.degree - 1) * 22;
       y += node.contentHeight - 0;
-      node.d += ' L ' + x + ' ' + y;
+      node.d += ` L ${x} ${y}`;
     }
 
     // bottom right arc
-    node.d += ' Q ' + x + ' ' + (y + 9) + ' ' + (x - 9) + ' ' + (y + 9);
+    node.d += ` Q ${x} ${y + 9} ${x - 9} ${y + 9}`;
     x -= 9;
     y += 9;
 
     // bottom straight
     if (node.width > 1) {
       x -= node.pixelWidth;
-      node.d += ' L ' + x + ' ' + y;
+      node.d += ` L ${x} ${y}`;
     }
 
     // bottom left arc
-    node.d += ' Q ' + (x - 9) + ' ' + y + ' ' + (x - 9) + ' ' + (y - 9);
+    node.d += ` Q ${x - 9} ${y} ${x - 9} ${y - 9}`;
     x -= 9;
     y -= 9;
 
@@ -1528,7 +1527,7 @@ function drawNodes() {
     if (node.contentHeight > 0) {
       // y -= (node.degree - 1) * 22;
       y -= node.contentHeight - 0;
-      node.d += ' L ' + x + ' ' + y;
+      node.d += ` L ${x} ${y}`;
     }
   });
 
@@ -1749,10 +1748,10 @@ function drawTrackCurves(type) {
 
   myTrackCurves.forEach((curve) => {
     const xMiddle = (curve.xStart + curve.xEnd) / 2;
-    let d = 'M ' + curve.xStart + ' ' + curve.yStart;
-    d += ' C ' + xMiddle + ' ' + curve.yStart + ' ' + xMiddle + ' ' + curve.yEnd + ' ' + curve.xEnd + ' ' + curve.yEnd;
-    d += ' V ' + (curve.yEnd + curve.width);
-    d += ' C ' + xMiddle + ' ' + (curve.yEnd + curve.width) + ' ' + xMiddle + ' ' + (curve.yStart + curve.width) + ' ' + curve.xStart + ' ' + (curve.yStart + curve.width);
+    let d = `M ${curve.xStart} ${curve.yStart}`;
+    d += ` C ${xMiddle} ${curve.yStart} ${xMiddle} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
+    d += ` V ${curve.yEnd + curve.width}`;
+    d += ` C ${xMiddle} ${curve.yEnd + curve.width} ${xMiddle} ${curve.yStart + curve.width} ${curve.xStart} ${curve.yStart + curve.width}`;
     d += ' Z';
     // curve.push(d);
     curve.path = d;
@@ -1796,13 +1795,13 @@ function drawLegend() {
   for (let i = 0; i < tracks.length; i += 1) {
     if (tracks[i].type === 'haplo') {
       // content += '<tr><td><span style="color: ' + generateTrackColor(tracks[i], 'exon') + '"><i class="fa fa-square" aria-hidden="true"></i></span></td>';
-      content += '<tr><td><span style="color: ' + generateTrackColor(tracks[i], 'exon') + '"><span class="glyphicon glyphicon-stop" aria-hidden="true"></span></td>';
+      content += `<tr><td><span style="color: ${generateTrackColor(tracks[i], 'exon')}"><span class="glyphicon glyphicon-stop" aria-hidden="true"></span></td>`;
       if (tracks[i].hasOwnProperty('name')) {
-        content += '<td>' + tracks[i].name + '</td>';
+        content += `<td>${tracks[i].name}</td>`;
       } else {
-        content += '<td>' + tracks[i].id + '</td>';
+        content += `<td>${tracks[i].id}</td>`;
       }
-      content += '<td><input type="checkbox" checked=true id="showTrack' + i + '"></td>';
+      content += `<td><input type="checkbox" checked=true id="showTrack${i}"></td>`;
       listeners.push(i);
     }
   }
@@ -1817,7 +1816,7 @@ function drawLegend() {
 function trackMouseOver() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr('trackID');
-  d3.selectAll('.track' + trackID).style('fill', 'url(#patternA)');
+  d3.selectAll(`.track${trackID}`).style('fill', 'url(#patternA)');
 }
 
 // Highlight node on mouseover
@@ -1830,7 +1829,7 @@ function nodeMouseOver() {
 function trackMouseOut() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr('trackID');
-  d3.selectAll('.track' + trackID)
+  d3.selectAll(`.track${trackID}`)
     .each(function clearTrackHighlight() {
       const c = d3.select(this).attr('color');
       d3.select(this).style('fill', c);
@@ -1849,7 +1848,7 @@ function trackDoubleClick() { // Move clicked track to first position
   const trackID = d3.select(this).attr('trackID');
   let index = 0;
   while (inputTracks[index].id !== trackID) index += 1;
-  console.log('moving index: ' + index);
+  console.log(`moving index: ${index}`);
   moveTrackToFirstPosition(index);
   createTubeMap();
 }
@@ -1868,7 +1867,7 @@ function nodeDoubleClick() { // Move clicked track to first position
 export function vgExtractNodes(vg) {
   const result = [];
   vg.node.forEach((node) => {
-    result.push({ name: '' + node.id, sequenceLength: node.sequence.length, seq: node.sequence });
+    result.push({ name: `${node.id}`, sequenceLength: node.sequence.length, seq: node.sequence });
     // console.log('name: ' + node.id + ', length: ' + node.sequence.length);
   });
   return result;
@@ -1920,9 +1919,9 @@ export function vgExtractTracks(vg) {
     let isCompletelyReverse = true;
     path.mapping.forEach((pos) => {
       if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
-        sequence.push('-' + pos.position.node_id);
+        sequence.push(`-${pos.position.node_id}`);
       } else {
-        sequence.push('' + pos.position.node_id);
+        sequence.push(`${pos.position.node_id}`);
         isCompletelyReverse = false;
       }
     });
@@ -2005,9 +2004,9 @@ export function vgExtractReads(myTracks, myReads) {
       const sequence = [];
       read.path.mapping.forEach((pos) => {
         if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
-          sequence.push('-' + pos.position.node_id);
+          sequence.push(`-${pos.position.node_id}`);
         } else {
-          sequence.push('' + pos.position.node_id);
+          sequence.push(`${pos.position.node_id}`);
         }
       });
 
@@ -2095,7 +2094,7 @@ function mergeNodes() {
               succ[nodeMap.get(nodeName)].add(nodeName2.substr(1));
             } else { // add 2 successors, to make sure there is no node merging in this case
               succ[nodeMap.get(nodeName)].add(nodeName2);
-              succ[nodeMap.get(nodeName)].add('-' + nodeName2);
+              succ[nodeMap.get(nodeName)].add(`-${nodeName2}`);
             }
           } else {
             succ[nodeMap.get(nodeName)].add('None');
@@ -2106,7 +2105,7 @@ function mergeNodes() {
               pred[nodeMap.get(nodeName)].add(nodeName2.substr(1));
             } else {
               pred[nodeMap.get(nodeName)].add(nodeName2);
-              pred[nodeMap.get(nodeName)].add('-' + nodeName2);
+              pred[nodeMap.get(nodeName)].add(`-${nodeName2}`);
             }
           } else {
             pred[nodeMap.get(nodeName)].add('None');

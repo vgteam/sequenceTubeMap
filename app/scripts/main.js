@@ -3,7 +3,7 @@
 /* eslint no-use-before-define: "off" */
 /* eslint no-console: "off" */
 /* eslint no-unused-vars: "off" */
-/* global d3, cactus, cactusReads */
+/* global d3 */
 
 import * as tubeMap from './tubemap';
 import * as data from './demo-data';
@@ -67,30 +67,21 @@ document.getElementById('postButton').onclick = function () {
 
   const nodeID = document.getElementById('nodeID').value;
   const distance = document.getElementById('distance').value;
-  /* $.post('vg_trace', { nodeID, distance }, (response) => {
-    // console.log(JSON.stringify(response));
-    const nodes = tubeMap.vgExtractNodes(response);
-    const tracks = tubeMap.vgExtractTracks(response);
-    tubeMap.create('#svg', nodes, tracks, true);
-    document.getElementById('loader').style.display = 'none';
-  });*/
 
   $.ajax({
     type: 'POST',
-    // url: 'http://138.68.24.125:3000/vg_trace',
     url: 'https://api.wbeyer.com/vg_trace',
     crossDomain: true,
     data: { nodeID, distance },
     dataType: 'json',
     success(response) {
-      // console.log(JSON.stringify(response));
       const nodes = tubeMap.vgExtractNodes(response);
       const tracks = tubeMap.vgExtractTracks(response);
       tubeMap.create('#svg', nodes, tracks, true);
       document.getElementById('loader').style.display = 'none';
     },
     error(responseData, textStatus, errorThrown) {
-      alert('POST failed.');
+      console.log('POST failed.');
     },
   });
 };

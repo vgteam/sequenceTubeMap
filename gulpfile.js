@@ -34,7 +34,7 @@ gulp.task('scripts', () => {
     //alt// noParse: ['/Users/wolfgang/Dropbox/Websites/webappES6/app/scripts/cactus-data.js'],
     //exclude: [require.resolve('./app/scripts/cactus-data.js')],
   });
-  console.log(require.resolve('./app/scripts/cactus-data.js'));
+  // console.log(require.resolve('./app/scripts/cactus-data.js'));
 
   return b.bundle()
     .pipe(source('bundle.js'))
