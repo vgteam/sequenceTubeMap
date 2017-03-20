@@ -11,7 +11,6 @@
 
 /* added these for faster publish -> TODO: remove again */
 /* eslint no-loop-func: "off" */
-/* eslint no-restricted-syntax: "off" */
 /* eslint no-unused-vars: "off" */
 
 const DEBUG = false;
@@ -555,7 +554,7 @@ function increaseOrderForAllNodes(amount) {
 
 // increases the order-value for currentNode and (if necessary) successor nodes recursively
 function increaseOrderForSuccessors(startingNode, tabuNode, order) {
-  const increasedOrders = {};
+  const increasedOrders = new Map();
   const queue = [];
   queue.push([startingNode, order]);
 
@@ -565,8 +564,8 @@ function increaseOrderForSuccessors(startingNode, tabuNode, order) {
     order = current[1];
 
     if ((currentNode.hasOwnProperty('order')) && (currentNode.order < order)) {
-      if ((!increasedOrders.hasOwnProperty(currentNode.name)) || (increasedOrders[currentNode.name] < order)) {
-        increasedOrders[currentNode.name] = order;
+      if ((!increasedOrders.has(currentNode.name)) || (increasedOrders.get(currentNode.name) < order)) {
+        increasedOrders.set(currentNode.name, order);
         currentNode.successors.forEach((successor) => {
           if ((nodes[nodeMap.get(successor)].order > currentNode.order) && (successor !== tabuNode)) { // only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
             queue.push([nodes[nodeMap.get(successor)], order + 1]);
@@ -583,11 +582,9 @@ function increaseOrderForSuccessors(startingNode, tabuNode, order) {
     }
   }
 
-  for (const nodeName in increasedOrders) {
-    if (increasedOrders.hasOwnProperty(nodeName)) {
-      nodes[nodeMap.get(nodeName)].order = increasedOrders[nodeName];
-    }
-  }
+  increasedOrders.forEach((value, key) => {
+    nodes[nodeMap.get(key)].order = value;
+  });
 }
 
 // calculates the node degree: the number of tracks passing through the node / the node height
@@ -612,7 +609,7 @@ function generateNodeDegree() {
 // (does not apply to the first track's nodes, these are always oriented as
 // dictated by the first track)
 function switchNodeOrientation() {
-  const toSwitch = {};
+  const toSwitch = new Map();
   let nodeName;
   let prevNode;
   let nextNode;
@@ -633,14 +630,14 @@ function switchNodeOrientation() {
           else nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1].substr(1))];
         }
         if (((j === 0) || (prevNode.order < currentNode.order)) && ((j === tracks[i].sequence.length - 1) || (currentNode.order < nextNode.order))) {
-          if (!toSwitch.hasOwnProperty(nodeName)) toSwitch[nodeName] = 0;
-          if (tracks[i].sequence[j].charAt(0) === '-') toSwitch[nodeName] += 1;
-          else toSwitch[nodeName] -= 1;
+          if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
+          if (tracks[i].sequence[j].charAt(0) === '-') toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
+          else toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
         }
         if (((j === 0) || (prevNode.order > currentNode.order)) && ((j === tracks[i].sequence.length - 1) || (currentNode.order > nextNode.order))) {
-          if (!toSwitch.hasOwnProperty(nodeName)) toSwitch[nodeName] = 0;
-          if (tracks[i].sequence[j].charAt(0) === '-') toSwitch[nodeName] -= 1;
-          else toSwitch[nodeName] += 1;
+          if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
+          if (tracks[i].sequence[j].charAt(0) === '-') toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
+          else toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
         }
       }
     }
@@ -650,7 +647,7 @@ function switchNodeOrientation() {
     track.sequence.forEach((node, nodeIndex) => {
       nodeName = node;
       if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
-      if ((toSwitch.hasOwnProperty(nodeName)) && (toSwitch[nodeName] > 0)) {
+      if ((toSwitch.has(nodeName)) && (toSwitch.get(nodeName) > 0)) {
         if (node.charAt(0) === '-') tracks[trackIndex].sequence[nodeIndex] = node.substr(1);
         else tracks[trackIndex].sequence[nodeIndex] = `-${node}`;
       }
@@ -658,12 +655,12 @@ function switchNodeOrientation() {
   });
 
   // invert the sequence within the nodes
-  for (const prop in toSwitch) {
-    if (toSwitch.hasOwnProperty(prop) && toSwitch[prop] > 0) {
-      currentNode = nodeMap.get(prop);
+  toSwitch.forEach((value, key) => {
+    if (value > 0) {
+      currentNode = nodeMap.get(key);
       nodes[currentNode].seq = nodes[currentNode].seq.split('').reverse().join('');
     }
-  }
+  });
 }
 
 // calculates the concrete values for the nodes' x-coordinates
