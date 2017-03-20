@@ -10,7 +10,6 @@
 /* eslint no-mixed-operators: ["error", {"allowSamePrecedence": true}] */
 
 /* added these for faster publish -> TODO: remove again */
-/* eslint no-continue: "off" */
 /* eslint no-loop-func: "off" */
 /* eslint no-restricted-syntax: "off" */
 /* eslint no-unused-vars: "off" */
@@ -1196,65 +1195,64 @@ function generateSVGShapesFromPath() {
     for (let i = 0; i < track.path.length; i += 1) {
       // if  (track.path[i].y === track.path[i - 1].y) continue;
       if (track.path[i].y === yStart) {
-        if (!track.path[i].hasOwnProperty('features')) continue;
-        if ((i > 0) && (track.path[i - 1].order === track.path[i].order)) reversalFlag = true;
-        else reversalFlag = false;
-        dummy = createFeatureRectangle(track.path[i], orderStartX[track.path[i].order], orderEndX[track.path[i].order], highlight, track, xStart, yStart, trackColor, reversalFlag);
-        highlight = dummy.highlight;
-        xStart = dummy.xStart;
-        continue;
-      }
-      if (track.path[i - 1].isForward) {
-        xEnd = orderEndX[track.path[i - 1].order];
-      } else {
-        xEnd = orderStartX[track.path[i - 1].order];
-      }
-      if (xEnd !== xStart) {
-        trackColor = generateTrackColor(track, highlight);
-        trackRectangles.push({ xStart: Math.min(xStart, xEnd), yStart, xEnd: Math.max(xStart, xEnd), yEnd: yStart + track.width - 1, color: trackColor, id: track.id, type: track.type });
-      }
-
-      if (track.path[i].order - 1 === track.path[i - 1].order) { // regular forward connection
-        xStart = xEnd;
-        xEnd = orderStartX[track.path[i].order];
-        yEnd = track.path[i].y;
-        trackColor = generateTrackColor(track, highlight);
-        trackCurves.push({ xStart, yStart, xEnd: xEnd + 1, yEnd, width: track.width, color: trackColor, laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane), id: track.id, type: track.type });
-        xStart = xEnd;
-        yStart = yEnd;
-      } else if (track.path[i].order + 1 === track.path[i - 1].order) { // regular backward connection
-        xStart = xEnd;
-        xEnd = orderEndX[track.path[i].order];
-        yEnd = track.path[i].y;
-        trackColor = generateTrackColor(track, highlight);
-        trackCurves.push({ xStart: xStart + 1, yStart, xEnd, yEnd, width: track.width, color: trackColor, laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane), id: track.id, type: track.type });
-        xStart = xEnd;
-        yStart = yEnd;
-      } else { // change of direction
-        if (track.path[i - 1].isForward) {
-          yEnd = track.path[i].y;
-          generateForwardToReverse(xEnd, yStart, yEnd, track.width, trackColor, track.id, track.path[i].order, track.type);
-          xStart = orderEndX[track.path[i].order];
-          yStart = track.path[i].y;
-        } else {
-          yEnd = track.path[i].y;
-          generateReverseToForward(xEnd, yStart, yEnd, track.width, trackColor, track.id, track.path[i].order, track.type);
-          xStart = orderStartX[track.path[i].order];
-          yStart = track.path[i].y;
+        if (track.path[i].hasOwnProperty('features')) {
+          if ((i > 0) && (track.path[i - 1].order === track.path[i].order)) reversalFlag = true;
+          else reversalFlag = false;
+          dummy = createFeatureRectangle(track.path[i], orderStartX[track.path[i].order], orderEndX[track.path[i].order], highlight, track, xStart, yStart, trackColor, reversalFlag);
+          highlight = dummy.highlight;
+          xStart = dummy.xStart;
         }
+      } else {
+        if (track.path[i - 1].isForward) {
+          xEnd = orderEndX[track.path[i - 1].order];
+        } else {
+          xEnd = orderStartX[track.path[i - 1].order];
+        }
+        if (xEnd !== xStart) {
+          trackColor = generateTrackColor(track, highlight);
+          trackRectangles.push({ xStart: Math.min(xStart, xEnd), yStart, xEnd: Math.max(xStart, xEnd), yEnd: yStart + track.width - 1, color: trackColor, id: track.id, type: track.type });
+        }
+
+        if (track.path[i].order - 1 === track.path[i - 1].order) { // regular forward connection
+          xStart = xEnd;
+          xEnd = orderStartX[track.path[i].order];
+          yEnd = track.path[i].y;
+          trackColor = generateTrackColor(track, highlight);
+          trackCurves.push({ xStart, yStart, xEnd: xEnd + 1, yEnd, width: track.width, color: trackColor, laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane), id: track.id, type: track.type });
+          xStart = xEnd;
+          yStart = yEnd;
+        } else if (track.path[i].order + 1 === track.path[i - 1].order) { // regular backward connection
+          xStart = xEnd;
+          xEnd = orderEndX[track.path[i].order];
+          yEnd = track.path[i].y;
+          trackColor = generateTrackColor(track, highlight);
+          trackCurves.push({ xStart: xStart + 1, yStart, xEnd, yEnd, width: track.width, color: trackColor, laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane), id: track.id, type: track.type });
+          xStart = xEnd;
+          yStart = yEnd;
+        } else { // change of direction
+          if (track.path[i - 1].isForward) {
+            yEnd = track.path[i].y;
+            generateForwardToReverse(xEnd, yStart, yEnd, track.width, trackColor, track.id, track.path[i].order, track.type);
+            xStart = orderEndX[track.path[i].order];
+            yStart = track.path[i].y;
+          } else {
+            yEnd = track.path[i].y;
+            generateReverseToForward(xEnd, yStart, yEnd, track.width, trackColor, track.id, track.path[i].order, track.type);
+            xStart = orderStartX[track.path[i].order];
+            yStart = track.path[i].y;
+          }
+        }
+
+        if (track.path[i].hasOwnProperty('features')) {
+          if (track.path[i - 1].order === track.path[i].order) reversalFlag = true;
+          else reversalFlag = false;
+          dummy = createFeatureRectangle(track.path[i], orderStartX[track.path[i].order], orderEndX[track.path[i].order], highlight, track, xStart, yStart, trackColor, reversalFlag);
+          highlight = dummy.highlight;
+          xStart = dummy.xStart;
+        }
+        maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
+        minYCoordinate = Math.min(minYCoordinate, yStart);
       }
-
-      if (track.path[i].hasOwnProperty('features')) {
-        if (track.path[i - 1].order === track.path[i].order) reversalFlag = true;
-        else reversalFlag = false;
-        dummy = createFeatureRectangle(track.path[i], orderStartX[track.path[i].order], orderEndX[track.path[i].order], highlight, track, xStart, yStart, trackColor, reversalFlag);
-        highlight = dummy.highlight;
-        xStart = dummy.xStart;
-      }
-
-
-      maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
-      minYCoordinate = Math.min(minYCoordinate, yStart);
     }
     maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
     minYCoordinate = Math.min(minYCoordinate, yStart);
