@@ -1,15 +1,9 @@
-/* eslint-env jquery */
-/* eslint no-use-before-define: "off" */
 /* eslint no-param-reassign: "off" */
 /* eslint no-lonely-if: "off" */
 /* eslint no-prototype-builtins: "off" */
 /* eslint no-console: "off" */
-/* global d3 */
 
 /* eslint max-len: "off" */
-/* eslint no-mixed-operators: ["error", {"allowSamePrecedence": true}] */
-
-/* added these for faster publish -> TODO: remove again */
 /* eslint no-loop-func: "off" */
 /* eslint no-unused-vars: "off" */
 
@@ -43,17 +37,20 @@ let assignments = []; // contains info about lane assignments sorted by order
 let extraLeft = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let extraRight = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let maxOrder; // horizontal order of the rightmost node
-let mergeNodesFlag = false;
-let clickableNodesFlag = false;
-let showExonsFlag = false;
-let colorScheme = 1;
 
-// 0...scale node width linear with number of bases within node
-// 1...scale node width with log2 of number of bases within node
-// 2...scale node width with log10 of number of bases within node
-let nodeWidthOption = 0;
+const config = {
+  mergeNodesFlag: false,
+  clickableNodesFlag: false,
+  showExonsFlag: false,
+  colorScheme: 1,
+  // Options for the width of sequence nodes:
+  // 0...scale node width linear with number of bases within node
+  // 1...scale node width with log2 of number of bases within node
+  // 2...scale node width with log10 of number of bases within node
+  nodeWidthOption: 0,
+};
 
-// letiables for storing info which can be directly translated into drawing instructions
+// variables for storing info which can be directly translated into drawing instructions
 let trackRectangles = [];
 let trackCurves = [];
 let trackCorners = [];
@@ -66,9 +63,9 @@ let minYCoordinate = 0;
 let bed;
 
 // public function to fill the svg with a visualization of the data contained in nodes and tracks variables
-export function create(inputSvg, origNodes, origTracks, clickableNodes, inputBed, inputReads) {
-  if (typeof clickableNodes === 'undefined') clickableNodesFlag = false;
-  else clickableNodesFlag = clickableNodes;
+/* export function create(inputSvg, origNodes, origTracks, clickableNodes, inputBed, inputReads) {
+  if (typeof clickableNodes === 'undefined') config.clickableNodesFlag = false;
+  else config.clickableNodesFlag = clickableNodes;
   svgID = inputSvg;
   svg = d3.select(inputSvg);
   inputNodes = (JSON.parse(JSON.stringify(origNodes))); // deep copy
@@ -79,6 +76,20 @@ export function create(inputSvg, origNodes, origTracks, clickableNodes, inputBed
     bed = inputBed;
     // console.log('received bed info');
   }
+  const tr = createTubeMap();
+  drawLegend(tr);
+}*/
+
+export function create(params) {
+  // mandatory parameters: svgID, nodes, tracks
+  // optional parameters: bed, clickableNodes, reads
+  svgID = params.svgID;
+  svg = d3.select(params.svgID);
+  inputNodes = (JSON.parse(JSON.stringify(params.nodes))); // deep copy
+  inputTracks = (JSON.parse(JSON.stringify(params.tracks)));
+  reads = params.reads || null;
+  bed = params.bed || null;
+  config.clickableNodesFlag = params.clickableNodes || false;
   const tr = createTubeMap();
   drawLegend(tr);
 }
@@ -119,10 +130,8 @@ function straightenTrack(index) {
         if (nodesToInvert.indexOf(currentSequence[j]) !== -1) {
           currentSequence[j] = `-${currentSequence[j]}`;
         }
-      } else {
-        if (nodesToInvert.indexOf(currentSequence[j].substr(1)) !== -1) {
-          currentSequence[j] = currentSequence[j].substr(1);
-        }
+      } else if (nodesToInvert.indexOf(currentSequence[j].substr(1)) !== -1) {
+        currentSequence[j] = currentSequence[j].substr(1);
       }
     }
   }
@@ -149,14 +158,14 @@ export function changeTrackVisibility(trackID) {
 }
 
 export function changeExonVisibility() {
-  showExonsFlag = !showExonsFlag;
+  config.showExonsFlag = !config.showExonsFlag;
   createTubeMap();
 }
 
 // sets the flag for whether redundant nodes should be automatically removed or not
 export function setMergeNodesFlag(value) {
-  if (mergeNodesFlag !== value) {
-    mergeNodesFlag = value;
+  if (config.mergeNodesFlag !== value) {
+    config.mergeNodesFlag = value;
     svg = d3.select(svgID);
     createTubeMap();
   }
@@ -165,8 +174,8 @@ export function setMergeNodesFlag(value) {
 // sets which option should be used for calculating the node width from its sequence length
 export function setNodeWidthOption(value) {
   if ((value === 0) || (value === 1) || (value === 2)) {
-    if (nodeWidthOption !== value) {
-      nodeWidthOption = value;
+    if (config.nodeWidthOption !== value) {
+      config.nodeWidthOption = value;
       if (svg !== undefined) {
         svg = d3.select(svgID);
         createTubeMap();
@@ -181,7 +190,7 @@ function createTubeMap() {
   nodes = (JSON.parse(JSON.stringify(inputNodes))); // deep copy (can add stuff to copy and leave original unchanged)
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   nodeMap = generateNodeMap(nodes);
-  if (typeof reads !== 'undefined') {
+  if (reads) {
     reads.sort(compareReadsByLeftEnd);
     tracks = tracks.concat(reads);
   }
@@ -210,7 +219,7 @@ function createTubeMap() {
   svg = d3.select(svgID);
   svg.selectAll('*').remove(); // clear svg for (re-)drawing
 
-  if (mergeNodesFlag) {
+  if (config.mergeNodesFlag) {
     // let NodesAndTracks = mergeNodes(nodes, tracks);
     // const NodesAndTracks = mergeNodes(nodes, tracks);
     // nodes = NodesAndTracks.nodes;
@@ -240,7 +249,7 @@ function createTubeMap() {
   calculateTrackWidth(tracks);
   generateLaneAssignment();
 
-  if ((showExonsFlag === true) && (bed !== null)) addTrackFeatures();
+  if ((config.showExonsFlag === true) && (bed !== null)) addTrackFeatures();
 
   generateNodeXCoords();
   generateSVGShapesFromPath(nodes, tracks);
@@ -269,7 +278,7 @@ function createTubeMap() {
 
   drawReversalsByColor(trackCorners, trackVerticalRectangles, 'read');
 
-  if (nodeWidthOption === 0) drawLabels();
+  if (config.nodeWidthOption === 0) drawLabels();
 
   if (DEBUG) {
     console.log(`number of tracks: ${numberOfTracks}`);
@@ -1077,7 +1086,7 @@ function calculateTrackWidth() {
 }
 
 export function useColorScheme(x) {
-  colorScheme = x;
+  config.colorScheme = x;
   svg = d3.select(svgID);
   // createTubeMap();
   const tr = createTubeMap();
@@ -1092,10 +1101,10 @@ function generateTrackColor(track, highlight) {
     trackColor = reds[track.id % reds.length];
     if (track.sequence[0].charAt(0) === '-') trackColor = blues[track.id % blues.length];
   } else {
-    if ((showExonsFlag === false) || (highlight !== 'plain')) {
-      if (colorScheme === 0) {
+    if ((config.showExonsFlag === false) || (highlight !== 'plain')) {
+      if (config.colorScheme === 0) {
         trackColor = plainColors[track.id % plainColors.length];
-      } else if (colorScheme === 1) {
+      } else if (config.colorScheme === 1) {
         trackColor = blues[track.id % blues.length];
       }
       // if (track.id === 2) trackColor = reds[4];
@@ -1538,7 +1547,7 @@ function drawNodes() {
     .on('dblclick', nodeDoubleClick)
     .style('fill', '#fff')
     // .style('fill-opacity', '0.4')
-    .style('fill-opacity', showExonsFlag ? '0.4' : '0.8')
+    .style('fill-opacity', config.showExonsFlag ? '0.4' : '0.8')
     .style('stroke', 'black')
     .style('stroke-width', '2px')
     .append('svg:title')
@@ -1547,7 +1556,7 @@ function drawNodes() {
 
 // draw seqence labels for nodes
 function drawLabels() {
-  if (nodeWidthOption === 0) {
+  if (config.nodeWidthOption === 0) {
     svg.selectAll('text')
       .data(nodes)
       .enter()
@@ -1852,7 +1861,7 @@ function trackDoubleClick() { // Move clicked track to first position
 function nodeDoubleClick() { // Move clicked track to first position
   /* jshint validthis: true */
   const nodeID = d3.select(this).attr('id');
-  if (clickableNodesFlag) {
+  if (config.clickableNodesFlag) {
     document.getElementById('nodeID').value = nodeID;
     document.getElementById('postButton').click();
   }
@@ -1870,7 +1879,7 @@ export function vgExtractNodes(vg) {
 
 // calculated node widths depending on sequence lengths and chosen calculation method
 function generateNodeWidth() {
-  switch (nodeWidthOption) {
+  switch (config.nodeWidthOption) {
     case 1:
       nodes.forEach((node) => {
         if (node.hasOwnProperty('sequenceLength')) node.width = (1 + (Math.log(node.sequenceLength) / Math.log(2)));

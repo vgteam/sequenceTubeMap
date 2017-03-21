@@ -1,9 +1,6 @@
-/* eslint-env jquery */
 /* eslint func-names: "off" */
-/* eslint no-use-before-define: "off" */
 /* eslint no-console: "off" */
 /* eslint no-unused-vars: "off" */
-/* global d3 */
 
 import * as tubeMap from './tubemap';
 import * as data from './demo-data';
@@ -11,23 +8,49 @@ import * as cactus from './cactus-data';
 // import * as cactus from './cactus-data-small';
 
 document.getElementById('example1').onclick = function () {
-  tubeMap.create('#svg', data.inputNodes, data.inputTracks1, false, data.bed1);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes: data.inputNodes,
+    tracks: data.inputTracks1,
+    bed: data.bed1,
+  });
 };
+
 document.getElementById('example2').onclick = function () {
   $('#example1').removeClass('active');
-  tubeMap.create('#svg', data.inputNodes, data.inputTracks2, false, data.bed1);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes: data.inputNodes,
+    tracks: data.inputTracks2,
+    bed: data.bed1,
+  });
 };
 document.getElementById('example3').onclick = function () {
   $('#example1').removeClass('active');
-  tubeMap.create('#svg', data.inputNodes, data.inputTracks3, false, data.bed1);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes: data.inputNodes,
+    tracks: data.inputTracks3,
+    bed: data.bed1,
+  });
 };
 document.getElementById('example4').onclick = function () {
   $('#example1').removeClass('active');
-  tubeMap.create('#svg', data.inputNodes, data.inputTracks4, false, data.bed1);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes: data.inputNodes,
+    tracks: data.inputTracks4,
+    bed: data.bed1,
+  });
 };
 document.getElementById('example5').onclick = function () {
   $('#example1').removeClass('active');
-  tubeMap.create('#svg', data.inputNodes, data.inputTracks5, false, data.bed1);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes: data.inputNodes,
+    tracks: data.inputTracks5,
+    bed: data.bed1,
+  });
 };
 document.getElementById('example6').onclick = function () {
   $('#example1').removeClass('active');
@@ -52,7 +75,12 @@ document.getElementById('parseButton').onclick = function () {
   const vg = JSON.parse(document.getElementById('textarea1').value);
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
-  tubeMap.create('#svg', nodes, tracks, false, data.notch2Simpl1000Bed);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes,
+    tracks,
+    bed: data.notch2Simpl1000Bed,
+  });
 };
 
 document.getElementById('postButton').onclick = function () {
@@ -77,7 +105,12 @@ document.getElementById('postButton').onclick = function () {
     success(response) {
       const nodes = tubeMap.vgExtractNodes(response);
       const tracks = tubeMap.vgExtractTracks(response);
-      tubeMap.create('#svg', nodes, tracks, true);
+      tubeMap.create({
+        svgID: '#svg',
+        nodes,
+        tracks,
+        clickableNodes: true,
+      });
       document.getElementById('loader').style.display = 'none';
     },
     error(responseData, textStatus, errorThrown) {
@@ -204,8 +237,11 @@ function displayVGjson(filename) {
     const vg = JSON.parse(response);
     const nodes = tubeMap.vgExtractNodes(vg);
     const tracks = tubeMap.vgExtractTracks(vg);
-    // tubeMap.create('#svg', nodes, tracks, false, b3106_bed);
-    tubeMap.create('#svg', nodes, tracks, false);
+    tubeMap.create({
+      svgID: '#svg',
+      nodes,
+      tracks,
+    });
   });
 }
 
@@ -226,13 +262,17 @@ document.getElementById('exonCheckbox').onclick = function () {
   tubeMap.changeExonVisibility();
 };
 
-function changeTrackVisibility(trackID) {
+/* function changeTrackVisibility(trackID) {
   tubeMap.changeTrackVisibility(trackID);
-}
+} */
 
 document.getElementById('bugfix1').onclick = function () {
   $('#example1').removeClass('active');
-  tubeMap.create('#svg', data.inputNodes, data.inputTracks6, false);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes: data.inputNodes,
+    tracks: data.inputTracks6,
+  });
 };
 
 document.getElementById('simpleReadsExample').onclick = function () {
@@ -241,7 +281,12 @@ document.getElementById('simpleReadsExample').onclick = function () {
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
   const reads = tubeMap.vgExtractReads(tracks, data.demoReads.split('\n'));
-  tubeMap.create('#svg', nodes, tracks, false, null, reads);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes,
+    tracks,
+    reads,
+  });
 };
 
 document.getElementById('cactusWithReads').onclick = function () {
@@ -251,7 +296,12 @@ document.getElementById('cactusWithReads').onclick = function () {
   const tracks = tubeMap.vgExtractTracks(vg);
   const reads = tubeMap.vgExtractReads(tracks, cactus.cactusReads.split('\n'));
   // const reads = tubeMap.vgExtractReads(tracks, cactusReadSmall.split('\n'));
-  tubeMap.create('#svg', nodes, tracks, false, null, reads);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes,
+    tracks,
+    reads,
+  });
 };
 
 document.getElementById('cactusWithoutReads').onclick = function () {
@@ -259,7 +309,11 @@ document.getElementById('cactusWithoutReads').onclick = function () {
   const vg = JSON.parse(cactus.cactus);
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
-  tubeMap.create('#svg', nodes, tracks, false);
+  tubeMap.create({
+    svgID: '#svg',
+    nodes,
+    tracks,
+  });
 };
 
 document.getElementById('example1').click();

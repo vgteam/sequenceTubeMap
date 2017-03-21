@@ -54,19 +54,21 @@
   "eslintConfig": {
     "env": {
       "es6": true,
-      "node": true,
-      "browser": true
+      "browser": true,
+      "jquery": true
     },
     "extends": "airbnb",
     "rules": {
-      "quotes": [
-        2,
-        "single"
-      ]
+      "quotes": [2, "single"],
+      "no-use-before-define": ["error", { "functions": false, "variables": true }],
+      "no-mixed-operators": ["error", {"allowSamePrecedence": true}]
     },
     "parserOptions": {
       "ecmaVersion": 6,
       "sourceType": "module"
+    },
+    "globals": {
+        "d3": true
     }
   }
 }
