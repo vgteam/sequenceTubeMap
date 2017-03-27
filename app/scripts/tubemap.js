@@ -62,31 +62,15 @@ let minYCoordinate = 0;
 
 let bed;
 
-// public function to fill the svg with a visualization of the data contained in nodes and tracks variables
-/* export function create(inputSvg, origNodes, origTracks, clickableNodes, inputBed, inputReads) {
-  if (typeof clickableNodes === 'undefined') config.clickableNodesFlag = false;
-  else config.clickableNodesFlag = clickableNodes;
-  svgID = inputSvg;
-  svg = d3.select(inputSvg);
-  inputNodes = (JSON.parse(JSON.stringify(origNodes))); // deep copy
-  inputTracks = (JSON.parse(JSON.stringify(origTracks)));
-  reads = inputReads;
-  bed = null;
-  if (typeof inputBed !== 'undefined') {
-    bed = inputBed;
-    // console.log('received bed info');
-  }
-  const tr = createTubeMap();
-  drawLegend(tr);
-}*/
-
+// main function to call from outside
+// which starts the process of creating a tube map visualization
 export function create(params) {
   // mandatory parameters: svgID, nodes, tracks
   // optional parameters: bed, clickableNodes, reads
   svgID = params.svgID;
   svg = d3.select(params.svgID);
   inputNodes = (JSON.parse(JSON.stringify(params.nodes))); // deep copy
-  inputTracks = (JSON.parse(JSON.stringify(params.tracks)));
+  inputTracks = (JSON.parse(JSON.stringify(params.tracks))); // deep copy
   reads = params.reads || null;
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
@@ -186,17 +170,19 @@ export function setNodeWidthOption(value) {
 
 // main
 function createTubeMap() {
-  // traightenTrack(0);
+  // straightenTrack(0);
   nodes = (JSON.parse(JSON.stringify(inputNodes))); // deep copy (can add stuff to copy and leave original unchanged)
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   nodeMap = generateNodeMap(nodes);
+  generateTrackIndexSequences();
+
   if (reads) {
     reads.sort(compareReadsByLeftEnd);
-    tracks = tracks.concat(reads);
+    // tracks = tracks.concat(reads);
   }
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
-    if (!tracks[i].hasOwnProperty('type')) {
+    if (!tracks[i].hasOwnProperty('type')) { // TODO: Remove "haplo"-property
       tracks[i].type = 'haplo';
     }
     if (tracks[i].hasOwnProperty('hidden')) {
@@ -227,11 +213,10 @@ function createTubeMap() {
     mergeNodes();
   }
 
-
   numberOfNodes = nodes.length;
   numberOfTracks = tracks.length;
   nodeMap = generateNodeMap(nodes);
-  generateNodeSuccessors(nodes, tracks);
+  generateNodeSuccessors();
   generateNodeWidth();
   generateNodeDegree();
   console.log(`${numberOfNodes} nodes.`);
@@ -288,6 +273,20 @@ function createTubeMap() {
   return tracks;
 }
 
+function generateTrackIndexSequences() {
+  tracks.forEach((track) => {
+    track.indexSequence = [];
+    track.sequence.forEach((nodeName) => {
+      if (nodeName.charAt(0) === '-') {
+        nodeName = nodeName.substr(1);
+        track.indexSequence.push(-nodeMap.get(nodeName));
+      } else {
+        track.indexSequence.push(nodeMap.get(nodeName));
+      }
+    });
+  });
+}
+
 // remove nodes with no tracks moving through them to avoid d3.js errors
 function removeUnusedNodes() {
   let i;
@@ -330,18 +329,16 @@ function alignSVG() {
 // map node names to node indices
 function generateNodeMap() {
   nodeMap = new Map();
-
   nodes.forEach((node, index) => {
     nodeMap.set(node.name, index);
   });
   return nodeMap;
 }
 
-// adds a successor-array to each node containing the names of the nodes coming directly after the current node
+// adds a successor-array to each node containing the indices of the nodes coming directly after the current node
 function generateNodeSuccessors() {
-  let currentNode;
-  let followerID;
-  let modifiedSequence = [];
+  let current;
+  let follower;
 
   nodes.forEach((node) => {
     node.successors = [];
@@ -349,15 +346,14 @@ function generateNodeSuccessors() {
   });
 
   tracks.forEach((track) => {
-    modifiedSequence = uninvert(track.sequence);
-    for (let i = 0; i < modifiedSequence.length - 1; i += 1) {
-      currentNode = nodes[nodeMap.get(modifiedSequence[i])];
-      followerID = modifiedSequence[i + 1];
-      if (currentNode.successors.indexOf(followerID) === -1) {
-        currentNode.successors.push(followerID);
+    for (let i = 0; i < track.indexSequence.length - 1; i += 1) {
+      current = Math.abs(track.indexSequence[i]);
+      follower = Math.abs(track.indexSequence[i + 1]);
+      if (nodes[current].successors.indexOf(follower) === -1) {
+        nodes[current].successors.push(follower);
       }
-      if (nodes[nodeMap.get(followerID)].predecessors.indexOf(modifiedSequence[i]) === -1) {
-        nodes[nodeMap.get(followerID)].predecessors.push(modifiedSequence[i]);
+      if (nodes[follower].predecessors.indexOf(current) === -1) {
+        nodes[follower].predecessors.push(current);
       }
     }
   });
@@ -465,12 +461,12 @@ function generateNodeOrder() {
 
         if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) { // if order-value of left anchor < order-value of right anchor
           if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < currentOrder) { // and the right anchor now has a lower order-value than our newly added nodes
-            increaseOrderForSuccessors(nodes[nodeMap.get(modifiedSequence[rightIndex])], modifiedSequence[rightIndex - 1], currentOrder);
+            increaseOrderForSuccessors(nodeMap.get(modifiedSequence[rightIndex]), nodeMap.get(modifiedSequence[rightIndex - 1]), currentOrder);
           }
         } else { // potential node reversal: check for ordering conflict, if no conflict found move node at rightIndex further to the right in order to not create a track reversal
           // if (!isSuccessor(nodeMap.get(modifiedSequence[rightIndex]), nodeMap.get(modifiedSequence[leftIndex]))) { // no real reversal
           if ((tracks[i].sequence[rightIndex].charAt(0) !== '-') && (!isSuccessor(nodeMap.get(modifiedSequence[rightIndex]), nodeMap.get(modifiedSequence[leftIndex])))) { // no real reversal
-            increaseOrderForSuccessors(nodes[nodeMap.get(modifiedSequence[rightIndex])], modifiedSequence[rightIndex - 1], currentOrder);
+            increaseOrderForSuccessors(nodeMap.get(modifiedSequence[rightIndex]), nodeMap.get(modifiedSequence[rightIndex - 1]), currentOrder);
           } else { // real reversal
             if ((tracks[i].sequence[leftIndex].charAt(0) === '-') || ((nodes[nodeMap.get(modifiedSequence[leftIndex + 1])].degree < 2) && (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < nodes[nodeMap.get(modifiedSequence[leftIndex])].order))) {
               currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order - 1; // start with order value of leftAnchor - 1
@@ -517,9 +513,9 @@ function isSuccessor(first, second) {
   visited[first] = true;
   while (stack.length > 0) {
     const current = stack.pop();
-    if (nodes[current].name === nodes[second].name) return true;
+    if (current === second) return true;
     for (let i = 0; i < nodes[current].successors.length; i += 1) {
-      const childIndex = nodeMap.get(nodes[current].successors[i]);
+      const childIndex = nodes[current].successors[i];
       if (!visited[childIndex]) {
         visited[childIndex] = true;
         stack.push(childIndex);
@@ -562,28 +558,28 @@ function increaseOrderForAllNodes(amount) {
 }
 
 // increases the order-value for currentNode and (if necessary) successor nodes recursively
-function increaseOrderForSuccessors(startingNode, tabuNode, order) {
+function increaseOrderForSuccessors(startingNode, tabuNode, newOrder) {
   const increasedOrders = new Map();
   const queue = [];
-  queue.push([startingNode, order]);
+  queue.push([startingNode, newOrder]);
 
   while (queue.length > 0) {
     const current = queue.shift();
     const currentNode = current[0];
-    order = current[1];
+    const currentOrder = current[1];
 
-    if ((currentNode.hasOwnProperty('order')) && (currentNode.order < order)) {
-      if ((!increasedOrders.has(currentNode.name)) || (increasedOrders.get(currentNode.name) < order)) {
-        increasedOrders.set(currentNode.name, order);
-        currentNode.successors.forEach((successor) => {
-          if ((nodes[nodeMap.get(successor)].order > currentNode.order) && (successor !== tabuNode)) { // only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
-            queue.push([nodes[nodeMap.get(successor)], order + 1]);
+    if ((nodes[currentNode].hasOwnProperty('order')) && (nodes[currentNode].order < currentOrder)) {
+      if ((!increasedOrders.has(currentNode)) || (increasedOrders.get(currentNode) < currentOrder)) {
+        increasedOrders.set(currentNode, currentOrder);
+        nodes[currentNode].successors.forEach((successor) => {
+          if ((nodes[successor].order > nodes[currentNode].order) && (successor !== tabuNode)) { // only increase order of successors if they lie to the right of the currentNode (not for repeats/translocations)
+            queue.push([successor, currentOrder + 1]);
           }
         });
         if (currentNode !== startingNode) {
-          currentNode.predecessors.forEach((predecessor) => {
-            if ((nodes[nodeMap.get(predecessor)].order > currentNode.order) && (predecessor !== tabuNode)) { // only increase order of predecessors if they lie to the right of the currentNode (not for repeats/translocations)
-              queue.push([nodes[nodeMap.get(predecessor)], order + 1]);
+          nodes[currentNode].predecessors.forEach((predecessor) => {
+            if ((nodes[predecessor].order > currentNode.order) && (predecessor !== tabuNode)) { // only increase order of predecessors if they lie to the right of the currentNode (not for repeats/translocations)
+              queue.push([predecessor, currentOrder + 1]);
             }
           });
         }
@@ -592,7 +588,7 @@ function increaseOrderForSuccessors(startingNode, tabuNode, order) {
   }
 
   increasedOrders.forEach((value, key) => {
-    nodes[nodeMap.get(key)].order = value;
+    nodes[key].order = value;
   });
 }
 
