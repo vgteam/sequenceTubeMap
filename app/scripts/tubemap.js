@@ -174,12 +174,12 @@ function createTubeMap() {
   nodes = (JSON.parse(JSON.stringify(inputNodes))); // deep copy (can add stuff to copy and leave original unchanged)
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   nodeMap = generateNodeMap(nodes);
-  generateTrackIndexSequences();
 
   if (reads) {
     reads.sort(compareReadsByLeftEnd);
-    // tracks = tracks.concat(reads);
+    tracks = tracks.concat(reads);
   }
+  generateTrackIndexSequences();
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty('type')) { // TODO: Remove "haplo"-property
@@ -215,7 +215,7 @@ function createTubeMap() {
 
   numberOfNodes = nodes.length;
   numberOfTracks = tracks.length;
-  nodeMap = generateNodeMap(nodes);
+  // nodeMap = generateNodeMap(nodes);
   generateNodeSuccessors();
   generateNodeWidth();
   generateNodeDegree();
@@ -227,7 +227,6 @@ function createTubeMap() {
   // can cause problems when there is a reversed single track node
   // OTOH, can solve problems with complex inversion patterns
   // switchNodeOrientation();
-
   // generateNodeOrder(nodes, tracks);
   // maxOrder = getMaxOrder();
 
@@ -365,10 +364,9 @@ function generateNodeOrderOfSingleTrack(sequence) {
   let currentNode;
   let minOrder = 0;
 
-  sequence.forEach((nodeName) => {
-    if (nodeName.charAt(0) === '-') {
-      nodeName = nodeName.substr(1);
-      currentNode = nodes[nodeMap.get(nodeName)];
+  sequence.forEach((nodeIndex) => {
+    if (nodeIndex < 0) {
+      currentNode = nodes[Math.abs(nodeIndex)];
       if (!currentNode.hasOwnProperty('order')) {
         currentNode.order = backwardOrder;
       }
@@ -376,7 +374,7 @@ function generateNodeOrderOfSingleTrack(sequence) {
       forwardOrder = currentNode.order;
       backwardOrder = currentNode.order - 1;
     } else {
-      currentNode = nodes[nodeMap.get(nodeName)];
+      currentNode = nodes[nodeIndex];
       if (!currentNode.hasOwnProperty('order')) {
         currentNode.order = forwardOrder;
       }
@@ -395,37 +393,30 @@ function generateNodeOrderTrackBeginning(sequence) {
   let currentOrder;
   let currentNode;
   let minOrder = 0;
+  let increment;
 
-  const modifiedSequence = uninvert(sequence);
+  while (!nodes[Math.abs(sequence[anchorIndex])].hasOwnProperty('order')) anchorIndex += 1; // anchor = first node in common with existing graph
 
-  while (!nodes[nodeMap.get(modifiedSequence[anchorIndex])].hasOwnProperty('order')) anchorIndex += 1; // anchor = first node in common with existing graph
+  if (sequence[anchorIndex] >= 0) { // regular node
+    currentOrder = nodes[sequence[anchorIndex]].order - 1;
+    increment = -1;
+  } else { // reverse node
+    currentOrder = nodes[-sequence[anchorIndex]].order + 1;
+    increment = 1;
+  }
 
-  if (sequence[anchorIndex].charAt(0) !== '-') {
-    currentOrder = nodes[nodeMap.get(sequence[anchorIndex])].order - 1;
-    for (let j = anchorIndex - 1; j >= 0; j -= 1) { // assign order to nodes
-      currentNode = nodes[nodeMap.get(modifiedSequence[j])];
-      if (!currentNode.hasOwnProperty('order')) {
-        currentNode.order = currentOrder;
-        minOrder = Math.min(minOrder, currentOrder);
-        currentOrder -= 1;
-      }
-    }
-  } else {
-    currentOrder = nodes[nodeMap.get(modifiedSequence[anchorIndex])].order + 1;
-    for (let j = anchorIndex - 1; j >= 0; j -= 1) {
-      currentNode = nodes[nodeMap.get(modifiedSequence[j])];
-      if (!currentNode.hasOwnProperty('order')) {
-        currentNode.order = currentOrder;
-        minOrder = Math.min(minOrder, currentOrder);
-        currentOrder += 1;
-      }
+  for (let j = anchorIndex - 1; j >= 0; j -= 1) { // assign order to nodes which are left of anchor node
+    currentNode = nodes[Math.abs(sequence[j])];
+    if (!currentNode.hasOwnProperty('order')) {
+      currentNode.order = currentOrder;
+      minOrder = Math.min(minOrder, currentOrder);
+      currentOrder += increment;
     }
   }
 
   if (minOrder < 0) {
     increaseOrderForAllNodes(-minOrder);
   }
-
   return anchorIndex;
 }
 
@@ -438,59 +429,58 @@ function generateNodeOrder() {
   let leftIndex;
   let minOrder = 0;
 
-  generateNodeOrderOfSingleTrack(tracks[0].sequence); // calculate order values for all nodes of the first track
+  generateNodeOrderOfSingleTrack(tracks[0].indexSequence); // calculate order values for all nodes of the first track
 
   for (let i = 1; i < tracks.length; i += 1) {
     if (DEBUG) console.log(`generating order for track ${i + 1}`);
-    modifiedSequence = uninvert(tracks[i].sequence);
-    // rightIndex = generateNodeOrderLeftEnd(modifiedSequence); // calculate order values for all nodes until the first anchor
-    rightIndex = generateNodeOrderTrackBeginning(tracks[i].sequence); // calculate order values for all nodes until the first anchor
+    rightIndex = generateNodeOrderTrackBeginning(tracks[i].indexSequence); // calculate order values for all nodes until the first anchor
+    modifiedSequence = uninvert(tracks[i].indexSequence);
 
     while (rightIndex < modifiedSequence.length) { // move right until the end of the sequence
       // find next anchor node
       leftIndex = rightIndex;
       rightIndex += 1;
-      while ((rightIndex < modifiedSequence.length) && (!nodes[nodeMap.get(modifiedSequence[rightIndex])].hasOwnProperty('order'))) rightIndex += 1;
+      while ((rightIndex < modifiedSequence.length) && (!nodes[modifiedSequence[rightIndex]].hasOwnProperty('order'))) rightIndex += 1;
 
       if (rightIndex < modifiedSequence.length) { // middle segment between two anchors
-        currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1; // start with order value of leftAnchor + 1
+        currentOrder = nodes[modifiedSequence[leftIndex]].order + 1; // start with order value of leftAnchor + 1
         for (let j = leftIndex + 1; j < rightIndex; j += 1) {
-          nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; // assign order values
+          nodes[modifiedSequence[j]].order = currentOrder; // assign order values
           currentOrder += 1;
         }
 
-        if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order > nodes[nodeMap.get(modifiedSequence[leftIndex])].order) { // if order-value of left anchor < order-value of right anchor
-          if (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < currentOrder) { // and the right anchor now has a lower order-value than our newly added nodes
-            increaseOrderForSuccessors(nodeMap.get(modifiedSequence[rightIndex]), nodeMap.get(modifiedSequence[rightIndex - 1]), currentOrder);
+        if (nodes[modifiedSequence[rightIndex]].order > nodes[modifiedSequence[leftIndex]].order) { // if order-value of left anchor < order-value of right anchor
+          if (nodes[modifiedSequence[rightIndex]].order < currentOrder) { // and the right anchor now has a lower order-value than our newly added nodes
+            increaseOrderForSuccessors(modifiedSequence[rightIndex], modifiedSequence[rightIndex - 1], currentOrder);
           }
         } else { // potential node reversal: check for ordering conflict, if no conflict found move node at rightIndex further to the right in order to not create a track reversal
           // if (!isSuccessor(nodeMap.get(modifiedSequence[rightIndex]), nodeMap.get(modifiedSequence[leftIndex]))) { // no real reversal
-          if ((tracks[i].sequence[rightIndex].charAt(0) !== '-') && (!isSuccessor(nodeMap.get(modifiedSequence[rightIndex]), nodeMap.get(modifiedSequence[leftIndex])))) { // no real reversal
-            increaseOrderForSuccessors(nodeMap.get(modifiedSequence[rightIndex]), nodeMap.get(modifiedSequence[rightIndex - 1]), currentOrder);
+          if ((tracks[i].indexSequence[rightIndex] >= 0) && (!isSuccessor(modifiedSequence[rightIndex], modifiedSequence[leftIndex]))) { // no real reversal
+            increaseOrderForSuccessors(modifiedSequence[rightIndex], modifiedSequence[rightIndex - 1], currentOrder);
           } else { // real reversal
-            if ((tracks[i].sequence[leftIndex].charAt(0) === '-') || ((nodes[nodeMap.get(modifiedSequence[leftIndex + 1])].degree < 2) && (nodes[nodeMap.get(modifiedSequence[rightIndex])].order < nodes[nodeMap.get(modifiedSequence[leftIndex])].order))) {
-              currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order - 1; // start with order value of leftAnchor - 1
+            if ((tracks[i].sequence[leftIndex] < 0) || ((nodes[modifiedSequence[leftIndex + 1]].degree < 2) && (nodes[modifiedSequence[rightIndex]].order < nodes[modifiedSequence[leftIndex]].order))) {
+              currentOrder = nodes[modifiedSequence[leftIndex]].order - 1; // start with order value of leftAnchor - 1
               for (let j = leftIndex + 1; j < rightIndex; j += 1) {
-                nodes[nodeMap.get(modifiedSequence[j])].order = currentOrder; // assign order values
+                nodes[modifiedSequence[j]].order = currentOrder; // assign order values
                 currentOrder -= 1;
               }
             }
           }
         }
       } else { // right segment to the right of last anchor
-        if (tracks[i].sequence[leftIndex].charAt(0) !== '-') { // elongate towards the right
-          currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order + 1;
+        if (tracks[i].sequence[leftIndex] >= 0) { // elongate towards the right
+          currentOrder = nodes[modifiedSequence[leftIndex]].order + 1;
           for (let j = leftIndex + 1; j < modifiedSequence.length; j += 1) {
-            currentNode = nodes[nodeMap.get(modifiedSequence[j])];
+            currentNode = nodes[modifiedSequence[j]];
             if (!currentNode.hasOwnProperty('order')) {
               currentNode.order = currentOrder;
               currentOrder += 1;
             }
           }
         } else { // elongate towards the left
-          currentOrder = nodes[nodeMap.get(modifiedSequence[leftIndex])].order - 1;
+          currentOrder = nodes[modifiedSequence[leftIndex]].order - 1;
           for (let j = leftIndex + 1; j < modifiedSequence.length; j += 1) {
-            currentNode = nodes[nodeMap.get(modifiedSequence[j])];
+            currentNode = nodes[modifiedSequence[j]];
             if (!currentNode.hasOwnProperty('order')) {
               currentNode.order = currentOrder;
               minOrder = Math.min(minOrder, currentOrder);
@@ -528,23 +518,20 @@ function isSuccessor(first, second) {
 // get order number of the rightmost node
 function getMaxOrder() {
   let max = -1;
-
   nodes.forEach((node) => {
     if ((node.hasOwnProperty('order')) && (node.order > max)) max = node.order;
   });
-
   return max;
 }
 
-// generates sequence keeping the order but removing all '-'s from nodes
+// generates sequence keeping the order but switching all reversed (negative) nodes to forward nodes
 function uninvert(sequence) {
   const result = [];
-
   for (let i = 0; i < sequence.length; i += 1) {
-    if (sequence[i].charAt(0) !== '-') {
+    if (sequence[i] >= 0) {
       result.push(sequence[i]);
     } else {
-      result.push(sequence[i].substr(1));
+      result.push(-sequence[i]);
     }
   }
   return result;
@@ -597,10 +584,8 @@ function generateNodeDegree() {
   nodes.forEach((node) => { node.tracks = []; });
 
   tracks.forEach((track) => {
-    track.sequence.forEach((nodeName) => {
-      let noMinusName = nodeName;
-      if (noMinusName.charAt(0) === '-') noMinusName = noMinusName.substr(1);
-      nodes[nodeMap.get(noMinusName)].tracks.push(track.id);
+    track.indexSequence.forEach((nodeIndex) => {
+      nodes[Math.abs(nodeIndex)].tracks.push(track.id);
     });
   });
 
@@ -1873,7 +1858,7 @@ export function vgExtractNodes(vg) {
   return result;
 }
 
-// calculated node widths depending on sequence lengths and chosen calculation method
+// calculate node widths depending on sequence lengths and chosen calculation method
 function generateNodeWidth() {
   switch (config.nodeWidthOption) {
     case 1:
@@ -1886,7 +1871,6 @@ function generateNodeWidth() {
       nodes.forEach((node) => {
         // if (node.hasOwnProperty('sequenceLength')) node.width = (1 + Math.log(node.sequenceLength) / Math.log(10));
         // node.pixelWidth = Math.round((node.width - 1) * 8.401);
-
         if (node.hasOwnProperty('sequenceLength')) node.width = (node.sequenceLength / 100);
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
