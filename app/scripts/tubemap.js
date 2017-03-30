@@ -174,13 +174,11 @@ function createTubeMap() {
   nodes = (JSON.parse(JSON.stringify(inputNodes))); // deep copy (can add stuff to copy and leave original unchanged)
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   nodeMap = generateNodeMap(nodes);
-
+  generateTrackIndexSequences(tracks);
   if (reads) {
     reads.sort(compareReadsByLeftEnd);
-    tracks = tracks.concat(reads);
+    // tracks = tracks.concat(reads);
   }
-  generateTrackIndexSequences();
-
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty('type')) { // TODO: Remove "haplo"-property
       tracks[i].type = 'haplo';
@@ -211,11 +209,12 @@ function createTubeMap() {
     // nodes = NodesAndTracks.nodes;
     // tracks = NodesAndTracks.tracks;
     mergeNodes();
+    nodeMap = generateNodeMap(nodes);
+    generateTrackIndexSequences(tracks);
   }
-
+  generateTrackIndexSequences(tracks); // can be removed once reads are not part of tracks anymore
   numberOfNodes = nodes.length;
   numberOfTracks = tracks.length;
-  // nodeMap = generateNodeMap(nodes);
   generateNodeSuccessors();
   generateNodeWidth();
   generateNodeDegree();
@@ -234,8 +233,18 @@ function createTubeMap() {
   generateLaneAssignment();
 
   if ((config.showExonsFlag === true) && (bed !== null)) addTrackFeatures();
-
   generateNodeXCoords();
+  console.log('Node x-coords:');
+  console.log(nodes);
+  if (reads) {
+    // reads = reads.slice(2, 3);
+    reads.sort(compareReadsByLeftEnd);
+    generateTrackIndexSequences(reads);
+    addReads2();
+    tracks = tracks.concat(reads);
+  }
+
+  // generateNodeXCoords();
   generateSVGShapesFromPath(nodes, tracks);
   removeUnusedNodes(nodes);
   console.log('tracks:');
@@ -268,12 +277,145 @@ function createTubeMap() {
     console.log(`number of tracks: ${numberOfTracks}`);
     console.log(`number of nodes: ${numberOfNodes}`);
   }
-
   return tracks;
 }
 
-function generateTrackIndexSequences() {
+function addReads() {
+  reads.forEach((read) => {
+    read.path = [];
+    read.width = 4;
+    read.indexSequence.forEach((currentNodeIndex) => {
+      const pathElement = {};
+      pathElement.isForward = currentNodeIndex >= 0;
+      const currentNode = nodes[Math.abs(currentNodeIndex)];
+      pathElement.order = currentNode.order;
+      pathElement.y = currentNode.y + currentNode.contentHeight;
+      currentNode.contentHeight += read.width;
+      pathElement.node = Math.abs(currentNodeIndex);
+      read.path.push(pathElement);
+      adjustVertically2(assignments[currentNode.order], pathElement.y, read.width);
+    });
+  });
+  console.log('Reads:');
+  console.log(reads);
+}
+
+function addReads2() {
+  const bottomY = calculateBottomY();
+  const assignedReadSegments = [];
+  for (let i = 0; i <= maxOrder; i += 1) {
+    assignedReadSegments.push([]);
+  }
+  console.log(assignedReadSegments);
+  generateBasicPathsForReads();
+  reads.forEach((read, idx) => {
+    read.width = 4;
+    read.path.forEach((element, pathIdx) => {
+      if (element.node != null) {
+        const currentNode = nodes[element.node];
+        element.y = currentNode.y + currentNode.contentHeight;
+        currentNode.contentHeight += read.width;
+        bottomY[element.order] += read.width;
+      } else {
+        element.y = bottomY[element.order];
+        bottomY[element.order] += read.width;
+      }
+      adjustVertically2(assignments[element.order], element.y, read.width);
+      assignedReadSegments[element.order].forEach((segment) => {
+        if (reads[segment.read].path[segment.pathIndex].y >= element.y) {
+          reads[segment.read].path[segment.pathIndex].y += read.width;
+        }
+      });
+
+      assignedReadSegments[element.order].push({ read: idx, pathIndex: pathIdx, y: element.y });
+    });
+  });
+  console.log('Reads:');
+  console.log(reads);
+}
+
+function calculateBottomY() {
+  const bottomY = [];
+  for (let i = 0; i <= maxOrder; i += 1) {
+    bottomY.push(0);
+  }
+
+  nodes.forEach((node) => {
+    bottomY[node.order] = Math.max(bottomY[node.order], node.y + node.contentHeight + 20);
+  });
+
   tracks.forEach((track) => {
+    track.path.forEach((element) => {
+      bottomY[element.order] = Math.max(bottomY[element.order], element.y + track.width);
+    });
+  });
+  return bottomY;
+}
+
+function generateBasicPathsForReads() {
+  let currentNodeIndex;
+  let currentNodeIsForward;
+  let currentNode;
+  let previousNode;
+  let previousNodeIsForward;
+
+  reads.forEach((read) => {
+    // add info for start of track
+    currentNodeIndex = Math.abs(read.indexSequence[0]);
+    currentNodeIsForward = read.indexSequence[0] >= 0;
+    currentNode = nodes[currentNodeIndex];
+
+    read.path = [];
+    read.path.push({ order: currentNode.order, isForward: currentNodeIsForward, node: currentNodeIndex });
+
+    for (let i = 1; i < read.sequence.length; i += 1) {
+      previousNode = currentNode;
+      previousNodeIsForward = currentNodeIsForward;
+
+      currentNodeIndex = Math.abs(read.indexSequence[i]);
+      currentNodeIsForward = read.indexSequence[i] >= 0;
+      currentNode = nodes[currentNodeIndex];
+
+      if (currentNode.order > previousNode.order) {
+        if (!previousNodeIsForward) { // backward to forward at previous node
+          read.path.push({ order: previousNode.order, isForward: true, node: null });
+        }
+        for (let j = previousNode.order + 1; j < currentNode.order; j += 1) { // forward without nodes
+          read.path.push({ order: j, isForward: true, node: null });
+        }
+        if (!currentNodeIsForward) { // forward to backward at current node
+          read.path.push({ order: currentNode.order, isForward: true, node: null });
+          read.path.push({ order: currentNode.order, isForward: false, node: currentNodeIndex });
+        } else { // current Node forward
+          read.path.push({ order: currentNode.order, isForward: true, node: currentNodeIndex });
+        }
+      } else if (currentNode.order < previousNode.order) {
+        if (previousNodeIsForward) { // turnaround from fw to bw at previous node
+          read.path.push({ order: previousNode.order, isForward: false, node: null });
+        }
+        for (let j = previousNode.order - 1; j > currentNode.order; j -= 1) { // bachward without nodes
+          read.path.push({ order: j, isForward: false, node: null });
+        }
+        if (currentNodeIsForward) { // backward to forward at current node
+          read.path.push({ order: currentNode.order, isForward: false, node: null });
+          read.path.push({ order: currentNode.order, isForward: true, node: currentNodeIndex });
+        } else { // backward at current node
+          read.path.push({ order: currentNode.order, isForward: false, node: currentNodeIndex });
+        }
+      } else { // currentNode.order === previousNode.order
+        if (currentNodeIsForward !== previousNodeIsForward) {
+          read.path.push({ order: currentNode.order, isForward: currentNodeIsForward, node: currentNodeIndex });
+        } else {
+          read.path.push({ order: currentNode.order, isForward: !currentNodeIsForward, node: null });
+          read.path.push({ order: currentNode.order, isForward: currentNodeIsForward, node: currentNodeIndex });
+        }
+      }
+    }
+  });
+}
+
+function generateTrackIndexSequences(tracksOrReads) {
+  tracksOrReads.forEach((track) => {
     track.indexSequence = [];
     track.sequence.forEach((nodeName) => {
       if (nodeName.charAt(0) === '-') {
@@ -289,7 +431,6 @@ function generateTrackIndexSequences() {
 // remove nodes with no tracks moving through them to avoid d3.js errors
 function removeUnusedNodes() {
   let i;
-
   for (i = nodes.length - 1; i >= 0; i -= 1) {
     if (nodes[i].degree === 0) {
       nodes.splice(i, 1);
@@ -658,12 +799,11 @@ function generateNodeXCoords() {
   let currentX = 0;
   let nextX = 20;
   let currentOrder = -1;
-
-  nodes.sort(compareNodesByOrder);
-  nodeMap = generateNodeMap(nodes);
+  const sortedNodes = nodes.slice();
+  sortedNodes.sort(compareNodesByOrder);
   const extra = calculateExtraSpace();
 
-  nodes.forEach((node) => {
+  sortedNodes.forEach((node) => {
     if (node.hasOwnProperty('order')) {
       if (node.order > currentOrder) {
         currentOrder = node.order;
@@ -701,20 +841,20 @@ function calculateExtraSpace() {
   for (let i = 1; i <= maxOrder; i += 1) {
     extra.push(Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1));
   }
-
   return extra;
 }
 
-// create and fill assignment-letiable, which contains info about tracks and lanes for each order-value
+// create and fill assignment-variable, which contains info about tracks and lanes for each order-value
 function generateLaneAssignment() {
   let segmentNumber;
-  let currentNodeId;
+  let currentNodeIndex;
   let currentNodeIsForward;
   let currentNode;
   let previousNode;
   let previousNodeIsForward;
   const prevSegmentPerOrderPerTrack = [];
 
+  // create empty variables
   for (let i = 0; i <= maxOrder; i += 1) {
     assignments[i] = [];
     prevSegmentPerOrderPerTrack[i] = [];
@@ -725,89 +865,80 @@ function generateLaneAssignment() {
 
   tracks.forEach((track, trackNo) => {
     // add info for start of track
-    currentNodeId = track.sequence[0];
-    if (currentNodeId.charAt(0) !== '-') {
-      currentNodeIsForward = true;
-    } else {
-      currentNodeId = currentNodeId.substr(1);
-      currentNodeIsForward = false;
-    }
-    currentNode = nodes[nodeMap.get(currentNodeId)];
+    currentNodeIndex = Math.abs(track.indexSequence[0]);
+    currentNodeIsForward = track.indexSequence[0] >= 0;
+    currentNode = nodes[currentNodeIndex];
 
     track.path = [];
-    track.path.push({ order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId });
-    addToAssignment(currentNode.order, currentNodeId, trackNo, 0, prevSegmentPerOrderPerTrack);
+    track.path.push({ order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeIndex });
+    addToAssignment(currentNode.order, currentNodeIndex, trackNo, 0, prevSegmentPerOrderPerTrack);
 
     segmentNumber = 1;
     for (let i = 1; i < track.sequence.length; i += 1) {
       previousNode = currentNode;
       previousNodeIsForward = currentNodeIsForward;
 
-      currentNodeId = track.sequence[i];
-      currentNodeIsForward = true;
-      if (currentNodeId.charAt(0) === '-') {
-        currentNodeId = currentNodeId.substr(1);
-        currentNodeIsForward = false;
-      }
-      currentNode = nodes[nodeMap.get(currentNodeId)];
+      currentNodeIndex = Math.abs(track.indexSequence[i]);
+      currentNodeIsForward = track.indexSequence[i] >= 0;
+      currentNode = nodes[currentNodeIndex];
 
       if (currentNode.order > previousNode.order) {
-        if (!previousNodeIsForward) {
+        if (!previousNodeIsForward) { // backward to forward at previous node
           track.path.push({ order: previousNode.order, lane: null, isForward: true, node: null });
           addToAssignment(previousNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
         }
-        for (let j = previousNode.order + 1; j < currentNode.order; j += 1) {
+        for (let j = previousNode.order + 1; j < currentNode.order; j += 1) { // forward without nodes
           track.path.push({ order: j, lane: null, isForward: true, node: null });
           addToAssignment(j, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
         }
-        if (!currentNodeIsForward) {
+        if (!currentNodeIsForward) { // forward to backward at current node
           track.path.push({ order: currentNode.order, lane: null, isForward: true, node: null });
           addToAssignment(currentNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
-          track.path.push({ order: currentNode.order, lane: null, isForward: false, node: currentNodeId });
-          addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
+          track.path.push({ order: currentNode.order, lane: null, isForward: false, node: currentNodeIndex });
+          addToAssignment(currentNode.order, currentNodeIndex, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
-        } else {
-          track.path.push({ order: currentNode.order, lane: null, isForward: true, node: currentNodeId });
-          addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
+        } else { // current Node forward
+          track.path.push({ order: currentNode.order, lane: null, isForward: true, node: currentNodeIndex });
+          addToAssignment(currentNode.order, currentNodeIndex, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
         }
       } else if (currentNode.order < previousNode.order) {
-        if (previousNodeIsForward) {
+        if (previousNodeIsForward) { // turnaround from fw to bw at previous node
           track.path.push({ order: previousNode.order, lane: null, isForward: false, node: null });
           addToAssignment(previousNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
         }
-        for (let j = previousNode.order - 1; j > currentNode.order; j -= 1) {
+        for (let j = previousNode.order - 1; j > currentNode.order; j -= 1) { // bachward without nodes
           track.path.push({ order: j, lane: null, isForward: false, node: null });
           addToAssignment(j, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
         }
-        if (currentNodeIsForward) {
+        if (currentNodeIsForward) { // backward to forward at current node
           track.path.push({ order: currentNode.order, lane: null, isForward: false, node: null });
           addToAssignment(currentNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
-          track.path.push({ order: currentNode.order, lane: null, isForward: true, node: currentNodeId });
-          addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
+          track.path.push({ order: currentNode.order, lane: null, isForward: true, node: currentNodeIndex });
+          addToAssignment(currentNode.order, currentNodeIndex, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
-        } else {
-          track.path.push({ order: currentNode.order, lane: null, isForward: false, node: currentNodeId });
-          addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
+        } else { // backward at current node
+          track.path.push({ order: currentNode.order, lane: null, isForward: false, node: currentNodeIndex });
+          addToAssignment(currentNode.order, currentNodeIndex, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
         }
       } else { // currentNode.order === previousNode.order
         if (currentNodeIsForward !== previousNodeIsForward) {
-          track.path.push({ order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId });
-          addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
+          track.path.push({ order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeIndex });
+          addToAssignment(currentNode.order, currentNodeIndex, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
         } else {
           track.path.push({ order: currentNode.order, lane: null, isForward: !currentNodeIsForward, node: null });
           addToAssignment(currentNode.order, null, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
-          track.path.push({ order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeId });
-          addToAssignment(currentNode.order, currentNodeId, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
+          track.path.push({ order: currentNode.order, lane: null, isForward: currentNodeIsForward, node: currentNodeIndex });
+          addToAssignment(currentNode.order, currentNodeIndex, trackNo, segmentNumber, prevSegmentPerOrderPerTrack);
           segmentNumber += 1;
         }
       }
@@ -819,20 +950,15 @@ function generateLaneAssignment() {
   }
 }
 
-function addToAssignment(order, nodeID, trackNo, segmentID, prevSegmentPerOrderPerTrack) {
-  let compareToFromSame;
+function addToAssignment(order, nodeIndex, trackNo, segmentID, prevSegmentPerOrderPerTrack) {
+  const compareToFromSame = prevSegmentPerOrderPerTrack[order][trackNo];
 
-  compareToFromSame = null;
-  if (prevSegmentPerOrderPerTrack[order][trackNo] !== null) {
-    compareToFromSame = prevSegmentPerOrderPerTrack[order][trackNo];
-  }
-
-  if (nodeID === null) {
-    assignments[order].push({ type: 'single', name: null, tracks: [{ trackID: trackNo, segmentID, compareToFromSame }] });
+  if (nodeIndex === null) {
+    assignments[order].push({ type: 'single', node: null, tracks: [{ trackID: trackNo, segmentID, compareToFromSame }] });
     prevSegmentPerOrderPerTrack[order][trackNo] = assignments[order][assignments[order].length - 1].tracks[0];
   } else {
     for (let i = 0; i < assignments[order].length; i += 1) {
-      if (assignments[order][i].name === nodeID) { // add to existing node in assignment
+      if (assignments[order][i].node === nodeIndex) { // add to existing node in assignment
         assignments[order][i].type = 'multiple';
         assignments[order][i].tracks.push({ trackID: trackNo, segmentID, compareToFromSame });
         prevSegmentPerOrderPerTrack[order][trackNo] = assignments[order][i].tracks[assignments[order][i].tracks.length - 1];
@@ -840,7 +966,7 @@ function addToAssignment(order, nodeID, trackNo, segmentID, prevSegmentPerOrderP
       }
     }
     // create new node in assignment
-    assignments[order].push({ type: 'single', name: nodeID, tracks: [{ trackID: trackNo, segmentID, compareToFromSame }] });
+    assignments[order].push({ type: 'single', node: nodeIndex, tracks: [{ trackID: trackNo, segmentID, compareToFromSame }] });
     prevSegmentPerOrderPerTrack[order][trackNo] = assignments[order][assignments[order].length - 1].tracks[0];
   }
 }
@@ -886,10 +1012,7 @@ function getIdealLanesAndCoords(assignment, order) {
 // and the whole construct is then moved up or down if necessary
 function generateSingleLaneAssignment(assignment, order) {
   let currentLane = 0;
-  // let sumOfLaneChanges = 0;
   const potentialAdjustmentValues = new Set();
-  // let totalLanes = 0;
-  // let currentY = offsetY + 20;
   let currentY = 20;
   let prevNameIsNull = false;
   let prevTrack = -1;
@@ -901,16 +1024,14 @@ function generateSingleLaneAssignment(assignment, order) {
   assignment.sort(compareByIdealLane);
 
   assignment.forEach((node) => {
-    if (node.name !== null) {
-      nodes[nodeMap.get(node.name)].topLane = currentLane;
+    if (node.node !== null) {
+      nodes[node.node].topLane = currentLane;
       if (prevNameIsNull) currentY -= 10;
-      nodes[nodeMap.get(node.name)].y = currentY;
-      nodes[nodeMap.get(node.name)].contentHeight = 0;
-
+      nodes[node.node].y = currentY;
+      nodes[node.node].contentHeight = 0;
       prevNameIsNull = false;
     } else {
       if (prevNameIsNull) currentY -= 25;
-      // else if (currentY > offsetY + 20) currentY -= 10;
       else if (currentY > 20) currentY -= 10;
       prevNameIsNull = true;
     }
@@ -918,16 +1039,14 @@ function generateSingleLaneAssignment(assignment, order) {
     node.tracks.sort(compareByIdealLane);
     node.tracks.forEach((track) => {
       track.lane = currentLane;
-      if ((track.trackID === prevTrack) && (node.name === null) && (prevNameIsNull)) currentY += 10;
+      if ((track.trackID === prevTrack) && (node.node === null) && (prevNameIsNull)) currentY += 10;
       tracks[track.trackID].path[track.segmentID].lane = currentLane;
       tracks[track.trackID].path[track.segmentID].y = currentY;
-      // sumOfLaneChanges += currentLane - track.idealLane;
       if (track.idealY !== null) potentialAdjustmentValues.add(track.idealY - currentY);
-      // totalLanes += 1;
       currentLane += 1;
       currentY += tracks[track.trackID].width;
-      if (node.name !== null) {
-        nodes[nodeMap.get(node.name)].contentHeight += tracks[track.trackID].width;
+      if (node.node !== null) {
+        nodes[node.node].contentHeight += tracks[track.trackID].width;
       }
       prevTrack = track.trackID;
     });
@@ -950,11 +1069,26 @@ function adjustVertically(assignment, potentialAdjustmentValues) {
   });
 
   assignment.forEach((node) => {
-    if (node.name !== null) {
-      nodes[nodeMap.get(node.name)].y += verticalAdjustment;
+    if (node.node !== null) {
+      nodes[node.node].y += verticalAdjustment;
     }
     node.tracks.forEach((track) => {
       tracks[track.trackID].path[track.segmentID].y += verticalAdjustment;
+    });
+  });
+}
+
+function adjustVertically2(assignment, adjustStart, adjustBy) {
+  assignment.forEach((node) => {
+    if (node.node !== null) {
+      if (nodes[node.node].y >= adjustStart) {
+        nodes[node.node].y += adjustBy;
+      }
+    }
+    node.tracks.forEach((track) => {
+      if (tracks[track.trackID].path[track.segmentID].y >= adjustStart) {
+        tracks[track.trackID].path[track.segmentID].y += adjustBy;
+      }
     });
   });
 }
@@ -1018,10 +1152,10 @@ function addTrackFeatures() {
         if (node.node !== null) {
           feature = {};
           // console.log(nodes[nodeMap.get(node.node)]);
-          if (nodes[nodeMap.get(node.node)].hasOwnProperty('sequenceLength')) {
-            nodeEnd = nodeStart + nodes[nodeMap.get(node.node)].sequenceLength - 1;
+          if (nodes[node.node].hasOwnProperty('sequenceLength')) {
+            nodeEnd = nodeStart + nodes[node.node].sequenceLength - 1;
           } else {
-            nodeEnd = nodeStart + nodes[nodeMap.get(node.node)].width - 1;
+            nodeEnd = nodeStart + nodes[node.node].width - 1;
           }
 
           // console.log(nodeStart + ', ' + nodeEnd);
@@ -1103,7 +1237,7 @@ function generateTrackColor(track, highlight) {
 function getReadXStart(read) {
   let x;
   let offset;
-  const node = nodes[nodeMap.get(read.path[0].node)];
+  const node = nodes[read.path[0].node];
   const nodeLeftX = node.x - 4;
   const nodeRightX = node.x + node.pixelWidth + 4;
   if (read.path[0].isForward) { // read starts in forward direction
@@ -1120,7 +1254,7 @@ function getReadXStart(read) {
 function getReadXEnd(read) {
   let x;
   let offset;
-  const node = nodes[nodeMap.get(read.path[read.path.length - 1].node)];
+  const node = nodes[read.path[read.path.length - 1].node];
   const nodeLeftX = node.x - 4;
   const nodeRightX = node.x + node.pixelWidth + 4;
   if (read.path[read.path.length - 1].isForward) { // read ends in forward direction
@@ -1270,10 +1404,10 @@ function createFeatureRectangle(node, nodeXStart, nodeXEnd, highlight, track, re
   nodeXStart -= 8;
   nodeXEnd += 8;
   // console.log('creating highlight');
-  if (nodes[nodeMap.get(node.node)].hasOwnProperty('sequenceLength')) {
-    nodeWidth = nodes[nodeMap.get(node.node)].sequenceLength;
+  if (nodes[node.node].hasOwnProperty('sequenceLength')) {
+    nodeWidth = nodes[node.node].sequenceLength;
   } else {
-    nodeWidth = nodes[nodeMap.get(node.node)].width;
+    nodeWidth = nodes[node.node].width;
   }
 
   // console.log(nodeWidth);
@@ -1579,31 +1713,6 @@ function drawTrackRectangles(rectangles, type) {
 
   // drawEmptyRects(trackRectangles);
 }
-
-// just an experiment, didn't look good
-/* function drawEmptyRects(trackRectangles) {
-  svg.selectAll('trackLines')
-    .data(trackRectangles)
-    .enter().append('line')
-    .attr('x1', function(d) { return d[0]; })
-    .attr('y1', function(d) { return d[1] + 1; })
-    .attr('x2', function(d) { return d[2] + 1; })
-    .attr('y2', function(d) { return d[1] + 1; })
-    .attr('stroke-width', '2px')
-    //.style('stroke', 'red');
-    .style('stroke', function(d) { return d[4]; });
-
-  svg.selectAll('trackLines')
-    .data(trackRectangles)
-    .enter().append('line')
-    .attr('x1', function(d) { return d[0]; })
-    .attr('y1', function(d) { return d[3]; })
-    .attr('x2', function(d) { return d[2] + 1; })
-    .attr('y2', function(d) { return d[3]; })
-    .attr('stroke-width', '2px')
-    // .style('stroke', 'blue');
-    .style('stroke', function(d) { return d[4]; });
-}*/
 
 function compareCurvesByLineChanges(a, b) {
   if (a[6] < b[6]) return -1;
@@ -2044,7 +2153,6 @@ function mergeNodes() {
     pred.push(new Set());
     succ.push(new Set());
   }
-  nodeMap = generateNodeMap(nodes);
   console.log('map:');
   console.log(nodeMap);
 
