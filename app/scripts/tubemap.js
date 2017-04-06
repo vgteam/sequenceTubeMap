@@ -175,10 +175,10 @@ function createTubeMap() {
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   nodeMap = generateNodeMap(nodes);
   generateTrackIndexSequences(tracks);
-  if (reads) {
-    reads.sort(compareReadsByLeftEnd);
+  // if (reads) {
+    // reads.sort(compareReadsByLeftEnd);
     // tracks = tracks.concat(reads);
-  }
+  // }
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty('type')) { // TODO: Remove "haplo"-property
       tracks[i].type = 'haplo';
@@ -238,9 +238,12 @@ function createTubeMap() {
   console.log(nodes);
   if (reads) {
     // reads = reads.slice(2, 3);
-    reads.sort(compareReadsByLeftEnd);
+    reverseReversedReads();
+    // reads = reads.filter(read => ((read.sequence[0] === '9') || (read.sequence[0] === '10')));
+    // reads = reads.slice(0, 10);
     generateTrackIndexSequences(reads);
-    addReads2();
+    reads.sort(compareReadsByLeftEnd2);
+    addReads3();
     tracks = tracks.concat(reads);
   }
 
@@ -309,11 +312,17 @@ function addReads2() {
   console.log(assignedReadSegments);
   generateBasicPathsForReads();
   reads.forEach((read, idx) => {
-    read.width = 4;
+    read.width = 7;
     read.path.forEach((element, pathIdx) => {
       if (element.node != null) {
         const currentNode = nodes[element.node];
-        element.y = currentNode.y + currentNode.contentHeight;
+        element.y = currentNode.y + currentNode.contentHeight; // TODO: continue here to stack reads!
+        /* if ((idx === 4) && (pathIdx === 0)) {
+          element.y = 183 - (4 * 7);
+          bottomY[element.order] -= read.width;
+          currentNode.contentHeight -= read.width;
+          adjustVertically2(assignments[element.order], element.y, -read.width);
+        }*/
         currentNode.contentHeight += read.width;
         bottomY[element.order] += read.width;
       } else {
@@ -326,9 +335,79 @@ function addReads2() {
           reads[segment.read].path[segment.pathIndex].y += read.width;
         }
       });
-
       assignedReadSegments[element.order].push({ read: idx, pathIndex: pathIdx, y: element.y });
     });
+  });
+  console.log('Reads:');
+  console.log(reads);
+}
+
+function addReads3() {
+  const bottomY = calculateBottomY();
+  const assignedReadSegments = [];
+  for (let i = 0; i <= maxOrder; i += 1) {
+    assignedReadSegments.push([]);
+  }
+  const nodeReadLaneEnds = [];
+  for (let i = 0; i < numberOfNodes; i += 1) {
+    nodeReadLaneEnds.push([]);
+  }
+  // let createsNewLane = false;
+
+  generateBasicPathsForReads();
+  reads.forEach((read, idx) => {
+    read.width = 7;
+    read.path.forEach((element, pathIdx) => {
+      if (element.node != null) {
+        const currentNode = nodes[element.node];
+        const nodeIndex = element.node;
+        // check if we can reuse a lane
+        let readLaneIndex = 0;
+        // if ((pathIdx === 0) || (pathIdx === read.path.length - 1)) {
+        if (pathIdx === 0) {
+          while ((readLaneIndex < nodeReadLaneEnds[nodeIndex].length)
+            && ((nodeReadLaneEnds[nodeIndex][readLaneIndex] < 0) ||
+             (nodeReadLaneEnds[nodeIndex][readLaneIndex] > read.firstNodeOffset - 2))) {
+            readLaneIndex += 1;
+          }
+        } else {
+          readLaneIndex = nodeReadLaneEnds[nodeIndex].length;
+        }
+        if (readLaneIndex < nodeReadLaneEnds[nodeIndex].length) { // reuse lane
+          element.y = currentNode.y + currentNode.contentHeight + (read.width * readLaneIndex);
+          if (pathIdx === read.path.length - 1) {
+            nodeReadLaneEnds[nodeIndex][readLaneIndex] = read.finalNodeCoverLength;
+          } else {
+            nodeReadLaneEnds[nodeIndex][readLaneIndex] = -1;
+          }
+        } else { // else: create new lane on the bottom of node
+          element.y = currentNode.y + currentNode.contentHeight + (nodeReadLaneEnds[nodeIndex].length * 7);
+          // element.y = currentNode.y + currentNode.contentHeight;
+          // currentNode.contentHeight += read.width;
+          if (pathIdx === read.path.length - 1) {
+            nodeReadLaneEnds[nodeIndex].push(read.finalNodeCoverLength);
+            // nodeReadLaneEnds[nodeIndex].push(-1);
+          } else {
+            nodeReadLaneEnds[nodeIndex].push(-1);
+          }
+          bottomY[element.order] += read.width;
+          adjustVertically2(assignments[element.order], element.y, read.width);
+          assignedReadSegments[element.order].forEach((segment) => {
+            if (reads[segment.read].path[segment.pathIndex].y >= element.y) {
+              reads[segment.read].path[segment.pathIndex].y += read.width;
+            }
+          });
+        }
+      } else {
+        element.y = bottomY[element.order];
+        bottomY[element.order] += read.width;
+      }
+      assignedReadSegments[element.order].push({ read: idx, pathIndex: pathIdx, y: element.y });
+    });
+  });
+  // TODO: re-calc contentHeight for all nodes
+  nodes.forEach((node, idx) => {
+    node.contentHeight += nodeReadLaneEnds[idx].length * 7;
   });
   console.log('Reads:');
   console.log(reads);
@@ -414,6 +493,24 @@ function generateBasicPathsForReads() {
   });
 }
 
+function reverseReversedReads() {
+  reads.forEach((read) => {
+    if (read.sequence[0].charAt(0) === '-') {
+      read.sequence = read.sequence.reverse();
+    }
+    /* read.sequence.forEach((element) => { //does not work -> byRef vs. byVal?
+      if (element.charAt(0) === '-') {
+        element = element.substr(1);
+      }
+    });*/
+    for (let i = 0; i < read.sequence.length; i += 1) {
+      if (read.sequence[i].charAt(0) === '-') {
+        read.sequence[i] = read.sequence[i].substr(1);
+      }
+    }
+  });
+}
+
 function generateTrackIndexSequences(tracksOrReads) {
   tracksOrReads.forEach((track) => {
     track.indexSequence = [];
@@ -462,7 +559,8 @@ function alignSVG() {
   // resize svg depending on drawing size
   // this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
   const svg2 = d3.select(svgID);
-  svg2.attr('height', maxYCoordinate - minYCoordinate + 30);
+  // svg2.attr('height', maxYCoordinate - minYCoordinate + 30);
+  svg2.attr('height', 500);
   svg2.attr('width', Math.max(maxX, $(svgID).parent().width()));
 }
 
@@ -2084,6 +2182,26 @@ function compareReadsByLeftEnd(a, b) {
   else if (leftNodeA > leftNodeB) return 1;
   if (leftIndexA < leftIndexB) return -1;
   else if (leftIndexA > leftIndexB) return 1;
+  return 0;
+}
+
+function compareReadsByLeftEnd2(a, b) {
+  // compare by order of first node
+  if (nodes[a.indexSequence[0]].order < nodes[b.indexSequence[0]].order) return -1;
+  else if (nodes[a.indexSequence[0]].order > nodes[b.indexSequence[0]].order) return 1;
+
+  // compare by first base within first node
+  if (a.firstNodeOffset < b.firstNodeOffset) return -1;
+  else if (a.firstNodeOffset > b.firstNodeOffset) return 1;
+
+  // compare by order of last node
+  if (nodes[a.indexSequence[a.indexSequence.length - 1]].order < nodes[b.indexSequence[b.indexSequence.length - 1]].order) return -1;
+  else if (nodes[a.indexSequence[a.indexSequence.length - 1]].order > nodes[b.indexSequence[b.indexSequence.length - 1]].order) return 1;
+
+  // compare by last base withing last node
+  if (a.finalNodeCoverLength < b.finalNodeCoverLength) return -1;
+  else if (a.finalNodeCoverLength > b.finalNodeCoverLength) return 1;
+
   return 0;
 }
 
