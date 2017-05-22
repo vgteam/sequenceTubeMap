@@ -8,16 +8,12 @@
 /* eslint no-unused-vars: "off" */
 
 const DEBUG = false;
-// let offsetY = 0;
 
 // let greys = ['#d9d9d9','#bdbdbd','#969696','#737373','#525252','#252525','#000000'];
 // const greys = ['#212121', '#424242', '#616161', '#757575', '#9e9e9e', '#bdbdbd', '#CFD8DC'];
-
 const blues = ['#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'];
-
 // const reds = ['#fff5f0','#fee0d2','#fcbba1','#fc9272','#fb6a4a','#ef3b2c','#cb181d','#a50f15','#67000d'];
 const reds = ['#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'];
-
 const plainColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']; // d3 category10
 // const plainColors = ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', '#0099c6', '#dd4477', '#66aa00', '#b82e2e', '#316395']; // d3 google 10c
 // const plainColors = ['#1b5e20', '#0850B8', '#ff9800', '#039be5', '#f44336', '#9c27b0', '#8bc34a', '#5d4037', '#ffeb3b'];
@@ -175,10 +171,7 @@ function createTubeMap() {
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   nodeMap = generateNodeMap(nodes);
   generateTrackIndexSequences(tracks);
-  // if (reads) {
-    // reads.sort(compareReadsByLeftEnd);
-    // tracks = tracks.concat(reads);
-  // }
+
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty('type')) { // TODO: Remove "haplo"-property
       tracks[i].type = 'haplo';
@@ -208,6 +201,9 @@ function createTubeMap() {
     // const NodesAndTracks = mergeNodes(nodes, tracks);
     // nodes = NodesAndTracks.nodes;
     // tracks = NodesAndTracks.tracks;
+    generateNodeSuccessors();
+    // if (reads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
+    generateNodeOrder();
     mergeNodes();
     nodeMap = generateNodeMap(nodes);
     generateTrackIndexSequences(tracks);
@@ -234,23 +230,28 @@ function createTubeMap() {
 
   if ((config.showExonsFlag === true) && (bed !== null)) addTrackFeatures();
   generateNodeXCoords();
-  console.log('Node x-coords:');
-  console.log(nodes);
+  // console.log('Node x-coords:');
+  // console.log(nodes);
+
   if (reads) {
     // reads = reads.slice(2, 3);
     reverseReversedReads();
     // reads = reads.filter(read => ((read.sequence[0] === '9') || (read.sequence[0] === '10')));
     // reads = reads.slice(0, 10);
+    // reads = reads.filter(read => ((read.sequence[0] === '1')));
+    // reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
+    // reads = reads.filter(read => ((Number(read.sequence[0]) < 800)));
     generateTrackIndexSequences(reads);
-    reads.sort(compareReadsByLeftEnd2);
-    addReads3();
+    // reads.sort(compareReadsByLeftEnd2);
+    placeReads4();
+    // addReads3();
     tracks = tracks.concat(reads);
   }
 
   // generateNodeXCoords();
   generateSVGShapesFromPath(nodes, tracks);
   removeUnusedNodes(nodes);
-  console.log('tracks:');
+  console.log('Tracks:');
   console.log(tracks);
   console.log('Nodes:');
   console.log(nodes);
@@ -259,9 +260,9 @@ function createTubeMap() {
   alignSVG(nodes, tracks);
   defineSVGPatterns();
 
-  console.log(trackRectangles);
-  console.log(trackRectanglesStep3);
-  console.log(trackCurves);
+  // console.log(trackRectangles);
+  // console.log(trackRectanglesStep3);
+  // console.log(trackCurves);
   drawTrackRectangles(trackRectangles);
   drawTrackCurves();
   drawReversalsByColor(trackCorners, trackVerticalRectangles);
@@ -342,6 +343,223 @@ function addReads2() {
   console.log(reads);
 }
 
+function assignReadsToNodes() {
+  // add read information to nodes
+  nodes.forEach((node) => {
+    node.incomingReads = [];
+    node.outgoingReads = [];
+    node.internalReads = [];
+  });
+  reads.forEach((read, idx) => {
+    read.width = 7;
+    if (read.path.length === 1) {
+      nodes[read.path[0].node].internalReads.push(idx);
+    } else {
+      read.path.forEach((element, pathIdx) => {
+        if (pathIdx === 0) {
+          nodes[read.path[0].node].outgoingReads.push([idx, pathIdx]);
+        } else if (read.path[pathIdx].node !== null) {
+          nodes[read.path[pathIdx].node].incomingReads.push([idx, pathIdx]);
+        }
+      });
+    }
+  });
+}
+
+function placeReads4() {
+  generateBasicPathsForReads();
+  assignReadsToNodes();
+
+  // sort nodes by order, then by y-coordinate
+  const sortedNodes = nodes.slice();
+  sortedNodes.sort(compareNodesByOrder);
+
+  // iterate over all nodes
+  sortedNodes.forEach((node) => {
+    // sort incoming reads
+    node.incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
+
+    // place incoming reads
+    let currentY = node.y + node.contentHeight;
+    const occupiedUntil = new Map();
+    node.incomingReads.forEach((readElement) => {
+      reads[readElement[0]].path[readElement[1]].y = currentY;
+      setOccupiedUntil(occupiedUntil, reads[readElement[0]], readElement[1], currentY, node);
+      currentY += 7;
+    });
+    let maxY = currentY;
+
+    // sort outgoing reads
+    node.outgoingReads.sort(compareReadOutgoingSegmentsByGoingTo);
+
+    // place outgoing reads
+    /* node.outgoingReads.forEach((readElement) => {
+      reads[readElement[0]].path[readElement[1]].y = currentY;
+      currentY += 7;
+    });*/
+    const occupiedFrom = new Map();
+    currentY = node.y + node.contentHeight;
+    node.outgoingReads.forEach((readElement) => {
+      // place in next lane
+      reads[readElement[0]].path[readElement[1]].y = currentY;
+      occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
+      // if no conflicts
+      if ((!occupiedUntil.has(currentY)) || (occupiedUntil.get(currentY) + 1 < reads[readElement[0]].firstNodeOffset)) {
+        // reads[readElement[0]].path[readElement[1]].y = currentY;
+        // occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
+        currentY += 7;
+        maxY = Math.max(maxY, currentY);
+      } else { // otherwise push down incoming reads to make place for outgoing Read
+        // reads[readElement[0]].path[readElement[1]].y = currentY;
+        occupiedUntil.set(currentY, 0);
+        node.incomingReads.forEach((incReadElementIndices) => {
+          const incRead = reads[incReadElementIndices[0]];
+          const incReadPathElement = incRead.path[incReadElementIndices[1]];
+          if (incReadPathElement.y >= currentY) {
+            incReadPathElement.y += 7;
+            setOccupiedUntil(occupiedUntil, incRead, incReadElementIndices[1], incReadPathElement.y, node);
+          }
+        });
+        currentY += 7;
+        maxY += 7;
+      }
+    });
+
+    // sort internal reads
+    node.internalReads.sort(compareInternalReads);
+
+    // place internal reads
+    node.internalReads.forEach((readIdx) => {
+      const currentRead = reads[readIdx];
+      currentY = node.y + node.contentHeight;
+      while ((currentRead.firstNodeOffset < occupiedUntil.get(currentY) + 2) || (currentRead.finalNodeCoverLength > occupiedFrom.get(currentY) - 3)) currentY += 7;
+      currentRead.path[0].y = currentY;
+      occupiedUntil.set(currentY, currentRead.finalNodeCoverLength);
+      maxY = Math.max(maxY, currentY);
+    });
+
+    // adjust node height and move other nodes vertically down
+    const heightIncrease = maxY - node.y - node.contentHeight;
+    node.contentHeight += heightIncrease;
+    adjustVertically3(node, heightIncrease);
+  });
+
+  // place read segments which are without node
+  // TODO: sort them
+  const bottomY = calculateBottomY();
+  /* reads.forEach((read, idx) => {
+    read.path.forEach((element, pathIdx) => {
+      if (!element.hasOwnProperty('y')) {
+        element.y = bottomY[element.order];
+        bottomY[element.order] += read.width;
+      }
+    });
+  });*/
+
+  const elementsWithoutNode = [];
+  reads.forEach((read, idx) => {
+    read.path.forEach((element, pathIdx) => {
+      if (!element.hasOwnProperty('y')) {
+        elementsWithoutNode.push({ readIndex: idx, pathIndex: pathIdx, previousY: reads[idx].path[pathIdx - 1].y });
+      }
+    });
+  });
+  elementsWithoutNode.sort(compareNoNodeReadsByPreviousY);
+  elementsWithoutNode.forEach((element) => {
+    const segment = reads[element.readIndex].path[element.pathIndex];
+    segment.y = bottomY[segment.order];
+    bottomY[segment.order] += reads[element.readIndex].width;
+  });
+
+  console.log('Reads:');
+  console.log(reads);
+}
+
+function setOccupiedUntil(map, read, pathIndex, y, node) {
+  if (pathIndex === read.path.length - 1) { // last node of current read
+    map.set(y, read.finalNodeCoverLength);
+  } else { // read covers the whole node
+    map.set(y, node.sequenceLength);
+  }
+}
+
+function compareNoNodeReadsByPreviousY(a, b) {
+  const segmentA = reads[a.readIndex].path[a.pathIndex];
+  const segmentB = reads[b.readIndex].path[b.pathIndex];
+  if (segmentA.order === segmentB.order) {
+    return a.previousY - b.previousY;
+  }
+  return segmentA.order - segmentB.order;
+}
+
+function compareReadOutgoingSegmentsByGoingTo(a, b) {
+  let pathIndexA = a[1];
+  let pathIndexB = b[1];
+  // let readA = reads[a[0]]
+  // let nodeIndexA = readA.path[pathIndexA].node;
+  let nodeA = nodes[reads[a[0]].path[pathIndexA].node];
+  let nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+  while ((nodeA !== null) && (nodeB !== null) && (nodeA === nodeB)) {
+    if (pathIndexA < reads[a[0]].path.length - 1) {
+      pathIndexA += 1;
+      while (reads[a[0]].path[pathIndexA].node === null) pathIndexA += 1; // skip null nodes in path
+      nodeA = nodes[reads[a[0]].path[pathIndexA].node];
+    } else {
+      nodeA = null;
+    }
+    if (pathIndexB < reads[b[0]].path.length - 1) {
+      pathIndexB += 1;
+      while (reads[b[0]].path[pathIndexB].node === null) pathIndexB += 1; // skip null nodes in path
+      nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+    } else {
+      nodeB = null;
+    }
+  }
+  if (nodeA !== null) {
+    if (nodeB !== null) return compareNodesByOrder(nodeA, nodeB);
+    return 1; // nodeB is null, nodeA not null
+  }
+  if (nodeB !== null) return -1; // nodeB not null, nodeA null
+  // both nodes are null -> both end in the same node
+  const beginDiff = reads[a[0]].firstNodeOffset - reads[b[0]].firstNodeOffset;
+  if (beginDiff !== 0) return beginDiff;
+  // break tie: both reads cover the same nodes and begin at the same position -> compare by endPosition
+  return reads[a[0]].finalNodeCoverLength - reads[b[0]].finalNodeCoverLength;
+}
+
+function compareReadIncomingSegmentsByComingFrom(a, b) {
+  // TODO: incoming from reversal (u-turn)
+  const pathA = reads[a[0]].path[a[1] - 1];
+  const pathB = reads[b[0]].path[b[1] - 1];
+  if (pathA.hasOwnProperty('y')) {
+    if (pathB.hasOwnProperty('y')) {
+      return pathA.y - pathB.y; // a and b have y-property
+    }
+    return -1; // only a has y-property
+  }
+  if (pathB.hasOwnProperty('y')) {
+    return 1; // only b has y-property
+  }
+  return compareReadIncomingSegmentsByComingFrom([a[0], a[1] - 1], [b[0], b[1] - 1]); // neither has y-property
+  /* const yA = reads[a[0]].path[a[1] - 1].y;
+  const yB = reads[b[0]].path[b[1] - 1].y;
+  return yA - yB; */
+}
+
+function compareInternalReads(idxA, idxB) {
+  const a = reads[idxA];
+  const b = reads[idxB];
+  // compare by first base within first node
+  if (a.firstNodeOffset < b.firstNodeOffset) return -1;
+  else if (a.firstNodeOffset > b.firstNodeOffset) return 1;
+
+  // compare by last base withing last node
+  if (a.finalNodeCoverLength < b.finalNodeCoverLength) return -1;
+  else if (a.finalNodeCoverLength > b.finalNodeCoverLength) return 1;
+
+  return 0;
+}
+
 function addReads3() {
   const bottomY = calculateBottomY();
   const assignedReadSegments = [];
@@ -405,7 +623,8 @@ function addReads3() {
       assignedReadSegments[element.order].push({ read: idx, pathIndex: pathIdx, y: element.y });
     });
   });
-  // TODO: re-calc contentHeight for all nodes
+
+  // re-calc contentHeight for all nodes
   nodes.forEach((node, idx) => {
     node.contentHeight += nodeReadLaneEnds[idx].length * 7;
   });
@@ -493,7 +712,7 @@ function generateBasicPathsForReads() {
   });
 }
 
-function reverseReversedReads() {
+function reverseReversedReadsOLD() {
   reads.forEach((read) => {
     if (read.sequence[0].charAt(0) === '-') {
       read.sequence = read.sequence.reverse();
@@ -507,6 +726,25 @@ function reverseReversedReads() {
       if (read.sequence[i].charAt(0) === '-') {
         read.sequence[i] = read.sequence[i].substr(1);
       }
+    }
+  });
+}
+
+function reverseReversedReads() {
+  reads.forEach((read) => {
+    let pos = 0;
+    while ((pos < read.sequence.length) && (read.sequence[pos].charAt(0) === '-')) pos += 1;
+    if (pos === read.sequence.length) { // completely reversed read
+      read.sequence = read.sequence.reverse(); // invert sequence
+      for (let i = 0; i < read.sequence.length; i += 1) {
+        read.sequence[i] = read.sequence[i].substr(1); // remove '-'
+      }
+      // adjust firstNodeOffset and finalNodeCoverLength
+      const temp = read.firstNodeOffset;
+      let seqLength = nodes[nodeMap.get(read.sequence[0])].sequenceLength;
+      read.firstNodeOffset = seqLength - read.finalNodeCoverLength;
+      seqLength = nodes[nodeMap.get(read.sequence[read.sequence.length - 1])].sequenceLength;
+      read.finalNodeCoverLength = seqLength - temp;
     }
   });
 }
@@ -560,7 +798,7 @@ function alignSVG() {
   // this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
   const svg2 = d3.select(svgID);
   // svg2.attr('height', maxYCoordinate - minYCoordinate + 30);
-  svg2.attr('height', 500);
+  svg2.attr('height', 800);
   svg2.attr('width', Math.max(maxX, $(svgID).parent().width()));
 }
 
@@ -667,6 +905,10 @@ function generateNodeOrder() {
   let rightIndex;
   let leftIndex;
   let minOrder = 0;
+
+  nodes.forEach((node) => {
+    delete node.order;
+  });
 
   generateNodeOrderOfSingleTrack(tracks[0].indexSequence); // calculate order values for all nodes of the first track
 
@@ -1191,6 +1433,28 @@ function adjustVertically2(assignment, adjustStart, adjustBy) {
   });
 }
 
+function adjustVertically3(node, adjustBy) {
+  if (node.hasOwnProperty('order')) {
+    assignments[node.order].forEach((assignmentNode) => {
+      if (assignmentNode.node !== null) {
+        const aNode = nodes[assignmentNode.node];
+        if ((aNode !== node) && (aNode.y > node.y)) {
+          aNode.y += adjustBy;
+          assignmentNode.tracks.forEach((track) => {
+            tracks[track.trackID].path[track.segmentID].y += adjustBy;
+          });
+        }
+      } else { // track-segment not within a node
+        assignmentNode.tracks.forEach((track) => {
+          if (tracks[track.trackID].path[track.segmentID].y >= node.y) {
+            tracks[track.trackID].path[track.segmentID].y += adjustBy;
+          }
+        });
+      }
+    });
+  }
+}
+
 // calculates cost of vertical adjustment as vertical distance * width of track
 function getVerticalAdjustmentCost(assignment, moveBy) {
   let result = 0;
@@ -1221,10 +1485,20 @@ function compareByIdealLane(a, b) {
 }
 
 function compareNodesByOrder(a, b) {
+  if (a === null) {
+    if (b === null) return 0;
+    return -1;
+  }
+  if (b === null) return 1;
+
   if (a.hasOwnProperty('order')) {
     if (b.hasOwnProperty('order')) {
       if (a.order < b.order) return -1;
       else if (a.order > b.order) return 1;
+      if (a.hasOwnProperty('y') && b.hasOwnProperty('y')) {
+        if (a.y < b.y) return -1;
+        else if (a.y > b.y) return 1;
+      }
       return 0;
     }
     return -1;
@@ -2265,8 +2539,8 @@ export function vgExtractReads(myTracks, myReads) {
 function mergeNodes() {
   let nodeName;
   let nodeName2;
-  const pred = [];
-  const succ = [];
+  const pred = []; // array of set of predecessors of each node
+  const succ = []; // array of set of successors of each node
   for (let i = 0; i < nodes.length; i += 1) {
     pred.push(new Set());
     succ.push(new Set());
@@ -2339,17 +2613,85 @@ function mergeNodes() {
     console.log(i + ': ' + mergeableWithPred(i, pred, succ) + ' ' + mergeableWithSucc(i, pred, succ));
   }*/
 
+  // update reads which pass through merging nodes
+  if (reads) {
+    // sort nodes by order, then by y-coordinate
+    const sortedNodes = nodes.slice();
+    sortedNodes.sort(compareNodesByOrder);
+
+    // iterate over all nodes and calculate their position within the new merged node
+    const mergeOffset = new Map();
+    const mergeOrigin = new Map(); // maps to leftmost node of a node's "merging cascade"
+    sortedNodes.forEach((node) => {
+      const predecessor = mergeableWithPred(nodeMap.get(node.name), pred, succ);
+      if (predecessor) {
+      // if (mergeableWithPred(nodeMap.get(node.name), pred, succ)) {
+        // const predecessor = nodes[node.predecessors[0]];
+        // mergeOffset.set(node.name, mergeOffset.get(predecessor.name) + predecessor.sequenceLength);
+        // mergeOrigin.set(node.name, mergeOrigin.get(predecessor.name));
+        mergeOffset.set(node.name, mergeOffset.get(predecessor) + nodes[nodeMap.get(predecessor)].sequenceLength);
+        mergeOrigin.set(node.name, mergeOrigin.get(predecessor));
+      } else {
+        mergeOffset.set(node.name, 0);
+        mergeOrigin.set(node.name, node.name);
+      }
+    });
+
+    // iterate over reads to adjust firstNodeOffset and finalNodeCoverLength
+    // and remove merged nodes from path
+    /* reads.forEach((read) => {
+      read.firstNodeOffset += mergeOffset.get(nodes[read.path[0].node].name);
+      read.finalNodeCoverLength += mergeOffset.get(nodes[read.path[read.path.length - 1].node].name);
+      for (let i = read.path.length - 1; i >= 0; i -= 1) {
+        if ((read.path[i].hasOwnProperty('node')) && (read.path[i].node != null)) {
+          const temp = read.path[i].node;
+          const temp2 = temp.toString();
+          const temp3 = nodeMap.get(temp2);
+          // if (mergeableWithPred(nodeMap.get(read.path[i].node.toString()), pred, succ)) {
+          if (mergeableWithPred(read.path[i].node, pred, succ)) {
+            read.path.splice(i, 1);
+          }
+        }
+      }
+    });*/
+
+    reads.forEach((read) => {
+      // read.firstNodeOffset += mergeOffset.get(nodes[nodeMap.get(read.sequence[0])]);
+      read.firstNodeOffset += mergeOffset.get(read.sequence[0]);
+      // read.finalNodeCoverLength += mergeOffset.get(nodes[nodeMap.get(read.sequence[read.sequence.length - 1])]);
+      read.finalNodeCoverLength += mergeOffset.get(read.sequence[read.sequence.length - 1]);
+      for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
+        // const temp = read.path[i].node;
+        // const temp2 = temp.toString();
+        // const temp3 = nodeMap.get(temp2);
+        // if (mergeableWithPred(nodeMap.get(read.path[i].node.toString()), pred, succ)) {
+        if (mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ)) {
+          const temp1 = nodeMap.get(read.sequence[i]);
+          const temp2 = nodes[temp1].predecessors[0].toString();
+          const temp3 = nodeMap.get(temp2);
+          // const predecessor = nodeMap.get(nodes[nodeMap.get(read.sequence[i])].predecessors[0].toString());
+          const predecessorOLD = nodes[nodeMap.get(read.sequence[i])].predecessors[0];
+          const predecessor = mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ);
+          if (mergeableWithSucc(nodeMap.get(predecessor), pred, succ)) {
+            if (i > 0) {
+              read.sequence.splice(i, 1);
+            } else {
+              read.sequence[0] = mergeOrigin.get(read.sequence[0]);
+            }
+          }
+        }
+      }
+    });
+  }
+
   // update node sequences + sequence lengths
   for (let i = 0; i < nodes.length; i += 1) {
     if (mergeableWithSucc(i, pred, succ) && !mergeableWithPred(i, pred, succ)) {
-      // if ((pred[i].length > 1) || (pred[i][0] === 'None')) { // node has multiple predecessors
-        // --> node is at the left end of (potentially multiple) mergers
       let donor = i;
       while (mergeableWithSucc(donor, pred, succ)) {
         donor = succ[donor][0];
         if (donor.charAt(0) === '-') donor = donor.substr(1);
         donor = nodeMap.get(donor);
-
         // console.log('Adding node ' + donor + ' to node ' + i);
         if (nodes[i].hasOwnProperty('sequenceLength')) {
           nodes[i].sequenceLength += nodes[donor].sequenceLength;
@@ -2358,7 +2700,6 @@ function mergeNodes() {
         }
         nodes[i].seq += nodes[donor].seq;
       }
-      // }
     }
   }
 
@@ -2395,7 +2736,8 @@ function mergeableWithPred(index, pred, succ) {
   const predecessorIndex = nodeMap.get(predecessor);
   if (succ[predecessorIndex].length !== 1) return false;
   if (succ[predecessorIndex][0] === 'None') return false;
-  return true;
+  // return true;
+  return predecessor;
 }
 
 function mergeableWithSucc(index, pred, succ) {
