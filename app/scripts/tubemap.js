@@ -23,6 +23,7 @@ let svgID; // the (html-tag) ID of the svg
 let svg; // he svg
 let inputNodes = [];
 let inputTracks = [];
+let inputReads = [];
 let nodes;
 let tracks;
 let reads;
@@ -67,7 +68,7 @@ export function create(params) {
   svg = d3.select(params.svgID);
   inputNodes = (JSON.parse(JSON.stringify(params.nodes))); // deep copy
   inputTracks = (JSON.parse(JSON.stringify(params.tracks))); // deep copy
-  reads = params.reads || null;
+  inputReads = params.reads || null;
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
   const tr = createTubeMap();
@@ -166,23 +167,6 @@ export function setNodeWidthOption(value) {
 
 // main
 function createTubeMap() {
-  // straightenTrack(0);
-  nodes = (JSON.parse(JSON.stringify(inputNodes))); // deep copy (can add stuff to copy and leave original unchanged)
-  tracks = (JSON.parse(JSON.stringify(inputTracks)));
-  nodeMap = generateNodeMap(nodes);
-  generateTrackIndexSequences(tracks);
-
-  for (let i = tracks.length - 1; i >= 0; i -= 1) {
-    if (!tracks[i].hasOwnProperty('type')) { // TODO: Remove "haplo"-property
-      tracks[i].type = 'haplo';
-    }
-    if (tracks[i].hasOwnProperty('hidden')) {
-      if (tracks[i].hidden === true) {
-        tracks.splice(i, 1);
-      }
-    }
-  }
-
   trackRectangles = [];
   trackCurves = [];
   trackCorners = [];
@@ -196,26 +180,39 @@ function createTubeMap() {
   svg = d3.select(svgID);
   svg.selectAll('*').remove(); // clear svg for (re-)drawing
 
+  nodes = (JSON.parse(JSON.stringify(inputNodes))); // deep copy (can add stuff to copy and leave original unchanged)
+  tracks = (JSON.parse(JSON.stringify(inputTracks)));
+  reads = (JSON.parse(JSON.stringify(inputReads)));
+  for (let i = tracks.length - 1; i >= 0; i -= 1) {
+    if (!tracks[i].hasOwnProperty('type')) { // TODO: maybe remove "haplo"-property?
+      tracks[i].type = 'haplo';
+    }
+    if (tracks[i].hasOwnProperty('hidden')) {
+      if (tracks[i].hidden === true) {
+        tracks.splice(i, 1);
+      }
+    }
+  }
+
+  nodeMap = generateNodeMap(nodes);
+  generateTrackIndexSequences(tracks);
+
   if (config.mergeNodesFlag) {
-    // let NodesAndTracks = mergeNodes(nodes, tracks);
-    // const NodesAndTracks = mergeNodes(nodes, tracks);
-    // nodes = NodesAndTracks.nodes;
-    // tracks = NodesAndTracks.tracks;
-    generateNodeSuccessors();
+    generateNodeSuccessors(); // requires indexSequence
     // if (reads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
-    generateNodeOrder();
+    generateNodeOrder(); // requires successors
+    if (reads) reverseReversedReads();
     mergeNodes();
     nodeMap = generateNodeMap(nodes);
     generateTrackIndexSequences(tracks);
   }
-  generateTrackIndexSequences(tracks); // can be removed once reads are not part of tracks anymore
+
   numberOfNodes = nodes.length;
   numberOfTracks = tracks.length;
   generateNodeSuccessors();
   generateNodeWidth();
   generateNodeDegree();
-  console.log(`${numberOfNodes} nodes.`);
-
+  if (DEBUG) console.log(`${numberOfNodes} nodes.`);
   generateNodeOrder();
   maxOrder = getMaxOrder();
 
@@ -230,8 +227,6 @@ function createTubeMap() {
 
   if ((config.showExonsFlag === true) && (bed !== null)) addTrackFeatures();
   generateNodeXCoords();
-  // console.log('Node x-coords:');
-  // console.log(nodes);
 
   if (reads) {
     // reads = reads.slice(2, 3);
@@ -242,13 +237,10 @@ function createTubeMap() {
     // reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
     // reads = reads.filter(read => ((Number(read.sequence[0]) < 800)));
     generateTrackIndexSequences(reads);
-    // reads.sort(compareReadsByLeftEnd2);
-    placeReads4();
-    // addReads3();
+    placeReads();
     tracks = tracks.concat(reads);
   }
 
-  // generateNodeXCoords();
   generateSVGShapesFromPath(nodes, tracks);
   removeUnusedNodes(nodes);
   console.log('Tracks:');
@@ -267,8 +259,6 @@ function createTubeMap() {
   drawTrackCurves();
   drawReversalsByColor(trackCorners, trackVerticalRectangles);
   drawTrackRectangles(trackRectanglesStep3);
-
-  // drawNodes();
   drawTrackRectangles(trackRectangles, 'read');
   drawTrackCurves('read');
   drawNodes();
@@ -284,67 +274,8 @@ function createTubeMap() {
   return tracks;
 }
 
-function addReads() {
-  reads.forEach((read) => {
-    read.path = [];
-    read.width = 4;
-    read.indexSequence.forEach((currentNodeIndex) => {
-      const pathElement = {};
-      pathElement.isForward = currentNodeIndex >= 0;
-      const currentNode = nodes[Math.abs(currentNodeIndex)];
-      pathElement.order = currentNode.order;
-      pathElement.y = currentNode.y + currentNode.contentHeight;
-      currentNode.contentHeight += read.width;
-      pathElement.node = Math.abs(currentNodeIndex);
-      read.path.push(pathElement);
-      adjustVertically2(assignments[currentNode.order], pathElement.y, read.width);
-    });
-  });
-  console.log('Reads:');
-  console.log(reads);
-}
-
-function addReads2() {
-  const bottomY = calculateBottomY();
-  const assignedReadSegments = [];
-  for (let i = 0; i <= maxOrder; i += 1) {
-    assignedReadSegments.push([]);
-  }
-  console.log(assignedReadSegments);
-  generateBasicPathsForReads();
-  reads.forEach((read, idx) => {
-    read.width = 7;
-    read.path.forEach((element, pathIdx) => {
-      if (element.node != null) {
-        const currentNode = nodes[element.node];
-        element.y = currentNode.y + currentNode.contentHeight; // TODO: continue here to stack reads!
-        /* if ((idx === 4) && (pathIdx === 0)) {
-          element.y = 183 - (4 * 7);
-          bottomY[element.order] -= read.width;
-          currentNode.contentHeight -= read.width;
-          adjustVertically2(assignments[element.order], element.y, -read.width);
-        }*/
-        currentNode.contentHeight += read.width;
-        bottomY[element.order] += read.width;
-      } else {
-        element.y = bottomY[element.order];
-        bottomY[element.order] += read.width;
-      }
-      adjustVertically2(assignments[element.order], element.y, read.width);
-      assignedReadSegments[element.order].forEach((segment) => {
-        if (reads[segment.read].path[segment.pathIndex].y >= element.y) {
-          reads[segment.read].path[segment.pathIndex].y += read.width;
-        }
-      });
-      assignedReadSegments[element.order].push({ read: idx, pathIndex: pathIdx, y: element.y });
-    });
-  });
-  console.log('Reads:');
-  console.log(reads);
-}
-
+// add info about reads to nodes (incoming, outgoing and internal reads)
 function assignReadsToNodes() {
-  // add read information to nodes
   nodes.forEach((node) => {
     node.incomingReads = [];
     node.outgoingReads = [];
@@ -366,7 +297,8 @@ function assignReadsToNodes() {
   });
 }
 
-function placeReads4() {
+// calculate paths (incl. correct y coordinate) for all reads
+function placeReads() {
   generateBasicPathsForReads();
   assignReadsToNodes();
 
@@ -393,10 +325,6 @@ function placeReads4() {
     node.outgoingReads.sort(compareReadOutgoingSegmentsByGoingTo);
 
     // place outgoing reads
-    /* node.outgoingReads.forEach((readElement) => {
-      reads[readElement[0]].path[readElement[1]].y = currentY;
-      currentY += 7;
-    });*/
     const occupiedFrom = new Map();
     currentY = node.y + node.contentHeight;
     node.outgoingReads.forEach((readElement) => {
@@ -405,12 +333,9 @@ function placeReads4() {
       occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
       // if no conflicts
       if ((!occupiedUntil.has(currentY)) || (occupiedUntil.get(currentY) + 1 < reads[readElement[0]].firstNodeOffset)) {
-        // reads[readElement[0]].path[readElement[1]].y = currentY;
-        // occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
         currentY += 7;
         maxY = Math.max(maxY, currentY);
       } else { // otherwise push down incoming reads to make place for outgoing Read
-        // reads[readElement[0]].path[readElement[1]].y = currentY;
         occupiedUntil.set(currentY, 0);
         node.incomingReads.forEach((incReadElementIndices) => {
           const incRead = reads[incReadElementIndices[0]];
@@ -445,17 +370,7 @@ function placeReads4() {
   });
 
   // place read segments which are without node
-  // TODO: sort them
   const bottomY = calculateBottomY();
-  /* reads.forEach((read, idx) => {
-    read.path.forEach((element, pathIdx) => {
-      if (!element.hasOwnProperty('y')) {
-        element.y = bottomY[element.order];
-        bottomY[element.order] += read.width;
-      }
-    });
-  });*/
-
   const elementsWithoutNode = [];
   reads.forEach((read, idx) => {
     read.path.forEach((element, pathIdx) => {
@@ -475,6 +390,7 @@ function placeReads4() {
   console.log(reads);
 }
 
+// keeps track of where reads end within nodes
 function setOccupiedUntil(map, read, pathIndex, y, node) {
   if (pathIndex === read.path.length - 1) { // last node of current read
     map.set(y, read.finalNodeCoverLength);
@@ -483,6 +399,8 @@ function setOccupiedUntil(map, read, pathIndex, y, node) {
   }
 }
 
+// compare read segments which are outside of nodes
+// by the y-coord of where they are coming from
 function compareNoNodeReadsByPreviousY(a, b) {
   const segmentA = reads[a.readIndex].path[a.pathIndex];
   const segmentB = reads[b.readIndex].path[b.pathIndex];
@@ -492,6 +410,7 @@ function compareNoNodeReadsByPreviousY(a, b) {
   return segmentA.order - segmentB.order;
 }
 
+// compare read segments by where they are going to
 function compareReadOutgoingSegmentsByGoingTo(a, b) {
   let pathIndexA = a[1];
   let pathIndexB = b[1];
@@ -527,6 +446,7 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
   return reads[a[0]].finalNodeCoverLength - reads[b[0]].finalNodeCoverLength;
 }
 
+// compare read segments by (y-coord of) where they are coming from
 function compareReadIncomingSegmentsByComingFrom(a, b) {
   // TODO: incoming from reversal (u-turn)
   const pathA = reads[a[0]].path[a[1] - 1];
@@ -541,11 +461,9 @@ function compareReadIncomingSegmentsByComingFrom(a, b) {
     return 1; // only b has y-property
   }
   return compareReadIncomingSegmentsByComingFrom([a[0], a[1] - 1], [b[0], b[1] - 1]); // neither has y-property
-  /* const yA = reads[a[0]].path[a[1] - 1].y;
-  const yB = reads[b[0]].path[b[1] - 1].y;
-  return yA - yB; */
 }
 
+// compare 2 reads which are completely within a single node
 function compareInternalReads(idxA, idxB) {
   const a = reads[idxA];
   const b = reads[idxB];
@@ -553,85 +471,14 @@ function compareInternalReads(idxA, idxB) {
   if (a.firstNodeOffset < b.firstNodeOffset) return -1;
   else if (a.firstNodeOffset > b.firstNodeOffset) return 1;
 
-  // compare by last base withing last node
+  // compare by last base within last node
   if (a.finalNodeCoverLength < b.finalNodeCoverLength) return -1;
   else if (a.finalNodeCoverLength > b.finalNodeCoverLength) return 1;
 
   return 0;
 }
 
-function addReads3() {
-  const bottomY = calculateBottomY();
-  const assignedReadSegments = [];
-  for (let i = 0; i <= maxOrder; i += 1) {
-    assignedReadSegments.push([]);
-  }
-  const nodeReadLaneEnds = [];
-  for (let i = 0; i < numberOfNodes; i += 1) {
-    nodeReadLaneEnds.push([]);
-  }
-  // let createsNewLane = false;
-
-  generateBasicPathsForReads();
-  reads.forEach((read, idx) => {
-    read.width = 7;
-    read.path.forEach((element, pathIdx) => {
-      if (element.node != null) {
-        const currentNode = nodes[element.node];
-        const nodeIndex = element.node;
-        // check if we can reuse a lane
-        let readLaneIndex = 0;
-        // if ((pathIdx === 0) || (pathIdx === read.path.length - 1)) {
-        if (pathIdx === 0) {
-          while ((readLaneIndex < nodeReadLaneEnds[nodeIndex].length)
-            && ((nodeReadLaneEnds[nodeIndex][readLaneIndex] < 0) ||
-             (nodeReadLaneEnds[nodeIndex][readLaneIndex] > read.firstNodeOffset - 2))) {
-            readLaneIndex += 1;
-          }
-        } else {
-          readLaneIndex = nodeReadLaneEnds[nodeIndex].length;
-        }
-        if (readLaneIndex < nodeReadLaneEnds[nodeIndex].length) { // reuse lane
-          element.y = currentNode.y + currentNode.contentHeight + (read.width * readLaneIndex);
-          if (pathIdx === read.path.length - 1) {
-            nodeReadLaneEnds[nodeIndex][readLaneIndex] = read.finalNodeCoverLength;
-          } else {
-            nodeReadLaneEnds[nodeIndex][readLaneIndex] = -1;
-          }
-        } else { // else: create new lane on the bottom of node
-          element.y = currentNode.y + currentNode.contentHeight + (nodeReadLaneEnds[nodeIndex].length * 7);
-          // element.y = currentNode.y + currentNode.contentHeight;
-          // currentNode.contentHeight += read.width;
-          if (pathIdx === read.path.length - 1) {
-            nodeReadLaneEnds[nodeIndex].push(read.finalNodeCoverLength);
-            // nodeReadLaneEnds[nodeIndex].push(-1);
-          } else {
-            nodeReadLaneEnds[nodeIndex].push(-1);
-          }
-          bottomY[element.order] += read.width;
-          adjustVertically2(assignments[element.order], element.y, read.width);
-          assignedReadSegments[element.order].forEach((segment) => {
-            if (reads[segment.read].path[segment.pathIndex].y >= element.y) {
-              reads[segment.read].path[segment.pathIndex].y += read.width;
-            }
-          });
-        }
-      } else {
-        element.y = bottomY[element.order];
-        bottomY[element.order] += read.width;
-      }
-      assignedReadSegments[element.order].push({ read: idx, pathIndex: pathIdx, y: element.y });
-    });
-  });
-
-  // re-calc contentHeight for all nodes
-  nodes.forEach((node, idx) => {
-    node.contentHeight += nodeReadLaneEnds[idx].length * 7;
-  });
-  console.log('Reads:');
-  console.log(reads);
-}
-
+// determine biggest y-coordinate for each order-value
 function calculateBottomY() {
   const bottomY = [];
   for (let i = 0; i <= maxOrder; i += 1) {
@@ -650,6 +497,8 @@ function calculateBottomY() {
   return bottomY;
 }
 
+// generate path-info for each read
+// containing order, node and orientation, but no concrete coordinates
 function generateBasicPathsForReads() {
   let currentNodeIndex;
   let currentNodeIsForward;
@@ -712,24 +561,7 @@ function generateBasicPathsForReads() {
   });
 }
 
-function reverseReversedReadsOLD() {
-  reads.forEach((read) => {
-    if (read.sequence[0].charAt(0) === '-') {
-      read.sequence = read.sequence.reverse();
-    }
-    /* read.sequence.forEach((element) => { //does not work -> byRef vs. byVal?
-      if (element.charAt(0) === '-') {
-        element = element.substr(1);
-      }
-    });*/
-    for (let i = 0; i < read.sequence.length; i += 1) {
-      if (read.sequence[i].charAt(0) === '-') {
-        read.sequence[i] = read.sequence[i].substr(1);
-      }
-    }
-  });
-}
-
+// reverse reads which are reversed
 function reverseReversedReads() {
   reads.forEach((read) => {
     let pos = 0;
@@ -749,6 +581,7 @@ function reverseReversedReads() {
   });
 }
 
+// for each track: generate sequence of node indices from seq. of node names
 function generateTrackIndexSequences(tracksOrReads) {
   tracksOrReads.forEach((track) => {
     track.indexSequence = [];
@@ -1960,12 +1793,6 @@ function drawReversalsByColor(corners, rectangles, type) {
     drawTrackRectangles(rectangles.filter(filterObjectByAttribute('color', c)), type);
     drawTrackCorners(corners.filter(filterObjectByAttribute('color', c)), type);
   });
-
-  /* for (c = 0; c < numberOfColors; c += 1) {
-    co = blues[c];
-    drawTrackRectangles(rectangles.filter(filterRectByColor(co)));
-    drawTrackCorners(corners.filter(filterCornerByColor(co)));
-  }*/
 }
 
 // draws nodes by building svg-path for border and filling it with transparent white
@@ -2483,7 +2310,6 @@ export function vgExtractReads(myTracks, myReads) {
   const extracted = [];
 
   for (let i = 0; i < myReads.length; i += 1) {
-  // for (let i = 2; i < 6; i += 1) {
     if (myReads[i].length > 0) {
       const read = JSON.parse(myReads[i]);
       const sequence = [];
@@ -2521,14 +2347,6 @@ export function vgExtractReads(myTracks, myReads) {
       extracted.push(track);
     }
   }
-  // console.log('READS:');
-  // console.log(tracks);
-
-  // extracted.sort(compareReadsByLeftEnd);
-
-  // tracks = tracks.concat(extracted);
-  // return tracks;
-
   return extracted;
 }
 
@@ -2605,14 +2423,6 @@ function mergeNodes() {
     pred[i] = Array.from(pred[i]);
   }
 
-  /* console.log('pred');
-  console.log(pred);
-  console.log('succ');
-  console.log(succ);
-  for (i = 0; i < nodes.length; i += 1) {
-    console.log(i + ': ' + mergeableWithPred(i, pred, succ) + ' ' + mergeableWithSucc(i, pred, succ));
-  }*/
-
   // update reads which pass through merging nodes
   if (reads) {
     // sort nodes by order, then by y-coordinate
@@ -2625,10 +2435,6 @@ function mergeNodes() {
     sortedNodes.forEach((node) => {
       const predecessor = mergeableWithPred(nodeMap.get(node.name), pred, succ);
       if (predecessor) {
-      // if (mergeableWithPred(nodeMap.get(node.name), pred, succ)) {
-        // const predecessor = nodes[node.predecessors[0]];
-        // mergeOffset.set(node.name, mergeOffset.get(predecessor.name) + predecessor.sequenceLength);
-        // mergeOrigin.set(node.name, mergeOrigin.get(predecessor.name));
         mergeOffset.set(node.name, mergeOffset.get(predecessor) + nodes[nodeMap.get(predecessor)].sequenceLength);
         mergeOrigin.set(node.name, mergeOrigin.get(predecessor));
       } else {
@@ -2637,40 +2443,14 @@ function mergeNodes() {
       }
     });
 
-    // iterate over reads to adjust firstNodeOffset and finalNodeCoverLength
-    // and remove merged nodes from path
-    /* reads.forEach((read) => {
-      read.firstNodeOffset += mergeOffset.get(nodes[read.path[0].node].name);
-      read.finalNodeCoverLength += mergeOffset.get(nodes[read.path[read.path.length - 1].node].name);
-      for (let i = read.path.length - 1; i >= 0; i -= 1) {
-        if ((read.path[i].hasOwnProperty('node')) && (read.path[i].node != null)) {
-          const temp = read.path[i].node;
-          const temp2 = temp.toString();
-          const temp3 = nodeMap.get(temp2);
-          // if (mergeableWithPred(nodeMap.get(read.path[i].node.toString()), pred, succ)) {
-          if (mergeableWithPred(read.path[i].node, pred, succ)) {
-            read.path.splice(i, 1);
-          }
-        }
-      }
-    });*/
-
     reads.forEach((read) => {
-      // read.firstNodeOffset += mergeOffset.get(nodes[nodeMap.get(read.sequence[0])]);
       read.firstNodeOffset += mergeOffset.get(read.sequence[0]);
-      // read.finalNodeCoverLength += mergeOffset.get(nodes[nodeMap.get(read.sequence[read.sequence.length - 1])]);
       read.finalNodeCoverLength += mergeOffset.get(read.sequence[read.sequence.length - 1]);
       for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
-        // const temp = read.path[i].node;
-        // const temp2 = temp.toString();
-        // const temp3 = nodeMap.get(temp2);
-        // if (mergeableWithPred(nodeMap.get(read.path[i].node.toString()), pred, succ)) {
         if (mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ)) {
           const temp1 = nodeMap.get(read.sequence[i]);
           const temp2 = nodes[temp1].predecessors[0].toString();
           const temp3 = nodeMap.get(temp2);
-          // const predecessor = nodeMap.get(nodes[nodeMap.get(read.sequence[i])].predecessors[0].toString());
-          const predecessorOLD = nodes[nodeMap.get(read.sequence[i])].predecessors[0];
           const predecessor = mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ);
           if (mergeableWithSucc(nodeMap.get(predecessor), pred, succ)) {
             if (i > 0) {
@@ -2692,7 +2472,6 @@ function mergeNodes() {
         donor = succ[donor][0];
         if (donor.charAt(0) === '-') donor = donor.substr(1);
         donor = nodeMap.get(donor);
-        // console.log('Adding node ' + donor + ' to node ' + i);
         if (nodes[i].hasOwnProperty('sequenceLength')) {
           nodes[i].sequenceLength += nodes[donor].sequenceLength;
         } else {
@@ -2724,7 +2503,6 @@ function mergeNodes() {
       nodes.splice(i, 1);
     }
   }
-  // console.log('done merging');
   return { nodes, tracks };
 }
 
@@ -2736,7 +2514,6 @@ function mergeableWithPred(index, pred, succ) {
   const predecessorIndex = nodeMap.get(predecessor);
   if (succ[predecessorIndex].length !== 1) return false;
   if (succ[predecessorIndex][0] === 'None') return false;
-  // return true;
   return predecessor;
 }
 
