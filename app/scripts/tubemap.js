@@ -20,7 +20,7 @@ const plainColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c
 const lightColors = ['#AAC3AB', '#A2BDE4', '#FFD89F', '#A1DAF5', '#FAA19B', '#DAAEE1', '#D4E9BB', '#AEA09B', '#FFF7B5'];
 
 let svgID; // the (html-tag) ID of the svg
-let svg; // he svg
+let svg; // the svg
 let inputNodes = [];
 let inputTracks = [];
 let inputReads = [];
@@ -630,8 +630,8 @@ function alignSVG() {
   // resize svg depending on drawing size
   // this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
   const svg2 = d3.select(svgID);
-  // svg2.attr('height', maxYCoordinate - minYCoordinate + 30);
-  svg2.attr('height', 800);
+  svg2.attr('height', maxYCoordinate - minYCoordinate + 30);
+  // svg2.attr('height', 800);
   svg2.attr('width', Math.max(maxX, $(svgID).parent().width()));
 }
 
