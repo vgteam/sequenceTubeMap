@@ -47,14 +47,21 @@ In addition, the module uses [d3.js](https://d3js.org/), [jQuery](https://jquery
 
 A minimal example would look like this:
 
-miniExample.html
+miniExample.html (a big part of this file are just commands for the JavaScript building and compiling, the actual html is minimal)
 ```html
 <!DOCTYPE html>
 <html>
 <head>
   <title>Sequence Tube Map Minimal Example</title>
+  <!-- build:css styles/vendor.css -->
+  <!-- bower:css -->
   <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.css" />
+  <!-- endbower -->
+  <!-- endbuild -->
+
+  <!-- build:css styles/main.css -->
   <link rel="stylesheet" href="styles/tubemap.css">
+  <!-- endbuild -->
 </head>
 <body>
   <p>A minimal example created with the Sequence Tube Maps JavaScript Module:</p>
@@ -63,9 +70,16 @@ miniExample.html
     <svg id="svg">
     </svg>
   </div>
+  <!-- build:js scripts/vendor.js -->
+  <!-- bower:js -->
   <script src="/bower_components/jquery/dist/jquery.js"></script>
   <script src="/bower_components/d3/d3.js"></script>
+  <!-- endbower -->
+  <!-- endbuild -->
+
+  <!-- build:js scripts/miniExample.js -->
   <script src="scripts/miniExample.bundle.js"></script>
+  <!-- endbuild -->
 </body>
 </html>
 ```
