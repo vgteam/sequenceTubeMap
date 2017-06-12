@@ -47,7 +47,7 @@ In addition, the module uses [d3.js](https://d3js.org/), [jQuery](https://jquery
 
 A minimal example would look like this:
 
-miniExample.html (a big part of this file are just commands for the JavaScript building and compiling, the actual html is minimal)
+**miniExample.html**(a big part of this file are just commands for the JavaScript building and compiling, the actual html is minimal)
 ```html
 <!DOCTYPE html>
 <html>
@@ -84,7 +84,7 @@ miniExample.html (a big part of this file are just commands for the JavaScript b
 </html>
 ```
 
-miniExample.js
+**miniExample.js**
 ```javascript
 import * as tubeMap from './tubemap';
 
@@ -106,7 +106,7 @@ tubeMap.create({
   tracks: paths,
 });
 tubeMap.useColorScheme(0);
-```html
+```
 
 (See the result [here](https://wolfib.github.io/sequenceTubeMap/miniExample.html).)
 
