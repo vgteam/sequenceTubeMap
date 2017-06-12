@@ -9,6 +9,8 @@ const browserify = require('browserify');
 const babelify = require('babelify');
 const buffer = require('vinyl-buffer');
 const source = require('vinyl-source-stream');
+const rename = require('gulp-rename');
+const es = require('event-stream');
 
 const $ = gulpLoadPlugins();
 const reload = browserSync.reload;
@@ -25,19 +27,22 @@ gulp.task('styles', () => {
 });
 
 gulp.task('scripts', () => {
-  // return gulp.src('app/scripts/**/*.js')
+  const files = [
+    'app/scripts/main.js',
+    'app/scripts/miniExample.js'
+  ];
 
-  const b = browserify({
-    entries: 'app/scripts/main.js',
-    transform: babelify,
-    debug: true,
-    //alt// noParse: ['/Users/wolfgang/Dropbox/Websites/webappES6/app/scripts/cactus-data.js'],
-    //exclude: [require.resolve('./app/scripts/cactus-data.js')],
-  });
-  // console.log(require.resolve('./app/scripts/cactus-data.js'));
-
-  return b.bundle()
-    .pipe(source('bundle.js'))
+  const tasks = files.map((entry) => {
+    return browserify({
+      entries: [entry],
+      transform: babelify,
+      debug: true,
+    })
+    .bundle()
+    .pipe(source(entry.substr(entry.lastIndexOf('/') + 1)))
+    .pipe(rename({
+      extname: '.bundle.js',
+    }))
     .pipe($.plumber())
     // .pipe($.sourcemaps.init())
     // .pipe($.babel())
@@ -46,6 +51,8 @@ gulp.task('scripts', () => {
     .pipe($.sourcemaps.write('.'))
     .pipe(gulp.dest('.tmp/scripts'))
     .pipe(reload({ stream: true }));
+  });
+  return es.merge.apply(null, tasks);
 });
 
 function lint(files, options) {

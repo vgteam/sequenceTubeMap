@@ -1517,6 +1517,8 @@ function generateSVGShapesFromPath() {
     } else {
       xStart = getReadXStart(track);
     }
+    maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
+    minYCoordinate = Math.min(minYCoordinate, yStart);
 
     // middle of path
     for (let i = 0; i < track.path.length; i += 1) {
@@ -2169,10 +2171,16 @@ export function vgExtractNodes(vg) {
 
 // calculate node widths depending on sequence lengths and chosen calculation method
 function generateNodeWidth() {
+  nodes.forEach((node) => {
+    if (!node.hasOwnProperty('sequenceLength')) {
+      node.sequenceLength = node.seq.length;
+    }
+  });
+
   switch (config.nodeWidthOption) {
     case 1:
       nodes.forEach((node) => {
-        if (node.hasOwnProperty('sequenceLength')) node.width = (1 + (Math.log(node.sequenceLength) / Math.log(2)));
+        node.width = (1 + (Math.log(node.sequenceLength) / Math.log(2)));
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
@@ -2180,13 +2188,13 @@ function generateNodeWidth() {
       nodes.forEach((node) => {
         // if (node.hasOwnProperty('sequenceLength')) node.width = (1 + Math.log(node.sequenceLength) / Math.log(10));
         // node.pixelWidth = Math.round((node.width - 1) * 8.401);
-        if (node.hasOwnProperty('sequenceLength')) node.width = (node.sequenceLength / 100);
+        node.width = (node.sequenceLength / 100);
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
     default:
       nodes.forEach((node) => {
-        if (node.hasOwnProperty('sequenceLength')) node.width = node.sequenceLength;
+        node.width = node.sequenceLength;
 
         // get width of node's text label by writing label, measuring it and removing label
         svg.append('text')

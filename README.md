@@ -41,68 +41,77 @@ There already exist various JavaScript tools for the visualization of graphs (se
 
 The demo at [https://wolfib.github.io/sequenceTubeMap/](https://wolfib.github.io/sequenceTubeMap/) contains some example visualizations as well as a way to generate visalizations from custom data.
 
-Another way to use this module is to include it in your own code. The whole visualization logic is contained in [`sequenceTubeMap.js`](https://github.com/wolfib/sequenceTubeMap/blob/master/sequenceTubeMap.js) and a handful of css rules are defined in [`sequenceTubeMapStyle.css`](https://github.com/wolfib/sequenceTubeMap/blob/master/sequenceTubeMapStyle.css). For the actual drawing the module uses [d3.js](https://d3js.org/), so this library has to be included as well. A minimal example would look like this:
+Another way to use this module is to include it in your own code. The whole visualization logic is contained in [`tubemap.js`](https://github.com/wolfib/sequenceTubeMap/blob/master/app/scripts/tubemap.js) and a handful of css rules are defined in [`tubemap.css`](https://github.com/wolfib/sequenceTubeMap/blob/master/app/styles/tubemap.css). tubemap.js is an ES6 module and importing it requires ES6's import command, which is not supported by most browsers natively at this time. The code therefore needs to be transpiled before it can be executed in the browser.
 
+In addition, the module uses [d3.js](https://d3js.org/), [jQuery](https://jquery.com/) and [Bootstrap](https://getbootstrap.com/).
+
+A minimal example would look like this:
+
+miniExample.html
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-  <title>sequenceTubeMap.js Minimal Example</title>
-  <script type="text/javascript" src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-  <script src="sequenceTubeMap.js"></script>
-  <link rel="stylesheet" type="text/css" href="sequenceTubeMapStyle.css">
+  <title>Sequence Tube Map Minimal Example</title>
+  <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.css" />
+  <link rel="stylesheet" href="styles/tubemap.css">
 </head>
 <body>
-  <p>A minimal example created with sequenceTubeMap.js:</p>
-  <div id="chart"></div>
-
-  <script type="text/javascript">
-
-    var nodes = [
-      {name: "A", width: 1},
-      {name: "B", width: 2},
-      {name: "C", width: 3}
-    ];
-
-    var paths = [
-      {id: 0, sequence: ["A", "B", "C"]},
-      {id: 1, sequence: ["A", "B", "C"]},
-      {id: 2, sequence: ["A", "C"]}
-    ];
-
-    var svg = d3.select("#chart").append("svg");
-
-    sequenceTubeMap.create(svg, nodes, paths);
-
-  </script>
+  <p>A minimal example created with the Sequence Tube Maps JavaScript Module:</p>
+  <div id="legendDiv"></div>
+  <div id="chart">
+    <svg id="svg">
+    </svg>
+  </div>
+  <script src="/bower_components/jquery/dist/jquery.js"></script>
+  <script src="/bower_components/d3/d3.js"></script>
+  <script src="scripts/miniExample.bundle.js"></script>
 </body>
 </html>
 ```
+
+miniExample.js
+```javascript
+import * as tubeMap from './tubemap';
+
+const nodes = [
+  { name: 'A', seq: 'AAAA' },
+  { name: 'B', seq: 'TTG' },
+  { name: 'C', seq: 'CC' },
+];
+
+const paths = [
+  { id: 0, name: 'Track 1', sequence: ['A', 'B', 'C'] },
+  { id: 1, name: 'Track 2', sequence: ['A', '-B', 'C'] },
+  { id: 2, name: 'Track 3', sequence: ['A', 'C'] },
+];
+
+tubeMap.create({
+  svgID: '#svg',
+  nodes,
+  tracks: paths,
+});
+tubeMap.useColorScheme(0);
+```html
+
 (See the result [here](https://wolfib.github.io/sequenceTubeMap/miniExample.html).)
 
-[`sequenceTubeMap.js`](https://github.com/wolfib/sequenceTubeMap/blob/master/sequenceTubeMap.js) uses very simple custom JSON data structures for its input data:
+[`tubemap.js`](https://github.com/wolfib/sequenceTubeMap/blob/master/app/scripts/tubemap.js) uses very simple custom JSON data structures for its input data:
 
-Nodes are defined by a `name` attribute (has to be unique) and either a `width` or a `sequenceLength` attribute. `width` determines the node's width directly whereas `sequenceLength` is used as input into a scaling function whose return value is the actual node `width` attribute to be used in the visualization.
+Nodes are defined by a `name` attribute (has to be unique) and a `seq` attribute which contains the node's sequence of bases.
 ```javascript
-var nodes = [
-  {name: "A", width: 1},
-  {name: "B", width: 2},
-  {name: "C", width: 3}
-];
-
-var nodes = [
-  {name: "A", sequenceLength: 1},
-  {name: "B", sequenceLength: 2},
-  {name: "C", sequenceLength: 3}
+const nodes = [
+  { name: 'A', seq: 'AAAA' },
+  { name: 'B', seq: 'TTG' },
+  { name: 'C', seq: 'CC' },
 ];
 ```
-
-Paths each have a unique and consecutively numbered `id` attribute (starting with 0) and a `sequence` attribute which contains a array of node `name` attributes. If a node is traversed in reversed direction, the node `name` is prefixed by a `-`-symbol.
+Paths each have a unique and consecutively numbered `id` attribute (starting with 0), a `name` attribute and a `sequence` attribute which contains a array of node `name` attributes. If a node is traversed in reversed direction, the node `name` is prefixed by a `-`-symbol.
 ```javascript
-var paths = [
-  {id: 0, sequence: ["A", "B", "C"]},
-  {id: 1, sequence: ["A", "-C", "-B"]},
-  {id: 2, sequence: ["A", "C"]}
+const paths = [
+  { id: 0, name: 'Track 1', sequence: ['A', 'B', 'C'] },
+  { id: 1, name: 'Track 2', sequence: ['A', '-B', 'C'] },
+  { id: 2, name: 'Track 3', sequence: ['A', 'C'] },
 ];
 ```
 
@@ -113,4 +122,4 @@ vg view -j filename.vg >filename.json
 JSON files generated in such a way can be parsed and displayed by the demo at [https://wolfib.github.io/sequenceTubeMap/](https://wolfib.github.io/sequenceTubeMap/).
 
 ## License
-Copyright (c) 2016 Wolfgang Beyer, licensed under the MIT License.
+Copyright (c) 2017 Wolfgang Beyer, licensed under the MIT License.

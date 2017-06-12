@@ -14,7 +14,9 @@
   "dependencies": {
     "body-parser": "^1.15.2",
     "cors": "^2.8.1",
-    "express": "^4.14.0"
+    "event-stream": "^3.3.4",
+    "express": "^4.14.0",
+    "gulp-rename": "^1.2.2"
   },
   "devDependencies": {
     "babel-core": "^6.4.0",
@@ -59,16 +61,30 @@
     },
     "extends": "airbnb",
     "rules": {
-      "quotes": [2, "single"],
-      "no-use-before-define": ["error", { "functions": false, "variables": true }],
-      "no-mixed-operators": ["error", {"allowSamePrecedence": true}]
+      "quotes": [
+        2,
+        "single"
+      ],
+      "no-use-before-define": [
+        "error",
+        {
+          "functions": false,
+          "variables": true
+        }
+      ],
+      "no-mixed-operators": [
+        "error",
+        {
+          "allowSamePrecedence": true
+        }
+      ]
     },
     "parserOptions": {
       "ecmaVersion": 6,
       "sourceType": "module"
     },
     "globals": {
-        "d3": true
+      "d3": true
     }
   }
 }

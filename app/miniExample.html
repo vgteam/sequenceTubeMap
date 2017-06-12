@@ -1,33 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>sequenceTubeMap.js Minimal Example</title>
-  <script type="text/javascript" src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-  <script src="sequenceTubeMap.js"></script>
-  <link rel="stylesheet" type="text/css" href="sequenceTubeMapStyle.css">
+  <title>Sequence Tube Map Minimal Example</title>
+  <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.css" />
+  <link rel="stylesheet" href="styles/tubemap.css">
 </head>
 <body>
-  <p>A minimal example created with sequenceTubeMap.js:</p>
-  <div id="chart"></div>
-
-  <script type="text/javascript">
-
-    var nodes = [
-      {name: "A", width: 1},
-      {name: "B", width: 2},
-      {name: "C", width: 3}
-    ];
-
-    var paths = [
-      {id: 0, sequence: ["A", "B", "C"]},
-      {id: 1, sequence: ["A", "B", "C"]},
-      {id: 2, sequence: ["A", "C"]}
-    ];
-
-    var svg = d3.select("#chart").append("svg");
-    sequenceTubeMap.setNodeWidthOption(0);
-    sequenceTubeMap.create(svg, nodes, paths);
-
-  </script>
+  <p>A minimal example created with the Sequence Tube Maps JavaScript Module:</p>
+  <div id="legendDiv"></div>
+  <div id="chart">
+    <svg id="svg">
+    </svg>
+  </div>
+  <script src="/bower_components/jquery/dist/jquery.js"></script>
+  <script src="/bower_components/d3/d3.js"></script>
+  <script src="scripts/miniExample.bundle.js"></script>
 </body>
 </html>
