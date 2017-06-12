@@ -59,3 +59,10 @@ label {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.display-options {
+  margin-top: 15px;
+  padding: 5px 10px 5px 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}

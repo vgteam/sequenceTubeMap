@@ -15,9 +15,11 @@ const blues = ['#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c',
 // const reds = ['#fff5f0','#fee0d2','#fcbba1','#fc9272','#fb6a4a','#ef3b2c','#cb181d','#a50f15','#67000d'];
 const reds = ['#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'];
 const plainColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']; // d3 category10
+const lightColors = ['#ABCCE3', '#FFCFA5', '#B0DBB0', '#F0AEAE', '#D7C6E6', '#C6ABA5', '#F4CCE8', '#CFCFCF', '#E6E6AC', '#A8E7ED']; // d3 category10
+
 // const plainColors = ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', '#0099c6', '#dd4477', '#66aa00', '#b82e2e', '#316395']; // d3 google 10c
 // const plainColors = ['#1b5e20', '#0850B8', '#ff9800', '#039be5', '#f44336', '#9c27b0', '#8bc34a', '#5d4037', '#ffeb3b'];
-const lightColors = ['#AAC3AB', '#A2BDE4', '#FFD89F', '#A1DAF5', '#FAA19B', '#DAAEE1', '#D4E9BB', '#AEA09B', '#FFF7B5'];
+// const lightColors = ['#AAC3AB', '#A2BDE4', '#FFD89F', '#A1DAF5', '#FAA19B', '#DAAEE1', '#D4E9BB', '#AEA09B', '#FFF7B5'];
 
 let svgID; // the (html-tag) ID of the svg
 let svg; // the svg
@@ -36,7 +38,7 @@ let extraRight = []; // info whether nodes have to be moved further apart becaus
 let maxOrder; // horizontal order of the rightmost node
 
 const config = {
-  mergeNodesFlag: false,
+  mergeNodesFlag: true,
   clickableNodesFlag: false,
   showExonsFlag: false,
   colorScheme: 1,
@@ -1416,26 +1418,25 @@ export function useColorScheme(x) {
 function generateTrackColor(track, highlight) {
   if (typeof highlight === 'undefined') highlight = 'plain';
   let trackColor;
+  // Color reads in red and reverse reads in blue
   if (track.hasOwnProperty('type') && track.type === 'read') {
-    // trackColor = greys[track.id % greys.length];
     trackColor = reds[track.id % reds.length];
     if (track.sequence[0].charAt(0) === '-') trackColor = blues[track.id % blues.length];
   } else {
-    if ((config.showExonsFlag === false) || (highlight !== 'plain')) {
-      if (config.colorScheme === 0) {
+    if (config.colorScheme === 0) { // colorful color scheme
+      if ((config.showExonsFlag === false) || (highlight !== 'plain')) {
         trackColor = plainColors[track.id % plainColors.length];
-      } else if (config.colorScheme === 1) {
-        trackColor = blues[track.id % blues.length];
+      } else {
+        trackColor = lightColors[track.id % lightColors.length];
       }
-      // if (track.id === 2) trackColor = reds[4];
-      // if (track.id === 9) trackColor = plainColors[0];
-      // if (track.id === 5) trackColor = plainColors[2];
-      // trackColor = reds[track.id % reds.length];
-    } else {
-      trackColor = lightColors[track.id % lightColors.length];
+    } else if (config.colorScheme === 1) { // blue-ish color scheme
+      if ((config.showExonsFlag === false) || (highlight === 'plain')) {
+        trackColor = blues[track.id % blues.length];
+      } else {
+        trackColor = reds[track.id % reds.length];
+      }
     }
   }
-  // track.color = trackColor;
   return trackColor;
 }
 

@@ -143,79 +143,33 @@ document.getElementById('inputFile').addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-document.getElementById('redundantNodesCheckbox1').onclick = function () {
-  document.getElementById('redundantNodesCheckbox2').checked = document.getElementById('redundantNodesCheckbox1').checked;
-  document.getElementById('redundantNodesCheckbox3').checked = document.getElementById('redundantNodesCheckbox1').checked;
-  if (document.getElementById('redundantNodesCheckbox1').checked === true) tubeMap.setMergeNodesFlag(true);
+document.getElementById('redundantNodesCheckbox').onclick = function () {
+  if (document.getElementById('redundantNodesCheckbox').checked === true) tubeMap.setMergeNodesFlag(true);
   else tubeMap.setMergeNodesFlag(false);
 };
 
-document.getElementById('redundantNodesCheckbox2').onclick = function () {
-  document.getElementById('redundantNodesCheckbox1').checked = document.getElementById('redundantNodesCheckbox2').checked;
-  document.getElementById('redundantNodesCheckbox3').checked = document.getElementById('redundantNodesCheckbox2').checked;
-  if (document.getElementById('redundantNodesCheckbox2').checked === true) tubeMap.setMergeNodesFlag(true);
-  else tubeMap.setMergeNodesFlag(false);
-};
-
-document.getElementById('redundantNodesCheckbox3').onclick = function () {
-  document.getElementById('redundantNodesCheckbox1').checked = document.getElementById('redundantNodesCheckbox3').checked;
-  document.getElementById('redundantNodesCheckbox2').checked = document.getElementById('redundantNodesCheckbox3').checked;
-  if (document.getElementById('redundantNodesCheckbox3').checked === true) tubeMap.setMergeNodesFlag(true);
-  else tubeMap.setMergeNodesFlag(false);
-};
-
-document.getElementById('linear1').onchange = function () {
-  document.getElementById('linear2').checked = true;
-  document.getElementById('linear3').checked = true;
+document.getElementById('linear').onchange = function () {
   tubeMap.setNodeWidthOption(0);
 };
 
-document.getElementById('log21').onchange = function () {
-  document.getElementById('log22').checked = true;
-  document.getElementById('log23').checked = true;
+document.getElementById('log2').onchange = function () {
   tubeMap.setNodeWidthOption(1);
 };
 
-document.getElementById('log101').onchange = function () {
-  document.getElementById('log102').checked = true;
-  document.getElementById('log103').checked = true;
+document.getElementById('divide100').onchange = function () {
   tubeMap.setNodeWidthOption(2);
 };
 
-document.getElementById('linear2').onchange = function () {
-  document.getElementById('linear1').checked = true;
-  document.getElementById('linear3').checked = true;
-  tubeMap.setNodeWidthOption(0);
+document.getElementById('colorfulRadioButton').onclick = function () {
+  tubeMap.useColorScheme(0);
 };
 
-document.getElementById('log22').onchange = function () {
-  document.getElementById('log21').checked = true;
-  document.getElementById('log23').checked = true;
-  tubeMap.setNodeWidthOption(1);
+document.getElementById('bluesRadioButton').onclick = function () {
+  tubeMap.useColorScheme(1);
 };
 
-document.getElementById('log102').onchange = function () {
-  document.getElementById('log101').checked = true;
-  document.getElementById('log103').checked = true;
-  tubeMap.setNodeWidthOption(2);
-};
-
-document.getElementById('linear3').onchange = function () {
-  document.getElementById('linear1').checked = true;
-  document.getElementById('linear2').checked = true;
-  tubeMap.setNodeWidthOption(0);
-};
-
-document.getElementById('log23').onchange = function () {
-  document.getElementById('log21').checked = true;
-  document.getElementById('log22').checked = true;
-  tubeMap.setNodeWidthOption(1);
-};
-
-document.getElementById('log103').onchange = function () {
-  document.getElementById('log101').checked = true;
-  document.getElementById('log102').checked = true;
-  tubeMap.setNodeWidthOption(2);
+document.getElementById('exonCheckbox').onclick = function () {
+  tubeMap.changeExonVisibility();
 };
 
 function loadJSON(filename, callback) {
@@ -250,17 +204,6 @@ function displayVGjson(filename) {
     document.getElementById('textarea2').value = response;
   });
 } */
-
-document.getElementById('colorfulRadioButton').onclick = function () {
-  tubeMap.useColorScheme(0);
-};
-document.getElementById('bluesRadioButton').onclick = function () {
-  tubeMap.useColorScheme(1);
-};
-
-document.getElementById('exonCheckbox').onclick = function () {
-  tubeMap.changeExonVisibility();
-};
 
 /* function changeTrackVisibility(trackID) {
   tubeMap.changeTrackVisibility(trackID);
