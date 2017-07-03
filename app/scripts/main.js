@@ -6,6 +6,7 @@ import * as tubeMap from './tubemap';
 import * as data from './demo-data';
 import * as cactus from './cactus-data';
 // import * as cactus from './cactus-data-small';
+import * as hgvm from './hgvm-data';
 
 document.getElementById('example1').onclick = function () {
   tubeMap.create({
@@ -25,6 +26,7 @@ document.getElementById('example2').onclick = function () {
     bed: data.bed1,
   });
 };
+
 document.getElementById('example3').onclick = function () {
   $('#example1').removeClass('active');
   tubeMap.create({
@@ -34,6 +36,22 @@ document.getElementById('example3').onclick = function () {
     bed: data.bed1,
   });
 };
+
+/* document.getElementById('example3').onclick = function () {
+  $('#example1').removeClass('active');
+  const vg = JSON.parse(hgvm.hgvm1);
+  const nodes = tubeMap.vgExtractNodes(vg);
+  const tracks = tubeMap.vgExtractTracks(vg);
+  const reads = tubeMap.vgExtractReads(nodes, tracks, hgvm.hgvmReads1.split('\n'));
+  // const reads = tubeMap.vgExtractReads(tracks, cactusReadSmall.split('\n'));
+  tubeMap.create({
+    svgID: '#svg',
+    nodes,
+    tracks,
+    reads,
+  });
+}; */
+
 document.getElementById('example4').onclick = function () {
   $('#example1').removeClass('active');
   tubeMap.create({
@@ -109,6 +127,44 @@ document.getElementById('postButton').onclick = function () {
         svgID: '#svg',
         nodes,
         tracks,
+        clickableNodes: true,
+      });
+      document.getElementById('loader').style.display = 'none';
+    },
+    error(responseData, textStatus, errorThrown) {
+      console.log('POST failed.');
+    },
+  });
+};
+
+document.getElementById('hgvmPostButton').onclick = function () {
+  d3.select('#svg').selectAll('*').remove();
+  const w1 = $('#svg').width();
+  const w2 = $('#chart0').width();
+  const w = Math.min(w1, w2);
+  $('#legendDiv').html('');
+  document.getElementById('loader').setAttribute('style', `left:${((w / 2) - 25)}px`);
+  // document.getElementById('loader').style.display = 'block';
+  $('#example1').removeClass('active');
+
+  const nodeID = document.getElementById('hgvmNodeID').value;
+  const distance = document.getElementById('hgvmDistance').value;
+
+  $.ajax({
+    type: 'POST',
+    url: 'https://api.wbeyer.com/vg_hgvm',
+    crossDomain: true,
+    data: { nodeID, distance },
+    dataType: 'json',
+    success(response) {
+      const nodes = tubeMap.vgExtractNodes(response.graph);
+      const tracks = tubeMap.vgExtractTracks(response.graph);
+      const reads = tubeMap.vgExtractReads(nodes, tracks, response.gam);
+      tubeMap.create({
+        svgID: '#svg',
+        nodes,
+        tracks,
+        reads,
         clickableNodes: true,
       });
       document.getElementById('loader').style.display = 'none';

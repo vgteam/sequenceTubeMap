@@ -19,7 +19,7 @@ const lightColors = ['#ABCCE3', '#FFCFA5', '#B0DBB0', '#F0AEAE', '#D7C6E6', '#C6
 
 // const plainColors = ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', '#0099c6', '#dd4477', '#66aa00', '#b82e2e', '#316395']; // d3 google 10c
 // const plainColors = ['#1b5e20', '#0850B8', '#ff9800', '#039be5', '#f44336', '#9c27b0', '#8bc34a', '#5d4037', '#ffeb3b'];
-// const lightColors = ['#AAC3AB', '#A2BDE4', '#FFD89F', '#A1DAF5', '#FAA19B', '#DAAEE1', '#D4E9BB', '#AEA09B', '#FFF7B5'];
+//const lightColors = ['#AAC3AB', '#A2BDE4', '#FFD89F', '#A1DAF5', '#FAA19B', '#DAAEE1', '#D4E9BB', '#AEA09B', '#FFF7B5'];
 
 let svgID; // the (html-tag) ID of the svg
 let svg; // the svg
@@ -231,6 +231,7 @@ function createTubeMap() {
   generateNodeXCoords();
 
   if (reads) {
+    removeNonPathNodesFromReads();
     // reads = reads.slice(2, 3);
     reverseReversedReads();
     // reads = reads.filter(read => ((read.sequence[0] === '9') || (read.sequence[0] === '10')));
@@ -295,6 +296,21 @@ function assignReadsToNodes() {
           nodes[read.path[pathIdx].node].incomingReads.push([idx, pathIdx]);
         }
       });
+    }
+  });
+}
+
+//
+function removeNonPathNodesFromReads() {
+  reads.forEach((read) => {
+    for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
+      let nodeName = read.sequence[i];
+      if (nodeName.charAt(0) === '-') {
+        nodeName = nodeName.substr(1);
+      }
+      if (!nodeMap.has(nodeName) || nodes[nodeMap.get(nodeName)].degree === 0) {
+        read.sequence.splice(i, 1);
+      }
     }
   });
 }
@@ -2315,20 +2331,35 @@ function compareReadsByLeftEnd2(a, b) {
   return 0;
 }
 
-export function vgExtractReads(myTracks, myReads) {
+export function vgExtractReads(myNodes, myTracks, myReads) {
   const extracted = [];
 
+  const nodeNames = [];
+  myNodes.forEach((node) => {
+    nodeNames.push(parseInt(node.name, 10));
+  });
+
   for (let i = 0; i < myReads.length; i += 1) {
-    if (myReads[i].length > 0) {
-      const read = JSON.parse(myReads[i]);
+    //if (myReads[i].length > 0) {
+      // const read = JSON.parse(myReads[i]);
+      const read = myReads[i];
       const sequence = [];
-      read.path.mapping.forEach((pos) => {
-        if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
-          sequence.push(`-${pos.position.node_id}`);
-        } else {
-          sequence.push(`${pos.position.node_id}`);
+      let firstIndex = -1; // index within mapping of the first node id contained in nodeNames
+      let lastIndex = -1; // index within mapping of the last node id contained in nodeNames
+      read.path.mapping.forEach((pos, j) => {
+        if (nodeNames.indexOf(pos.position.node_id) > -1) {
+          if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
+            sequence.push(`-${pos.position.node_id}`);
+          } else {
+            sequence.push(`${pos.position.node_id}`);
+          }
+          if (firstIndex < 0) firstIndex = j;
+          lastIndex = j;
         }
       });
+      if (sequence.length === 0) {
+        console.log('read ' + i + ' is empty');
+      }
 
       const track = {};
       track.id = myTracks.length + extracted.length;
@@ -2338,14 +2369,17 @@ export function vgExtractReads(myTracks, myReads) {
       if (read.path.hasOwnProperty('name')) track.name = read.path.name;
 
       track.firstNodeOffset = 0;
-      if (read.path.mapping[0].position.hasOwnProperty('offset')) {
-        track.firstNodeOffset = read.path.mapping[0].position.offset;
+      if (read.path.mapping[firstIndex].position.hasOwnProperty('offset')) {
+        track.firstNodeOffset = read.path.mapping[firstIndex].position.offset;
       }
 
-      const finalNodeEdit = read.path.mapping[read.path.mapping.length - 1].edit;
+      // const finalNodeEdit = read.path.mapping[read.path.mapping.length - 1].edit;
+      const finalNodeEdit = read.path.mapping[lastIndex].edit;
       track.finalNodeCoverLength = 0;
-      if (read.path.mapping[read.path.mapping.length - 1].position.hasOwnProperty('offset')) {
-        track.finalNodeCoverLength += read.path.mapping[read.path.mapping.length - 1].position.offset;
+      // if (read.path.mapping[read.path.mapping.length - 1].position.hasOwnProperty('offset')) {
+        // track.finalNodeCoverLength += read.path.mapping[read.path.mapping.length - 1].position.offset;
+      if (read.path.mapping[lastIndex].position.hasOwnProperty('offset')) {
+        track.finalNodeCoverLength += read.path.mapping[lastIndex].position.offset;
       }
       finalNodeEdit.forEach((edit) => {
         if (edit.hasOwnProperty('from_length')) {
@@ -2355,7 +2389,7 @@ export function vgExtractReads(myTracks, myReads) {
 
       extracted.push(track);
     }
-  }
+  //}
   return extracted;
 }
 
@@ -2372,8 +2406,6 @@ function mergeNodes() {
     pred.push(new Set());
     succ.push(new Set());
   }
-  console.log('map:');
-  console.log(nodeMap);
 
   tracks.forEach((track) => {
     if (track.type === 'haplo') {
