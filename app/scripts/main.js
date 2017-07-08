@@ -279,7 +279,7 @@ document.getElementById('simpleReadsExample').onclick = function () {
   const vg = JSON.parse(data.k3138);
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
-  const reads = tubeMap.vgExtractReads(tracks, data.demoReads.split('\n'));
+  const reads = tubeMap.vgExtractReads(nodes, tracks, readsFromStringToArray(data.demoReads));
   tubeMap.create({
     svgID: '#svg',
     nodes,
@@ -288,13 +288,23 @@ document.getElementById('simpleReadsExample').onclick = function () {
   });
 };
 
+function readsFromStringToArray(readsString) {
+  const lines = readsString.split('\n');
+  const result = [];
+  lines.forEach((line) => {
+    if (line.length > 0) {
+      result.push(JSON.parse(line));
+    }
+  });
+  return result;
+}
+
 document.getElementById('cactusWithReads').onclick = function () {
   $('#example1').removeClass('active');
   const vg = JSON.parse(cactus.cactus);
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
-  const reads = tubeMap.vgExtractReads(tracks, cactus.cactusReads.split('\n'));
-  // const reads = tubeMap.vgExtractReads(tracks, cactusReadSmall.split('\n'));
+  const reads = tubeMap.vgExtractReads(nodes, tracks, readsFromStringToArray(cactus.cactusReads));
   tubeMap.create({
     svgID: '#svg',
     nodes,

@@ -71,8 +71,8 @@ app.post('/vg_hgvm', (req, res) => {
   console.log(`distance = ${distance}`);
 
   const fileName = uuid();
-  // const child = spawn('./vg_data/vg', ['chunk', '-x', './vg_data/hgvm.xg', '-a', 'aligned.gam.index', '-g', '-p', 'chr22:8206732-8206732', '-i', '-c', distance, '|', 'vg', 'view', '-j', '-', `>./vg_data/${fileName}.json`]);
   const child = spawn('sh', ['-c', `./vg_data/vg chunk -x ./vg_data/hgvm.xg -a ./vg_data/aligned.gam.index -g -p chr22:${nodeID}-${nodeID} -i -c ${distance} | ./vg_data/vg view -j - >./vg_data/${fileName}.json`]);
+  // const child = spawn('sh', ['-c', `./vg_data2/vg chunk -x ./vg_data2/chr22_v4.vg.xg -a ./vg_data2/NA12878_mapped_v4.gam.index -g -p 22:${nodeID}-${nodeID} -i -c ${distance} | ./vg_data2/vg view -j - >./vg_data2/${fileName}.json`]);
 
   child.stderr.on('data', (data) => {
     console.log(`err data: ${data}`);
@@ -86,7 +86,7 @@ app.post('/vg_hgvm', (req, res) => {
     const obj = JSON.parse(jsonfile);
 
     let gamFile;
-    fs.readdirSync('./').forEach(file => {
+    fs.readdirSync('./').forEach((file) => {
       if (file.substr(file.length - 3) === 'gam') {
         gamFile = file;
       }
@@ -98,12 +98,12 @@ app.post('/vg_hgvm', (req, res) => {
       console.log(`err data: ${data}`);
     });
 
-    vgViewChild.on('close', (code) => {
+    vgViewChild.on('close', () => {
       const lineReader = rl.createInterface({
         input: fs.createReadStream('gam.json'),
       });
 
-      let gamArr = [];
+      const gamArr = [];
       lineReader.on('line', (line) => {
         // console.log(JSON.parse(line));
         gamArr.push(JSON.parse(line));
@@ -112,7 +112,7 @@ app.post('/vg_hgvm', (req, res) => {
 
       lineReader.on('close', () => {
         // console.log(gamArr);
-        let resultJSON = {};
+        const resultJSON = {};
         resultJSON.graph = obj;
         resultJSON.gam = gamArr;
 
