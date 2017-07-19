@@ -101,7 +101,7 @@ document.getElementById('parseButton').onclick = function () {
   });
 };
 
-document.getElementById('postButton').onclick = function () {
+document.getElementById('chr22_v3PostButton').onclick = function () {
   d3.select('#svg').selectAll('*').remove();
   const w1 = $('#svg').width();
   const w2 = $('#chart0').width();
@@ -111,12 +111,13 @@ document.getElementById('postButton').onclick = function () {
   // document.getElementById('loader').style.display = 'block';
   $('#example1').removeClass('active');
 
-  const nodeID = document.getElementById('nodeID').value;
-  const distance = document.getElementById('distance').value;
+  const nodeID = document.getElementById('chr22_v3NodeID').value;
+  const distance = document.getElementById('chr22_v3Distance').value;
 
   $.ajax({
     type: 'POST',
     url: 'https://api.wbeyer.com/vg_trace',
+    // url: 'vg_trace',
     crossDomain: true,
     data: { nodeID, distance },
     dataType: 'json',
@@ -153,6 +154,46 @@ document.getElementById('hgvmPostButton').onclick = function () {
   $.ajax({
     type: 'POST',
     url: 'https://api.wbeyer.com/vg_hgvm',
+    // url: 'vg_hgvm',
+    crossDomain: true,
+    data: { nodeID, distance },
+    dataType: 'json',
+    success(response) {
+      const nodes = tubeMap.vgExtractNodes(response.graph);
+      const tracks = tubeMap.vgExtractTracks(response.graph);
+      const reads = tubeMap.vgExtractReads(nodes, tracks, response.gam);
+      tubeMap.create({
+        svgID: '#svg',
+        nodes,
+        tracks,
+        reads,
+        clickableNodes: true,
+      });
+      document.getElementById('loader').style.display = 'none';
+    },
+    error(responseData, textStatus, errorThrown) {
+      console.log('POST failed.');
+    },
+  });
+};
+
+document.getElementById('chr22_v4PostButton').onclick = function () {
+  d3.select('#svg').selectAll('*').remove();
+  const w1 = $('#svg').width();
+  const w2 = $('#chart0').width();
+  const w = Math.min(w1, w2);
+  $('#legendDiv').html('');
+  document.getElementById('loader').setAttribute('style', `left:${((w / 2) - 25)}px`);
+  // document.getElementById('loader').style.display = 'block';
+  $('#example1').removeClass('active');
+
+  const nodeID = document.getElementById('chr22_v4NodeID').value;
+  const distance = document.getElementById('chr22_v4Distance').value;
+
+  $.ajax({
+    type: 'POST',
+    url: 'https://api.wbeyer.com/chr22_v4',
+    // url: 'vg_hgvm',
     crossDomain: true,
     data: { nodeID, distance },
     dataType: 'json',
