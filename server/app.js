@@ -132,12 +132,12 @@ app.post('/chr22_v4', (req, res) => {
   console.log(`distance = ${req.body.distance}`);
 
   req.uuid = uuid();
-  req.basepath = './vg_data3';
+  // req.basepath = './vg_data3';
+  req.basepath = './vg_data4';
 
   // call 'vg chunk' to generate graph
-  const child = spawn('sh', ['-c', `${req.basepath}/vg chunk -x ${req.basepath}/chr22_v4.xg -a ${req.basepath}/NA12878_mapped_v4.gam.index -g -n ${req.body.nodeID} -d ${req.body.distance} | ${req.basepath}/vg view -j - >${req.uuid}.json`]);
-  // const child = spawn('sh', ['-c', `${basePath}/vgChunk/vg chunk -x ${basePath}/vgChunk/hgvm.xg -a ${basePath}/vgChunk/aligned.gam.index -g -p chr22:${nodeID}-${nodeID} -i -c ${distance} | ${basePath}/vgChunk/vg view -j - >${basePath}/vgChunk/${fileName}.json`]);
-  // const child = spawn('sh', ['-c', `./vg_data2/vg chunk -x ./vg_data2/chr22_v4.vg.xg -a ./vg_data2/NA12878_mapped_v4.gam.index -g -p 22:${nodeID}-${nodeID} -i -c ${distance} | ./vg_data2/vg view -j - >./vg_data2/${fileName}.json`]);
+  // const child = spawn('sh', ['-c', `${req.basepath}/vg chunk -x ${req.basepath}/chr22_v4.xg -a ${req.basepath}/NA12878_mapped_v4.gam.index -g -n ${req.body.nodeID} -d ${req.body.distance} | ${req.basepath}/vg view -j - >${req.uuid}.json`]);
+  const child = spawn('sh', ['-c', `${req.basepath}/vg chunk -x ${req.basepath}/chr22_v4.xg -a ${req.basepath}/NA12878_mapped_v4.gam.index -g -p 22:${req.body.nodeID} -c ${req.body.distance} -T -E regions.tsv | ${req.basepath}/vg view -j - >${req.uuid}.json`]);
 
   child.stderr.on('data', (data) => {
     console.log(`err data: ${data}`);
@@ -210,8 +210,30 @@ function processGamFile(req, res) {
     });
 
     lineReader.on('close', () => {
-      cleanUpAndSendResult(req, res);
+      processRegionFile(req, res);
     });
+  });
+}
+
+function processRegionFile(req, res) {
+  // read regions.tsv
+  const lineReader = rl.createInterface({
+    input: fs.createReadStream('regions.tsv'),
+    // input: fs.createReadStream('test.txt'),
+    // input: fs.createReadStream(req.annotationFile),
+  });
+
+  lineReader.on('line', (line) => {
+    const arr = line.replace(/\s+/g, ' ').split(' ');
+    // req.graph.sequencePosition = { path: arr[0], position: arr[1] };
+    req.graph.path.forEach((path) => {
+      if (path.name === arr[0]) path.indexOfFirstBase = arr[1];
+    });
+  });
+
+  lineReader.on('close', () => {
+    // console.log('path: ' + req.sequencePosition.path + ', Position: ' + req.sequencePosition.position);
+    cleanUpAndSendResult(req, res);
   });
 }
 
@@ -220,6 +242,7 @@ function cleanUpAndSendResult(req, res) {
   fs.unlink(req.gamFile);
   fs.unlink('gam.json');
   fs.unlink(req.annotationFile);
+  // fs.unlink('regions.tsv');
 
   const result = {};
   result.graph = req.graph;

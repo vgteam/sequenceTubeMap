@@ -12,7 +12,7 @@ const DEBUG = false;
 // let greys = ['#d9d9d9','#bdbdbd','#969696','#737373','#525252','#252525','#000000'];
 // const greys = ['#212121', '#424242', '#616161', '#757575', '#9e9e9e', '#bdbdbd', '#CFD8DC'];
 const blues = ['#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'];
-// const reds = ['#fff5f0','#fee0d2','#fcbba1','#fc9272','#fb6a4a','#ef3b2c','#cb181d','#a50f15','#67000d'];
+// const reds = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'];
 const reds = ['#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'];
 const plainColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']; // d3 category10
 const lightColors = ['#ABCCE3', '#FFCFA5', '#B0DBB0', '#F0AEAE', '#D7C6E6', '#C6ABA5', '#F4CCE8', '#CFCFCF', '#E6E6AC', '#A8E7ED']; // d3 category10
@@ -59,6 +59,8 @@ let trackRectanglesStep3 = [];
 
 let maxYCoordinate = 0;
 let minYCoordinate = 0;
+let maxXCoordinate = 0;
+let trackForRuler;
 
 let bed;
 
@@ -180,6 +182,8 @@ function createTubeMap() {
   extraRight = [];
   maxYCoordinate = 0;
   minYCoordinate = 0;
+  maxXCoordinate = 0;
+  trackForRuler = undefined;
   svg = d3.select(svgID);
   svg.selectAll('*').remove(); // clear svg for (re-)drawing
 
@@ -194,6 +198,9 @@ function createTubeMap() {
       if (tracks[i].hidden === true) {
         tracks.splice(i, 1);
       }
+    }
+    if (tracks[i].hasOwnProperty('indexOfFirstBase')) {
+      trackForRuler = tracks[i].name;
     }
   }
 
@@ -257,6 +264,7 @@ function createTubeMap() {
   console.log(nodes);
   console.log('Lane assignment:');
   console.log(assignments);
+  getImageDimensions();
   alignSVG(nodes, tracks);
   defineSVGPatterns();
 
@@ -274,6 +282,7 @@ function createTubeMap() {
   drawReversalsByColor(trackCorners, trackVerticalRectangles, 'read');
 
   if (config.nodeWidthOption === 0) drawLabels();
+  if (trackForRuler !== undefined) drawRuler();
 
   if (DEBUG) {
     console.log(`number of tracks: ${numberOfTracks}`);
@@ -659,16 +668,32 @@ function removeUnusedNodes() {
   numberOfNodes = nodes.length;
 }
 
-// align visualization to the top and left within svg and resize svg to correct size
-function alignSVG() {
-  let maxX = -9007199254740991;
+// get the minimum and maximum coordinates used in the image to calculate image dimensions
+function getImageDimensions() {
+  maxXCoordinate = -99;
+  minYCoordinate = 99;
+  maxYCoordinate = -99;
 
   nodes.forEach((node) => {
     if (node.hasOwnProperty('x')) {
-      maxX = Math.max(maxX, node.x + 20 + node.pixelWidth);
+      maxXCoordinate = Math.max(maxXCoordinate, node.x + 20 + node.pixelWidth);
+    }
+    if (node.hasOwnProperty('y')) {
+      minYCoordinate = Math.min(minYCoordinate, node.y - 10);
+      maxYCoordinate = Math.max(maxYCoordinate, node.y + node.contentHeight + 10);
     }
   });
 
+  tracks.forEach((track) => {
+    track.path.forEach((segment) => {
+      maxYCoordinate = Math.max(maxYCoordinate, segment.y + track.width);
+      minYCoordinate = Math.min(minYCoordinate, segment.y);
+    });
+  });
+}
+
+// align visualization to the top and left within svg and resize svg to correct size
+function alignSVG() {
   // enable Pan + Zoom
   const zoom = d3.behavior.zoom().scaleExtent([0.1, 5]).on('zoom', () => {
     svg.attr('transform', `translate(${d3.event.translate}) scale(${d3.event.scale})`);
@@ -676,15 +701,15 @@ function alignSVG() {
   svg = svg.call(zoom).on('dblclick.zoom', null).append('g');
 
   // translate so that top of drawing is visible
-  zoom.translate([0, -minYCoordinate + 15]);
+  zoom.translate([0, -minYCoordinate + 25]);
   zoom.event(svg);
 
   // resize svg depending on drawing size
   // this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
   const svg2 = d3.select(svgID);
-  svg2.attr('height', maxYCoordinate - minYCoordinate + 30);
+  svg2.attr('height', maxYCoordinate - minYCoordinate + 50);
   // svg2.attr('height', 800);
-  svg2.attr('width', Math.max(maxX, $(svgID).parent().width()));
+  svg2.attr('width', Math.max(maxXCoordinate, $(svgID).parent().width()));
 }
 
 // map node names to node indices
@@ -1321,7 +1346,7 @@ function adjustVertically(assignment, potentialAdjustmentValues) {
   });
 }
 
-function adjustVertically2(assignment, adjustStart, adjustBy) {
+/* function adjustVertically2(assignment, adjustStart, adjustBy) {
   assignment.forEach((node) => {
     if (node.node !== null) {
       if (nodes[node.node].y >= adjustStart) {
@@ -1334,7 +1359,7 @@ function adjustVertically2(assignment, adjustStart, adjustBy) {
       }
     });
   });
-}
+} */
 
 function adjustVertically3(node, adjustBy) {
   if (node.hasOwnProperty('order')) {
@@ -1515,7 +1540,7 @@ function generateTrackColor(track, highlight) {
   return trackColor;
 }
 
-function getReadXStart(read) {
+/* function getReadXStart(read) {
   let x;
   let offset;
   const node = nodes[read.path[0].node];
@@ -1530,9 +1555,18 @@ function getReadXStart(read) {
     x = nodeRightX - ((offset / node.sequenceLength) * (nodeRightX - nodeLeftX));
   }
   return x;
+} */
+
+function getReadXStart(read) {
+  const node = nodes[read.path[0].node];
+  if (read.path[0].isForward) { // read starts in forward direction
+    return getXCoordinateOfBaseWithinNode(node, read.firstNodeOffset);
+  }
+  // read starts in backward direction
+  return getXCoordinateOfBaseWithinNode(node, node.sequenceLength - read.firstNodeOffset);
 }
 
-function getReadXEnd(read) {
+/* function getReadXEnd(read) {
   let x;
   let offset;
   const node = nodes[read.path[read.path.length - 1].node];
@@ -1547,6 +1581,24 @@ function getReadXEnd(read) {
     x = nodeLeftX + ((offset / node.sequenceLength) * (nodeRightX - nodeLeftX));
   }
   return x;
+} */
+
+function getReadXEnd(read) {
+  const node = nodes[read.path[read.path.length - 1].node];
+  if (read.path[read.path.length - 1].isForward) { // read ends in forward direction
+    return getXCoordinateOfBaseWithinNode(node, read.finalNodeCoverLength);
+  }
+  // read ends in backward direction
+  return getXCoordinateOfBaseWithinNode(node, node.sequenceLength - read.finalNodeCoverLength);
+}
+
+// returns the x coordinate (in pixels) of (the left side) of the given base
+// position within the given node
+function getXCoordinateOfBaseWithinNode(node, base) {
+  if (base > node.width) return null;
+  const nodeLeftX = node.x - 4;
+  const nodeRightX = node.x + node.pixelWidth + 4;
+  return nodeLeftX + ((base / node.sequenceLength) * (nodeRightX - nodeLeftX));
 }
 
 // transforms the info in the tracks' path attribute into actual coordinates
@@ -1592,8 +1644,6 @@ function generateSVGShapesFromPath() {
     } else {
       xStart = getReadXStart(track);
     }
-    maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
-    minYCoordinate = Math.min(minYCoordinate, yStart);
 
     // middle of path
     for (let i = 0; i < track.path.length; i += 1) {
@@ -1654,12 +1704,8 @@ function generateSVGShapesFromPath() {
           highlight = dummy.highlight;
           xStart = dummy.xStart;
         }
-        maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
-        minYCoordinate = Math.min(minYCoordinate, yStart);
       }
     }
-    maxYCoordinate = Math.max(maxYCoordinate, yStart + track.width);
-    minYCoordinate = Math.min(minYCoordinate, yStart);
 
     // ending edges
     if (track.type !== 'read') {
@@ -1961,6 +2007,57 @@ function drawLabels() {
       .attr('fill', 'black')
       .style('pointer-events', 'none');
   }
+}
+
+function drawRuler() {
+  let rulerTrackIndex = 0;
+  while (tracks[rulerTrackIndex].name !== trackForRuler) rulerTrackIndex += 1;
+  const rulerTrack = tracks[rulerTrackIndex];
+  // console.log(`Drawing ruler for track ${trackForRuler} which starts at ${rulerTrack.indexOfFirstBase}`);
+  // drawRulerMarking(rulerTrack.indexOfFirstBase, 10);
+
+  // draw horizontal line
+  svg.append('line')
+    .attr('x1', 0)
+    .attr('y1', minYCoordinate - 10)
+    .attr('x2', maxXCoordinate)
+    .attr('y2', minYCoordinate - 10)
+    .attr('stroke-width', 1)
+    .attr('stroke', 'black');
+
+  let markingInterval = 100;
+  if (config.nodeWidthOption === 0) markingInterval = 20;
+
+  let indexOfFirstBaseInNode = rulerTrack.indexOfFirstBase;
+  let atLeastOneMarkingDrawn = false;
+  rulerTrack.indexSequence.forEach((nodeIndex) => {
+    const currentNode = nodes[nodeIndex];
+
+    let nextMarking = Math.ceil(indexOfFirstBaseInNode / markingInterval) * markingInterval;
+    while (nextMarking < indexOfFirstBaseInNode + currentNode.width) {
+      const xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, nextMarking - indexOfFirstBaseInNode);
+      drawRulerMarking(nextMarking, xCoordOfMarking);
+      atLeastOneMarkingDrawn = true;
+      nextMarking += markingInterval;
+    }
+    indexOfFirstBaseInNode += nodes[nodeIndex].width;
+  });
+
+  // if no markings drawn, draw one at the very beginning
+  if (!atLeastOneMarkingDrawn) {
+    drawRulerMarking(rulerTrack.indexOfFirstBase, nodes[rulerTrack.indexSequence[0]].x - 4);
+  }
+}
+
+function drawRulerMarking(sequencePosition, xCoordinate) {
+  svg.append('text')
+    .attr('x', xCoordinate)
+    .attr('y', minYCoordinate - 13)
+    .text(`|${sequencePosition}`)
+    .attr('font-family', 'Courier, "Lucida Console", monospace')
+    .attr('font-size', '12px')
+    .attr('fill', 'black')
+    .style('pointer-events', 'none');
 }
 
 function filterObjectByAttribute(attribute, value) {
@@ -2317,6 +2414,7 @@ export function vgExtractTracks(vg) {
     track.sequence = sequence;
     if (path.hasOwnProperty('freq')) track.freq = path.freq;
     if (path.hasOwnProperty('name')) track.name = path.name;
+    if (path.hasOwnProperty('indexOfFirstBase')) track.indexOfFirstBase = Number(path.indexOfFirstBase);
     result.push(track);
   });
   return result;
