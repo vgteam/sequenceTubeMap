@@ -282,7 +282,13 @@ function createTubeMap() {
   drawReversalsByColor(trackCorners, trackVerticalRectangles, 'read');
 
   if (config.nodeWidthOption === 0) drawLabels();
-  if (trackForRuler !== undefined) drawRuler();
+  if (trackForRuler !== undefined) {
+    // recalculate indexSequences because removal of unused nodes changed node indices
+    nodeMap = generateNodeMap(nodes);
+    generateTrackIndexSequences(tracks);
+    if (reads) generateTrackIndexSequences(reads);
+    drawRuler();
+  }
 
   if (DEBUG) {
     console.log(`number of tracks: ${numberOfTracks}`);

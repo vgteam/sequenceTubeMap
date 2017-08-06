@@ -40,7 +40,7 @@ export const inputNodes = [
 ];
 
 export const inputTracks1 = [
-  { id: 0, name: 'Track A', indexOfFirstBase: 10, sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AE', 'AG'], freq: 3000 },
+  { id: 0, name: 'Track A', indexOfFirstBase: 1, sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AE', 'AG'], freq: 3000 },
   { id: 1, name: 'Track B', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'Q', 'S', 'U', 'AA', 'AE', 'AG'], freq: 15 },
   { id: 2, name: 'Track C', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'V', 'W', 'X', 'Z', 'AB', 'AE', 'AG'], freq: 300 },
   { id: 3, name: 'Track D', sequence: ['B', 'C', 'D', 'E', 'G', 'H', 'J', 'L', 'M', 'N', 'P', 'R', 'S', 'U', 'W', 'Y', 'Z', 'AC', 'AF', 'AG'], freq: 4 },
@@ -48,7 +48,7 @@ export const inputTracks1 = [
 ];
 
 export const inputTracks2 = [
-  { id: 0, name: 'Track A', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AG'], freq: 4000 },
+  { id: 0, name: 'Track A', indexOfFirstBase: 1, sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AG'], freq: 4000 },
   { id: 1, name: 'Track B', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'Q', 'S', 'U', 'AA', 'AG'], freq: 150 },
   { id: 2, name: 'Track C', sequence: ['A', 'B', 'D', 'F', '-H', '-G', '-E', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'AB', 'V', 'W', 'X', '-AA', '-Z', 'AG'], freq: 30 },
   { id: 3, name: 'Track D', sequence: ['B', 'C', 'D', 'E', 'G', 'H', 'J', 'L', '-P', '-N', '-M', 'R', 'S', 'U', 'W', 'Y', 'Z', 'AC', 'AF', 'AG'], freq: 10 },
@@ -56,7 +56,7 @@ export const inputTracks2 = [
 ];
 
 export const inputTracks3 = [
-  { id: 0, name: 'Track A', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AE', 'AG'] },
+  { id: 0, name: 'Track A', indexOfFirstBase: 1, sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AE', 'AG'] },
   { id: 1, name: 'Track B', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'Q', 'S', 'U', 'AA', 'AE', 'AG'] },
   { id: 2, name: 'Track C', sequence: ['A', 'B', 'D', '-H', 'G', '-E', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'AB', 'V', 'W', 'X', '-AE', '-AA', '-Z', 'AG'] },
   { id: 3, name: 'Track D', sequence: ['B', 'C', 'D', 'E', 'G', 'H', 'J', 'L', '-P', '-N', '-M', 'R', 'S', 'U', 'W', 'Y', 'Z', 'AC', 'AF', 'AG'] },
@@ -64,7 +64,7 @@ export const inputTracks3 = [
 ];
 
 export const inputTracks4 = [
-  { id: 0, name: 'Track A', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AE', 'AG'] },
+  { id: 0, name: 'Track A', indexOfFirstBase: 1, sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AE', 'AG'] },
   { id: 1, name: 'Track B', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'J', 'N', 'Q', 'S', 'U', 'AA', 'AE', 'AG'] },
   { id: 2, name: 'Track C', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'V', 'W', 'X', 'Z', 'AB', 'AE', 'AG'] },
   { id: 3, name: 'Track D', sequence: ['B', 'C', 'D', 'E', 'D', 'E', 'G', 'H', 'J', 'L', 'M', 'N', 'P', 'R', 'S', 'U', 'W', 'Y', 'Z', 'AC', 'AF', 'AG'] },
@@ -72,7 +72,7 @@ export const inputTracks4 = [
 ];
 
 export const inputTracks5 = [
-  { id: 0, name: 'Track A', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AE', 'AG'] },
+  { id: 0, name: 'Track A', indexOfFirstBase: 1, sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'U', 'W', 'X', 'Z', 'AA', 'AE', 'AG'] },
   { id: 1, name: 'Track B', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'Q', 'K', 'M', 'N', 'S', 'U', 'AA', 'AE', 'AG'] },
   { id: 2, name: 'Track C', sequence: ['A', 'B', 'D', 'E', 'G', 'H', 'J', 'K', 'M', 'N', 'P', 'Q', 'S', 'V', 'W', 'X', 'Z', 'AB', 'AE', 'AG'] },
   { id: 3, name: 'Track D', sequence: ['B', 'C', 'D', 'H', 'E', 'G', 'J', 'L', 'M', 'N', 'P', 'R', 'S', 'U', 'W', 'Y', 'Z', 'AC', 'AF', 'AG'] },
@@ -80,7 +80,7 @@ export const inputTracks5 = [
 ];
 
 export const inputTracks6 = [
-  { id: 0, name: 'F1', sequence: ['E', 'D', 'C', 'B'] },
+  { id: 0, name: 'F1', indexOfFirstBase: 1, sequence: ['E', 'D', 'C', 'B'] },
   { id: 1, name: 'R1', sequence: ['A', '-B', '-C', '-D'] },
   { id: 2, name: 'R2', sequence: ['A', '-B', '-C', '-D'] },
   //{ id: 1, name: 'R', sequence: ['E', 'A', 'B', 'C', 'D'] },
