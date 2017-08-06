@@ -4,7 +4,7 @@
 
 ### A JavaScript module for the visualization of genomic sequence graphs. It automatically generates a "tube map"-like visualization of given sequence graphs.
 
-### Link to working demo: [https://wolfib.github.io/sequenceTubeMap/](https://wolfib.github.io/sequenceTubeMap/)
+### Link to working demo: [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/)
 
 ## Biological Background
 
@@ -39,9 +39,9 @@ There already exist various JavaScript tools for the visualization of graphs (se
 
 ## Usage
 
-The demo at [https://wolfib.github.io/sequenceTubeMap/](https://wolfib.github.io/sequenceTubeMap/) contains some example visualizations as well as a way to generate visalizations from custom data.
+The demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/) contains some example visualizations as well as a way to generate visalizations from custom data.
 
-Another way to use this module is to include it in your own code. The whole visualization logic is contained in [`tubemap.js`](https://github.com/wolfib/sequenceTubeMap/blob/master/app/scripts/tubemap.js) and a handful of css rules are defined in [`tubemap.css`](https://github.com/wolfib/sequenceTubeMap/blob/master/app/styles/tubemap.css). tubemap.js is an ES6 module and importing it requires ES6's import command, which is not supported by most browsers natively at this time. The code therefore needs to be transpiled before it can be executed in the browser.
+Another way to use this module is to include it in your own code. The whole visualization logic is contained in [`tubemap.js`](https://github.com/vgteam/sequenceTubeMap/blob/master/app/scripts/tubemap.js) and a handful of css rules are defined in [`tubemap.css`](https://github.com/vgteam/sequenceTubeMap/blob/master/app/styles/tubemap.css). tubemap.js is an ES6 module and importing it requires ES6's import command, which is not supported by most browsers natively at this time. The code therefore needs to be transpiled before it can be executed in the browser.
 
 In addition, the module uses [d3.js](https://d3js.org/), [jQuery](https://jquery.com/) and [Bootstrap](https://getbootstrap.com/).
 
@@ -108,9 +108,9 @@ tubeMap.create({
 tubeMap.useColorScheme(0);
 ```
 
-(See the result [here](https://wolfib.github.io/sequenceTubeMap/miniExample.html).)
+(See the result [here](https://vgteam.github.io/sequenceTubeMap/miniExample.html).)
 
-[`tubemap.js`](https://github.com/wolfib/sequenceTubeMap/blob/master/app/scripts/tubemap.js) uses very simple custom JSON data structures for its input data:
+[`tubemap.js`](https://github.com/vgteam/sequenceTubeMap/blob/master/app/scripts/tubemap.js) uses very simple custom JSON data structures for its input data:
 
 Nodes are defined by a `name` attribute (has to be unique) and a `seq` attribute which contains the node's sequence of bases.
 ```javascript
@@ -133,7 +133,7 @@ The sequence tube maps module also has the ability to parse JSON data generated 
 ```
 vg view -j filename.vg >filename.json
 ```
-JSON files generated in such a way can be parsed and displayed by the demo at [https://wolfib.github.io/sequenceTubeMap/](https://wolfib.github.io/sequenceTubeMap/).
+JSON files generated in such a way can be parsed and displayed by the demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/).
 
 ## License
 Copyright (c) 2017 Wolfgang Beyer, licensed under the MIT License.
