@@ -642,13 +642,41 @@ function reverseReversedReads() {
 }
 
 // for each track: generate sequence of node indices from seq. of node names
-function generateTrackIndexSequences(tracksOrReads) {
+function generateTrackIndexSequencesOLD(tracksOrReads) {
   tracksOrReads.forEach((track) => {
     track.indexSequence = [];
     track.sequence.forEach((nodeName) => {
       if (nodeName.charAt(0) === '-') {
         nodeName = nodeName.substr(1);
         track.indexSequence.push(-nodeMap.get(nodeName));
+      } else {
+        track.indexSequence.push(nodeMap.get(nodeName));
+      }
+    });
+  });
+}
+
+// for each track: generate sequence of node indices from seq. of node names
+function generateTrackIndexSequencesNEW(tracksOrReads) {
+  tracksOrReads.forEach((track) => {
+    track.indexSequence = [];
+    track.sequence.forEach((edit) => {
+      if (edit.nodeName.charAt(0) === '-') {
+        track.indexSequence.push(-nodeMap.get(edit.nodeName.substr(1)));
+      } else {
+        track.indexSequence.push(nodeMap.get(edit.nodeName));
+      }
+    });
+  });
+}
+
+// for each track: generate sequence of node indices from seq. of node names
+function generateTrackIndexSequences(tracksOrReads) {
+  tracksOrReads.forEach((track) => {
+    track.indexSequence = [];
+    track.sequence.forEach((nodeName) => {
+      if (nodeName.charAt(0) === '-') {
+        track.indexSequence.push(-nodeMap.get(nodeName.substr(1)));
       } else {
         track.indexSequence.push(nodeMap.get(nodeName));
       }
@@ -2551,6 +2579,75 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
     }
   }
   // }
+  return extracted;
+}
+
+export function vgExtractReadsNEW(myNodes, myTracks, myReads) {
+  const extracted = [];
+
+  const nodeNames = [];
+  myNodes.forEach((node) => {
+    nodeNames.push(parseInt(node.name, 10));
+  });
+
+  for (let i = 0; i < myReads.length; i += 1) {
+    const read = myReads[i];
+    const sequence = [];
+    let firstIndex = -1; // index within mapping of the first node id contained in nodeNames
+    let lastIndex = -1; // index within mapping of the last node id contained in nodeNames
+    read.path.mapping.forEach((pos, j) => {
+      const edit = {};
+      if (nodeNames.indexOf(pos.position.node_id) > -1) {
+        if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
+          // sequence.push(`-${pos.position.node_id}`);
+          edit.nodeName = `-${pos.position.node_id}`;
+        } else {
+          // sequence.push(`${pos.position.node_id}`);
+          edit.nodeName = pos.position.node_id;
+        }
+        if (firstIndex < 0) firstIndex = j;
+        lastIndex = j;
+
+        pos.edit.forEach((element) => {
+          // insertion
+          if (element.hasOwnProperty('to_length') && !element.hasOwnProperty('from_length')) {
+            console.log('found insertion');
+          }
+        });
+        sequence.push(edit);
+      }
+    });
+    if (sequence.length === 0) {
+      console.log(`read ${i} is empty`);
+    } else {
+      const track = {};
+      track.id = myTracks.length + extracted.length;
+      track.sequence = sequence;
+      track.type = 'read';
+      if (read.path.hasOwnProperty('freq')) track.freq = read.path.freq;
+      if (read.path.hasOwnProperty('name')) track.name = read.path.name;
+
+      // where within node does read start
+      track.firstNodeOffset = 0;
+      if (read.path.mapping[firstIndex].position.hasOwnProperty('offset')) {
+        track.firstNodeOffset = read.path.mapping[firstIndex].position.offset;
+      }
+
+      // where within node does read end
+      const finalNodeEdit = read.path.mapping[lastIndex].edit;
+      track.finalNodeCoverLength = 0;
+      if (read.path.mapping[lastIndex].position.hasOwnProperty('offset')) {
+        track.finalNodeCoverLength += read.path.mapping[lastIndex].position.offset;
+      }
+      finalNodeEdit.forEach((edit) => {
+        if (edit.hasOwnProperty('from_length')) {
+          track.finalNodeCoverLength += edit.from_length;
+        }
+      });
+
+      extracted.push(track);
+    }
+  }
   return extracted;
 }
 
