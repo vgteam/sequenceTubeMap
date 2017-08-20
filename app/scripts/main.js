@@ -201,7 +201,8 @@ document.getElementById('chr22_v4PostButton').onclick = function () {
       const nodes = tubeMap.vgExtractNodes(response.graph);
       const tracks = tubeMap.vgExtractTracks(response.graph);
       const reads = tubeMap.vgExtractReads(nodes, tracks, response.gam);
-      // console.log('path: ' + response.graph.sequencePosition.path + ', position: ' + response.graph.sequencePosition.position)
+      // console.log('path: ' + response.graph.sequencePosition.path +
+      // ', position: ' + response.graph.sequencePosition.position)
       tubeMap.create({
         svgID: '#svg',
         nodes,

@@ -190,6 +190,10 @@ function createTubeMap() {
   nodes = (JSON.parse(JSON.stringify(inputNodes))); // deep copy (can add stuff to copy and leave original unchanged)
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   reads = (JSON.parse(JSON.stringify(inputReads)));
+
+  // if (reads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) < 29));
+  // if (reads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) > 20));
+
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty('type')) { // TODO: maybe remove "haplo"-property?
       tracks[i].type = 'haplo';
@@ -207,7 +211,10 @@ function createTubeMap() {
   nodeMap = generateNodeMap(nodes);
   generateTrackIndexSequences(tracks);
   if (reads) generateTrackIndexSequences(reads);
+  generateNodeWidth();
 
+  // if (reads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
+  // if (reads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) < 4));
   if (config.mergeNodesFlag) {
     generateNodeSuccessors(); // requires indexSequence
     // if (reads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
@@ -215,6 +222,7 @@ function createTubeMap() {
     if (reads) reverseReversedReads();
     mergeNodes();
     nodeMap = generateNodeMap(nodes);
+    generateNodeWidth();
     generateTrackIndexSequences(tracks);
     if (reads) generateTrackIndexSequences(reads);
   }
@@ -222,7 +230,6 @@ function createTubeMap() {
   numberOfNodes = nodes.length;
   numberOfTracks = tracks.length;
   generateNodeSuccessors();
-  generateNodeWidth();
   generateNodeDegree();
   if (DEBUG) console.log(`${numberOfNodes} nodes.`);
   generateNodeOrder();
@@ -257,7 +264,8 @@ function createTubeMap() {
   }
 
   generateSVGShapesFromPath(nodes, tracks);
-  removeUnusedNodes(nodes);
+  // removeUnusedNodes(nodes);
+  // nodeMap = generateNodeMap(nodes);
   console.log('Tracks:');
   console.log(tracks);
   console.log('Nodes:');
@@ -277,12 +285,17 @@ function createTubeMap() {
   drawTrackRectangles(trackRectanglesStep3);
   drawTrackRectangles(trackRectangles, 'read');
   drawTrackCurves('read');
-  drawNodes();
+
+  // draw only those nodes which have coords assigned to them
+  const dNodes = removeUnusedNodes(nodes);
+  drawNodes(dNodes);
 
   drawReversalsByColor(trackCorners, trackVerticalRectangles, 'read');
+  // generateTrackIndexSequences(tracks);
 
-  if (config.nodeWidthOption === 0) drawLabels();
+  if (config.nodeWidthOption === 0) drawLabels(dNodes);
   if (trackForRuler !== undefined) drawRuler();
+  drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
 
   if (DEBUG) {
     console.log(`number of tracks: ${numberOfTracks}`);
@@ -631,6 +644,19 @@ function reverseReversedReads() {
       for (let i = 0; i < read.sequence.length; i += 1) {
         read.sequence[i] = read.sequence[i].substr(1); // remove '-'
       }
+
+      read.sequenceNew = read.sequenceNew.reverse(); // invert sequence
+      for (let i = 0; i < read.sequenceNew.length; i += 1) {
+        read.sequenceNew[i].nodeName = read.sequenceNew[i].nodeName.substr(1); // remove '-'
+        const nodeWidth = nodes[nodeMap.get(read.sequenceNew[i].nodeName)].width;
+        read.sequenceNew[i].mismatches.forEach((mm) => {
+          if (mm.type === 'insertion') {
+            mm.pos = nodeWidth - mm.pos;
+          }
+          mm.seq = mm.seq.split('').reverse().join('');
+        });
+      }
+
       // adjust firstNodeOffset and finalNodeCoverLength
       const temp = read.firstNodeOffset;
       let seqLength = nodes[nodeMap.get(read.sequence[0])].sequenceLength;
@@ -638,21 +664,6 @@ function reverseReversedReads() {
       seqLength = nodes[nodeMap.get(read.sequence[read.sequence.length - 1])].sequenceLength;
       read.finalNodeCoverLength = seqLength - temp;
     }
-  });
-}
-
-// for each track: generate sequence of node indices from seq. of node names
-function generateTrackIndexSequencesOLD(tracksOrReads) {
-  tracksOrReads.forEach((track) => {
-    track.indexSequence = [];
-    track.sequence.forEach((nodeName) => {
-      if (nodeName.charAt(0) === '-') {
-        nodeName = nodeName.substr(1);
-        track.indexSequence.push(-nodeMap.get(nodeName));
-      } else {
-        track.indexSequence.push(nodeMap.get(nodeName));
-      }
-    });
   });
 }
 
@@ -685,15 +696,17 @@ function generateTrackIndexSequences(tracksOrReads) {
 }
 
 // remove nodes with no tracks moving through them to avoid d3.js errors
-function removeUnusedNodes() {
+function removeUnusedNodes(allNodes) {
+  const dNodes = allNodes.slice(0);
   let i;
-  for (i = nodes.length - 1; i >= 0; i -= 1) {
+  for (i = dNodes.length - 1; i >= 0; i -= 1) {
     // if (nodes[i].degree === 0) {
-    if (!nodes[i].hasOwnProperty('x')) {
-      nodes.splice(i, 1);
+    if (!dNodes[i].hasOwnProperty('x')) {
+      dNodes.splice(i, 1);
     }
   }
-  numberOfNodes = nodes.length;
+  // numberOfNodes = nodes.length;
+  return dNodes;
 }
 
 // get the minimum and maximum coordinates used in the image to calculate image dimensions
@@ -1568,23 +1581,6 @@ function generateTrackColor(track, highlight) {
   return trackColor;
 }
 
-/* function getReadXStart(read) {
-  let x;
-  let offset;
-  const node = nodes[read.path[0].node];
-  const nodeLeftX = node.x - 4;
-  const nodeRightX = node.x + node.pixelWidth + 4;
-  if (read.path[0].isForward) { // read starts in forward direction
-    offset = read.firstNodeOffset;
-    x = nodeLeftX + ((offset / node.sequenceLength) * (nodeRightX - nodeLeftX));
-  } else { // read starts in backward direction
-    // offset = node.sequenceLength - read.firstNodeOffset;
-    offset = read.firstNodeOffset;
-    x = nodeRightX - ((offset / node.sequenceLength) * (nodeRightX - nodeLeftX));
-  }
-  return x;
-} */
-
 function getReadXStart(read) {
   const node = nodes[read.path[0].node];
   if (read.path[0].isForward) { // read starts in forward direction
@@ -1593,23 +1589,6 @@ function getReadXStart(read) {
   // read starts in backward direction
   return getXCoordinateOfBaseWithinNode(node, node.sequenceLength - read.firstNodeOffset);
 }
-
-/* function getReadXEnd(read) {
-  let x;
-  let offset;
-  const node = nodes[read.path[read.path.length - 1].node];
-  const nodeLeftX = node.x - 4;
-  const nodeRightX = node.x + node.pixelWidth + 4;
-  if (read.path[read.path.length - 1].isForward) { // read ends in forward direction
-    offset = read.finalNodeCoverLength;
-    x = nodeLeftX + ((offset / node.sequenceLength) * (nodeRightX - nodeLeftX));
-  } else { // read ends in backward direction
-    offset = node.sequenceLength - read.finalNodeCoverLength;
-    // x = nodeRightX - (offset / node.sequenceLength) * (nodeRightX - nodeLeftX);
-    x = nodeLeftX + ((offset / node.sequenceLength) * (nodeRightX - nodeLeftX));
-  }
-  return x;
-} */
 
 function getReadXEnd(read) {
   const node = nodes[read.path[read.path.length - 1].node];
@@ -1948,11 +1927,11 @@ function drawReversalsByColor(corners, rectangles, type) {
 }
 
 // draws nodes by building svg-path for border and filling it with transparent white
-function drawNodes() {
+function drawNodes(dNodes) {
   let x;
   let y;
 
-  nodes.forEach((node) => {
+  dNodes.forEach((node) => {
     // top left arc
     node.d = `M ${node.x - 9} ${node.y} Q ${node.x - 9} ${node.y - 9} ${node.x} ${node.y - 9}`;
     x = node.x;
@@ -2002,7 +1981,7 @@ function drawNodes() {
   });
 
   svg.selectAll('.node')
-    .data(nodes)
+    .data(dNodes)
     .enter()
     .append('path')
     .attr('id', d => d.name)
@@ -2021,10 +2000,11 @@ function drawNodes() {
 }
 
 // draw seqence labels for nodes
-function drawLabels() {
+function drawLabels(dNodes) {
   if (config.nodeWidthOption === 0) {
     svg.selectAll('text')
-      .data(nodes)
+    // svg.append('text')
+      .data(dNodes)
       .enter()
       .append('text')
       .attr('x', d => d.x - 4)
@@ -2041,8 +2021,6 @@ function drawRuler() {
   let rulerTrackIndex = 0;
   while (tracks[rulerTrackIndex].name !== trackForRuler) rulerTrackIndex += 1;
   const rulerTrack = tracks[rulerTrackIndex];
-  // console.log(`Drawing ruler for track ${trackForRuler} which starts at ${rulerTrack.indexOfFirstBase}`);
-  // drawRulerMarking(rulerTrack.indexOfFirstBase, 10);
 
   // draw horizontal line
   svg.append('line')
@@ -2530,91 +2508,45 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
   });
 
   for (let i = 0; i < myReads.length; i += 1) {
-    // if (myReads[i].length > 0) {
-    // const read = JSON.parse(myReads[i]);
     const read = myReads[i];
     const sequence = [];
+    const sequenceNew = [];
     let firstIndex = -1; // index within mapping of the first node id contained in nodeNames
     let lastIndex = -1; // index within mapping of the last node id contained in nodeNames
     read.path.mapping.forEach((pos, j) => {
       if (nodeNames.indexOf(pos.position.node_id) > -1) {
+        const edit = {};
+        let offset = 0;
         if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
           sequence.push(`-${pos.position.node_id}`);
-        } else {
-          sequence.push(`${pos.position.node_id}`);
-        }
-        if (firstIndex < 0) firstIndex = j;
-        lastIndex = j;
-      }
-    });
-    if (sequence.length === 0) {
-      console.log(`read ${i} is empty`);
-    } else {
-      const track = {};
-      track.id = myTracks.length + extracted.length;
-      track.sequence = sequence;
-      track.type = 'read';
-      if (read.path.hasOwnProperty('freq')) track.freq = read.path.freq;
-      if (read.path.hasOwnProperty('name')) track.name = read.path.name;
-
-      track.firstNodeOffset = 0;
-      if (read.path.mapping[firstIndex].position.hasOwnProperty('offset')) {
-        track.firstNodeOffset = read.path.mapping[firstIndex].position.offset;
-      }
-
-      // const finalNodeEdit = read.path.mapping[read.path.mapping.length - 1].edit;
-      const finalNodeEdit = read.path.mapping[lastIndex].edit;
-      track.finalNodeCoverLength = 0;
-      // if (read.path.mapping[read.path.mapping.length - 1].position.hasOwnProperty('offset')) {
-        // track.finalNodeCoverLength += read.path.mapping[read.path.mapping.length - 1].position.offset;
-      if (read.path.mapping[lastIndex].position.hasOwnProperty('offset')) {
-        track.finalNodeCoverLength += read.path.mapping[lastIndex].position.offset;
-      }
-      finalNodeEdit.forEach((edit) => {
-        if (edit.hasOwnProperty('from_length')) {
-          track.finalNodeCoverLength += edit.from_length;
-        }
-      });
-      extracted.push(track);
-    }
-  }
-  // }
-  return extracted;
-}
-
-export function vgExtractReadsNEW(myNodes, myTracks, myReads) {
-  const extracted = [];
-
-  const nodeNames = [];
-  myNodes.forEach((node) => {
-    nodeNames.push(parseInt(node.name, 10));
-  });
-
-  for (let i = 0; i < myReads.length; i += 1) {
-    const read = myReads[i];
-    const sequence = [];
-    let firstIndex = -1; // index within mapping of the first node id contained in nodeNames
-    let lastIndex = -1; // index within mapping of the last node id contained in nodeNames
-    read.path.mapping.forEach((pos, j) => {
-      const edit = {};
-      if (nodeNames.indexOf(pos.position.node_id) > -1) {
-        if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
-          // sequence.push(`-${pos.position.node_id}`);
+          // console.log(`read ${i} is reverse`);
           edit.nodeName = `-${pos.position.node_id}`;
         } else {
-          // sequence.push(`${pos.position.node_id}`);
-          edit.nodeName = pos.position.node_id;
+          sequence.push(`${pos.position.node_id}`);
+          edit.nodeName = pos.position.node_id.toString();
         }
-        if (firstIndex < 0) firstIndex = j;
+        if (firstIndex < 0) {
+          firstIndex = j;
+          if (pos.position.hasOwnProperty('offset')) {
+            offset = pos.position.offset;
+          }
+        }
         lastIndex = j;
 
+        const mismatches = [];
+        let posWithinNode = offset;
         pos.edit.forEach((element) => {
           // insertion
           if (element.hasOwnProperty('to_length') && !element.hasOwnProperty('from_length')) {
-            console.log('found insertion');
+            // console.log(`found insertion at read ${i}, node ${j} = ${pos.position.node_id}`);
+            mismatches.push({ type: 'insertion', pos: posWithinNode, seq: element.sequence });
+          }
+          if (element.hasOwnProperty('from_length')) {
+            posWithinNode += element.from_length;
           }
         });
-        sequence.push(edit);
+        edit.mismatches = mismatches;
+        sequenceNew.push(edit);
       }
     });
     if (sequence.length === 0) {
@@ -2623,6 +2555,7 @@ export function vgExtractReadsNEW(myNodes, myTracks, myReads) {
       const track = {};
       track.id = myTracks.length + extracted.length;
       track.sequence = sequence;
+      track.sequenceNew = sequenceNew;
       track.type = 'read';
       if (read.path.hasOwnProperty('freq')) track.freq = read.path.freq;
       if (read.path.hasOwnProperty('name')) track.name = read.path.name;
@@ -2678,7 +2611,6 @@ function mergeNodes() {
           if (nodeName.charAt(0) === '-') { // add 2 predecessors, to make sure there is no node merging in this case
             pred[nodeMap.get(track.sequence[i])].add(nodeName.substr(1));
           }
-        // } else {
         } else if (track.type === 'haplo') {
           pred[nodeMap.get(track.sequence[i])].add('None');
         }
@@ -2688,7 +2620,6 @@ function mergeNodes() {
           if (nodeName.charAt(0) === '-') { // add 2 successors, to make sure there is no node merging in this case
             succ[nodeMap.get(track.sequence[i])].add(nodeName.substr(1));
           }
-        // } else {
         } else if (track.type === 'haplo') {
           succ[nodeMap.get(track.sequence[i])].add('None');
         }
@@ -2753,15 +2684,23 @@ function mergeNodes() {
       read.finalNodeCoverLength += mergeOffset.get(read.sequence[read.sequence.length - 1]);
       for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
         if (mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ)) {
-          const temp1 = nodeMap.get(read.sequence[i]);
-          const temp2 = nodes[temp1].predecessors[0].toString();
-          const temp3 = nodeMap.get(temp2);
           const predecessor = mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ);
           if (mergeableWithSucc(nodeMap.get(predecessor), pred, succ)) {
             if (i > 0) {
               read.sequence.splice(i, 1);
+              // adjust position of mismatches
+              read.sequenceNew[i].mismatches.forEach((mismatch) => {
+                mismatch.pos += nodes[nodeMap.get(predecessor)].sequenceLength;
+              });
+              // append mismatches to previous entry's mismatches
+              read.sequenceNew[i - 1].mismatches = read.sequenceNew[i - 1].mismatches.concat(read.sequenceNew[i].mismatches);
+              read.sequenceNew.splice(i, 1);
             } else {
               read.sequence[0] = mergeOrigin.get(read.sequence[0]);
+              read.sequenceNew[i].mismatches.forEach((mismatch) => {
+                mismatch.pos += mergeOffset.get(read.sequenceNew[0].nodeName);
+              });
+              read.sequenceNew[0].nodeName = mergeOrigin.get(read.sequenceNew[0].nodeName);
             }
           }
         }
@@ -2794,180 +2733,9 @@ function mergeNodes() {
       if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
       const nodeIndex = nodeMap.get(nodeName);
       if (mergeableWithPred(nodeIndex, pred, succ)) {
-        // console.log('removing node ' + nodeName + ' from track:' + i);
         track.sequence.splice(i, 1);
       }
     }
-    // console.log(track.sequence);
-  });
-
-  if (reads) {
-    reads.forEach((track) => {
-      for (let i = track.sequence.length - 1; i >= 0; i -= 1) {
-        nodeName = track.sequence[i];
-        if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
-        const nodeIndex = nodeMap.get(nodeName);
-        if (mergeableWithPred(nodeIndex, pred, succ)) {
-          // console.log('removing node ' + nodeName + ' from track:' + i);
-          track.sequence.splice(i, 1);
-        }
-      }
-      // console.log(track.sequence);
-    });
-  }
-
-  // remove the nodes from node-array
-  for (let i = nodes.length - 1; i >= 0; i -= 1) {
-    if (mergeableWithPred(i, pred, succ)) {
-      // console.log('removing node ' + i);
-      nodes.splice(i, 1);
-    }
-  }
-  // return { nodes, tracks };
-}
-
-// remove redundant nodes
-// two nodes A and B can be merged if all tracks leaving A go directly into B
-// and all tracks entering B come directly from A
-// (plus no inversions involved)
-function mergeNodesOLD() {
-  let nodeName;
-  let nodeName2;
-  const pred = []; // array of set of predecessors of each node
-  const succ = []; // array of set of successors of each node
-  for (let i = 0; i < nodes.length; i += 1) {
-    pred.push(new Set());
-    succ.push(new Set());
-  }
-
-  tracks.forEach((track) => {
-    if (track.type === 'haplo') {
-      for (let i = 0; i < track.sequence.length; i += 1) {
-        if (track.sequence[i].charAt(0) !== '-') {  // forward Node
-          if (i > 0) {
-            nodeName = track.sequence[i - 1];
-            pred[nodeMap.get(track.sequence[i])].add(nodeName);
-            if (nodeName.charAt(0) === '-') { // add 2 predecessors, to make sure there is no node merging in this case
-              pred[nodeMap.get(track.sequence[i])].add(nodeName.substr(1));
-            }
-          } else {
-            pred[nodeMap.get(track.sequence[i])].add('None');
-          }
-          if (i < track.sequence.length - 1) {
-            nodeName = track.sequence[i + 1];
-            succ[nodeMap.get(track.sequence[i])].add(nodeName);
-            if (nodeName.charAt(0) === '-') { // add 2 successors, to make sure there is no node merging in this case
-              succ[nodeMap.get(track.sequence[i])].add(nodeName.substr(1));
-            }
-          } else {
-            succ[nodeMap.get(track.sequence[i])].add('None');
-          }
-        } else { // reverse Node
-          nodeName = track.sequence[i].substr(1);
-          if (i > 0) {
-            nodeName2 = track.sequence[i - 1];
-            if (nodeName2.charAt(0) === '-') {
-              succ[nodeMap.get(nodeName)].add(nodeName2.substr(1));
-            } else { // add 2 successors, to make sure there is no node merging in this case
-              succ[nodeMap.get(nodeName)].add(nodeName2);
-              succ[nodeMap.get(nodeName)].add(`-${nodeName2}`);
-            }
-          } else {
-            succ[nodeMap.get(nodeName)].add('None');
-          }
-          if (i < track.sequence.length - 1) {
-            nodeName2 = track.sequence[i + 1];
-            if (nodeName2.charAt(0) === '-') {
-              pred[nodeMap.get(nodeName)].add(nodeName2.substr(1));
-            } else {
-              pred[nodeMap.get(nodeName)].add(nodeName2);
-              pred[nodeMap.get(nodeName)].add(`-${nodeName2}`);
-            }
-          } else {
-            pred[nodeMap.get(nodeName)].add('None');
-          }
-        }
-      }
-    }
-  });
-
-  // convert sets to arrays
-  for (let i = 0; i < nodes.length; i += 1) {
-    succ[i] = Array.from(succ[i]);
-    pred[i] = Array.from(pred[i]);
-  }
-
-  // update reads which pass through merging nodes
-  if (reads) {
-    // sort nodes by order, then by y-coordinate
-    const sortedNodes = nodes.slice();
-    sortedNodes.sort(compareNodesByOrder);
-
-    // iterate over all nodes and calculate their position within the new merged node
-    const mergeOffset = new Map();
-    const mergeOrigin = new Map(); // maps to leftmost node of a node's "merging cascade"
-    sortedNodes.forEach((node) => {
-      const predecessor = mergeableWithPred(nodeMap.get(node.name), pred, succ);
-      if (predecessor) {
-        mergeOffset.set(node.name, mergeOffset.get(predecessor) + nodes[nodeMap.get(predecessor)].sequenceLength);
-        mergeOrigin.set(node.name, mergeOrigin.get(predecessor));
-      } else {
-        mergeOffset.set(node.name, 0);
-        mergeOrigin.set(node.name, node.name);
-      }
-    });
-
-    reads.forEach((read) => {
-      read.firstNodeOffset += mergeOffset.get(read.sequence[0]);
-      read.finalNodeCoverLength += mergeOffset.get(read.sequence[read.sequence.length - 1]);
-      for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
-        if (mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ)) {
-          const temp1 = nodeMap.get(read.sequence[i]);
-          const temp2 = nodes[temp1].predecessors[0].toString();
-          const temp3 = nodeMap.get(temp2);
-          const predecessor = mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ);
-          if (mergeableWithSucc(nodeMap.get(predecessor), pred, succ)) {
-            if (i > 0) {
-              read.sequence.splice(i, 1);
-            } else {
-              read.sequence[0] = mergeOrigin.get(read.sequence[0]);
-            }
-          }
-        }
-      }
-    });
-  }
-
-  // update node sequences + sequence lengths
-  for (let i = 0; i < nodes.length; i += 1) {
-    if (mergeableWithSucc(i, pred, succ) && !mergeableWithPred(i, pred, succ)) {
-      let donor = i;
-      while (mergeableWithSucc(donor, pred, succ)) {
-        donor = succ[donor][0];
-        if (donor.charAt(0) === '-') donor = donor.substr(1);
-        donor = nodeMap.get(donor);
-        if (nodes[i].hasOwnProperty('sequenceLength')) {
-          nodes[i].sequenceLength += nodes[donor].sequenceLength;
-        } else {
-          nodes[i].width += nodes[donor].width;
-        }
-        nodes[i].seq += nodes[donor].seq;
-      }
-    }
-  }
-
-  // actually merge the nodes by removing the corresponding nodes from track data
-  tracks.forEach((track) => {
-    for (let i = track.sequence.length - 1; i >= 0; i -= 1) {
-      nodeName = track.sequence[i];
-      if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
-      const nodeIndex = nodeMap.get(nodeName);
-      if (mergeableWithPred(nodeIndex, pred, succ)) {
-        // console.log('removing node ' + nodeName + ' from track:' + i);
-        track.sequence.splice(i, 1);
-      }
-    }
-    // console.log(track.sequence);
   });
 
   // remove the nodes from node-array
@@ -2977,7 +2745,6 @@ function mergeNodesOLD() {
       nodes.splice(i, 1);
     }
   }
-  return { nodes, tracks };
 }
 
 function mergeableWithPred(index, pred, succ) {
@@ -3000,4 +2767,64 @@ function mergeableWithSucc(index, pred, succ) {
   if (pred[successorIndex].length !== 1) return false;
   if (pred[successorIndex][0] === 'None') return false;
   return true;
+}
+
+function drawMismatches() {
+  tracks.forEach((read, trackIdx) => {
+    if (read.type === 'read') {
+      read.sequenceNew.forEach((element, i) => {
+        element.mismatches.forEach((mm) => {
+          if (mm.type === 'insertion') {
+            const nodeIndex = nodeMap.get(element.nodeName);
+            const node = nodes[nodeIndex];
+            const x = getXCoordinateOfBaseWithinNode(node, mm.pos);
+            let pathIndex = i;
+            while (read.path[pathIndex].node !== nodeIndex) pathIndex += 1;
+            const y = read.path[pathIndex].y;
+            drawInsertion(x - 3, y + 7, mm.seq, node.y);
+          }
+        });
+      });
+    }
+  });
+}
+
+function drawInsertion(x, y, seq, nodeY) {
+  svg.append('text')
+    .attr('x', x)
+    .attr('y', y)
+    .text('I')
+    .attr('font-family', 'Courier, "Lucida Console", monospace')
+    .attr('font-size', '12px')
+    .attr('fill', 'black')
+    .attr('nodeY', nodeY)
+    .on('mouseover', insertionMouseOver)
+    .on('mouseout', insertionMouseOut)
+    // .style('pointer-events', 'none')
+    .append('svg:title')
+        .text(seq);
+}
+
+// Highlight node on mouseover
+function insertionMouseOver() {
+  /* jshint validthis: true */
+  d3.select(this).attr('fill', 'red');
+  const x = Number(d3.select(this).attr('x'));
+  const y = Number(d3.select(this).attr('y'));
+  const yTop = Number(d3.select(this).attr('nodeY'));
+  svg.append('line')
+    .attr('class', 'insertionHighlight')
+    .attr('x1', x + 4)
+    .attr('y1', y - 10)
+    .attr('x2', x + 4)
+    .attr('y2', yTop + 5)
+    .attr('stroke-width', 1)
+    .attr('stroke', 'black');
+}
+
+// Highlight node on mouseover
+function insertionMouseOut() {
+  /* jshint validthis: true */
+  d3.select(this).attr('fill', 'black');
+  d3.selectAll('.insertionHighlight').remove();
 }
