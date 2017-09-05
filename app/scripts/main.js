@@ -247,6 +247,11 @@ document.getElementById('redundantNodesCheckbox').onclick = function () {
   else tubeMap.setMergeNodesFlag(false);
 };
 
+document.getElementById('softClipsCheckbox').onclick = function () {
+  if (document.getElementById('softClipsCheckbox').checked === true) tubeMap.setSoftClipsFlag(true);
+  else tubeMap.setSoftClipsFlag(false);
+};
+
 document.getElementById('linear').onchange = function () {
   tubeMap.setNodeWidthOption(0);
 };

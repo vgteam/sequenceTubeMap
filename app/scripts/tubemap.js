@@ -48,6 +48,7 @@ const config = {
   // 1...scale node width with log2 of number of bases within node
   // 2...scale node width with log10 of number of bases within node
   nodeWidthOption: 0,
+  showSoftClips: true,
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -152,6 +153,15 @@ export function changeExonVisibility() {
 export function setMergeNodesFlag(value) {
   if (config.mergeNodesFlag !== value) {
     config.mergeNodesFlag = value;
+    svg = d3.select(svgID);
+    createTubeMap();
+  }
+}
+
+// sets the flag for whether read soft clips should be displayed or not
+export function setSoftClipsFlag(value) {
+  if (config.showSoftClips !== value) {
+    config.showSoftClips = value;
     svg = d3.select(svgID);
     createTubeMap();
   }
@@ -2541,6 +2551,14 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
             // console.log(`found insertion at read ${i}, node ${j} = ${pos.position.node_id}`);
             mismatches.push({ type: 'insertion', pos: posWithinNode, seq: element.sequence });
           }
+          // deletion
+          if (!element.hasOwnProperty('to_length') && element.hasOwnProperty('from_length')) {
+            // console.log(`found deletion at read ${i}, node ${j} = ${pos.position.node_id}`);
+          }
+          // substitution
+          if (element.hasOwnProperty('to_length') && element.hasOwnProperty('from_length') && (element.to_length !== element.from_length)) {
+            console.log(`found substitution at read ${i}, node ${j} = ${pos.position.node_id}`);
+          }
           if (element.hasOwnProperty('from_length')) {
             posWithinNode += element.from_length;
           }
@@ -2777,11 +2795,16 @@ function drawMismatches() {
           if (mm.type === 'insertion') {
             const nodeIndex = nodeMap.get(element.nodeName);
             const node = nodes[nodeIndex];
-            const x = getXCoordinateOfBaseWithinNode(node, mm.pos);
-            let pathIndex = i;
-            while (read.path[pathIndex].node !== nodeIndex) pathIndex += 1;
-            const y = read.path[pathIndex].y;
-            drawInsertion(x - 3, y + 7, mm.seq, node.y);
+            if (config.showSoftClips
+              || ((mm.pos !== read.firstNodeOffset || i !== 0)
+              && (mm.pos !== read.finalNodeCoverLength
+                || i !== read.sequenceNew.length - 1))) {
+              const x = getXCoordinateOfBaseWithinNode(node, mm.pos);
+              let pathIndex = i;
+              while (read.path[pathIndex].node !== nodeIndex) pathIndex += 1;
+              const y = read.path[pathIndex].y;
+              drawInsertion(x - 3, y + 7, mm.seq, node.y);
+            }
           }
         });
       });
