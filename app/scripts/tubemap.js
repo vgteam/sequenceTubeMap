@@ -662,8 +662,14 @@ function reverseReversedReads() {
         read.sequenceNew[i].mismatches.forEach((mm) => {
           if (mm.type === 'insertion') {
             mm.pos = nodeWidth - mm.pos;
+          } else if (mm.type === 'deletion') {
+            mm.pos = nodeWidth - mm.pos - mm.length;
+          } else if (mm.type === 'substitution') {
+            mm.pos = nodeWidth - mm.pos - mm.seq.length;
           }
-          mm.seq = mm.seq.split('').reverse().join('');
+          if (mm.hasOwnProperty('seq')) {
+            mm.seq = mm.seq.split('').reverse().join('');
+          }
         });
       }
 
@@ -2510,6 +2516,7 @@ function compareReadsByLeftEnd2(a, b) {
 }
 
 export function vgExtractReads(myNodes, myTracks, myReads) {
+  console.log(myReads);
   const extracted = [];
 
   const nodeNames = [];
@@ -2546,18 +2553,18 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
         const mismatches = [];
         let posWithinNode = offset;
         pos.edit.forEach((element) => {
-          // insertion
-          if (element.hasOwnProperty('to_length') && !element.hasOwnProperty('from_length')) {
+          if (element.hasOwnProperty('to_length') && !element.hasOwnProperty('from_length')) { // insertion
             // console.log(`found insertion at read ${i}, node ${j} = ${pos.position.node_id}`);
             mismatches.push({ type: 'insertion', pos: posWithinNode, seq: element.sequence });
-          }
-          // deletion
-          if (!element.hasOwnProperty('to_length') && element.hasOwnProperty('from_length')) {
+          } else if (!element.hasOwnProperty('to_length') && element.hasOwnProperty('from_length')) { // deletion
             // console.log(`found deletion at read ${i}, node ${j} = ${pos.position.node_id}`);
-          }
-          // substitution
-          if (element.hasOwnProperty('to_length') && element.hasOwnProperty('from_length') && (element.to_length !== element.from_length)) {
-            console.log(`found substitution at read ${i}, node ${j} = ${pos.position.node_id}`);
+            mismatches.push({ type: 'deletion', pos: posWithinNode, length: element.from_length });
+          } else if (element.hasOwnProperty('sequence')) { // substitution
+            // console.log(`found substitution at read ${i}, node ${j} = ${pos.position.node_id}`);
+            if (element.sequence.length > 1) {
+              console.log(`found substitution at read ${i}, node ${j} = ${pos.position.node_id}, seq = ${element.sequence}`);
+            }
+            mismatches.push({ type: 'substitution', pos: posWithinNode, seq: element.sequence });
           }
           if (element.hasOwnProperty('from_length')) {
             posWithinNode += element.from_length;
@@ -2792,19 +2799,25 @@ function drawMismatches() {
     if (read.type === 'read') {
       read.sequenceNew.forEach((element, i) => {
         element.mismatches.forEach((mm) => {
+          const nodeIndex = nodeMap.get(element.nodeName);
+          const node = nodes[nodeIndex];
+          const x = getXCoordinateOfBaseWithinNode(node, mm.pos);
+          let pathIndex = i;
+          while (read.path[pathIndex].node !== nodeIndex) pathIndex += 1;
+          const y = read.path[pathIndex].y;
           if (mm.type === 'insertion') {
-            const nodeIndex = nodeMap.get(element.nodeName);
-            const node = nodes[nodeIndex];
             if (config.showSoftClips
-              || ((mm.pos !== read.firstNodeOffset || i !== 0)
-              && (mm.pos !== read.finalNodeCoverLength
+                || ((mm.pos !== read.firstNodeOffset || i !== 0)
+                && (mm.pos !== read.finalNodeCoverLength
                 || i !== read.sequenceNew.length - 1))) {
-              const x = getXCoordinateOfBaseWithinNode(node, mm.pos);
-              let pathIndex = i;
-              while (read.path[pathIndex].node !== nodeIndex) pathIndex += 1;
-              const y = read.path[pathIndex].y;
               drawInsertion(x - 3, y + 7, mm.seq, node.y);
             }
+          } else if (mm.type === 'deletion') {
+            const x2 = getXCoordinateOfBaseWithinNode(node, mm.pos + mm.length);
+            drawDeletion(x, x2, y + 4, node.y);
+          } else if (mm.type === 'substitution') {
+            const x2 = getXCoordinateOfBaseWithinNode(node, mm.pos + mm.seq.length);
+            drawSubstitution(x + 1, x2, y + 7, node.y, mm.seq);
           }
         });
       });
@@ -2828,7 +2841,35 @@ function drawInsertion(x, y, seq, nodeY) {
         .text(seq);
 }
 
-// Highlight node on mouseover
+function drawSubstitution(x1, x2, y, nodeY, seq) {
+  svg.append('text')
+    .attr('x', x1)
+    .attr('y', y)
+    .text(seq)
+    .attr('font-family', 'Courier, "Lucida Console", monospace')
+    .attr('font-size', '12px')
+    .attr('fill', 'grey')
+    .attr('nodeY', nodeY)
+    .attr('rightX', x2)
+    .on('mouseover', substitutionMouseOver)
+    .on('mouseout', substitutionMouseOut);
+    // .style('pointer-events', 'none');
+}
+
+function drawDeletion(x1, x2, y, nodeY) {
+  // draw horizontal block
+  svg.append('line')
+    .attr('x1', x1)
+    .attr('y1', y - 1)
+    .attr('x2', x2)
+    .attr('y2', y - 1)
+    .attr('stroke-width', 7)
+    .attr('stroke', 'grey')
+    .attr('nodeY', nodeY)
+    .on('mouseover', deletionMouseOver)
+    .on('mouseout', deletionMouseOut);
+}
+
 function insertionMouseOver() {
   /* jshint validthis: true */
   d3.select(this).attr('fill', 'red');
@@ -2845,9 +2886,70 @@ function insertionMouseOver() {
     .attr('stroke', 'black');
 }
 
-// Highlight node on mouseover
+function deletionMouseOver() {
+  /* jshint validthis: true */
+  d3.select(this).attr('stroke', 'red');
+  const x1 = Number(d3.select(this).attr('x1'));
+  const x2 = Number(d3.select(this).attr('x2'));
+  const y = Number(d3.select(this).attr('y1'));
+  const yTop = Number(d3.select(this).attr('nodeY'));
+  svg.append('line')
+    .attr('class', 'deletionHighlight')
+    .attr('x1', x1)
+    .attr('y1', y - 3)
+    .attr('x2', x1)
+    .attr('y2', yTop + 5)
+    .attr('stroke-width', 1)
+    .attr('stroke', 'black');
+  svg.append('line')
+    .attr('class', 'deletionHighlight')
+    .attr('x1', x2)
+    .attr('y1', y - 3)
+    .attr('x2', x2)
+    .attr('y2', yTop + 5)
+    .attr('stroke-width', 1)
+    .attr('stroke', 'black');
+}
+
+function substitutionMouseOver() {
+  /* jshint validthis: true */
+  d3.select(this).attr('fill', 'red');
+  const x1 = Number(d3.select(this).attr('x'));
+  const x2 = Number(d3.select(this).attr('rightX'));
+  const y = Number(d3.select(this).attr('y'));
+  const yTop = Number(d3.select(this).attr('nodeY'));
+  svg.append('line')
+    .attr('class', 'substitutionHighlight')
+    .attr('x1', x1 - 1)
+    .attr('y1', y - 7)
+    .attr('x2', x1 - 1)
+    .attr('y2', yTop + 5)
+    .attr('stroke-width', 1)
+    .attr('stroke', 'black');
+  svg.append('line')
+    .attr('class', 'substitutionHighlight')
+    .attr('x1', x2 + 1)
+    .attr('y1', y - 7)
+    .attr('x2', x2 + 1)
+    .attr('y2', yTop + 5)
+    .attr('stroke-width', 1)
+    .attr('stroke', 'black');
+}
+
 function insertionMouseOut() {
   /* jshint validthis: true */
   d3.select(this).attr('fill', 'black');
   d3.selectAll('.insertionHighlight').remove();
+}
+
+function deletionMouseOut() {
+  /* jshint validthis: true */
+  d3.select(this).attr('stroke', 'grey');
+  d3.selectAll('.deletionHighlight').remove();
+}
+
+function substitutionMouseOut() {
+  /* jshint validthis: true */
+  d3.select(this).attr('fill', 'grey');
+  d3.selectAll('.substitutionHighlight').remove();
 }
