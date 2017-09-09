@@ -9,7 +9,7 @@
 
 const DEBUG = false;
 
-// let greys = ['#d9d9d9','#bdbdbd','#969696','#737373','#525252','#252525','#000000'];
+const greys = ['#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525', '#000000'];
 // const greys = ['#212121', '#424242', '#616161', '#757575', '#9e9e9e', '#bdbdbd', '#CFD8DC'];
 const blues = ['#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'];
 // const reds = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'];
@@ -650,6 +650,7 @@ function reverseReversedReads() {
     let pos = 0;
     while ((pos < read.sequence.length) && (read.sequence[pos].charAt(0) === '-')) pos += 1;
     if (pos === read.sequence.length) { // completely reversed read
+      read.is_reverse = true;
       read.sequence = read.sequence.reverse(); // invert sequence
       for (let i = 0; i < read.sequence.length; i += 1) {
         read.sequence[i] = read.sequence[i].substr(1); // remove '-'
@@ -662,10 +663,12 @@ function reverseReversedReads() {
         read.sequenceNew[i].mismatches.forEach((mm) => {
           if (mm.type === 'insertion') {
             mm.pos = nodeWidth - mm.pos;
+            mm.seq = getReverseComplement(mm.seq);
           } else if (mm.type === 'deletion') {
             mm.pos = nodeWidth - mm.pos - mm.length;
           } else if (mm.type === 'substitution') {
             mm.pos = nodeWidth - mm.pos - mm.seq.length;
+            mm.seq = getReverseComplement(mm.seq);
           }
           if (mm.hasOwnProperty('seq')) {
             mm.seq = mm.seq.split('').reverse().join('');
@@ -681,6 +684,29 @@ function reverseReversedReads() {
       read.finalNodeCoverLength = seqLength - temp;
     }
   });
+}
+
+function getReverseComplement(s) {
+  let result = '';
+  for (let i = s.length - 1; i >= 0; i -= 1) {
+    switch (s.charAt(i)) {
+      case 'A':
+        result += 'T';
+        break;
+      case 'T':
+        result += 'A';
+        break;
+      case 'C':
+        result += 'G';
+        break;
+      case 'G':
+        result += 'C';
+        break;
+      default:
+        result += 'N';
+    }
+  }
+  return result;
 }
 
 // for each track: generate sequence of node indices from seq. of node names
@@ -1577,8 +1603,12 @@ function generateTrackColor(track, highlight) {
   let trackColor;
   // Color reads in red and reverse reads in blue
   if (track.hasOwnProperty('type') && track.type === 'read') {
-    trackColor = reds[track.id % reds.length];
-    if (track.sequence[0].charAt(0) === '-') trackColor = blues[track.id % blues.length];
+    // if (track.sequence[0].charAt(0) === '-') trackColor = blues[track.id % blues.length];
+    if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
+      trackColor = blues[track.id % blues.length];
+    } else {
+      trackColor = reds[track.id % reds.length];
+    }
   } else {
     if (config.colorScheme === 0) { // colorful color scheme
       if ((config.showExonsFlag === false) || (highlight !== 'plain')) {
@@ -1588,7 +1618,8 @@ function generateTrackColor(track, highlight) {
       }
     } else if (config.colorScheme === 1) { // blue-ish color scheme
       if ((config.showExonsFlag === false) || (highlight === 'plain')) {
-        trackColor = blues[track.id % blues.length];
+        // trackColor = blues[track.id % blues.length];
+        trackColor = greys[track.id % greys.length];
       } else {
         trackColor = reds[track.id % reds.length];
       }
