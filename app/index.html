@@ -124,15 +124,15 @@
         <div id="chr22_v4" class="tab-pane fade">
           <form class="form limWidth">
             <div class="form-group">
-              <label for="nodeID" class="col-sm-2 control-label">Seq.Pos.</label>
-              <div class="col-sm-10">
+              <label for="nodeID" class="col-sm-4 control-label">Sequence position</label>
+              <div class="col-sm-8">
                 <input type="text" class="form-control" id="chr22_v4NodeID" value="17697661">
                 <!-- nodeID: 120734 = sequencePosition: 17697661 -->
               </div>
             </div>
             <div class="form-group">
-              <label for="distance" class="col-sm-2 control-label">Distance</label>
-              <div class="col-sm-10">
+              <label for="distance" class="col-sm-4 control-label">Distance (in nodes)</label>
+              <div class="col-sm-8">
                 <input type="text" class="form-control" id="chr22_v4Distance" value="10">
               </div>
             </div>
@@ -169,11 +169,12 @@
           <label><input type="checkbox" id="redundantNodesCheckbox" checked> Remove redundant nodes</label><br>
         </form>
 
-        <p><input type="checkbox" id="exonCheckbox"> Display Exons </p>
+        <p><input type="checkbox" id="exonCheckbox"> Display Exons</p>
+        <p><input type="checkbox" id="softClipsCheckbox" checked> Display soft Clips</p>
         <p>
           <form action="">
             <input type="radio" name="colorScheme" value="colorful" id="colorfulRadioButton"> Colorful<br>
-            <input type="radio" name="colorScheme" value="blues" id="bluesRadioButton" checked> Shades of Blue<br>
+            <input type="radio" name="colorScheme" value="blues" id="bluesRadioButton" checked> Greyscale<br>
           </form>
         </p>
       </div>

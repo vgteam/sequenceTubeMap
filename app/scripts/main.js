@@ -201,7 +201,8 @@ document.getElementById('chr22_v4PostButton').onclick = function () {
       const nodes = tubeMap.vgExtractNodes(response.graph);
       const tracks = tubeMap.vgExtractTracks(response.graph);
       const reads = tubeMap.vgExtractReads(nodes, tracks, response.gam);
-      // console.log('path: ' + response.graph.sequencePosition.path + ', position: ' + response.graph.sequencePosition.position)
+      // console.log('path: ' + response.graph.sequencePosition.path +
+      // ', position: ' + response.graph.sequencePosition.position)
       tubeMap.create({
         svgID: '#svg',
         nodes,
@@ -244,6 +245,11 @@ document.getElementById('inputFile').addEventListener('change', (e) => {
 document.getElementById('redundantNodesCheckbox').onclick = function () {
   if (document.getElementById('redundantNodesCheckbox').checked === true) tubeMap.setMergeNodesFlag(true);
   else tubeMap.setMergeNodesFlag(false);
+};
+
+document.getElementById('softClipsCheckbox').onclick = function () {
+  if (document.getElementById('softClipsCheckbox').checked === true) tubeMap.setSoftClipsFlag(true);
+  else tubeMap.setSoftClipsFlag(false);
 };
 
 document.getElementById('linear').onchange = function () {
