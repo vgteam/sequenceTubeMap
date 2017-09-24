@@ -136,8 +136,20 @@ app.post('/chr22_v4', (req, res) => {
   req.basepath = './vg_data4';
 
   // call 'vg chunk' to generate graph
+  let vgCall = `${req.basepath}/vg chunk -x ${req.basepath}/chr22_v4.xg -a ${req.basepath}/NA12878_mapped_v4.gam.index -g `;
+  const position = Number(req.body.nodeID);
+  const distance = Number(req.body.distance);
+  if (Object.prototype.hasOwnProperty.call(req.body, 'byNode') && req.body.byNode === 'true') {
+    // vgCall += `-r ${position}:${position + distance} -T -E regions.tsv | ${req.basepath}/vg view -j - >${req.uuid}.json`;
+    vgCall += `-r ${position} -c ${distance} -T -E regions.tsv | ${req.basepath}/vg view -j - >${req.uuid}.json`;
+  } else {
+    vgCall += `-p 22:${position}-${position + distance} -T -E regions.tsv | ${req.basepath}/vg view -j - >${req.uuid}.json`;
+  }
   // const child = spawn('sh', ['-c', `${req.basepath}/vg chunk -x ${req.basepath}/chr22_v4.xg -a ${req.basepath}/NA12878_mapped_v4.gam.index -g -n ${req.body.nodeID} -d ${req.body.distance} | ${req.basepath}/vg view -j - >${req.uuid}.json`]);
-  const child = spawn('sh', ['-c', `${req.basepath}/vg chunk -x ${req.basepath}/chr22_v4.xg -a ${req.basepath}/NA12878_mapped_v4.gam.index -g -p 22:${req.body.nodeID} -c ${req.body.distance} -T -E regions.tsv | ${req.basepath}/vg view -j - >${req.uuid}.json`]);
+  // const child = spawn('sh', ['-c', `${req.basepath}/vg chunk -x ${req.basepath}/chr22_v4.xg -a ${req.basepath}/NA12878_mapped_v4.gam.index -g -p 22:${req.body.nodeID} -c ${req.body.distance} -T -E regions.tsv | ${req.basepath}/vg view -j - >${req.uuid}.json`]);
+
+  console.log(vgCall);
+  const child = spawn('sh', ['-c', vgCall]);
 
   child.stderr.on('data', (data) => {
     console.log(`err data: ${data}`);

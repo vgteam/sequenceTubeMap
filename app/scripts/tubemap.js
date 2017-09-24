@@ -2437,7 +2437,7 @@ function nodeMouseOut() {
 }
 
 // Move clicked track to first position
-function trackDoubleClick() { // Move clicked track to first position
+function trackDoubleClick() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr('trackID');
   let index = 0;
@@ -2452,7 +2452,7 @@ function trackDoubleClick() { // Move clicked track to first position
 }
 
 // Redraw with current node moved to beginning
-function nodeDoubleClick() { // Move clicked track to first position
+function nodeDoubleClick() {
   /* jshint validthis: true */
   const nodeID = d3.select(this).attr('id');
   if (config.clickableNodesFlag) {

@@ -12,7 +12,7 @@
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
-
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <!-- build:css styles/main.css -->
     <link rel="stylesheet" href="styles/layout1.css">
     <!-- endbuild -->
@@ -29,10 +29,9 @@
       <form class="form-inline">
         <label class="mb-2 mr-sm-2 mb-sm-0" for="dataSourceSelect">Data:</label>
         <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="dataSourceSelect">
-          <option value="1" selected>chr22_v4</option>
-          <option value="2">File 2</option>
-          <option value="3">File 3</option>
-          <option value="4">Custom</option>
+          <option value="chr22" selected>chr22_v4</option>
+          <option value="cactus">cactus</option>
+          <option value="custom">Custom</option>
         </select>
         <label class="mb-2 mr-sm-2 mb-sm-0" for="positionTypeSelect">Position:</label>
         <select class="custom-select mb-2 mr-sm-2 mb-sm-0" id="positionTypeSelect">
@@ -41,12 +40,14 @@
         </select>
         <input type="text" class="form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="17697661">
         <label class="mb-2 mr-sm-2 mb-sm-0" for="distance">Distance:</label>
-        <input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="10">
+        <input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="100">
         <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="distanceTypeSelect">
-          <option value="1" selected>Nodes</option>
-          <option value="2">Nucleotides</option>
+          <option value="1" selected>Nucleotides</option>
+          <option value="2">Nodes</option>
         </select>
-        <button type="button" class="btn btn-primary" id="goButton">Go</button>
+        <button type="button" class="btn btn-primary m-1" id="goButton">Go</button>
+        <button type="button" class="btn btn-primary m-1" id="goLeftButton"><i class="fa fa-step-backward fa-lg"></i></button>
+        <button type="button" class="btn btn-primary m-1" id="goRightButton"><i class="fa fa-step-forward fa-lg"></i></button>
       </form>
 
       <div class="collapse" id="collapseExample">
@@ -72,6 +73,7 @@
             </label>
           </div>
         </div>
+        <p>Displaying of custom files not yet implemented<p>
       </div>
     </div>
 
@@ -81,7 +83,9 @@
       </svg>
     </div>
 
+
     <div class="container">
+      <p><button type="button" class="btn btn-primary" id="downloadButton">Download Image</button></p>
       <div id="accordion" role="tablist">
         <div class="card">
           <div class="card-header" role="tab" id="legendCard">
