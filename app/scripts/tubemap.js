@@ -21,6 +21,11 @@ const lightColors = ['#ABCCE3', '#FFCFA5', '#B0DBB0', '#F0AEAE', '#D7C6E6', '#C6
 // const plainColors = ['#1b5e20', '#0850B8', '#ff9800', '#039be5', '#f44336', '#9c27b0', '#8bc34a', '#5d4037', '#ffeb3b'];
 // const lightColors = ['#AAC3AB', '#A2BDE4', '#FFD89F', '#A1DAF5', '#FAA19B', '#DAAEE1', '#D4E9BB', '#AEA09B', '#FFF7B5'];
 
+let haplotypeColors = [];
+let forwardReadColors = [];
+let reverseReadColors = [];
+let exonColors = [];
+
 let svgID; // the (html-tag) ID of the svg
 let svg; // the svg
 let inputNodes = [];
@@ -42,13 +47,18 @@ const config = {
   mergeNodesFlag: true,
   clickableNodesFlag: false,
   showExonsFlag: false,
-  colorScheme: 1,
+  colorScheme: 0,
   // Options for the width of sequence nodes:
   // 0...scale node width linear with number of bases within node
   // 1...scale node width with log2 of number of bases within node
   // 2...scale node width with log10 of number of bases within node
   nodeWidthOption: 0,
+  showReads: true,
   showSoftClips: true,
+  haplotypeColors: 'colorful',
+  forwardReadColors: 'reds',
+  reverseReadColors: 'blues',
+  exonColors: 'colorful',
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -167,6 +177,21 @@ export function setSoftClipsFlag(value) {
   }
 }
 
+// sets the flag for whether reads should be displayed or not
+export function setShowReadsFlag(value) {
+  if (config.showReads !== value) {
+    config.showReads = value;
+    svg = d3.select(svgID);
+    createTubeMap();
+  }
+}
+
+export function setColorSet(trackType, colorSet) {
+  config[trackType] = colorSet;
+  const tr = createTubeMap();
+  drawLegend(tr);
+}
+
 // sets which option should be used for calculating the node width from its sequence length
 export function setNodeWidthOption(value) {
   if ((value === 0) || (value === 1) || (value === 2)) {
@@ -201,8 +226,10 @@ function createTubeMap() {
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   reads = (JSON.parse(JSON.stringify(inputReads)));
 
-  // if (reads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) < 29));
-  // if (reads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) > 20));
+  // if (reads && config.showReads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) < 29));
+  // if (reads && config.showReads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) > 20));
+
+  assignColorSets();
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty('type')) { // TODO: maybe remove "haplo"-property?
@@ -220,21 +247,21 @@ function createTubeMap() {
 
   nodeMap = generateNodeMap(nodes);
   generateTrackIndexSequences(tracks);
-  if (reads) generateTrackIndexSequences(reads);
+  if (reads && config.showReads) generateTrackIndexSequences(reads);
   generateNodeWidth();
 
-  // if (reads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
-  // if (reads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) < 4));
-  if (config.mergeNodesFlag) {
+  // if (reads && config.showReads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
+  // if (reads && config.showReads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) < 4));
+  if (reads && config.mergeNodesFlag) {
     generateNodeSuccessors(); // requires indexSequence
-    // if (reads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
+    // if (reads && config.showReads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
     generateNodeOrder(); // requires successors
-    if (reads) reverseReversedReads();
+    if (reads && config.showReads) reverseReversedReads();
     mergeNodes();
     nodeMap = generateNodeMap(nodes);
     generateNodeWidth();
     generateTrackIndexSequences(tracks);
-    if (reads) generateTrackIndexSequences(reads);
+    if (reads && config.showReads) generateTrackIndexSequences(reads);
   }
 
   numberOfNodes = nodes.length;
@@ -257,7 +284,7 @@ function createTubeMap() {
   if ((config.showExonsFlag === true) && (bed !== null)) addTrackFeatures();
   generateNodeXCoords();
 
-  if (reads) {
+  if (reads && config.showReads) {
     // removeNonPathNodesFromReads();
     generateReadOnlyNodeAttributes();
     // reads = reads.slice(2, 3);
@@ -305,7 +332,7 @@ function createTubeMap() {
 
   if (config.nodeWidthOption === 0) drawLabels(dNodes);
   if (trackForRuler !== undefined) drawRuler();
-  drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
+  if (config.nodeWidthOption === 0) drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
 
   if (DEBUG) {
     console.log(`number of tracks: ${numberOfTracks}`);
@@ -827,7 +854,7 @@ function generateNodeSuccessors() {
     }
   });
 
-  if (reads) {
+  if (reads && config.showReads) {
     reads.forEach((track) => {
       for (let i = 0; i < track.indexSequence.length - 1; i += 1) {
         current = Math.abs(track.indexSequence[i]);
@@ -914,7 +941,7 @@ function generateNodeOrder() {
   let leftIndex;
   let minOrder = 0;
   let tracksAndReads;
-  if (reads) tracksAndReads = tracks.concat(reads);
+  if (reads && config.showReads) tracksAndReads = tracks.concat(reads);
   else tracksAndReads = tracks;
 
   nodes.forEach((node) => {
@@ -1598,7 +1625,50 @@ export function useColorScheme(x) {
   drawLegend(tr);
 }
 
+function assignColorSets() {
+  haplotypeColors = getColorSet(config.haplotypeColors);
+  forwardReadColors = getColorSet(config.forwardReadColors);
+  reverseReadColors = getColorSet(config.reverseReadColors);
+  exonColors = getColorSet(config.exonColors);
+}
+
+function getColorSet(colorSetName) {
+  switch (colorSetName) {
+    case 'plainColors':
+      return plainColors;
+    case 'reds':
+      return reds;
+    case 'blues':
+      return blues;
+    case 'greys':
+      return greys;
+    case 'lightColors':
+      return lightColors;
+    default:
+      return plainColors;
+  }
+}
+
 function generateTrackColor(track, highlight) {
+  if (typeof highlight === 'undefined') highlight = 'plain';
+  let trackColor;
+  if (track.hasOwnProperty('type') && track.type === 'read') {
+    if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
+      trackColor = reverseReadColors[track.id % reverseReadColors.length];
+    } else {
+      trackColor = forwardReadColors[track.id % forwardReadColors.length];
+    }
+  } else {
+    if ((config.showExonsFlag === false) || (highlight !== 'plain')) {
+      trackColor = haplotypeColors[track.id % haplotypeColors.length];
+    } else {
+      trackColor = exonColors[track.id % exonColors.length];
+    }
+  }
+  return trackColor;
+}
+
+function generateTrackColorOLD(track, highlight) {
   if (typeof highlight === 'undefined') highlight = 'plain';
   let trackColor;
   // Color reads in red and reverse reads in blue
@@ -1649,7 +1719,8 @@ function getReadXEnd(read) {
 // returns the x coordinate (in pixels) of (the left side) of the given base
 // position within the given node
 function getXCoordinateOfBaseWithinNode(node, base) {
-  if (base > node.width) return null;
+  // if (base > node.width) return null;
+  if (base > node.sequenceLength) return null;  // equality is allowed
   const nodeLeftX = node.x - 4;
   const nodeRightX = node.x + node.pixelWidth + 4;
   return nodeLeftX + ((base / node.sequenceLength) * (nodeRightX - nodeLeftX));
@@ -2039,7 +2110,7 @@ function drawNodes(dNodes) {
     .on('dblclick', nodeDoubleClick)
     .style('fill', '#fff')
     // .style('fill-opacity', '0.4')
-    .style('fill-opacity', config.showExonsFlag ? '0.4' : '0.8')
+    .style('fill-opacity', config.showExonsFlag ? '0.4' : '0.6')
     .style('stroke', 'black')
     .style('stroke-width', '2px')
     .append('svg:title')
@@ -2087,13 +2158,13 @@ function drawRuler() {
     const currentNode = nodes[nodeIndex];
 
     let nextMarking = Math.ceil(indexOfFirstBaseInNode / markingInterval) * markingInterval;
-    while (nextMarking < indexOfFirstBaseInNode + currentNode.width) {
+    while (nextMarking < indexOfFirstBaseInNode + currentNode.sequenceLength) {
       const xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, nextMarking - indexOfFirstBaseInNode);
       drawRulerMarking(nextMarking, xCoordOfMarking);
       atLeastOneMarkingDrawn = true;
       nextMarking += markingInterval;
     }
-    indexOfFirstBaseInNode += nodes[nodeIndex].width;
+    indexOfFirstBaseInNode += nodes[nodeIndex].sequenceLength;
   });
 
   // if no markings drawn, draw one at the very beginning
@@ -2311,12 +2382,14 @@ function drawTrackCorners(corners, type) {
 }
 
 function drawLegend() {
-  let content = '<table class="table table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
+  let content = '<table class="table-sm table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
   const listeners = [];
   for (let i = 0; i < tracks.length; i += 1) {
     if (tracks[i].type === 'haplo') {
       // content += '<tr><td><span style="color: ' + generateTrackColor(tracks[i], 'exon') + '"><i class="fa fa-square" aria-hidden="true"></i></span></td>';
-      content += `<tr><td><span style="color: ${generateTrackColor(tracks[i], 'exon')}"><span class="glyphicon glyphicon-stop" aria-hidden="true"></span></td>`;
+      // content += `<tr><td><span style="color: ${generateTrackColor(tracks[i], 'exon')}"><span class="glyphicon glyphicon-stop" aria-hidden="true"></span></td>`;
+      // content += `<tr><td><p style="color: ${generateTrackColor(tracks[i], 'exon')}">O &#x25FE;</p></td>`;
+      content += `<tr><td style="text-align:right"><div class="color-box" style="background-color: ${generateTrackColor(tracks[i], 'exon')};"></div></td>`;
       if (tracks[i].hasOwnProperty('name')) {
         content += `<td>${tracks[i].name}</td>`;
       } else {
@@ -2368,7 +2441,11 @@ function trackDoubleClick() { // Move clicked track to first position
   /* jshint validthis: true */
   const trackID = d3.select(this).attr('trackID');
   let index = 0;
-  while (inputTracks[index].id !== trackID) index += 1;
+  // while (inputTracks[index].id !== trackID) index += 1;
+  while ((index < inputTracks.length) && (inputTracks[index].id !== Number(trackID))) {
+    index += 1;
+  }
+  if (index >= inputTracks.length) return;
   console.log(`moving index: ${index}`);
   moveTrackToFirstPosition(index);
   createTubeMap();
@@ -2379,7 +2456,7 @@ function nodeDoubleClick() { // Move clicked track to first position
   /* jshint validthis: true */
   const nodeID = d3.select(this).attr('id');
   if (config.clickableNodesFlag) {
-    if (reads) {
+    if (reads && config.showReads) {
       document.getElementById('hgvmNodeID').value = nodeID;
       document.getElementById('hgvmPostButton').click();
     } else {
@@ -2655,7 +2732,7 @@ function mergeNodes() {
   }
 
   let tracksAndReads;
-  if (reads) tracksAndReads = tracks.concat(reads);
+  if (reads && config.showReads) tracksAndReads = tracks.concat(reads);
   else tracksAndReads = tracks;
 
   tracksAndReads.forEach((track) => {
@@ -2716,7 +2793,7 @@ function mergeNodes() {
   }
 
   // update reads which pass through merging nodes
-  if (reads) {
+  if (reads && config.showReads) {
     // sort nodes by order, then by y-coordinate
     const sortedNodes = nodes.slice();
     sortedNodes.sort(compareNodesByOrder);
@@ -2860,7 +2937,7 @@ function drawInsertion(x, y, seq, nodeY) {
   svg.append('text')
     .attr('x', x)
     .attr('y', y)
-    .text('I')
+    .text('*')
     .attr('font-family', 'Courier, "Lucida Console", monospace')
     .attr('font-size', '12px')
     .attr('fill', 'black')
@@ -2879,7 +2956,7 @@ function drawSubstitution(x1, x2, y, nodeY, seq) {
     .text(seq)
     .attr('font-family', 'Courier, "Lucida Console", monospace')
     .attr('font-size', '12px')
-    .attr('fill', 'grey')
+    .attr('fill', 'black')
     .attr('nodeY', nodeY)
     .attr('rightX', x2)
     .on('mouseover', substitutionMouseOver)

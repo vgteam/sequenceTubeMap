@@ -29,7 +29,8 @@ gulp.task('styles', () => {
 gulp.task('scripts', () => {
   const files = [
     'app/scripts/main.js',
-    'app/scripts/miniExample.js'
+    'app/scripts/miniExample.js',
+    'app/scripts/layout1.js'
   ];
 
   const tasks = files.map((entry) => {

@@ -66,3 +66,13 @@ label {
   border-radius: 4px;
   border: 1px solid #ddd;
 }
+
+.color-box {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    background-color: #ccc;
+    /* position: absolute;*/
+    left: 5px;
+    top: 5px;
+}
