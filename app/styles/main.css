@@ -1,89 +1,68 @@
-.browserupgrade {
-  margin: 0.2em 0;
-  background: #ccc;
-  color: #000;
-  padding: 0.2em 0;
-}
-
-/* Space out content a bit */
+/* Move down content because we have a fixed navbar that is 3.5rem tall */
 body {
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: 1.5rem;
+  font-size: 85%;
 }
 
-/* Everything but the jumbotron gets side spacing for mobile first views */
-.header,
-.marketing,
-.footer {
-  padding-left: 15px;
-  padding-right: 15px;
+.form-control {
+  font-size: 100%;
 }
 
-/* Custom page header */
-.header {
-  border-bottom: 1px solid #e5e5e5;
+.custom-select {
+  height: calc(2.25rem - 2px);
 }
 
-/* Make the masthead heading the same height as the navigation */
-.header h3 {
-  margin-top: 0;
-  margin-bottom: 0;
-  line-height: 40px;
-  padding-bottom: 19px;
+.tubeMapSVG {
+  overflow: auto;
+  width: 100%;
+  position: relative;
+  margin-top: 20px;
+  margin-bottom: 0px;
 }
 
-/* Custom page footer */
-.footer {
-  padding-top: 19px;
-  color: #777;
-  border-top: 1px solid #e5e5e5;
+.custom-file-control:after {
+  content: attr(data-content) !important;
 }
 
-.container-narrow > hr {
-  margin: 30px 0;
+.color-box {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    background-color: #ccc;
+    /* position: absolute;*/
+    left: 5px;
+    top: 5px;
 }
 
-/* Main marketing message and sign up button */
-.jumbotron {
-  text-align: center;
-  border-bottom: 1px solid #e5e5e5;
+#loader {
+  border: 5px solid #f3f3f3;
+  -webkit-animation: spin 1s linear infinite;
+  animation: spin 1s linear infinite;
+  border-top: 5px solid #555;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  margin: -25px 0 0 0px;
 }
 
-.jumbotron .btn {
-  font-size: 21px;
-  padding: 14px 24px;
-}
-
-/* Supporting marketing content */
-.marketing {
-  margin: 40px 0;
-}
-
-.marketing p + h4 {
-  margin-top: 28px;
-}
-
-/* Responsive: Portrait tablets and up */
-@media screen and (min-width: 768px) {
-  .container {
-    max-width: 730px;
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
   }
-
-  /* Remove the padding we set earlier */
-  .header,
-  .marketing,
-  .footer {
-    padding-left: 0;
-    padding-right: 0;
+  100% {
+    -webkit-transform: rotate(360deg);
   }
+}
 
-  /* Space out the masthead */
-  .header {
-    margin-bottom: 30px;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
   }
-
-  /* Remove the bottom border on the jumbotron for visual effect */
-  .jumbotron {
-    border-bottom: 0;
+  100% {
+    transform: rotate(360deg);
   }
 }

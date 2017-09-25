@@ -55,10 +55,11 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  haplotypeColors: 'colorful',
+  haplotypeColors: 'plainColors',
   forwardReadColors: 'reds',
   reverseReadColors: 'blues',
-  exonColors: 'colorful',
+  exonColors: 'lightColors',
+  hideLegendFlag: false,
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -79,7 +80,7 @@ let bed;
 // which starts the process of creating a tube map visualization
 export function create(params) {
   // mandatory parameters: svgID, nodes, tracks
-  // optional parameters: bed, clickableNodes, reads
+  // optional parameters: bed, clickableNodes, reads, showLegend
   svgID = params.svgID;
   svg = d3.select(params.svgID);
   inputNodes = (JSON.parse(JSON.stringify(params.nodes))); // deep copy
@@ -87,8 +88,9 @@ export function create(params) {
   inputReads = params.reads || null;
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
+  config.hideLegendFlag = params.hideLegend || false;
   const tr = createTubeMap();
-  drawLegend(tr);
+  if (!config.hideLegendFlag) drawLegend(tr);
 }
 
 // moves a specific track to the top
@@ -189,7 +191,7 @@ export function setShowReadsFlag(value) {
 export function setColorSet(trackType, colorSet) {
   config[trackType] = colorSet;
   const tr = createTubeMap();
-  drawLegend(tr);
+  if (!config.hideLegendFlag) drawLegend(tr);
 }
 
 // sets which option should be used for calculating the node width from its sequence length
@@ -1622,7 +1624,7 @@ export function useColorScheme(x) {
   svg = d3.select(svgID);
   // createTubeMap();
   const tr = createTubeMap();
-  drawLegend(tr);
+  if (!config.hideLegendFlag) drawLegend(tr);
 }
 
 function assignColorSets() {
@@ -1645,7 +1647,7 @@ function getColorSet(colorSetName) {
     case 'lightColors':
       return lightColors;
     default:
-      return plainColors;
+      return greys;
   }
 }
 
