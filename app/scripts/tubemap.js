@@ -2156,14 +2156,27 @@ function drawRuler() {
 
   let indexOfFirstBaseInNode = rulerTrack.indexOfFirstBase;
   let atLeastOneMarkingDrawn = false;
+  let xCoordOfPreviousMarking = -100;
+
+  // draw ruler marking at the left end of chart for compressed charts
+  // (this marking is on purpose not at a 0 % 100 position)
+  if (config.nodeWidthOption !== 0) {
+    const firstNode = nodes[rulerTrack.indexSequence[0]];
+    xCoordOfPreviousMarking = getXCoordinateOfBaseWithinNode(firstNode, 0);
+    drawRulerMarking(indexOfFirstBaseInNode, xCoordOfPreviousMarking);
+    atLeastOneMarkingDrawn = true;
+  }
+
   rulerTrack.indexSequence.forEach((nodeIndex) => {
     const currentNode = nodes[nodeIndex];
-
     let nextMarking = Math.ceil(indexOfFirstBaseInNode / markingInterval) * markingInterval;
     while (nextMarking < indexOfFirstBaseInNode + currentNode.sequenceLength) {
       const xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, nextMarking - indexOfFirstBaseInNode);
-      drawRulerMarking(nextMarking, xCoordOfMarking);
-      atLeastOneMarkingDrawn = true;
+      if (xCoordOfPreviousMarking + 80 <= xCoordOfMarking) {
+        drawRulerMarking(nextMarking, xCoordOfMarking);
+        atLeastOneMarkingDrawn = true;
+        xCoordOfPreviousMarking = xCoordOfMarking;
+      }
       nextMarking += markingInterval;
     }
     indexOfFirstBaseInNode += nodes[nodeIndex].sequenceLength;
@@ -3060,6 +3073,6 @@ function deletionMouseOut() {
 
 function substitutionMouseOut() {
   /* jshint validthis: true */
-  d3.select(this).attr('fill', 'grey');
+  d3.select(this).attr('fill', 'black');
   d3.selectAll('.substitutionHighlight').remove();
 }

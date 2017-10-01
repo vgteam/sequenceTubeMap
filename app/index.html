@@ -19,13 +19,8 @@
   </head>
 
   <body>
-    <div class="container">
-      <div class="row">
-        <div class="col">
-          <h1 class="text-center mb-4">Sequence Tube Map</h1>
-        </div>
-      </div>
-
+    <div class="container-fluid">
+      <div class="d-flex justify-content-center">
       <form class="form-inline">
         <label class="mb-2 mr-sm-2 mb-sm-0" for="dataSourceSelect">Data:</label>
         <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="dataSourceSelect">
@@ -48,6 +43,8 @@
         <button type="button" class="btn btn-primary m-1" id="goButton">Go</button>
         <button type="button" class="btn btn-primary m-1" id="goLeftButton"><i class="fa fa-step-backward fa-lg"></i></button>
         <button type="button" class="btn btn-primary m-1" id="goRightButton"><i class="fa fa-step-forward fa-lg"></i></button>
+        <button type="button" class="btn btn-primary m-1" id="downloadButton">Download Image</button>
+        <button type="button" class="btn btn-primary m-1" id="helpButton">?</button>
       </form>
 
       <div class="collapse" id="collapseExample">
@@ -76,16 +73,15 @@
         <p>Displaying of custom files not yet implemented<p>
       </div>
     </div>
+  </div>
 
-    <div class="tubeMapSVG">
-      <div id="loader" style="display:none;"></div>
-      <svg id="svg">
-      </svg>
-    </div>
-
+  <div class="tubeMapSVG">
+    <div id="loader" style="display:none;"></div>
+    <svg id="svg">
+    </svg>
+  </div>
 
     <div class="container">
-      <p><button type="button" class="btn btn-primary" id="downloadButton">Download Image</button></p>
       <div id="accordion" role="tablist">
         <div class="card">
           <div class="card-header" role="tab" id="legendCard">
@@ -332,21 +328,6 @@
                   </div>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header" role="tab" id="headingThree">
-            <h5 class="mb-0">
-              <a class="collapsed" data-toggle="collapse" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                What am I seeing here?
-              </a>
-            </h5>
-          </div>
-          <div id="collapseThree" class="collapse" role="tabpanel" aria-labelledby="headingThree">
-            <div class="card-body">
-              Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
             </div>
           </div>
         </div>
