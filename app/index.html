@@ -21,34 +21,35 @@
   <body>
     <div class="container-fluid">
       <div class="d-flex justify-content-center">
-      <form class="form-inline">
-        <label class="mb-2 mr-sm-2 mb-sm-0" for="dataSourceSelect">Data:</label>
-        <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="dataSourceSelect">
-          <option value="chr22" selected>chr22_v4</option>
-          <option value="cactus">cactus</option>
-          <option value="custom">Custom</option>
-        </select>
-        <label class="mb-2 mr-sm-2 mb-sm-0" for="positionTypeSelect">Position:</label>
-        <select class="custom-select mb-2 mr-sm-2 mb-sm-0" id="positionTypeSelect">
-          <option value="1" selected>Nucleotide #</option>
-          <option value="2">Node ID</option>
-        </select>
-        <input type="text" class="form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="17697661">
-        <label class="mb-2 mr-sm-2 mb-sm-0" for="distance">Distance:</label>
-        <input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="100">
-        <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="distanceTypeSelect">
-          <option value="1" selected>Nucleotides</option>
-          <option value="2">Nodes</option>
-        </select>
-        <button type="button" class="btn btn-primary m-1" id="goButton">Go</button>
-        <button type="button" class="btn btn-primary m-1" id="goLeftButton"><i class="fa fa-step-backward fa-lg"></i></button>
-        <button type="button" class="btn btn-primary m-1" id="goRightButton"><i class="fa fa-step-forward fa-lg"></i></button>
-        <button type="button" class="btn btn-primary m-1" id="downloadButton">Download Image</button>
-        <button type="button" class="btn btn-primary m-1" id="helpButton">?</button>
-      </form>
+        <form class="form-inline">
+          <label class="mb-2 mr-sm-2 mb-sm-0" for="dataSourceSelect">Data:</label>
+          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="dataSourceSelect">
+            <option value="chr22" selected>chr22_v4</option>
+            <option value="cactus">cactus</option>
+            <option value="custom">Custom</option>
+          </select>
+          <label class="mb-2 mr-sm-2 mb-sm-0" for="positionTypeSelect">Position:</label>
+          <select class="custom-select mb-2 mr-sm-2 mb-sm-0" id="positionTypeSelect">
+            <option value="1" selected>Nucleotide #</option>
+            <option value="2">Node ID</option>
+          </select>
+          <input type="text" class="form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="17697661">
+          <label class="mb-2 mr-sm-2 mb-sm-0" for="distance">Distance:</label>
+          <input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="100">
+          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="distanceTypeSelect">
+            <option value="1" selected>Nucleotides</option>
+            <option value="2">Nodes</option>
+          </select>
+          <button type="button" class="btn btn-primary m-1" id="goButton">Go</button>
+          <button type="button" class="btn btn-primary m-1" id="goLeftButton"><i class="fa fa-step-backward fa-lg"></i></button>
+          <button type="button" class="btn btn-primary m-1" id="goRightButton"><i class="fa fa-step-forward fa-lg"></i></button>
+          <button type="button" class="btn btn-primary m-1" id="downloadButton">Download Image</button>
+          <button type="button" class="btn btn-primary m-1" id="helpButton">?</button>
+        </form>
+      </div>
 
       <div class="collapse" id="collapseExample">
-        <div class="row mt-2 mb-2">
+        <div class="row mt-2 mb-2 justify-content-md-center">
           <div class="col-2">
             <span class="align-middle">vg file:</span>
           </div>
@@ -59,7 +60,7 @@
             </label>
           </div>
         </div>
-        <div class="row mt-2 mb-2">
+        <div class="row mt-2 mb-2 justify-content-md-center">
           <div class="col-2">
             <span class="align-middle">gam file (optional):</span>
           </div>
@@ -73,13 +74,12 @@
         <p>Displaying of custom files not yet implemented<p>
       </div>
     </div>
-  </div>
 
-  <div class="tubeMapSVG">
-    <div id="loader" style="display:none;"></div>
-    <svg id="svg">
-    </svg>
-  </div>
+    <div class="tubeMapSVG">
+      <div id="loader" style="display:none;"></div>
+      <svg id="svg">
+      </svg>
+    </div>
 
     <div class="container">
       <div id="accordion" role="tablist">
