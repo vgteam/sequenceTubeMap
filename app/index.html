@@ -49,29 +49,32 @@
       </div>
 
       <div class="collapse" id="collapseExample">
-        <div class="row mt-2 mb-2 justify-content-md-center">
-          <div class="col-2">
-            <span class="align-middle">vg file:</span>
+        <form>
+          <div class="form-group row mb-2">
+            <div class="col-2"></div>
+            <label for="xgFileSelect" class="col-sm-1 col-form-label">xg file:</label>
+            <div class="col-sm-2">
+              <select class="form-control" id="xgFileSelect">
+                <option value="none" selected>None</option>
+              </select>
+            </div>
           </div>
-          <div class="col-4">
-            <label class="custom-file">
-              <input type="file" id="vgFile" class="custom-file-input">
-              <span class="custom-file-control"></span>
-            </label>
+          <div class="form-group row mb-2">
+            <div class="col-2"></div>
+            <label for="gamIndexSelect" class="col-sm-1 col-form-label">gam index:</label>
+            <div class="col-sm-2">
+              <select class="form-control" id="gamIndexSelect">
+                <option value="none" selected>None</option>
+              </select>
+            </div>
+          </div>
+        </form>
+        <div class="row">
+          <div class="col-2"></div>
+          <div class="col-8">
+            You can only choose among files in the xyz directory, because the docker container needs to be able to access them for processing.<p>
           </div>
         </div>
-        <div class="row mt-2 mb-2 justify-content-md-center">
-          <div class="col-2">
-            <span class="align-middle">gam file (optional):</span>
-          </div>
-          <div class="col-4">
-            <label class="custom-file">
-              <input type="file" id="gamFile" class="custom-file-input">
-              <span class="custom-file-control"></span>
-            </label>
-          </div>
-        </div>
-        <p>Displaying of custom files not yet implemented<p>
       </div>
     </div>
 

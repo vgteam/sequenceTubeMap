@@ -8,6 +8,10 @@ import * as cactus from './cactus-data';
 // import * as cactus from './cactus-data-small';
 // import * as hgvm from './hgvm-data';
 
+// const REMOTE_URL = 'https://api.wbeyer.com/';
+// const REMOTE_URL = 'http://localhost:3000/';
+const REMOTE_URL = 'http://52.178.70.70:3000/';
+
 
 $('#dataSourceSelect').change(() => {
   if ($('#dataSourceSelect').val() === 'custom') { // show file pickers only when datasource = custom
@@ -89,7 +93,7 @@ function getRemoteTubeMapData() {
 
   $.ajax({
     type: 'POST',
-    url: 'https://api.wbeyer.com/chr22_v4',
+    url: `${REMOTE_URL}chr22_v4`,
     // url: 'vg_hgvm',
     crossDomain: true,
     data: { nodeID, distance, byNode },
@@ -225,7 +229,35 @@ document.getElementById('downloadButton').onclick = function () {
   document.body.removeChild(downloadLink);
 };
 
+function populateDropdownsWithFilenames() {
+  $.ajax({
+    type: 'POST',
+    url: `${REMOTE_URL}test`,
+    crossDomain: true,
+    // dataType: 'json',
+    success(response) {
+      const xgSelect = document.getElementById('xgFileSelect');
+      response.xgFiles.forEach((filename) => {
+        const opt = document.createElement('option');
+        opt.value = filename;
+        opt.innerHTML = filename;
+        xgSelect.appendChild(opt);
+      });
+      const gamIndexSelect = document.getElementById('gamIndexSelect');
+      response.gamIndices.forEach((filename) => {
+        const opt = document.createElement('option');
+        opt.value = filename;
+        opt.innerHTML = filename;
+        gamIndexSelect.appendChild(opt);
+      });
+    },
+    error(responseData, textStatus, errorThrown) {
+      console.log('POST failed.');
+    },
+  });
+}
 
 window.onload = function () {
   document.getElementById('goButton').click();
+  populateDropdownsWithFilenames();
 };
