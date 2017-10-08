@@ -90,15 +90,27 @@ function getRemoteTubeMapData() {
   const nodeID = document.getElementById('position').value;
   const distance = document.getElementById('distance').value;
   const byNode = (document.getElementById('positionTypeSelect').selectedIndex !== 0);
+  let xgFile = 'chr22_v4.xg';
+  let gamIndex = 'NA12878_mapped_v4.gam.index';
+  const anchorTrackName = '22';
+  if ($('#dataSourceSelect').val() === 'custom') {
+    xgFile = $('#xgFileSelect').val();
+    gamIndex = $('#gamIndexSelect').val();
+  }
 
   $.ajax({
     type: 'POST',
     url: `${REMOTE_URL}chr22_v4`,
     // url: 'vg_hgvm',
     crossDomain: true,
-    data: { nodeID, distance, byNode },
+    data: { nodeID, distance, byNode, xgFile, gamIndex, anchorTrackName },
     dataType: 'json',
     success(response) {
+      if ($.isEmptyObject(response)) {
+        console.log('empty');
+        document.getElementById('loader').style.display = 'none';
+        return;
+      }
       const nodes = tubeMap.vgExtractNodes(response.graph);
       const tracks = tubeMap.vgExtractTracks(response.graph);
       const reads = tubeMap.vgExtractReads(nodes, tracks, response.gam);
@@ -232,7 +244,7 @@ document.getElementById('downloadButton').onclick = function () {
 function populateDropdownsWithFilenames() {
   $.ajax({
     type: 'POST',
-    url: `${REMOTE_URL}test`,
+    url: `${REMOTE_URL}getFilenames`,
     crossDomain: true,
     // dataType: 'json',
     success(response) {

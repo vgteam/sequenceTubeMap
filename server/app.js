@@ -11,6 +11,9 @@ const uuid = require('uuid/v1');
 const fs = require('fs');
 const rl = require('readline');
 
+const VG_PATH = './vg_data4/';
+const DATA_PATH = './vg_data4/';
+
 const app = express();
 app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
@@ -29,16 +32,21 @@ app.post('/chr22_v4', (req, res) => {
   console.log(`distance = ${req.body.distance}`);
 
   req.uuid = uuid();
-  req.basepath = './vg_data4';
+
+  const xgFile = req.body.xgFile;
+  // const xgFile = 'chr22_v4.xg';
+  const gamIndex = req.body.gamIndex;
+  // const gamIndex = 'NA12878_mapped_v4.gam.index';
+  const anchorTrackName = req.body.anchorTrackName;
 
   // call 'vg chunk' to generate graph
-  let vgCall = `${req.basepath}/vg chunk -x ${req.basepath}/chr22_v4.xg -a ${req.basepath}/NA12878_mapped_v4.gam.index -g `;
+  let vgCall = `${VG_PATH}vg chunk -x ${DATA_PATH}${xgFile} -a ${DATA_PATH}${gamIndex} -g `;
   const position = Number(req.body.nodeID);
   const distance = Number(req.body.distance);
   if (Object.prototype.hasOwnProperty.call(req.body, 'byNode') && req.body.byNode === 'true') {
-    vgCall += `-r ${position} -c ${distance} -T -E regions.tsv | ${req.basepath}/vg view -j - >${req.uuid}.json`;
+    vgCall += `-r ${position} -c ${distance} -T -E regions.tsv | ${VG_PATH}vg view -j - >${req.uuid}.json`;
   } else {
-    vgCall += `-p 22:${position}-${position + distance} -T -E regions.tsv | ${req.basepath}/vg view -j - >${req.uuid}.json`;
+    vgCall += `-p ${anchorTrackName}:${position}-${position + distance} -T -E regions.tsv | ${VG_PATH}vg view -j - >${req.uuid}.json`;
   }
 
   console.log(vgCall);
@@ -51,21 +59,37 @@ app.post('/chr22_v4', (req, res) => {
   child.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
 
+    if (!fs.existsSync(`${req.uuid}.json`)) {
+      returnError(req, res);
+      return;
+    }
     // Read Result File Synchronously
     const graphAsString = fs.readFileSync(`${req.uuid}.json`);
     req.graph = JSON.parse(graphAsString);
-
     processAnnotationFile(req, res);
   });
 });
 
+function returnError(req, res) {
+  console.log('returning error');
+  // res.json({ foo: 'bar' });
+  res.json({});
+}
+
 function processAnnotationFile(req, res) {
   // find annotation file
+  console.log('process annotation');
   fs.readdirSync('./').forEach((file) => {
     if (file.substr(file.length - 12) === 'annotate.txt') {
       req.annotationFile = file;
     }
   });
+
+  if (!req.hasOwnProperty('annotationFile') || typeof req.annotationFile === 'undefined') {
+    returnError(req, res);
+    return;
+  }
+  console.log(`annotationFile: ${req.annotationFile}`);
 
   // read annotation file
   const lineReader = rl.createInterface({
@@ -97,7 +121,7 @@ function processGamFile(req, res) {
   });
 
   // call 'vg view' to transform gam to json
-  const vgViewChild = spawn('sh', ['-c', `${req.basepath}/vg view -j -a ${req.gamFile} > gam.json`]);
+  const vgViewChild = spawn('sh', ['-c', `${VG_PATH}vg view -j -a ${req.gamFile} > gam.json`]);
 
   vgViewChild.stderr.on('data', (data) => {
     console.log(`err data: ${data}`);
@@ -154,15 +178,14 @@ function cleanUpAndSendResult(req, res) {
   res.json(result);
 }
 
-app.post('/test', (req, res) => {
-  console.log('received test request');
-  const path = './vg_data4';
+app.post('/getFilenames', (req, res) => {
+  console.log('received request for filenames');
   const result = {
     xgFiles: [],
     gamIndices: [],
   };
 
-  fs.readdirSync(path).forEach((file) => {
+  fs.readdirSync(DATA_PATH).forEach((file) => {
     if (file.substr(file.length - 2) === 'xg') {
       result.xgFiles.push(file);
     }
@@ -172,8 +195,6 @@ app.post('/test', (req, res) => {
   });
 
   console.log(result);
-
-  // result.answer = 'testAnswer';
   res.json(result);
 });
 
