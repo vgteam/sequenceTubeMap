@@ -10,7 +10,8 @@ import * as cactus from './cactus-data';
 
 // const REMOTE_URL = 'https://api.wbeyer.com/';
 // const REMOTE_URL = 'http://localhost:3000/';
-const REMOTE_URL = 'http://52.178.70.70:3000/';
+// const REMOTE_URL = 'http://52.178.70.70:3000/';
+const REMOTE_URL = '';
 
 
 $('#dataSourceSelect').change(() => {
@@ -92,18 +93,24 @@ function getRemoteTubeMapData() {
   const byNode = (document.getElementById('positionTypeSelect').selectedIndex !== 0);
   let xgFile = 'chr22_v4.xg';
   let gamIndex = 'NA12878_mapped_v4.gam.index';
-  const anchorTrackName = '22';
+  let anchorTrackName = '22';
+  let useMountedPath = false;
   if ($('#dataSourceSelect').val() === 'custom') {
     xgFile = $('#xgFileSelect').val();
     gamIndex = $('#gamIndexSelect').val();
+    // anchorTrackName = '17';
+    anchorTrackName = $('#pathName').val();
+    useMountedPath = true;
   }
+  console.log(`useMountedPath = ${useMountedPath}`);
+  console.log(`anchorTrackName = ${anchorTrackName}`);
 
   $.ajax({
     type: 'POST',
     url: `${REMOTE_URL}chr22_v4`,
     // url: 'vg_hgvm',
     crossDomain: true,
-    data: { nodeID, distance, byNode, xgFile, gamIndex, anchorTrackName },
+    data: { nodeID, distance, byNode, xgFile, gamIndex, anchorTrackName, useMountedPath },
     dataType: 'json',
     success(response) {
       if ($.isEmptyObject(response)) {

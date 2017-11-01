@@ -11,8 +11,10 @@ const uuid = require('uuid/v1');
 const fs = require('fs');
 const rl = require('readline');
 
-const VG_PATH = './vg_data4/';
-const DATA_PATH = './vg_data4/';
+const VG_PATH = './vg/';
+// const DATA_PATH = './vg_data4/';
+const MOUNTED_DATA_PATH = './mountedData/';
+const INTERNAL_DATA_PATH = './internalData/'
 
 const app = express();
 app.use(bodyParser.json()); // to support JSON-encoded bodies
@@ -26,6 +28,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(express.static('public'));
+
 app.post('/chr22_v4', (req, res) => {
   console.log('http POST chr22_v4 received');
   console.log(`nodeID = ${req.body.nodeID}`);
@@ -37,10 +41,22 @@ app.post('/chr22_v4', (req, res) => {
   // const xgFile = 'chr22_v4.xg';
   const gamIndex = req.body.gamIndex;
   // const gamIndex = 'NA12878_mapped_v4.gam.index';
+  req.withGam = true;
+  if (gamIndex === 'none') {
+    req.withGam = false;
+    console.log('no gam index provided.');
+  }
+
   const anchorTrackName = req.body.anchorTrackName;
+  const useMountedPath = req.body.useMountedPath;
+  const dataPath = useMountedPath === 'true' ? MOUNTED_DATA_PATH : INTERNAL_DATA_PATH;
+  console.log('dataPath = ' + dataPath);
 
   // call 'vg chunk' to generate graph
-  let vgCall = `${VG_PATH}vg chunk -x ${DATA_PATH}${xgFile} -a ${DATA_PATH}${gamIndex} -g `;
+  let vgCall = `${VG_PATH}vg chunk -x ${dataPath}${xgFile} `;
+  if (req.withGam) {
+    vgCall += `-a ${dataPath}${gamIndex} -g `;
+  }
   const position = Number(req.body.nodeID);
   const distance = Number(req.body.distance);
   if (Object.prototype.hasOwnProperty.call(req.body, 'byNode') && req.body.byNode === 'true') {
@@ -108,7 +124,11 @@ function processAnnotationFile(req, res) {
   });
 
   lineReader.on('close', () => {
-    processGamFile(req, res);
+    if (req.withGam === true) {
+      processGamFile(req, res);
+    } else {
+      processRegionFile(req, res);
+    }
   });
 }
 
@@ -167,14 +187,16 @@ function processRegionFile(req, res) {
 
 function cleanUpAndSendResult(req, res) {
   fs.unlink(`${req.uuid}.json`);
-  fs.unlink(req.gamFile);
-  fs.unlink('gam.json');
   fs.unlink(req.annotationFile);
   // fs.unlink('regions.tsv');
+  if (req.withGam === true) {
+    fs.unlink(req.gamFile);
+    fs.unlink('gam.json');
+  }
 
   const result = {};
   result.graph = req.graph;
-  result.gam = req.gamArr;
+  result.gam = req.withGam === true ? req.gamArr : [];
   res.json(result);
 }
 
@@ -185,7 +207,7 @@ app.post('/getFilenames', (req, res) => {
     gamIndices: [],
   };
 
-  fs.readdirSync(DATA_PATH).forEach((file) => {
+  fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
     if (file.substr(file.length - 2) === 'xg') {
       result.xgFiles.push(file);
     }
