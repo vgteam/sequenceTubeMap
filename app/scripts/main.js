@@ -8,30 +8,23 @@ import * as cactus from './cactus-data';
 // import * as cactus from './cactus-data-small';
 // import * as hgvm from './hgvm-data';
 
-// const REMOTE_URL = 'https://api.wbeyer.com/';
-// const REMOTE_URL = 'http://localhost:3000/';
-const REMOTE_URL = 'http://52.178.70.70:3000/';
-// const REMOTE_URL = '';
-
 
 $('#dataSourceSelect').change(() => {
-  if ($('#dataSourceSelect').val() === 'custom') { // show file pickers only when datasource = custom
-    $('#collapseExample').collapse('show');
-  } else {
-    $('#collapseExample').collapse('hide');
-  }
-
   if ($('#dataSourceSelect').val() === 'cactus') { // render most form components inactive
     console.log('cactus');
-    $('#positionTypeSelect').prop('disabled', true);
-    $('#distanceTypeSelect').prop('disabled', true);
+    $('#unitSelect').prop('disabled', true);
     $('#position').prop('disabled', true);
     $('#distance').prop('disabled', true);
+    $('#xgFileSelect').prop('disabled', true);
+    $('#gamIndexSelect').prop('disabled', true);
+    $('#pathName').prop('disabled', true);
   } else {
-    $('#positionTypeSelect').prop('disabled', false);
-    $('#distanceTypeSelect').prop('disabled', false);
+    $('#unitSelect').prop('disabled', false);
     $('#position').prop('disabled', false);
     $('#distance').prop('disabled', false);
+    $('#xgFileSelect').prop('disabled', false);
+    $('#gamIndexSelect').prop('disabled', false);
+    $('#pathName').prop('disabled', false);
   }
 });
 
@@ -90,7 +83,7 @@ function prepareForTubeMap() {
 function getRemoteTubeMapData() {
   const nodeID = document.getElementById('position').value;
   const distance = document.getElementById('distance').value;
-  const byNode = (document.getElementById('positionTypeSelect').selectedIndex !== 0);
+  const byNode = (document.getElementById('unitSelect').selectedIndex !== 0);
   let xgFile = 'chr22_v4.xg';
   let gamIndex = 'NA12878_mapped_v4.gam.index';
   let anchorTrackName = '22';
@@ -107,8 +100,7 @@ function getRemoteTubeMapData() {
 
   $.ajax({
     type: 'POST',
-    url: `${REMOTE_URL}chr22_v4`,
-    // url: 'vg_hgvm',
+    url: `http://${window.location.host}/chr22_v4`,
     crossDomain: true,
     data: { nodeID, distance, byNode, xgFile, gamIndex, anchorTrackName, useMountedPath },
     dataType: 'json',
@@ -251,7 +243,7 @@ document.getElementById('downloadButton').onclick = function () {
 function populateDropdownsWithFilenames() {
   $.ajax({
     type: 'POST',
-    url: `${REMOTE_URL}getFilenames`,
+    url: `http://${window.location.host}/getFilenames`,
     crossDomain: true,
     // dataType: 'json',
     success(response) {
