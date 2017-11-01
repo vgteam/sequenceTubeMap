@@ -29,8 +29,8 @@ gulp.task('styles', () => {
 gulp.task('scripts', () => {
   const files = [
     'app/scripts/main.js',
-    'app/scripts/miniExample.js',
-    'app/scripts/oldMain.js',
+    // 'app/scripts/miniExample.js',
+    // 'app/scripts/oldMain.js',
   ];
 
   const tasks = files.map((entry) => {
@@ -100,8 +100,8 @@ gulp.task('copyStuff', () => {
     .pipe(gulp.dest('dist/fonts'));
 
   // copy files in exampeData directory
-  gulp.src('app/exampleData/*')
-    .pipe(gulp.dest('dist/exampleData'));
+  // gulp.src('app/exampleData/*')
+    // .pipe(gulp.dest('dist/exampleData'));
 });
 
 gulp.task('extras', () => {

@@ -14,7 +14,7 @@ const rl = require('readline');
 const VG_PATH = './vg/';
 // const DATA_PATH = './vg_data4/';
 const MOUNTED_DATA_PATH = './mountedData/';
-const INTERNAL_DATA_PATH = './internalData/'
+const INTERNAL_DATA_PATH = './internalData/';
 
 const app = express();
 app.use(bodyParser.json()); // to support JSON-encoded bodies
@@ -50,7 +50,7 @@ app.post('/chr22_v4', (req, res) => {
   const anchorTrackName = req.body.anchorTrackName;
   const useMountedPath = req.body.useMountedPath;
   const dataPath = useMountedPath === 'true' ? MOUNTED_DATA_PATH : INTERNAL_DATA_PATH;
-  console.log('dataPath = ' + dataPath);
+  console.log(`dataPath = ${dataPath}`);
 
   // call 'vg chunk' to generate graph
   let vgCall = `${VG_PATH}vg chunk -x ${dataPath}${xgFile} `;

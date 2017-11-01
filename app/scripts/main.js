@@ -4,27 +4,27 @@
 
 import * as tubeMap from './tubemap';
 // import * as data from './demo-data';
-import * as cactus from './cactus-data';
+// import * as cactus from './cactus-data';
 // import * as cactus from './cactus-data-small';
 // import * as hgvm from './hgvm-data';
 
 
 $('#dataSourceSelect').change(() => {
-  if ($('#dataSourceSelect').val() === 'cactus') { // render most form components inactive
-    console.log('cactus');
-    $('#unitSelect').prop('disabled', true);
-    $('#position').prop('disabled', true);
-    $('#distance').prop('disabled', true);
-    $('#xgFileSelect').prop('disabled', true);
-    $('#gamIndexSelect').prop('disabled', true);
-    $('#pathName').prop('disabled', true);
-  } else {
+  if ($('#dataSourceSelect').val() === 'custom') {
     $('#unitSelect').prop('disabled', false);
     $('#position').prop('disabled', false);
     $('#distance').prop('disabled', false);
     $('#xgFileSelect').prop('disabled', false);
     $('#gamIndexSelect').prop('disabled', false);
     $('#pathName').prop('disabled', false);
+  } else {
+  // if ($('#dataSourceSelect').val() === 'cactus') { // render most form components inactive
+    // $('#unitSelect').prop('disabled', true);
+    // $('#position').prop('disabled', true);
+    // $('#distance').prop('disabled', true);
+    $('#xgFileSelect').prop('disabled', true);
+    $('#gamIndexSelect').prop('disabled', true);
+    $('#pathName').prop('disabled', true);
   }
 });
 
@@ -73,28 +73,54 @@ function prepareForTubeMap() {
     .getElementById('loader')
     .setAttribute('style', `left:${(w / 2) - 25}px`);
 
-  if ($('#dataSourceSelect').val() === 'cactus') {
+  /* if ($('#dataSourceSelect').val() === 'cactus') {
     getCactusTubeMapData();
   } else {
     getRemoteTubeMapData();
-  }
+  }*/
+  getRemoteTubeMapData();
 }
 
 function getRemoteTubeMapData() {
   const nodeID = document.getElementById('position').value;
   const distance = document.getElementById('distance').value;
   const byNode = (document.getElementById('unitSelect').selectedIndex !== 0);
+
   let xgFile = 'chr22_v4.xg';
   let gamIndex = 'NA12878_mapped_v4.gam.index';
   let anchorTrackName = '22';
   let useMountedPath = false;
-  if ($('#dataSourceSelect').val() === 'custom') {
+
+  switch ($('#dataSourceSelect').val()) {
+    case 'cactus':
+      xgFile = 'cactus.vg.xg';
+      gamIndex = 'cactus-NA12879.gam.index';
+      anchorTrackName = 'ref';
+      useMountedPath = false;
+      break;
+    case 'snp1kg-BRAC1':
+      xgFile = 'snp1kg-BRAC1.vg.xg';
+      gamIndex = 'NA12878-BRCA1.gam.index';
+      anchorTrackName = '17';
+      useMountedPath = false;
+      break;
+    case 'custom':
+      xgFile = $('#xgFileSelect').val();
+      gamIndex = $('#gamIndexSelect').val();
+      anchorTrackName = $('#pathName').val();
+      useMountedPath = true;
+      break;
+    default:
+      break;
+  }
+
+  /* if ($('#dataSourceSelect').val() === 'custom') {
     xgFile = $('#xgFileSelect').val();
     gamIndex = $('#gamIndexSelect').val();
     // anchorTrackName = '17';
     anchorTrackName = $('#pathName').val();
     useMountedPath = true;
-  }
+  }*/
   console.log(`useMountedPath = ${useMountedPath}`);
   console.log(`anchorTrackName = ${anchorTrackName}`);
 
@@ -122,13 +148,13 @@ function getRemoteTubeMapData() {
   // return false; // prevents browser from reloading page (button within form tag)
 }
 
-function getCactusTubeMapData() {
+/* function getCactusTubeMapData() {
   const vg = JSON.parse(cactus.cactus);
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
   const reads = tubeMap.vgExtractReads(nodes, tracks, readsFromStringToArray(cactus.cactusReads));
   createTubeMap(nodes, tracks, reads);
-}
+}*/
 
 function createTubeMap(nodes, tracks, reads) {
   tubeMap.create({
@@ -140,7 +166,7 @@ function createTubeMap(nodes, tracks, reads) {
   document.getElementById('loader').style.display = 'none';
 }
 
-function readsFromStringToArray(readsString) {
+/* function readsFromStringToArray(readsString) {
   const lines = readsString.split('\n');
   const result = [];
   lines.forEach((line) => {
@@ -149,7 +175,7 @@ function readsFromStringToArray(readsString) {
     }
   });
   return result;
-}
+}*/
 
 document.getElementById('redundantNodesCheckbox').onclick = function () {
   if (document.getElementById('redundantNodesCheckbox').checked === true) tubeMap.setMergeNodesFlag(true);
