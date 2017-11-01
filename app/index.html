@@ -22,70 +22,51 @@
     <div class="container-fluid">
       <div class="d-flex justify-content-center">
         <form class="form-inline">
-          <img src="images/logo4.png" />
+          <img src="images/logo5.png" />
+
           <label class="mb-2 mr-sm-2 mb-sm-0 ml-2" for="dataSourceSelect">Data:</label>
           <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="dataSourceSelect">
             <!--<option value="chr22" selected>chr22_v4</option>-->
             <option value="cactus" selected>cactus</option>
             <option value="custom">Custom</option>
           </select>
-          <label class="mb-2 mr-sm-2 mb-sm-0" for="positionTypeSelect">Position:</label>
-          <select class="custom-select mb-2 mr-sm-2 mb-sm-0" id="positionTypeSelect">
-            <option value="1" selected>Nucleotide #</option>
-            <option value="2">Node ID</option>
+
+          <label for="xgFileSelect" class="mb-2 mr-sm-2 mb-sm-0 ml-2">xg file:</label>
+          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="xgFileSelect">
+            <option value="none" selected>None</option>
           </select>
-          <!--<input type="text" class="form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="17697661">-->
+
+          <label for="gamIndexSelect" class="mb-2 mr-sm-2 mb-sm-0 ml-2">gam index:</label>
+          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="gamIndexSelect">
+            <option value="none" selected>None</option>
+          </select>
+
+          <label for="pathName" class="mb-2 mr-sm-2 mb-sm-0 ml-2">Path name:</label>
+          <input type="text" class="form-control" id="pathName" size="20">
+
+        </form>
+      </div>
+
+      <div class="d-flex justify-content-center">
+        <form class="form-inline">
+          <label class="mb-2 mr-sm-2 mb-sm-0" for="position">Start:</label>
           <input type="text" class="form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="1">
-          <label class="mb-2 mr-sm-2 mb-sm-0" for="distance">Distance:</label>
+
+          <label class="mb-2 mr-sm-2 mb-sm-0" for="distance">Length:</label>
           <input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="100">
-          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="distanceTypeSelect">
+
+          <label class="mb-2 mr-sm-2 mb-sm-0" for="unitSelect">Unit:</label>
+          <select class="custom-select mb-2 mr-sm-2 mb-sm-0" id="positionTypeSelect">
             <option value="1" selected>Nucleotides</option>
             <option value="2">Nodes</option>
           </select>
+
           <button type="button" class="btn btn-primary m-1" id="goButton">Go</button>
           <button type="button" class="btn btn-primary m-1" id="goLeftButton"><i class="fa fa-step-backward fa-lg"></i></button>
           <button type="button" class="btn btn-primary m-1" id="goRightButton"><i class="fa fa-step-forward fa-lg"></i></button>
           <button type="button" class="btn btn-primary m-1" id="downloadButton">Download Image</button>
           <button type="button" class="btn btn-primary m-1" id="helpButton">?</button>
         </form>
-      </div>
-
-      <div class="collapse" id="collapseExample">
-        <form>
-          <div class="form-group row mb-2">
-            <div class="col-2"></div>
-            <label for="xgFileSelect" class="col-sm-1 col-form-label">xg file:</label>
-            <div class="col-sm-2">
-              <select class="form-control" id="xgFileSelect">
-                <option value="none" selected>None</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group row mb-2">
-            <div class="col-2"></div>
-            <label for="gamIndexSelect" class="col-sm-1 col-form-label">gam index:</label>
-            <div class="col-sm-2">
-              <select class="form-control" id="gamIndexSelect">
-                <option value="none" selected>None</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group row mb-2">
-            <div class="col-2"></div>
-            <label for="pathName" class="col-sm-1 col-form-label">Path name:</label>
-            <div class="col-sm-2">
-              <input type="text" class="form-control" id="pathName" size="20">
-            </div>
-          </div>
-
-        </form>
-        <div class="row">
-          <div class="col-2"></div>
-          <div class="col-8">
-            You can only choose among files in the xyz directory, because the docker container needs to be able to access them for processing.<p>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -101,12 +82,13 @@
           <div class="card-header" role="tab" id="legendCard">
             <h5 class="mb-0">
               <a data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-              <!---<a class="collapsed" data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">-->
+              <!--<a class="collapsed" data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">-->
                 Legend
               </a>
             </h5>
           </div>
-          <div id="collapseOne" class="collapse show" role="tabpanel" aria-labelledby="legendCard">
+          <div id="collapseOne" class="collapse" role="tabpanel" aria-labelledby="legendCard">
+          <!--<div id="collapseOne" class="collapse show" role="tabpanel" aria-labelledby="legendCard">-->
             <div class="card-body">
               <div id="legendDiv"></div>
             </div>
@@ -116,13 +98,14 @@
         <div class="card">
           <div class="card-header" role="tab" id="visOptionsCard">
             <h5 class="mb-0">
-              <!--<a class="collapsed" data-toggle="collapse" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">-->
               <a data-toggle="collapse" href="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+              <!--<a class="collapsed" data-toggle="collapse" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">-->
                 Visualization Options
               </a>
             </h5>
           </div>
-          <div id="collapseTwo" class="collapse show" role="tabpanel" aria-labelledby="visOptionsCard">
+          <div id="collapseTwo" class="collapse" role="tabpanel" aria-labelledby="visOptionsCard">
+          <!--<div id="collapseTwo" class="collapse show" role="tabpanel" aria-labelledby="visOptionsCard">-->
             <div class="card-body">
               <h5>General</h5>
               <div class="form-check">
@@ -165,7 +148,7 @@
                   <div class="col-auto">
                     <div class="form-check">
                       <label class="form-check-label">
-                        <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo1" value="option1" checked>
+                        <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo1" value="option1">
                         colorful
                       </label>
                     </div>
@@ -173,7 +156,7 @@
                   <div class="col-auto">
                     <div class="form-check">
                       <label class="form-check-label">
-                        <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo2" value="option2">
+                        <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo2" value="option2" checked>
                         greyscale
                       </label>
                     </div>

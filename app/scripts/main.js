@@ -10,8 +10,8 @@ import * as cactus from './cactus-data';
 
 // const REMOTE_URL = 'https://api.wbeyer.com/';
 // const REMOTE_URL = 'http://localhost:3000/';
-// const REMOTE_URL = 'http://52.178.70.70:3000/';
-const REMOTE_URL = '';
+const REMOTE_URL = 'http://52.178.70.70:3000/';
+// const REMOTE_URL = '';
 
 
 $('#dataSourceSelect').change(() => {
@@ -179,13 +179,13 @@ document.getElementById('softClipsCheckbox').onclick = function () {
   else tubeMap.setSoftClipsFlag(false);
 };
 
-document.getElementById('positionTypeSelect').onchange = function () {
+/* document.getElementById('positionTypeSelect').onchange = function () {
   document.getElementById('distanceTypeSelect').selectedIndex = this.selectedIndex;
 };
 
 document.getElementById('distanceTypeSelect').onchange = function () {
   document.getElementById('positionTypeSelect').selectedIndex = this.selectedIndex;
-};
+};*/
 
 const radios = document.getElementsByClassName('colorRadio');
 for (let i = 0; i < radios.length; i += 1) {
