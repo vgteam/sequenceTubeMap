@@ -77,7 +77,7 @@ function prepareForTubeMap() {
     getCactusTubeMapData();
   } else {
     getRemoteTubeMapData();
-  }*/
+  } */
   getRemoteTubeMapData();
 }
 
@@ -120,7 +120,7 @@ function getRemoteTubeMapData() {
     // anchorTrackName = '17';
     anchorTrackName = $('#pathName').val();
     useMountedPath = true;
-  }*/
+  } */
   console.log(`useMountedPath = ${useMountedPath}`);
   console.log(`anchorTrackName = ${anchorTrackName}`);
 
@@ -154,7 +154,7 @@ function getRemoteTubeMapData() {
   const tracks = tubeMap.vgExtractTracks(vg);
   const reads = tubeMap.vgExtractReads(nodes, tracks, readsFromStringToArray(cactus.cactusReads));
   createTubeMap(nodes, tracks, reads);
-}*/
+} */
 
 function createTubeMap(nodes, tracks, reads) {
   tubeMap.create({
@@ -175,7 +175,7 @@ function createTubeMap(nodes, tracks, reads) {
     }
   });
   return result;
-}*/
+} */
 
 document.getElementById('redundantNodesCheckbox').onclick = function () {
   if (document.getElementById('redundantNodesCheckbox').checked === true) tubeMap.setMergeNodesFlag(true);
@@ -203,7 +203,7 @@ document.getElementById('softClipsCheckbox').onclick = function () {
 
 document.getElementById('distanceTypeSelect').onchange = function () {
   document.getElementById('positionTypeSelect').selectedIndex = this.selectedIndex;
-};*/
+}; */
 
 const radios = document.getElementsByClassName('colorRadio');
 for (let i = 0; i < radios.length; i += 1) {
