@@ -15,7 +15,7 @@ const es = require('event-stream');
 const $ = gulpLoadPlugins();
 const reload = browserSync.reload;
 
-//const dev = true;
+// const dev = true;
 let dev = true;
 
 gulp.task('styles', () => {
@@ -30,8 +30,9 @@ gulp.task('styles', () => {
 gulp.task('scripts', () => {
   const files = [
     'app/scripts/main.js',
-    // 'app/scripts/miniExample.js',
-    // 'app/scripts/oldMain.js',
+    'app/scripts/miniExample.js',
+    'app/scripts/oldMain.js',
+    'app/scripts/examples.js',
   ];
 
   const tasks = files.map((entry) => {
