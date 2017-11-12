@@ -8,6 +8,10 @@ import * as tubeMap from './tubemap';
 // import * as cactus from './cactus-data-small';
 // import * as hgvm from './hgvm-data';
 
+// const BACKEND_URL = `http://${window.location.host}`;
+// const BACKEND_URL = 'https://api.wbeyer.com/';
+const BACKEND_URL = 'http://52.178.70.70:3000';
+
 
 $('#dataSourceSelect').change(() => {
   if ($('#dataSourceSelect').val() === 'custom') {
@@ -126,7 +130,7 @@ function getRemoteTubeMapData() {
 
   $.ajax({
     type: 'POST',
-    url: `http://${window.location.host}/chr22_v4`,
+    url: `${BACKEND_URL}/chr22_v4`,
     crossDomain: true,
     data: { nodeID, distance, byNode, xgFile, gamIndex, anchorTrackName, useMountedPath },
     dataType: 'json',
@@ -269,7 +273,7 @@ document.getElementById('downloadButton').onclick = function () {
 function populateDropdownsWithFilenames() {
   $.ajax({
     type: 'POST',
-    url: `http://${window.location.host}/getFilenames`,
+    url: `${BACKEND_URL}/getFilenames`,
     crossDomain: true,
     // dataType: 'json',
     success(response) {
