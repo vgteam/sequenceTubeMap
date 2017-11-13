@@ -223,9 +223,6 @@ for (let i = 0; i < radios.length; i += 1) {
     case 'colorsRevReads':
       trackType = 'reverseReadColors';
       break;
-    case 'colorsExons':
-      trackType = 'exonColors';
-      break;
     default:
       console.log('Could not find track type in color set assignment');
   }
