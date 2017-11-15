@@ -3,15 +3,27 @@
 /* eslint no-unused-vars: "off" */
 
 import * as tubeMap from './tubemap';
-// import * as data from './demo-data';
-// import * as cactus from './cactus-data';
-// import * as cactus from './cactus-data-small';
-// import * as hgvm from './hgvm-data';
 
 // const BACKEND_URL = `http://${window.location.host}`;
 // const BACKEND_URL = 'https://api.wbeyer.com/';
 const BACKEND_URL = 'http://52.178.70.70:3000';
 
+const DATA_SOURCES = [
+  { name: 'snp1kg-BRAC1',
+    xgFile: 'snp1kg-BRAC1.vg.xg',
+    gamIndex: 'NA12878-BRCA1.gam.index',
+    anchorTrackName: '17',
+    useMountedPath: false },
+  { name: 'cactus',
+    xgFile: 'cactus.vg.xg',
+    gamIndex: 'cactus-NA12879.gam.index',
+    anchorTrackName: 'ref',
+    useMountedPath: false },
+  { name: 'chr22_v4',
+    xgFile: 'chr22_v4.xg',
+    gamIndex: 'NA12878_mapped_v4.gam.index',
+    anchorTrackName: '22',
+    useMountedPath: false }];
 
 $('#dataSourceSelect').change(() => {
   if ($('#dataSourceSelect').val() === 'custom') {
@@ -22,7 +34,6 @@ $('#dataSourceSelect').change(() => {
     $('#gamIndexSelect').prop('disabled', false);
     $('#pathName').prop('disabled', false);
   } else {
-  // if ($('#dataSourceSelect').val() === 'cactus') { // render most form components inactive
     // $('#unitSelect').prop('disabled', true);
     // $('#position').prop('disabled', true);
     // $('#distance').prop('disabled', true);
@@ -33,7 +44,7 @@ $('#dataSourceSelect').change(() => {
 });
 
 // display filename of chosen file in file picker
-$('input[type=file]').change(() => {
+/* $('input[type=file]').change(() => {
   console.log('foo');
   let fieldVal = $(this).val();
   if (fieldVal !== undefined || fieldVal !== '') {
@@ -45,7 +56,7 @@ $('input[type=file]').change(() => {
     .next('.custom-file-control')
     .attr('data-content', fieldVal);
   }
-});
+}); */
 
 document.getElementById('goButton').onclick = function () {
   prepareForTubeMap();
@@ -90,41 +101,21 @@ function getRemoteTubeMapData() {
   const distance = document.getElementById('distance').value;
   const byNode = (document.getElementById('unitSelect').selectedIndex !== 0);
 
-  let xgFile = 'chr22_v4.xg';
-  let gamIndex = 'NA12878_mapped_v4.gam.index';
-  let anchorTrackName = '22';
-  let useMountedPath = false;
+  let xgFile = $('#xgFileSelect').val();
+  let gamIndex = $('#gamIndexSelect').val();
+  let anchorTrackName = $('#pathName').val();
+  let useMountedPath = true;
 
-  switch ($('#dataSourceSelect').val()) {
-    case 'cactus':
-      xgFile = 'cactus.vg.xg';
-      gamIndex = 'cactus-NA12879.gam.index';
-      anchorTrackName = 'ref';
-      useMountedPath = false;
-      break;
-    case 'snp1kg-BRAC1':
-      xgFile = 'snp1kg-BRAC1.vg.xg';
-      gamIndex = 'NA12878-BRCA1.gam.index';
-      anchorTrackName = '17';
-      useMountedPath = false;
-      break;
-    case 'custom':
-      xgFile = $('#xgFileSelect').val();
-      gamIndex = $('#gamIndexSelect').val();
-      anchorTrackName = $('#pathName').val();
-      useMountedPath = true;
-      break;
-    default:
-      break;
-  }
+  DATA_SOURCES.forEach((ds) => {
+    if (ds.name === $('#dataSourceSelect').val()) {
+      console.log('found');
+      xgFile = ds.xgFile;
+      gamIndex = ds.gamIndex;
+      anchorTrackName = ds.anchorTrackName;
+      useMountedPath = ds.useMountedPath;
+    }
+  });
 
-  /* if ($('#dataSourceSelect').val() === 'custom') {
-    xgFile = $('#xgFileSelect').val();
-    gamIndex = $('#gamIndexSelect').val();
-    // anchorTrackName = '17';
-    anchorTrackName = $('#pathName').val();
-    useMountedPath = true;
-  } */
   console.log(`useMountedPath = ${useMountedPath}`);
   console.log(`anchorTrackName = ${anchorTrackName}`);
 
@@ -151,14 +142,6 @@ function getRemoteTubeMapData() {
   });
   // return false; // prevents browser from reloading page (button within form tag)
 }
-
-/* function getCactusTubeMapData() {
-  const vg = JSON.parse(cactus.cactus);
-  const nodes = tubeMap.vgExtractNodes(vg);
-  const tracks = tubeMap.vgExtractTracks(vg);
-  const reads = tubeMap.vgExtractReads(nodes, tracks, readsFromStringToArray(cactus.cactusReads));
-  createTubeMap(nodes, tracks, reads);
-} */
 
 function createTubeMap(nodes, tracks, reads) {
   tubeMap.create({
@@ -296,6 +279,19 @@ function populateDropdownsWithFilenames() {
 }
 
 window.onload = function () {
+  // populate UI 'data' dropdown with data from DATA_SOURCES
+  const dsSelect = document.getElementById('dataSourceSelect');
+  DATA_SOURCES.forEach((ds) => {
+    const opt = document.createElement('option');
+    opt.value = ds.name;
+    opt.innerHTML = ds.name;
+    dsSelect.appendChild(opt);
+  });
+  const opt = document.createElement('option');
+  opt.value = 'custom';
+  opt.innerHTML = 'custom';
+  dsSelect.appendChild(opt);
+
   document.getElementById('goButton').click();
   populateDropdownsWithFilenames();
 };
