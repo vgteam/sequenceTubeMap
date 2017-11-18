@@ -13,33 +13,39 @@ const DATA_SOURCES = [
     xgFile: 'snp1kg-BRAC1.vg.xg',
     gamIndex: 'NA12878-BRCA1.gam.index',
     anchorTrackName: '17',
-    useMountedPath: false },
+    useMountedPath: false,
+    defaultPosition: '1' },
   { name: 'cactus',
     xgFile: 'cactus.vg.xg',
     gamIndex: 'cactus-NA12879.gam.index',
     anchorTrackName: 'ref',
-    useMountedPath: false },
+    useMountedPath: false,
+    defaultPosition: '1' },
   { name: 'chr22_v4',
-    xgFile: 'chr22_v4.xg',
+    xgFile: 'chr22_v4.vg.xg',
     gamIndex: 'NA12878_mapped_v4.gam.index',
     anchorTrackName: '22',
-    useMountedPath: false }];
+    useMountedPath: false,
+    defaultPosition: '17697661' }];
 
 $('#dataSourceSelect').change(() => {
+  $('#distance').prop('value', '100');
+  $('#unitSelect').prop('value', '1');
   if ($('#dataSourceSelect').val() === 'custom') {
-    $('#unitSelect').prop('disabled', false);
-    $('#position').prop('disabled', false);
-    $('#distance').prop('disabled', false);
     $('#xgFileSelect').prop('disabled', false);
     $('#gamIndexSelect').prop('disabled', false);
     $('#pathName').prop('disabled', false);
+    $('#position').prop('value', '1');
   } else {
-    // $('#unitSelect').prop('disabled', true);
-    // $('#position').prop('disabled', true);
-    // $('#distance').prop('disabled', true);
     $('#xgFileSelect').prop('disabled', true);
     $('#gamIndexSelect').prop('disabled', true);
     $('#pathName').prop('disabled', true);
+
+    DATA_SOURCES.forEach((ds) => {
+      if (ds.name === $('#dataSourceSelect').val()) {
+        $('#position').prop('value', ds.defaultPosition);
+      }
+    });
   }
 });
 
