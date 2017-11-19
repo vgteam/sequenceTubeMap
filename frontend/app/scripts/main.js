@@ -4,9 +4,9 @@
 
 import * as tubeMap from './tubemap';
 
-// const BACKEND_URL = `http://${window.location.host}`;
+const BACKEND_URL = `http://${window.location.host}`;
 // const BACKEND_URL = 'https://api.wbeyer.com/';
-const BACKEND_URL = 'http://52.178.70.70:3000';
+// const BACKEND_URL = 'http://52.178.70.70:3000';
 
 const DATA_SOURCES = [
   { name: 'snp1kg-BRAC1',
@@ -34,12 +34,12 @@ $('#dataSourceSelect').change(() => {
   if ($('#dataSourceSelect').val() === 'custom') {
     $('#xgFileSelect').prop('disabled', false);
     $('#gamIndexSelect').prop('disabled', false);
-    $('#pathName').prop('disabled', false);
+    $('#pathNameSelect').prop('disabled', false);
     $('#position').prop('value', '1');
   } else {
     $('#xgFileSelect').prop('disabled', true);
     $('#gamIndexSelect').prop('disabled', true);
-    $('#pathName').prop('disabled', true);
+    $('#pathNameSelect').prop('disabled', true);
 
     DATA_SOURCES.forEach((ds) => {
       if (ds.name === $('#dataSourceSelect').val()) {
@@ -48,6 +48,37 @@ $('#dataSourceSelect').change(() => {
     });
   }
 });
+
+$('#xgFileSelect').change(() => {
+  $('#pathNameSelect').empty();
+  if ($('#xgFileSelect').val() === 'none') {
+    // $('#pathNameSelect').empty();
+  } else {
+    getPathNames();
+    // $('#pathNameSelect').append('<option value="foo" selected>foo</option>');
+  }
+});
+
+function getPathNames() {
+  const xgFile = $('#xgFileSelect').val();
+  $.ajax({
+    type: 'POST',
+    url: `${BACKEND_URL}/getPathNames`,
+    crossDomain: true,
+    data: { xgFile },
+    dataType: 'json',
+    success(response) {
+      const pathNameSelect = document.getElementById('pathNameSelect');
+      response.pathNames.forEach((fn) => {
+        const opt = document.createElement('option');
+        $('#pathNameSelect').append(`<option value="${fn}" selected>${fn}</option>`);
+      });
+    },
+    error(responseData, textStatus, errorThrown) {
+      console.log('POST failed.');
+    },
+  });
+}
 
 // display filename of chosen file in file picker
 /* $('input[type=file]').change(() => {
@@ -109,7 +140,7 @@ function getRemoteTubeMapData() {
 
   let xgFile = $('#xgFileSelect').val();
   let gamIndex = $('#gamIndexSelect').val();
-  let anchorTrackName = $('#pathName').val();
+  let anchorTrackName = $('#pathNameSelect').val();
   let useMountedPath = true;
 
   DATA_SOURCES.forEach((ds) => {

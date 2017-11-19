@@ -1,7 +1,8 @@
 # ---------------------------
 # vg container
 
-FROM quay.io/vgteam/vg:v1.5.0-1753-gb1a214aa-t109-run as vgBinary
+# FROM quay.io/vgteam/vg:v1.5.0-1753-gb1a214aa-t109-run as vgBinary
+FROM quay.io/vgteam/vg:v1.5.0-1967-g59e94bbf-t116-run as vgBinary
 
 # create indices from vg and gam files
 RUN mkdir -p /vg/data/out

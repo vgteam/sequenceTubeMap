@@ -12,7 +12,6 @@ const fs = require('fs');
 const rl = require('readline');
 
 const VG_PATH = './vg/';
-// const DATA_PATH = './vg_data4/';
 const MOUNTED_DATA_PATH = './mountedData/';
 const INTERNAL_DATA_PATH = './internalData/';
 
@@ -218,6 +217,43 @@ app.post('/getFilenames', (req, res) => {
 
   console.log(result);
   res.json(result);
+});
+
+app.post('/getPathNames', (req, res) => {
+  console.log('received request for pathNames');
+  const result = {
+    pathNames: [],
+  };
+
+  // call 'vg paths' to get path name information
+  console.log(req);
+  let vgCall = `${VG_PATH}vg paths -X ${MOUNTED_DATA_PATH}${req.body.xgFile} > pathNames.txt`;
+  console.log(vgCall);
+  const vgViewChild = spawn('sh', ['-c', vgCall]);
+  // const vgViewChild = spawn('sh', ['-c', `${VG_PATH}vg paths -X ${MOUNTED_DATA_PATH}${req.xgFile} > pathNames.txt`]);
+
+  vgViewChild.stderr.on('data', (data) => {
+    console.log(`err data: ${data}`);
+  });
+
+  vgViewChild.on('close', () => {
+    // read pathNames.txt line by line
+    const lineReader = rl.createInterface({
+      input: fs.createReadStream('pathNames.txt'),
+    });
+
+    req.gamArr = [];
+    lineReader.on('line', (line) => {
+      result.pathNames.push(line);
+    });
+
+    lineReader.on('close', () => {
+      console.log(result);
+      res.json(result);
+    });
+  });
+  // console.log(result);
+  // res.json(result);
 });
 
 app.listen(3000, () => console.log('TubeMapServer listening on port 3000!'));
