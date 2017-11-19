@@ -21,12 +21,13 @@ const DATA_SOURCES = [
     anchorTrackName: 'ref',
     useMountedPath: false,
     defaultPosition: '1' },
-  { name: 'chr22_v4',
+  /* { name: 'chr22_v4',
     xgFile: 'chr22_v4.vg.xg',
     gamIndex: 'NA12878_mapped_v4.gam.index',
     anchorTrackName: '22',
     useMountedPath: false,
-    defaultPosition: '17697661' }];
+    defaultPosition: '17697661' }*/
+];
 
 $('#dataSourceSelect').change(() => {
   $('#distance').prop('value', '100');

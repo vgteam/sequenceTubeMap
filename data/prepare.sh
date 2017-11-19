@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 echo Generating xg indices from vg files
 for f in *.vg
 do
