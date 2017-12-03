@@ -910,7 +910,12 @@ function generateNodeOrderTrackBeginning(sequence) {
   let minOrder = 0;
   let increment;
 
-  while (!nodes[Math.abs(sequence[anchorIndex])].hasOwnProperty('order')) anchorIndex += 1; // anchor = first node in common with existing graph
+  while (anchorIndex < sequence.length && !nodes[Math.abs(sequence[anchorIndex])].hasOwnProperty('order')) {
+    anchorIndex += 1; // anchor = first node in common with existing graph
+  }
+  if (anchorIndex >= sequence.length) {
+    return null;
+  }
 
   if (sequence[anchorIndex] >= 0) { // regular node
     currentOrder = nodes[sequence[anchorIndex]].order - 1;
@@ -956,6 +961,12 @@ function generateNodeOrder() {
   for (let i = 1; i < tracksAndReads.length; i += 1) {
     if (DEBUG) console.log(`generating order for track ${i + 1}`);
     rightIndex = generateNodeOrderTrackBeginning(tracksAndReads[i].indexSequence); // calculate order values for all nodes until the first anchor
+    if (rightIndex === null) {
+      tracksAndReads.splice(i, 1);
+      reads.splice(i - tracks.length, 1);
+      i -= 1;
+      continue;
+    }
     modifiedSequence = uninvert(tracksAndReads[i].indexSequence);
 
     while (rightIndex < modifiedSequence.length) { // move right until the end of the sequence

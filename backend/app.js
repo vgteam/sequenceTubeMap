@@ -54,7 +54,7 @@ app.post('/chr22_v4', (req, res) => {
   // call 'vg chunk' to generate graph
   let vgCall = `${VG_PATH}vg chunk -x ${dataPath}${xgFile} `;
   if (req.withGam) {
-    vgCall += `-a ${dataPath}${gamIndex} -g -A `;
+    vgCall += `-a ${dataPath}${gamIndex} -g -A -c 5 `;
   }
   const position = Number(req.body.nodeID);
   const distance = Number(req.body.distance);
