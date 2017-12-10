@@ -1618,18 +1618,30 @@ function addTrackFeatures() {
 }
 
 function calculateTrackWidth() {
+  // flag: if vg returns freq of 0 for all tracks, we will increase width manually
+  let allAreFour = true;
+
   tracks.forEach((track) => {
     if (track.hasOwnProperty('freq')) { // custom track width
-      // track.width = track.freq;
       track.width = Math.round((Math.log(track.freq) + 1) * 4);
-      // track.width = Math.round((Math.log(track.freq) + 1));
     } else { // default track width
       track.width = 15;
       if (track.hasOwnProperty('type') && track.type === 'read') {
         track.width = 4;
       }
     }
+    if (track.width !== 4) {
+      allAreFour = false;
+    }
   });
+
+  if (allAreFour) {
+    tracks.forEach((track) => {
+      if (track.hasOwnProperty('freq')) {
+        track.width = 15;
+      }
+    });
+  }
 }
 
 export function useColorScheme(x) {
