@@ -39,101 +39,96 @@ There already exist various JavaScript tools for the visualization of graphs (se
 
 ## Usage
 
-The demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/) contains some example visualizations as well as a way to generate visalizations from custom data.
+### Online Version: Explore Without Installing Anything
+The easiest way to have a look at some graph visualizations is to check out the online demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/). There you can play with visualizations from a few different data sets as well as look at some examples showcasing different structural features of variation graphs.
 
-Another way to use this module is to include it in your own code. The whole visualization logic is contained in [`tubemap.js`](https://github.com/vgteam/sequenceTubeMap/blob/master/app/scripts/tubemap.js) and a handful of css rules are defined in [`tubemap.css`](https://github.com/vgteam/sequenceTubeMap/blob/master/app/styles/tubemap.css). tubemap.js is an ES6 module and importing it requires ES6's import command, which is not supported by most browsers natively at this time. The code therefore needs to be transpiled before it can be executed in the browser.
+### Docker Version: Visualizing Your Custom Data
+If you are using vg and want visualize the graphs it generates, the easiest way to do that is to use the docker container provided at [https://hub.docker.com/r/wolfib/sequencetubemap/](https://hub.docker.com/r/wolfib/sequencetubemap/). The ```sequencetubemap``` docker image contains the build of this repo as well as a vg executable, which is needed for data preprocessing and extraction.
 
-In addition, the module uses [d3.js](https://d3js.org/), [jQuery](https://jquery.com/) and [Bootstrap](https://getbootstrap.com/).
+Follow these steps to use the docker image:
 
-A minimal example would look like this:
+ - The vg files you want to visualize need to contain haplotype/path info. Generating visualizations for the graph itself only is not supported. In addition to the haplotype graph, you can optionally visualize aligned reads from a gam file.
+ - Install docker (https://docs.docker.com/engine/installation/)
+ - Pull the docker image:
+ ```
+ docker pull wolfib/sequencetubemap:vg2018 
+ ```
+ - Alternatively you can build the docker image directly from the repo
+ ```
+ git clone https://github.com/vgteam/sequenceTubeMap.git
+ cd sequencetubemap
+ docker build -t wolfib/sequencetubemap:vg2018 .
+ ```
+ - Start the container: 
+	There is some demo data included, but if you want to look at your own data, put vg and gam files in the same folder. This folder needs to be mounted for the docker container, so that the vg executable within the container can access those files:
+    ```
+    docker run -v <path_do_data>:/usr/src/app/mountedData --restart unless-stopped -p 80:3000 -d wolfib/sequencetubemap:vg2018
+    ```
+    (leave out the `-v` part if you don't have your own data)
+ - Your data needs to be indexed by vg. This is done within the container to avoid issues with differing versions of vg.
+ - To generate an index of your vg file:
+    ```
+    docker exec -it <container_id> /bin/sh prepare_vg.sh <vg_file>
+    ```
+	Run `docker ps`to see the id of the running container.
+  `<vg_file>` is the file name of your vg file without any path information.
+ - To generate an index of your gam file (optional, you can view vg only too): 
+    ```
+    docker exec -it <container_id> /bin/sh prepare_gam.sh <gam_file>
+    ```
+	 `<gam_file>` is the file name of your gam file without any path information.
+ - open `localhost` in the browser, pick data -> custom, select xg file and optionally gam index
+ - pick the location with start, length and unit input fields (or keep them the way they are)
+ - Click go and hope to see a graph visualization
+ 
+### Local Version: Build And Modify Sequence Tube Maps Yourself
+If you need full control over Sequence Tube Maps and want to be able to modify its source code, you need to build it yourself.
 
-**miniExample.html**(a big part of this file are just commands for the JavaScript building and compiling, the actual html is minimal)
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Sequence Tube Map Minimal Example</title>
-  <!-- build:css styles/vendor.css -->
-  <!-- bower:css -->
-  <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.css" />
-  <!-- endbower -->
-  <!-- endbuild -->
+#### Prerequisites: 
+npm, nodejs, gulp, bower and [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
 
-  <!-- build:css styles/main.css -->
-  <link rel="stylesheet" href="styles/tubemap.css">
-  <!-- endbuild -->
-</head>
-<body>
-  <p>A minimal example created with the Sequence Tube Maps JavaScript Module:</p>
-  <div id="legendDiv"></div>
-  <div id="chart">
-    <svg id="svg">
-    </svg>
-  </div>
-  <!-- build:js scripts/vendor.js -->
-  <!-- bower:js -->
-  <script src="/bower_components/jquery/dist/jquery.js"></script>
-  <script src="/bower_components/d3/d3.js"></script>
-  <!-- endbower -->
-  <!-- endbuild -->
+#### Backend:
+- Clone the repo:
+  ```
+  git clone https://github.com/vgteam/sequenceTubeMap.git
+  ```
+- Switch to the ```sequenceTubeMap/backend/``` folder
+- Install npm dependencies:
+  ```
+  npm install
+  ```
+  
+#### Data:
+- ```mkdir /<your_path>/sequenceTubeMap/backend/vg```
+- Copy the vg executable to ```sequenceTubeMap/backend/vg/```
+- Add vg to your environment path:
+  ```
+  PATH=/<your_path>/sequenceTubeMap/backend/vg:$PATH
+  ```
+- Build indices:
+  ```
+  /bin/sh /<your_path>/sequenceTubeMap/data/prepare_dev.sh
+  ```
+- Switch to the ```sequenceTubeMap/backend/``` folder and start server:
+  ```
+  nodejs app.js
+  ```
 
-  <!-- build:js scripts/miniExample.js -->
-  <script src="scripts/miniExample.bundle.js"></script>
-  <!-- endbuild -->
-</body>
-</html>
-```
+#### Frontend:
+- Switch to the ```sequenceTubeMap/frontend/``` folder
+- Install npm dependencies:
+  ```
+  npm install
+  ```
+- Install bower dependencies:
+  ```
+  bower install
+  ```
+- Edit ```sequenceTubeMap/frontend/app/scripts/main.js```: change ```BACKEND_URL``` to the location of your backend.
+- ```gulp``` to build the frontend, open ```frontend/dist/index.html``` in the browser.
+- Alternatively use ```gulp serve``` to build and continually rebuild the frontend after each change. Open ```localhost:9000``` in the browser.
 
-**miniExample.js**
-```javascript
-import * as tubeMap from './tubemap';
-
-const nodes = [
-  { name: 'A', seq: 'AAAA' },
-  { name: 'B', seq: 'TTG' },
-  { name: 'C', seq: 'CC' },
-];
-
-const paths = [
-  { id: 0, name: 'Track 1', sequence: ['A', 'B', 'C'] },
-  { id: 1, name: 'Track 2', sequence: ['A', '-B', 'C'] },
-  { id: 2, name: 'Track 3', sequence: ['A', 'C'] },
-];
-
-tubeMap.create({
-  svgID: '#svg',
-  nodes,
-  tracks: paths,
-});
-tubeMap.useColorScheme(0);
-```
-
-(See the result [here](https://vgteam.github.io/sequenceTubeMap/miniExample.html).)
-
-[`tubemap.js`](https://github.com/vgteam/sequenceTubeMap/blob/master/app/scripts/tubemap.js) uses very simple custom JSON data structures for its input data:
-
-Nodes are defined by a `name` attribute (has to be unique) and a `seq` attribute which contains the node's sequence of bases.
-```javascript
-const nodes = [
-  { name: 'A', seq: 'AAAA' },
-  { name: 'B', seq: 'TTG' },
-  { name: 'C', seq: 'CC' },
-];
-```
-Paths each have a unique and consecutively numbered `id` attribute (starting with 0), a `name` attribute and a `sequence` attribute which contains a array of node `name` attributes. If a node is traversed in reversed direction, the node `name` is prefixed by a `-`-symbol.
-```javascript
-const paths = [
-  { id: 0, name: 'Track 1', sequence: ['A', 'B', 'C'] },
-  { id: 1, name: 'Track 2', sequence: ['A', '-B', 'C'] },
-  { id: 2, name: 'Track 3', sequence: ['A', 'C'] },
-];
-```
-
-The sequence tube maps module also has the ability to parse JSON data generated by [vg](https://github.com/vgteam/vg/) ([https://github.com/vgteam/vg/](https://github.com/vgteam/vg/)). vg builds variation graphs from sequence data. Its output are typically binary .vg files, which it can transform into JSON files via
-```
-vg view -j filename.vg >filename.json
-```
-JSON files generated in such a way can be parsed and displayed by the demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/).
+  
 
 ## License
 Copyright (c) 2017 Wolfgang Beyer, licensed under the MIT License.
