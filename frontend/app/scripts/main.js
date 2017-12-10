@@ -5,6 +5,7 @@
 import * as tubeMap from './tubemap';
 
 const BACKEND_URL = `http://${window.location.host}`;
+// const BACKEND_URL = `http://localhost`;
 // const BACKEND_URL = 'https://api.wbeyer.com/';
 // const BACKEND_URL = 'http://52.178.70.70:3000';
 

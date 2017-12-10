@@ -2,6 +2,7 @@
 /* eslint no-lonely-if: "off" */
 /* eslint no-prototype-builtins: "off" */
 /* eslint no-console: "off" */
+/* eslint no-continue: "off" */
 
 /* eslint max-len: "off" */
 /* eslint no-loop-func: "off" */

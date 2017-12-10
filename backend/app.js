@@ -21,6 +21,7 @@ app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
   extended: true,
 }));
 
+// required for local usage (access docker container from outside)
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -54,14 +55,14 @@ app.post('/chr22_v4', (req, res) => {
   // call 'vg chunk' to generate graph
   let vgCall = `${VG_PATH}vg chunk -x ${dataPath}${xgFile} `;
   if (req.withGam) {
-    vgCall += `-a ${dataPath}${gamIndex} -g -A -c 5 `;
+    vgCall += `-a ${dataPath}${gamIndex} -g -A `;
   }
   const position = Number(req.body.nodeID);
   const distance = Number(req.body.distance);
   if (Object.prototype.hasOwnProperty.call(req.body, 'byNode') && req.body.byNode === 'true') {
     vgCall += `-r ${position} -c ${distance} -T -E regions.tsv | ${VG_PATH}vg view -j - >${req.uuid}.json`;
   } else {
-    vgCall += `-p ${anchorTrackName}:${position}-${position + distance} -T -E regions.tsv | ${VG_PATH}vg view -j - >${req.uuid}.json`;
+    vgCall += `-c 5 -p ${anchorTrackName}:${position}-${position + distance} -T -E regions.tsv | ${VG_PATH}vg view -j - >${req.uuid}.json`;
   }
 
   console.log(vgCall);
