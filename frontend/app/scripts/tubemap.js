@@ -7,6 +7,7 @@
 /* eslint max-len: "off" */
 /* eslint no-loop-func: "off" */
 /* eslint no-unused-vars: "off" */
+/* eslint no-return-assign: "off" */
 
 const DEBUG = false;
 
