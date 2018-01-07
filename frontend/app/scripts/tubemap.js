@@ -619,11 +619,12 @@ function generateBasicPathsForReads() {
   let currentNode;
   let previousNode;
   let previousNodeIsForward;
+  const isPositive = n => ((n = +n) || 1 / n) >= 0;
 
   reads.forEach((read) => {
     // add info for start of track
     currentNodeIndex = Math.abs(read.indexSequence[0]);
-    currentNodeIsForward = read.indexSequence[0] >= 0;
+    currentNodeIsForward = isPositive(read.indexSequence[0]);
     currentNode = nodes[currentNodeIndex];
 
     read.path = [];
@@ -634,7 +635,7 @@ function generateBasicPathsForReads() {
       previousNodeIsForward = currentNodeIsForward;
 
       currentNodeIndex = Math.abs(read.indexSequence[i]);
-      currentNodeIsForward = read.indexSequence[i] >= 0;
+      currentNodeIsForward = isPositive(read.indexSequence[i]);
       currentNode = nodes[currentNodeIndex];
 
       if (currentNode.order > previousNode.order) {
@@ -1246,6 +1247,7 @@ function generateLaneAssignment() {
   let previousNode;
   let previousNodeIsForward;
   const prevSegmentPerOrderPerTrack = [];
+  const isPositive = n => ((n = +n) || 1 / n) >= 0;
 
   // create empty variables
   for (let i = 0; i <= maxOrder; i += 1) {
@@ -1259,7 +1261,7 @@ function generateLaneAssignment() {
   tracks.forEach((track, trackNo) => {
     // add info for start of track
     currentNodeIndex = Math.abs(track.indexSequence[0]);
-    currentNodeIsForward = track.indexSequence[0] >= 0;
+    currentNodeIsForward = isPositive(track.indexSequence[0]);
     currentNode = nodes[currentNodeIndex];
 
     track.path = [];
@@ -1272,7 +1274,7 @@ function generateLaneAssignment() {
       previousNodeIsForward = currentNodeIsForward;
 
       currentNodeIndex = Math.abs(track.indexSequence[i]);
-      currentNodeIsForward = track.indexSequence[i] >= 0;
+      currentNodeIsForward = isPositive(track.indexSequence[i]);
       currentNode = nodes[currentNodeIndex];
 
       if (currentNode.order > previousNode.order) {
