@@ -85,7 +85,9 @@ Follow these steps to use the docker image:
 If you need full control over Sequence Tube Maps and want to be able to modify its source code, you need to build it yourself.
 
 #### Prerequisites: 
-npm, nodejs, gulp, bower and [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
+npm, nodejs, and [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
+
+If you have gulp and bower installed globally, you will be able to use the ```gulp``` and ```bower``` commands, rather than ```node_modules/gulp/bin/gulp.js``` and ```node_modules/bower/bin/bower```, when working on the frontend.
 
 #### Backend:
 - Clone the repo:
@@ -105,9 +107,9 @@ npm, nodejs, gulp, bower and [vg](https://github.com/vgteam/vg) (vg can be trick
   ```
   PATH=/<your_path>/sequenceTubeMap/backend/vg:$PATH
   ```
-- Build indices:
+- Switch to the ```sequenceTubeMap/data``` folder and build indices for the test data:
   ```
-  /bin/sh /<your_path>/sequenceTubeMap/data/prepare_dev.sh
+  /bin/sh ./prepare_dev.sh
   ```
 - Switch to the ```sequenceTubeMap/backend/``` folder and start server:
   ```
@@ -122,11 +124,23 @@ npm, nodejs, gulp, bower and [vg](https://github.com/vgteam/vg) (vg can be trick
   ```
 - Install bower dependencies:
   ```
-  bower install
+  node_modules/bower/bin/bower install
   ```
-- Edit ```sequenceTubeMap/frontend/app/scripts/main.js```: change ```BACKEND_URL``` to the location of your backend.
-- ```gulp``` to build the frontend, open ```frontend/dist/index.html``` in the browser.
-- Alternatively use ```gulp serve``` to build and continually rebuild the frontend after each change. Open ```localhost:9000``` in the browser.
+- Edit ```sequenceTubeMap/frontend/app/scripts/main.js``` to set ```BACKEND_URL``` to the location of your backend. You can do:
+  ```
+  sed -i 's|`http://${window.location.host}`|"http://your-url.com:port"|' app/scripts/main.js
+  ```
+  You can also uncomment one of the existing options in the file.
+  Make sure not to include a trailing slash in the URL.
+
+- Run ```node_modules/gulp/bin/gulp.js``` to build the frontend into the `sequenceTubeMap/frontend/dist` directory.
+- An easy way to view the built frontend is with the ```http-server``` module:
+  ```
+  npm install -g http-server
+  http-server ./dist
+  ```
+  This serves the frontend on ```localhost:8080```.
+- Alternatively use ```node_modules/gulp/bin/gulp.js serve``` to build and continually rebuild the frontend after each change. Open ```localhost:9000``` in the browser for the page, and ```localhost:3001``` for the instrumentation and cross-device page synchronization UI.
 
   
 
