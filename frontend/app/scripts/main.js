@@ -27,7 +27,7 @@ const DATA_SOURCES = [
     gamIndex: 'NA12878_mapped_v4.gam.index',
     anchorTrackName: '22',
     useMountedPath: false,
-    defaultPosition: '17697661' }*/
+    defaultPosition: '17697661' },*/
 ];
 
 $('#dataSourceSelect').change(() => {

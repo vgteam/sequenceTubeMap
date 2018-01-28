@@ -38,9 +38,7 @@ app.post('/chr22_v4', (req, res) => {
   req.uuid = uuid();
 
   const xgFile = req.body.xgFile;
-  // const xgFile = 'chr22_v4.xg';
   const gamIndex = req.body.gamIndex;
-  // const gamIndex = 'NA12878_mapped_v4.gam.index';
   req.withGam = true;
   if (gamIndex === 'none') {
     req.withGam = false;
@@ -53,34 +51,49 @@ app.post('/chr22_v4', (req, res) => {
   console.log(`dataPath = ${dataPath}`);
 
   // call 'vg chunk' to generate graph
-  let vgCall = `${VG_PATH}vg chunk -x ${dataPath}${xgFile} `;
+  let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];
   if (req.withGam) {
-    vgCall += `-a ${dataPath}${gamIndex} -g -A `;
+    vgChunkParams.push('-a', `${dataPath}${gamIndex}`, '-g', '-A')
   }
   const position = Number(req.body.nodeID);
   const distance = Number(req.body.distance);
   if (Object.prototype.hasOwnProperty.call(req.body, 'byNode') && req.body.byNode === 'true') {
-    vgCall += `-r ${position} -c ${distance} -T -E regions.tsv | ${VG_PATH}vg view -j - >${req.uuid}.json`;
+    vgChunkParams.push('-r', position, '-c', distance, '-T', '-E', 'regions.tsv');
   } else {
-    vgCall += `-c 5 -p ${anchorTrackName}:${position}-${position + distance} -T -E regions.tsv | ${VG_PATH}vg view -j - >${req.uuid}.json`;
+    vgChunkParams.push('-c', '20', '-p', `${anchorTrackName}:${position}-${position + distance}`, '-T', '-E', 'regions.tsv');
   }
 
-  console.log(vgCall);
-  const child = spawn('sh', ['-c', vgCall]);
+  const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
+  const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', '-']);
+  let graphAsString = '';
 
-  child.stderr.on('data', (data) => {
-    console.log(`err data: ${data}`);
+  vgChunkCall.stderr.on('data', (data) => {
+    console.log(`vg chunk err data: ${data}`);
   });
 
-  child.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
+  vgChunkCall.stdout.on('data', function (data) {
+    vgViewCall.stdin.write(data);
+  });
 
-    if (!fs.existsSync(`${req.uuid}.json`)) {
+  vgChunkCall.on('close', (code) => {
+    console.log(`vg chunk exited with code ${code}`);
+    vgViewCall.stdin.end();
+  });
+
+  vgViewCall.stderr.on('data', (data) => {
+    console.log(`vg view err data: ${data}`);
+  });
+
+  vgViewCall.stdout.on('data', function (data) {
+    graphAsString += data.toString();
+  });
+
+  vgViewCall.on('close', (code) => {
+    console.log(`vg view exited with code ${code}`);
+    if (graphAsString === '') {
       returnError(req, res);
       return;
     }
-    // Read Result File Synchronously
-    const graphAsString = fs.readFileSync(`${req.uuid}.json`);
     req.graph = JSON.parse(graphAsString);
     processAnnotationFile(req, res);
   });
@@ -88,7 +101,6 @@ app.post('/chr22_v4', (req, res) => {
 
 function returnError(req, res) {
   console.log('returning error');
-  // res.json({ foo: 'bar' });
   res.json({});
 }
 
@@ -141,40 +153,37 @@ function processGamFile(req, res) {
   });
 
   // call 'vg view' to transform gam to json
-  const vgViewChild = spawn('sh', ['-c', `${VG_PATH}vg view -j -a ${req.gamFile} > gam.json`]);
+  const vgViewChild = spawn(`${VG_PATH}vg`, ['view', '-j', '-a', req.gamFile]);
 
   vgViewChild.stderr.on('data', (data) => {
     console.log(`err data: ${data}`);
   });
 
+  let gamJSON = '';
+  vgViewChild.stdout.on('data', function (data) {
+    gamJSON += data.toString();
+  });
+
   vgViewChild.on('close', () => {
-    // read gam.json line by line
-    const lineReader = rl.createInterface({
-      input: fs.createReadStream('gam.json'),
-    });
-
-    req.gamArr = [];
-    lineReader.on('line', (line) => {
-      req.gamArr.push(JSON.parse(line));
-    });
-
-    lineReader.on('close', () => {
-      processRegionFile(req, res);
-    });
+    req.gamArr = gamJSON
+      .split('\n')
+      .filter(function(a) {
+        return a != '';
+      })
+      .map(function(a) {
+        return JSON.parse(a);
+      });
+    processRegionFile(req, res);
   });
 }
 
 function processRegionFile(req, res) {
-  // read regions.tsv
   const lineReader = rl.createInterface({
     input: fs.createReadStream('regions.tsv'),
-    // input: fs.createReadStream('test.txt'),
-    // input: fs.createReadStream(req.annotationFile),
   });
 
   lineReader.on('line', (line) => {
     const arr = line.replace(/\s+/g, ' ').split(' ');
-    // req.graph.sequencePosition = { path: arr[0], position: arr[1] };
     req.graph.path.forEach((path) => {
       if (path.name === arr[0]) path.indexOfFirstBase = arr[1];
     });
@@ -186,12 +195,9 @@ function processRegionFile(req, res) {
 }
 
 function cleanUpAndSendResult(req, res) {
-  fs.unlink(`${req.uuid}.json`);
   fs.unlink(req.annotationFile);
-  // fs.unlink('regions.tsv');
   if (req.withGam === true) {
     fs.unlink(req.gamFile);
-    fs.unlink('gam.json');
   }
 
   const result = {};
@@ -227,34 +233,24 @@ app.post('/getPathNames', (req, res) => {
   };
 
   // call 'vg paths' to get path name information
-  console.log(req);
-  let vgCall = `${VG_PATH}vg paths -X ${MOUNTED_DATA_PATH}${req.body.xgFile} > pathNames.txt`;
-  console.log(vgCall);
-  const vgViewChild = spawn('sh', ['-c', vgCall]);
-  // const vgViewChild = spawn('sh', ['-c', `${VG_PATH}vg paths -X ${MOUNTED_DATA_PATH}${req.xgFile} > pathNames.txt`]);
+  const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-X', `${MOUNTED_DATA_PATH}${req.body.xgFile}`]);
 
   vgViewChild.stderr.on('data', (data) => {
     console.log(`err data: ${data}`);
   });
 
-  vgViewChild.on('close', () => {
-    // read pathNames.txt line by line
-    const lineReader = rl.createInterface({
-      input: fs.createReadStream('pathNames.txt'),
-    });
-
-    req.gamArr = [];
-    lineReader.on('line', (line) => {
-      result.pathNames.push(line);
-    });
-
-    lineReader.on('close', () => {
-      console.log(result);
-      res.json(result);
-    });
+  let pathNames = '';
+  vgViewChild.stdout.on('data', function (data) {
+    pathNames += data.toString();
   });
-  // console.log(result);
-  // res.json(result);
+
+  vgViewChild.on('close', () => {
+    result.pathNames = pathNames.split('\n').filter(function(a) {
+      return a != '';
+    });
+    console.log(result);
+    res.json(result);
+  });
 });
 
 app.listen(3000, () => console.log('TubeMapServer listening on port 3000!'));
