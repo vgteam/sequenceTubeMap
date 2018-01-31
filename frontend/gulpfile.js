@@ -7,10 +7,12 @@ const wiredep = require('wiredep').stream;
 const runSequence = require('run-sequence');
 const browserify = require('browserify');
 const babelify = require('babelify');
+const browserifyOptional = require('browserify-optional');
 const buffer = require('vinyl-buffer');
 const source = require('vinyl-source-stream');
 const rename = require('gulp-rename');
 const es = require('event-stream');
+const fs = require('fs');
 
 const $ = gulpLoadPlugins();
 const reload = browserSync.reload;
@@ -35,7 +37,7 @@ gulp.task('scripts', () => {
   const tasks = files.map((entry) => {
     return browserify({
       entries: [entry],
-      transform: babelify,
+      transform: [babelify, browserifyOptional],
       debug: true,
     })
     .bundle()
@@ -64,8 +66,7 @@ function lint(files, options) {
 }
 
 gulp.task('lint', () => {
-  return lint('app/scripts/**/*.js')
-    .pipe(gulp.dest('app/scripts'));
+  return lint('app/scripts/**/*.js');
 });
 gulp.task('lint:test', () => {
   return lint('test/spec/**/*.js')

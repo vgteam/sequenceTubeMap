@@ -126,13 +126,11 @@ If you have gulp and bower installed globally, you will be able to use the ```gu
   ```
   node_modules/bower/bin/bower install
   ```
-- Edit ```sequenceTubeMap/frontend/app/scripts/main.js``` to set ```BACKEND_URL``` to the location of your backend. You can do:
+- Create a local configuration setting BACKEND_URL to the location of your backend. If you ran `nodejs app.js` for the backend, and are working on a single machine, this will be `http://localhost:3000`. You can do:
   ```
-  sed -i 's|`http://${window.location.host}`|"http://your-url.com:port"|' app/scripts/main.js
+  echo '{"BACKEND_URL": "http://localhost:3000"}' > config.json
   ```
-  You can also uncomment one of the existing options in the file.
   Make sure not to include a trailing slash in the URL.
-
 - Run ```node_modules/gulp/bin/gulp.js``` to build the frontend into the `sequenceTubeMap/frontend/dist` directory.
 - An easy way to view the built frontend is with the ```http-server``` module:
   ```
