@@ -37,15 +37,29 @@ app.post('/chr22_v4', (req, res) => {
 
   req.uuid = uuid();
 
+  // We always have an XG file
   const xgFile = req.body.xgFile;
+  
+  // We sometimes have a GAM index with reads
   const gamIndex = req.body.gamIndex;
   req.withGam = true;
-  if (gamIndex === 'none') {
+  if (!gamIndex || gamIndex === 'none') {
     req.withGam = false;
     console.log('no gam index provided.');
   }
+  
+  // We sometimes have a GBWT with haplotypes that override any in the XG
+  const gbwtFile = req.body.gbwtFile;
+  req.withGbwt = true;
+  if (!gbwtFile || gbwtFile === 'none') {
+    req.withGbwt = false;
+    console.log('no gbwt file provided.');
+  }
 
+  // What path should be our anchoring path?
   const anchorTrackName = req.body.anchorTrackName;
+  
+  // Decide where to pull the data from (builtin examples or user data)
   const useMountedPath = req.body.useMountedPath;
   const dataPath = useMountedPath === 'true' ? MOUNTED_DATA_PATH : INTERNAL_DATA_PATH;
   console.log(`dataPath = ${dataPath}`);
@@ -53,7 +67,12 @@ app.post('/chr22_v4', (req, res) => {
   // call 'vg chunk' to generate graph
   let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];
   if (req.withGam) {
+    // Use a GAM index
     vgChunkParams.push('-a', `${dataPath}${gamIndex}`, '-g', '-A')
+  }
+  if (req.withGbwt) {
+    // Use a GBWT haplotype database
+    vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`)
   }
   const position = Number(req.body.nodeID);
   const distance = Number(req.body.distance);
@@ -106,6 +125,8 @@ function returnError(req, res) {
 
 function processAnnotationFile(req, res) {
   // find annotation file
+  // TODO: This is not going to work if multiple people hit the server at once!
+  // We need to make vg chunk take an argument from us for where to put the file.
   console.log('process annotation');
   fs.readdirSync('./').forEach((file) => {
     if (file.substr(file.length - 12) === 'annotate.txt') {
@@ -214,11 +235,14 @@ app.post('/getFilenames', (req, res) => {
   };
 
   fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
-    if (file.substr(file.length - 2) === 'xg') {
+    if (file.endsWith('.xg')) {
       result.xgFiles.push(file);
     }
-    if (file.substr(file.length - 9) === 'gam.index') {
+    if (file.endsWith('.gam.index')) {
       result.gamIndices.push(file);
+    }
+    if (file.endsWith('.gcsa')) {
+      result.xgFiles.push(file);
     }
   });
 
