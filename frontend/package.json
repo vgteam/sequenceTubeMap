@@ -17,6 +17,7 @@
     "cors": "^2.8.1",
     "event-stream": "^3.3.4",
     "express": "^4.14.0",
+    "lazypipe": "^1.0.1",
     "merge-json": "0.1.0-b.3"
   },
   "devDependencies": {

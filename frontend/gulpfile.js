@@ -13,6 +13,7 @@ const source = require('vinyl-source-stream');
 const rename = require('gulp-rename');
 const es = require('event-stream');
 const fs = require('fs');
+const lazypipe = require('lazypipe')
 
 const $ = gulpLoadPlugins();
 const reload = browserSync.reload;
@@ -75,10 +76,13 @@ gulp.task('lint:test', () => {
 
 gulp.task('html', ['styles', 'scripts'], () => {
   return gulp.src('app/*.html')
-    .pipe($.useref({searchPath: ['.tmp', 'app', '.']}))
+    // We want to have sourcemaps generated for the bundled scripts come through useref and uglification
+    // We need lazypipe because useref internally needs multiple copies of this pipeline.
+    .pipe($.useref({searchPath: ['.tmp', 'app', '.']}, lazypipe().pipe($.sourcemaps.init, { loadMaps: true })))
     .pipe($.if('*.js', $.uglify()))
     .pipe($.if('*.css', $.cssnano({safe: true, autoprefixer: false})))
     .pipe($.if('*.html', $.htmlmin({collapseWhitespace: true})))
+    .pipe($.sourcemaps.write('.'))
     .pipe(gulp.dest('dist'));
 });
 
@@ -120,6 +124,10 @@ gulp.task('serve', () => {
     browserSync.init({
       notify: false,
       port: 9000,
+      // Turn off BrowserSync cross-device syncing and UI
+      // TODO: Protect these with authorization when running on a multi-user Internet-visible system
+      ghostMode: false,
+      ui: false,
       server: {
         baseDir: ['.tmp', 'app'],
         routes: {
@@ -145,6 +153,10 @@ gulp.task('serve:dist', ['default'], () => {
   browserSync.init({
     notify: false,
     port: 9000,
+    // Turn off BrowserSync cross-device syncing and UI
+    // TODO: Protect these with authorization when running on a multi-user Internet-visible system
+    ghostMode: false,
+    ui: false,
     server: {
       baseDir: ['dist']
     }
@@ -155,6 +167,9 @@ gulp.task('serve:test', ['scripts'], () => {
   browserSync.init({
     notify: false,
     port: 9000,
+    // Turn off BrowserSync cross-device syncing and UI
+    // TODO: Protect these with authorization when running on a multi-user Internet-visible system
+    ghostMode: false,
     ui: false,
     server: {
       baseDir: 'test',
