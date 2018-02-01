@@ -1,13 +1,20 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -e
 
 mkdir ../backend/internalData
 
-echo "Generating xg indices from vg files"
+echo "Generating xg and gbwt indices from vg files"
 for f in *.vg
 do
 	echo "${f}:"
-	vg index "${f}" -x "../backend/internalData/${f}.xg"
+    
+    if [[ -e "${f%.vg}.vcf.gz" && -e "${f%.vg}.vcf.gz.tbi" ]]
+    then
+        # Assume graph was built with alt paths
+        vg index "${f}" -v "${f%.vg}.vcf.gz" -x "../backend/internalData/${f}.xg" --gbwt-name "../backend/internalData/${f}.gbwt"
+    else
+        vg index "${f}" -x "../backend/internalData/${f}.xg"
+    fi
 done
 
 echo "Generating indices from gam files"
@@ -17,15 +24,3 @@ do
 	vg index -N "${f}" -d "../backend/internalData/${f}.index"
 done
 
-echo "Generating xg/gbwt pairs from FASTA and VCF files"
-for f in *.fa
-do
-    if [ ! -e "${f%.fa}.vcf.gz" ]
-    then
-        continue
-    fi
-    
-    echo "${f}:"
-    vg construct -r "${f}" -v "${f%.fa}.vcf.gz" -a > "../backend/internalData/${f}.vg"
-    vg index "../backend/internalData/${f}.vg" -v "${f%.fa}.vcf.gz" -x "../backend/internalData/${f}.xg" --gbwt-name "../backend/internalData/${f}.gbwt"
-done
