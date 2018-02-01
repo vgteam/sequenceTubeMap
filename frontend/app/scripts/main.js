@@ -28,11 +28,13 @@ $('#dataSourceSelect').change(() => {
   $('#unitSelect').prop('value', '1');
   if ($('#dataSourceSelect').val() === 'custom') {
     $('#xgFileSelect').prop('disabled', false);
+    $('#gbwtFileSelect').prop('disabled', false);
     $('#gamIndexSelect').prop('disabled', false);
     $('#pathNameSelect').prop('disabled', false);
     $('#position').prop('value', '1');
   } else {
     $('#xgFileSelect').prop('disabled', true);
+    $('#gbwtFileSelect').prop('disabled', true);
     $('#gamIndexSelect').prop('disabled', true);
     $('#pathNameSelect').prop('disabled', true);
 
@@ -134,6 +136,7 @@ function getRemoteTubeMapData() {
   const byNode = (document.getElementById('unitSelect').selectedIndex !== 0);
 
   let xgFile = $('#xgFileSelect').val();
+  let gbwtFile = $('#gbwtFileSelect').val();
   let gamIndex = $('#gamIndexSelect').val();
   let anchorTrackName = $('#pathNameSelect').val();
   let useMountedPath = true;
@@ -142,6 +145,7 @@ function getRemoteTubeMapData() {
     if (ds.name === $('#dataSourceSelect').val()) {
       console.log('found');
       xgFile = ds.xgFile;
+      gbwtFile = ds.gbwtFile;
       gamIndex = ds.gamIndex;
       anchorTrackName = ds.anchorTrackName;
       useMountedPath = ds.useMountedPath;
@@ -155,7 +159,7 @@ function getRemoteTubeMapData() {
     type: 'POST',
     url: `${BACKEND_URL}/chr22_v4`,
     crossDomain: true,
-    data: { nodeID, distance, byNode, xgFile, gamIndex, anchorTrackName, useMountedPath },
+    data: { nodeID, distance, byNode, xgFile, gbwtFile, gamIndex, anchorTrackName, useMountedPath },
     dataType: 'json',
     success(response) {
       if ($.isEmptyObject(response)) {
@@ -295,6 +299,13 @@ function populateDropdownsWithFilenames() {
         opt.value = filename;
         opt.innerHTML = filename;
         xgSelect.appendChild(opt);
+      });
+      const gbwtSelect = document.getElementById('gbwtFileSelect');
+      response.gbwtFiles.forEach((filename) => {
+        const opt = document.createElement('option');
+        opt.value = filename;
+        opt.innerHTML = filename;
+        gbwtSelect.appendChild(opt);
       });
       const gamIndexSelect = document.getElementById('gamIndexSelect');
       response.gamIndices.forEach((filename) => {

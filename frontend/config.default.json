@@ -11,6 +11,12 @@
     "gamIndex": "cactus-NA12879.gam.index",
     "anchorTrackName": "ref",
     "useMountedPath": false,
-    "defaultPosition": "1" }
+    "defaultPosition": "1" },
+  { "name": "vg \"small\" example",
+    "xgFile": "x.fa.xg",
+    "gbwtFile": "x.fa.gbwt",
+    "anchorTrackName": "x",
+    "useMountedPath": false,
+    "defaultPosition": "1" },
 ]}
 
