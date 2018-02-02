@@ -231,6 +231,7 @@ app.post('/getFilenames', (req, res) => {
   console.log('received request for filenames');
   const result = {
     xgFiles: [],
+    gbwtFiles: [],
     gamIndices: [],
   };
 
@@ -238,11 +239,11 @@ app.post('/getFilenames', (req, res) => {
     if (file.endsWith('.xg')) {
       result.xgFiles.push(file);
     }
+    if (file.endsWith('.gbwt')) {
+      result.gbwtFiles.push(file);
+    }
     if (file.endsWith('.gam.index')) {
       result.gamIndices.push(file);
-    }
-    if (file.endsWith('.gcsa')) {
-      result.xgFiles.push(file);
     }
   });
 
