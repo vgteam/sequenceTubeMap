@@ -1,34 +1,27 @@
 /* eslint func-names: "off" */
 /* eslint no-console: "off" */
 /* eslint no-unused-vars: "off" */
+// We need these to conditionally import a user config
+/* eslint import/no-unresolved: "off" */
+/* eslint global-require: "off" */
+
+import * as mergeJSON from 'merge-json';
 
 import * as tubeMap from './tubemap';
 
-const BACKEND_URL = `http://${window.location.host}`;
-// const BACKEND_URL = `http://localhost`;
-// const BACKEND_URL = 'https://api.wbeyer.com/';
-// const BACKEND_URL = 'http://52.178.70.70:3000';
+let CONFIG = require('../../config.default.json');
 
-const DATA_SOURCES = [
-  { name: 'snp1kg-BRAC1',
-    xgFile: 'snp1kg-BRAC1.vg.xg',
-    gamIndex: 'NA12878-BRCA1.gam.index',
-    anchorTrackName: '17',
-    useMountedPath: false,
-    defaultPosition: '1' },
-  { name: 'cactus',
-    xgFile: 'cactus.vg.xg',
-    gamIndex: 'cactus-NA12879.gam.index',
-    anchorTrackName: 'ref',
-    useMountedPath: false,
-    defaultPosition: '1' },
-  /* { name: 'chr22_v4',
-    xgFile: 'chr22_v4.vg.xg',
-    gamIndex: 'NA12878_mapped_v4.gam.index',
-    anchorTrackName: '22',
-    useMountedPath: false,
-    defaultPosition: '17697661' },*/
-];
+try {
+  // Ordinarily this wouldn't work at all with browserify, but we use the
+  // browserify-optional transform that makes it work great.
+  CONFIG = mergeJSON.merge(CONFIG, require('../../config.json'));
+} catch (err) {
+    // Ignore errors; probably means the override config didn't exist at build
+    // time.
+}
+
+const BACKEND_URL = CONFIG.BACKEND_URL || `http://${window.location.host}`;
+const DATA_SOURCES = CONFIG.DATA_SOURCES;
 
 $('#dataSourceSelect').change(() => {
   $('#distance').prop('value', '100');
