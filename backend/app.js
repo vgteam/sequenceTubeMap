@@ -8,7 +8,7 @@ const spawn = require('child_process').spawn;
 const express = require('express');
 const bodyParser = require('body-parser');
 const uuid = require('uuid/v1');
-const fs = require('fs');
+const fs = require('fs-extra');
 const rl = require('readline');
 
 const VG_PATH = './vg/';
@@ -35,7 +35,14 @@ app.post('/chr22_v4', (req, res) => {
   console.log(`nodeID = ${req.body.nodeID}`);
   console.log(`distance = ${req.body.distance}`);
 
+  // Assign each request a UUID. v1 UUIDs can be very similar for similar
+  // timestamps on the same node, but are still guaranteed to be unique within
+  // a given nodejs process.
   req.uuid = uuid();
+  
+  // Make a temp directory for vg output files for this request
+  req.tempDir = `./tmp-${req.uuid}`
+  fs.mkdirSync(req.tempDir);
 
   const xgFile = req.body.xgFile;
   const gamIndex = req.body.gamIndex;
@@ -58,10 +65,11 @@ app.post('/chr22_v4', (req, res) => {
   const position = Number(req.body.nodeID);
   const distance = Number(req.body.distance);
   if (Object.prototype.hasOwnProperty.call(req.body, 'byNode') && req.body.byNode === 'true') {
-    vgChunkParams.push('-r', position, '-c', distance, '-T', '-E', 'regions.tsv');
+    vgChunkParams.push('-r', position, '-c', distance);
   } else {
-    vgChunkParams.push('-c', '20', '-p', `${anchorTrackName}:${position}-${position + distance}`, '-T', '-E', 'regions.tsv');
+    vgChunkParams.push('-c', '20', '-p', `${anchorTrackName}:${position}-${position + distance}`);
   }
+  vgChunkParams.push('-T', '-b', `${req.tempDir}/chunk`, '-E', `${req.tempDir}/regions.tsv`);
 
   const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
   const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', '-']);
@@ -102,14 +110,16 @@ app.post('/chr22_v4', (req, res) => {
 function returnError(req, res) {
   console.log('returning error');
   res.json({});
+  // Clean up the temp directory for the request recursively
+  fs.remove(req.tempDir);
 }
 
 function processAnnotationFile(req, res) {
   // find annotation file
   console.log('process annotation');
-  fs.readdirSync('./').forEach((file) => {
+  fs.readdirSync(req.tempDir).forEach((file) => {
     if (file.substr(file.length - 12) === 'annotate.txt') {
-      req.annotationFile = file;
+      req.annotationFile = req.tempDir + '/' + file;
     }
   });
 
@@ -146,9 +156,9 @@ function processAnnotationFile(req, res) {
 
 function processGamFile(req, res) {
   // Find gam file
-  fs.readdirSync('./').forEach((file) => {
+  fs.readdirSync(req.tempDir).forEach((file) => {
     if (file.substr(file.length - 3) === 'gam') {
-      req.gamFile = file;
+      req.gamFile = req.tempDir + '/' + file;
     }
   });
 
@@ -179,7 +189,7 @@ function processGamFile(req, res) {
 
 function processRegionFile(req, res) {
   const lineReader = rl.createInterface({
-    input: fs.createReadStream('regions.tsv'),
+    input: fs.createReadStream(`${req.tempDir}/regions.tsv`),
   });
 
   lineReader.on('line', (line) => {
@@ -199,6 +209,8 @@ function cleanUpAndSendResult(req, res) {
   if (req.withGam === true) {
     fs.unlink(req.gamFile);
   }
+  // Clean up the temp directory for the request recursively (even though it should be empty)
+  fs.remove(req.tempDir);
 
   const result = {};
   result.graph = req.graph;
