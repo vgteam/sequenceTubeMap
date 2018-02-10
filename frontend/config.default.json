@@ -1,7 +1,7 @@
 { "BACKEND_URL": false,
   "DATA_SOURCES": [
-  { "name": "snp1kg-BRAC1",
-    "xgFile": "snp1kg-BRAC1.vg.xg",
+  { "name": "snp1kg-BRCA1",
+    "xgFile": "snp1kg-BRCA1.vg.xg",
     "gamIndex": "NA12878-BRCA1.gam.index",
     "anchorTrackName": "17",
     "useMountedPath": false,
@@ -11,6 +11,12 @@
     "gamIndex": "cactus-NA12879.gam.index",
     "anchorTrackName": "ref",
     "useMountedPath": false,
-    "defaultPosition": "1" }
+    "defaultPosition": "1" },
+  { "name": "vg \"small\" example",
+    "xgFile": "x.vg.xg",
+    "gbwtFile": "x.vg.gbwt",
+    "anchorTrackName": "x",
+    "useMountedPath": false,
+    "defaultPosition": "1" },
 ]}
 

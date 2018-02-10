@@ -1,13 +1,13 @@
 # ---------------------------
 # vg container
 
-FROM quay.io/vgteam/vg:v1.5.0-2018-g71f96239-t119-run as vgBinary
+FROM quay.io/vgteam/vg:v1.6.0-326-gf4bd6099-t131-run as vgBinary
 
 # create indices from vg and gam files
 RUN mkdir -p /vg/data/out
 COPY data/ /vg/data
 WORKDIR /vg/data
-RUN /bin/sh prepare.sh
+RUN ./prepare.sh
 
 # ---------------------------
 # frontend container

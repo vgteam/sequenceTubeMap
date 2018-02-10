@@ -68,13 +68,14 @@ Follow these steps to use the docker image:
  - Your data needs to be indexed by vg. This is done within the container to avoid issues with differing versions of vg.
  - To generate an index of your vg file:
     ```
-    docker exec -it <container_id> /bin/sh prepare_vg.sh <vg_file>
+    docker exec -it <container_id> ./prepare_vg.sh <vg_file>
     ```
 	Run `docker ps`to see the id of the running container.
+    If there are `.vcf.gz` and `.vcf.gz.tbi` files next to your `.vg`, they will be used to generate a GBWT index of haplotypes from the VCF. In this case, the `.vg` file must contain alt paths, from the `-a` option of vg construct.
   `<vg_file>` is the file name of your vg file without any path information.
  - To generate an index of your gam file (optional, you can view vg only too): 
     ```
-    docker exec -it <container_id> /bin/sh prepare_gam.sh <gam_file>
+    docker exec -it <container_id> ./prepare_gam.sh <gam_file>
     ```
 	 `<gam_file>` is the file name of your gam file without any path information.
  - open `localhost` in the browser, pick data -> custom, select xg file and optionally gam index
@@ -109,7 +110,7 @@ If you have gulp and bower installed globally, you will be able to use the ```gu
   ```
 - Switch to the ```sequenceTubeMap/data``` folder and build indices for the test data:
   ```
-  /bin/sh ./prepare_dev.sh
+  ./prepare_dev.sh
   ```
 - Switch to the ```sequenceTubeMap/backend/``` folder and start server:
   ```
