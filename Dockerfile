@@ -1,13 +1,13 @@
 # ---------------------------
 # vg container
 
-FROM quay.io/vgteam/vg:v1.5.0-2018-g71f96239-t119-run as vgBinary
+FROM quay.io/vgteam/vg:v1.6.0-382-g0fe63b96-t133-run as vgBinary
 
 # create indices from vg and gam files
 RUN mkdir -p /vg/data/out
 COPY data/ /vg/data
 WORKDIR /vg/data
-RUN /bin/sh prepare.sh
+RUN ./prepare.sh
 
 # ---------------------------
 # frontend container
@@ -29,6 +29,7 @@ RUN bower install --allow-root
 # build frontend
 COPY frontend/.babelrc /usr/src/app/
 COPY frontend/app/ /usr/src/app/app/
+COPY frontend/config.default.json /usr/src/app/
 COPY frontend/gulpfile.js /usr/src/app/
 RUN gulp
 
