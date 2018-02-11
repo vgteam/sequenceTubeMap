@@ -37,6 +37,7 @@ RUN gulp
 # backend container
 
 FROM node:boron-alpine
+RUN apk add --update bash
 
 # Create app directory
 RUN mkdir -p /usr/src/app
