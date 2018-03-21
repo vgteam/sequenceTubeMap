@@ -8,6 +8,8 @@
 import * as mergeJSON from 'merge-json';
 
 import * as tubeMap from './tubemap';
+import * as vg from './vg';
+import * as paragraph from './paragraph';
 
 let CONFIG = require('../../config.default.json');
 
@@ -167,9 +169,9 @@ function getRemoteTubeMapData() {
         document.getElementById('loader').style.display = 'none';
         return;
       }
-      const nodes = tubeMap.vgExtractNodes(response.graph);
-      const tracks = tubeMap.vgExtractTracks(response.graph);
-      const reads = tubeMap.vgExtractReads(nodes, tracks, response.gam);
+      const nodes = vg.vgExtractNodes(response.graph);
+      const tracks = vg.vgExtractTracks(response.graph);
+      const reads = vg.vgExtractReads(nodes, tracks, response.gam);
       createTubeMap(nodes, tracks, reads);
     },
     error(responseData, textStatus, errorThrown) {

@@ -2,26 +2,14 @@
 /* eslint no-lonely-if: "off" */
 /* eslint no-prototype-builtins: "off" */
 /* eslint no-console: "off" */
-/* eslint no-continue: "off" */
 
 /* eslint max-len: "off" */
 /* eslint no-loop-func: "off" */
 /* eslint no-unused-vars: "off" */
-/* eslint no-return-assign: "off" */
+
+import * as svghelpers from './svghelpers';
 
 const DEBUG = false;
-
-const greys = ['#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525', '#000000'];
-// const greys = ['#212121', '#424242', '#616161', '#757575', '#9e9e9e', '#bdbdbd', '#CFD8DC'];
-const blues = ['#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'];
-// const reds = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'];
-const reds = ['#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'];
-const plainColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']; // d3 category10
-const lightColors = ['#ABCCE3', '#FFCFA5', '#B0DBB0', '#F0AEAE', '#D7C6E6', '#C6ABA5', '#F4CCE8', '#CFCFCF', '#E6E6AC', '#A8E7ED']; // d3 category10
-
-// const plainColors = ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', '#0099c6', '#dd4477', '#66aa00', '#b82e2e', '#316395']; // d3 google 10c
-// const plainColors = ['#1b5e20', '#0850B8', '#ff9800', '#039be5', '#f44336', '#9c27b0', '#8bc34a', '#5d4037', '#ffeb3b'];
-// const lightColors = ['#AAC3AB', '#A2BDE4', '#FFD89F', '#A1DAF5', '#FAA19B', '#DAAEE1', '#D4E9BB', '#AEA09B', '#FFF7B5'];
 
 let haplotypeColors = [];
 let forwardReadColors = [];
@@ -35,6 +23,7 @@ let inputTracks = [];
 let inputReads = [];
 let nodes;
 let tracks;
+let trackIdToTrack;
 let reads;
 let numberOfNodes;
 let numberOfTracks;
@@ -46,7 +35,7 @@ let extraRight = []; // info whether nodes have to be moved further apart becaus
 let maxOrder; // horizontal order of the rightmost node
 
 const config = {
-  mergeNodesFlag: true,
+  mergeNodesFlag: false,
   clickableNodesFlag: false,
   showExonsFlag: false,
   colorScheme: 0,
@@ -79,6 +68,8 @@ let trackForRuler;
 
 let bed;
 
+let windowResizeInitialized = false;
+
 // main function to call from outside
 // which starts the process of creating a tube map visualization
 export function create(params) {
@@ -86,6 +77,7 @@ export function create(params) {
   // optional parameters: bed, clickableNodes, reads, showLegend
   svgID = params.svgID;
   svg = d3.select(params.svgID);
+
   inputNodes = (JSON.parse(JSON.stringify(params.nodes))); // deep copy
   inputTracks = (JSON.parse(JSON.stringify(params.tracks))); // deep copy
   inputReads = params.reads || null;
@@ -94,6 +86,11 @@ export function create(params) {
   config.hideLegendFlag = params.hideLegend || false;
   const tr = createTubeMap();
   if (!config.hideLegendFlag) drawLegend(tr);
+
+  if (!windowResizeInitialized) {
+    window.addEventListener('resize', createTubeMap);
+    windowResizeInitialized = true;
+  }
 }
 
 // moves a specific track to the top
@@ -231,9 +228,6 @@ function createTubeMap() {
   tracks = (JSON.parse(JSON.stringify(inputTracks)));
   reads = (JSON.parse(JSON.stringify(inputReads)));
 
-  // if (reads && config.showReads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) < 29));
-  // if (reads && config.showReads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) > 20));
-
   assignColorSets();
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
@@ -255,11 +249,8 @@ function createTubeMap() {
   if (reads && config.showReads) generateTrackIndexSequences(reads);
   generateNodeWidth();
 
-  // if (reads && config.showReads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
-  // if (reads && config.showReads) reads = reads.filter(read => (Math.abs(Number(read.sequence[0])) < 4));
   if (reads && config.mergeNodesFlag) {
     generateNodeSuccessors(); // requires indexSequence
-    // if (reads && config.showReads) reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
     generateNodeOrder(); // requires successors
     if (reads && config.showReads) reverseReversedReads();
     mergeNodes();
@@ -277,12 +268,6 @@ function createTubeMap() {
   generateNodeOrder();
   maxOrder = getMaxOrder();
 
-  // can cause problems when there is a reversed single track node
-  // OTOH, can solve problems with complex inversion patterns
-  // switchNodeOrientation();
-  // generateNodeOrder(nodes, tracks);
-  // maxOrder = getMaxOrder();
-
   calculateTrackWidth(tracks);
   generateLaneAssignment();
 
@@ -290,37 +275,29 @@ function createTubeMap() {
   generateNodeXCoords();
 
   if (reads && config.showReads) {
-    // removeNonPathNodesFromReads();
     generateReadOnlyNodeAttributes();
-    // reads = reads.slice(2, 3);
     reverseReversedReads();
-    // reads = reads.filter(read => ((read.sequence[0] === '9') || (read.sequence[0] === '10')));
-    // reads = reads.slice(0, 10);
-    // reads = reads.filter(read => ((read.sequence[0] === '1')));
-    // reads = reads.filter(read => ((read.sequence[0] === '1') || (read.sequence[0] === '2')));
-    // reads = reads.filter(read => ((Number(read.sequence[0]) < 800)));
     generateTrackIndexSequences(reads);
     placeReads();
-    // generateReadOnlyNodeAttributes();
     tracks = tracks.concat(reads);
   }
-
+  trackIdToTrack = {};
+  tracks.forEach((track) => { trackIdToTrack[track.id] = track; });
   generateSVGShapesFromPath(nodes, tracks);
-  // removeUnusedNodes(nodes);
-  // nodeMap = generateNodeMap(nodes);
-  console.log('Tracks:');
-  console.log(tracks);
-  console.log('Nodes:');
-  console.log(nodes);
-  console.log('Lane assignment:');
-  console.log(assignments);
+
+  if (DEBUG) {
+    console.log('Tracks:');
+    console.log(tracks);
+    console.log('Nodes:');
+    console.log(nodes);
+    console.log('Lane assignment:');
+    console.log(assignments);
+  }
+
   getImageDimensions();
   alignSVG(nodes, tracks);
-  defineSVGPatterns();
+  svghelpers.defineSVGPatterns(svg);
 
-  // console.log(trackRectangles);
-  // console.log(trackRectanglesStep3);
-  // console.log(trackCurves);
   drawTrackRectangles(trackRectangles);
   drawTrackCurves();
   drawReversalsByColor(trackCorners, trackVerticalRectangles);
@@ -393,21 +370,6 @@ function assignReadsToNodes() {
           nodes[read.path[pathIdx].node].incomingReads.push([idx, pathIdx]);
         }
       });
-    }
-  });
-}
-
-//
-function removeNonPathNodesFromReads() {
-  reads.forEach((read) => {
-    for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
-      let nodeName = read.sequence[i];
-      if (nodeName.charAt(0) === '-') {
-        nodeName = nodeName.substr(1);
-      }
-      if (!nodeMap.has(nodeName) || nodes[nodeMap.get(nodeName)].degree === 0) {
-        read.sequence.splice(i, 1);
-      }
     }
   });
 }
@@ -743,20 +705,6 @@ function getReverseComplement(s) {
 }
 
 // for each track: generate sequence of node indices from seq. of node names
-function generateTrackIndexSequencesNEW(tracksOrReads) {
-  tracksOrReads.forEach((track) => {
-    track.indexSequence = [];
-    track.sequence.forEach((edit) => {
-      if (edit.nodeName.charAt(0) === '-') {
-        track.indexSequence.push(-nodeMap.get(edit.nodeName.substr(1)));
-      } else {
-        track.indexSequence.push(nodeMap.get(edit.nodeName));
-      }
-    });
-  });
-}
-
-// for each track: generate sequence of node indices from seq. of node names
 function generateTrackIndexSequences(tracksOrReads) {
   tracksOrReads.forEach((track) => {
     track.indexSequence = [];
@@ -913,13 +861,13 @@ function generateNodeOrderTrackBeginning(sequence) {
   let minOrder = 0;
   let increment;
 
-  while (anchorIndex < sequence.length && !nodes[Math.abs(sequence[anchorIndex])].hasOwnProperty('order')) {
-    anchorIndex += 1; // anchor = first node in common with existing graph
-  }
-  if (anchorIndex >= sequence.length) {
+  try {
+    while (!nodes[Math.abs(sequence[anchorIndex])].hasOwnProperty('order')) anchorIndex += 1; // anchor = first node in common with existing graph
+  } catch (e) {
+    console.log(`Found path that is disjoint with all other paths: ${sequence}`);
+    anchorIndex = 0;
     return null;
   }
-
   if (sequence[anchorIndex] >= 0) { // regular node
     currentOrder = nodes[sequence[anchorIndex]].order - 1;
     increment = -1;
@@ -1127,65 +1075,6 @@ function generateNodeDegree() {
 
   nodes.forEach((node) => {
     if (node.hasOwnProperty('tracks')) node.degree = node.tracks.length;
-  });
-}
-
-// if more tracks pass through a specific node in reverse direction than in
-// regular direction, switch its orientation
-// (does not apply to the first track's nodes, these are always oriented as
-// dictated by the first track)
-function switchNodeOrientation() {
-  const toSwitch = new Map();
-  let nodeName;
-  let prevNode;
-  let nextNode;
-  let currentNode;
-
-  for (let i = 1; i < tracks.length; i += 1) {
-    for (let j = 0; j < tracks[i].sequence.length; j += 1) {
-      nodeName = tracks[i].sequence[j];
-      if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
-      currentNode = nodes[nodeMap.get(nodeName)];
-      if (tracks[0].sequence.indexOf(nodeName) === -1) { // do not change orientation for nodes which are part of the pivot track
-        if (j > 0) {
-          if (tracks[i].sequence[j - 1].charAt(0) !== '-') prevNode = nodes[nodeMap.get(tracks[i].sequence[j - 1])];
-          else prevNode = nodes[nodeMap.get(tracks[i].sequence[j - 1].substr(1))];
-        }
-        if (j < tracks[i].sequence.length - 1) {
-          if (tracks[i].sequence[j + 1].charAt(0) !== '-') nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1])];
-          else nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1].substr(1))];
-        }
-        if (((j === 0) || (prevNode.order < currentNode.order)) && ((j === tracks[i].sequence.length - 1) || (currentNode.order < nextNode.order))) {
-          if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
-          if (tracks[i].sequence[j].charAt(0) === '-') toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
-          else toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
-        }
-        if (((j === 0) || (prevNode.order > currentNode.order)) && ((j === tracks[i].sequence.length - 1) || (currentNode.order > nextNode.order))) {
-          if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
-          if (tracks[i].sequence[j].charAt(0) === '-') toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
-          else toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
-        }
-      }
-    }
-  }
-
-  tracks.forEach((track, trackIndex) => {
-    track.sequence.forEach((node, nodeIndex) => {
-      nodeName = node;
-      if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
-      if ((toSwitch.has(nodeName)) && (toSwitch.get(nodeName) > 0)) {
-        if (node.charAt(0) === '-') tracks[trackIndex].sequence[nodeIndex] = node.substr(1);
-        else tracks[trackIndex].sequence[nodeIndex] = `-${node}`;
-      }
-    });
-  });
-
-  // invert the sequence within the nodes
-  toSwitch.forEach((value, key) => {
-    if (value > 0) {
-      currentNode = nodeMap.get(key);
-      nodes[currentNode].seq = nodes[currentNode].seq.split('').reverse().join('');
-    }
   });
 }
 
@@ -1413,9 +1302,6 @@ function generateSingleLaneAssignment(assignment, order) {
   let prevNameIsNull = false;
   let prevTrack = -1;
 
-  // console.log('order : ' + order);
-  // console.log(assignment);
-
   getIdealLanesAndCoords(assignment, order);
   assignment.sort(compareByIdealLane);
 
@@ -1571,34 +1457,27 @@ function compareNodesByOrder(a, b) {
 }
 
 function addTrackFeatures() {
-  // console.log('adding track features');
   let nodeStart;
   let nodeEnd;
   let feature = {};
 
-  // console.log('processing BED-info');
   bed.forEach((line) => {
     let i = 0;
     while ((i < numberOfTracks) && (tracks[i].name !== line.track)) i += 1;
     if (i < numberOfTracks) {
-      // console.log('Track ' + line.track + ' found');
       nodeStart = 0;
       tracks[i].path.forEach((node) => {
         if (node.node !== null) {
           feature = {};
-          // console.log(nodes[nodeMap.get(node.node)]);
           if (nodes[node.node].hasOwnProperty('sequenceLength')) {
             nodeEnd = nodeStart + nodes[node.node].sequenceLength - 1;
           } else {
             nodeEnd = nodeStart + nodes[node.node].width - 1;
           }
 
-          // console.log(nodeStart + ', ' + nodeEnd);
-          // console.log(line.start + ' ' + line.end);
           if ((nodeStart >= line.start) && (nodeStart <= line.end)) feature.start = 0;
           if ((nodeStart < line.start) && (nodeEnd >= line.start)) feature.start = line.start - nodeStart;
           if ((nodeEnd <= line.end) && (nodeEnd >= line.start)) {
-            // console.log('drin');
             feature.end = nodeEnd - nodeStart;
             if (nodeEnd < line.end) feature.continue = true;
           }
@@ -1607,15 +1486,11 @@ function addTrackFeatures() {
             feature.type = line.type;
             feature.name = line.name;
             if (!node.hasOwnProperty('features')) node.features = [];
-            // console.log(feature);
             node.features.push(feature);
-            // console.log('adding feature');
           }
           nodeStart = nodeEnd + 1;
         }
       });
-    } else {
-      // console.log('Track ' + line.track + ' not found');
     }
   });
 }
@@ -1656,72 +1531,29 @@ export function useColorScheme(x) {
 }
 
 function assignColorSets() {
-  haplotypeColors = getColorSet(config.haplotypeColors);
-  forwardReadColors = getColorSet(config.forwardReadColors);
-  reverseReadColors = getColorSet(config.reverseReadColors);
-  exonColors = getColorSet(config.exonColors);
-}
-
-function getColorSet(colorSetName) {
-  switch (colorSetName) {
-    case 'plainColors':
-      return plainColors;
-    case 'reds':
-      return reds;
-    case 'blues':
-      return blues;
-    case 'greys':
-      return greys;
-    case 'lightColors':
-      return lightColors;
-    default:
-      return greys;
-  }
+  haplotypeColors = svghelpers.getColorSet(config.haplotypeColors);
+  forwardReadColors = svghelpers.getColorSet(config.forwardReadColors);
+  reverseReadColors = svghelpers.getColorSet(config.reverseReadColors);
+  exonColors = svghelpers.getColorSet(config.exonColors);
 }
 
 function generateTrackColor(track, highlight) {
   if (typeof highlight === 'undefined') highlight = 'plain';
   let trackColor;
-  if (track.hasOwnProperty('type') && track.type === 'read') {
-    if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
-      trackColor = reverseReadColors[track.id % reverseReadColors.length];
-    } else {
-      trackColor = forwardReadColors[track.id % forwardReadColors.length];
-    }
+  if (track.hasOwnProperty('custom_color')) {
+    trackColor = track.custom_color;
   } else {
-    if ((config.showExonsFlag === false) || (highlight !== 'plain')) {
-      trackColor = haplotypeColors[track.id % haplotypeColors.length];
-    } else {
-      trackColor = exonColors[track.id % exonColors.length];
-    }
-  }
-  return trackColor;
-}
-
-function generateTrackColorOLD(track, highlight) {
-  if (typeof highlight === 'undefined') highlight = 'plain';
-  let trackColor;
-  // Color reads in red and reverse reads in blue
-  if (track.hasOwnProperty('type') && track.type === 'read') {
-    // if (track.sequence[0].charAt(0) === '-') trackColor = blues[track.id % blues.length];
-    if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
-      trackColor = blues[track.id % blues.length];
-    } else {
-      trackColor = reds[track.id % reds.length];
-    }
-  } else {
-    if (config.colorScheme === 0) { // colorful color scheme
-      if ((config.showExonsFlag === false) || (highlight !== 'plain')) {
-        trackColor = plainColors[track.id % plainColors.length];
+    if (track.hasOwnProperty('type') && track.type === 'read') {
+      if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
+        trackColor = reverseReadColors[track.id % reverseReadColors.length];
       } else {
-        trackColor = lightColors[track.id % lightColors.length];
+        trackColor = forwardReadColors[track.id % forwardReadColors.length];
       }
-    } else if (config.colorScheme === 1) { // blue-ish color scheme
-      if ((config.showExonsFlag === false) || (highlight === 'plain')) {
-        // trackColor = blues[track.id % blues.length];
-        trackColor = greys[track.id % greys.length];
+    } else {
+      if ((config.showExonsFlag === false) || (highlight !== 'plain')) {
+        trackColor = haplotypeColors[track.id % haplotypeColors.length];
       } else {
-        trackColor = reds[track.id % reds.length];
+        trackColor = exonColors[track.id % exonColors.length];
       }
     }
   }
@@ -1887,19 +1719,14 @@ function createFeatureRectangle(node, nodeXStart, nodeXEnd, highlight, track, re
 
   nodeXStart -= 8;
   nodeXEnd += 8;
-  // console.log('creating highlight');
   if (nodes[node.node].hasOwnProperty('sequenceLength')) {
     nodeWidth = nodes[node.node].sequenceLength;
   } else {
     nodeWidth = nodes[node.node].width;
   }
 
-  // console.log(nodeWidth);
-  // console.log(nodeXStart);
-  // console.log(nodeXEnd);
   node.features.sort((a, b) => a.start - b.start);
   node.features.forEach((feature) => {
-    // console.log(feature);
     if (currentHighlight !== feature.type) { // finish incoming rectangle
       c = generateTrackColor(track, currentHighlight);
       if (node.isForward === true) {
@@ -1913,11 +1740,9 @@ function createFeatureRectangle(node, nodeXStart, nodeXEnd, highlight, track, re
         }
 
         if (featureXStart > rectXStart + 1) {
-          // console.log('drawing rect 1: ' + rectXStart + ' bis '  + (featureXStart - 1));
           trackRectanglesStep3.push({ xStart: rectXStart, yStart, xEnd: featureXStart - 1, yEnd: yStart + track.width - 1, color: c, id: track.id, type: track.type });
         }
       } else {
-        // console.log('reversal 1 here:');
         featureXStart = nodeXEnd - Math.round(feature.start * (nodeXEnd - nodeXStart + 1) / nodeWidth);
 
         // overwrite narrow post-inversion rectangle if highlight starts near beginning of node
@@ -1928,7 +1753,6 @@ function createFeatureRectangle(node, nodeXStart, nodeXEnd, highlight, track, re
         }
 
         if (rectXStart > featureXStart + 1) {
-          // console.log('drawing rect 1 reverse: ' + rectXStart + ' bis '  + (featureXStart + 1));
           trackRectanglesStep3.push({ xStart: featureXStart + 1, yStart, xEnd: rectXStart, yEnd: yStart + track.width - 1, color: c, id: track.id, type: track.type });
         }
       }
@@ -1939,12 +1763,9 @@ function createFeatureRectangle(node, nodeXStart, nodeXEnd, highlight, track, re
       c = generateTrackColor(track, currentHighlight);
       if (node.isForward === true) {
         featureXEnd = nodeXStart + Math.round((feature.end + 1) * (nodeXEnd - nodeXStart + 1) / nodeWidth) - 1;
-        // console.log('drawing rect 2: ' + rectXStart + ' bis ' + (featureXEnd));
         trackRectanglesStep3.push({ xStart: rectXStart, yStart, xEnd: featureXEnd, yEnd: yStart + track.width - 1, color: c, id: track.id, type: track.type });
       } else {
-        // console.log('reversal 2 here:');
         featureXEnd = nodeXEnd - Math.round((feature.end + 1) * (nodeXEnd - nodeXStart + 1) / nodeWidth) - 1;
-        // console.log('drawing rect 2 reverse: ' + rectXStart + ' bis ' + featureXEnd);
         trackRectanglesStep3.push({ xStart: featureXEnd, yStart, xEnd: rectXStart, yEnd: yStart + track.width - 1, color: c, id: track.id, type: track.type });
       }
       rectXStart = featureXEnd + 1;
@@ -2063,11 +1884,8 @@ function drawReversalsByColor(corners, rectangles, type) {
 
   const co = new Set();
   rectangles.forEach((rect) => {
-    // console.log('rect: ' + rect[4]);
-    // co.add(rect[4]);
     co.add(rect.color);
   });
-  // console.log(co);
   co.forEach((c) => {
     drawTrackRectangles(rectangles.filter(filterObjectByAttribute('color', c)), type);
     drawTrackCorners(corners.filter(filterObjectByAttribute('color', c)), type);
@@ -2141,10 +1959,15 @@ function drawNodes(dNodes) {
     .style('fill', '#fff')
     // .style('fill-opacity', '0.4')
     .style('fill-opacity', config.showExonsFlag ? '0.4' : '0.6')
-    .style('stroke', 'black')
+    .style('stroke', (d) => {
+      if (d.hasOwnProperty('custom_stroke')) {
+        return d.custom_stroke;
+      }
+      return 'black';
+    })
     .style('stroke-width', '2px')
     .append('svg:title')
-        .text(d => d.name);
+        .text(d => `${d.name} [${d.fullname}]`);
 }
 
 // draw seqence labels for nodes
@@ -2197,6 +2020,7 @@ function drawRuler() {
 
   rulerTrack.indexSequence.forEach((nodeIndex) => {
     const currentNode = nodes[nodeIndex];
+
     let nextMarking = Math.ceil(indexOfFirstBaseInNode / markingInterval) * markingInterval;
     while (nextMarking < indexOfFirstBaseInNode + currentNode.sequenceLength) {
       const xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, nextMarking - indexOfFirstBaseInNode);
@@ -2248,9 +2072,12 @@ function drawTrackRectangles(rectangles, type) {
     .attr('trackID', d => d.id)
     .attr('class', d => `track${d.id}`)
     .attr('color', d => d.color)
+    .attr('opacity', d => trackIdToTrack[d.id].opacity || 1.0)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick);
+    .on('dblclick', trackDoubleClick)
+    .append('svg:title')
+      .text(d => d.name);
 
   // drawEmptyRects(trackRectangles);
 }
@@ -2259,120 +2086,6 @@ function compareCurvesByLineChanges(a, b) {
   if (a[6] < b[6]) return -1;
   else if (a[6] > b[6]) return 1;
   return 0;
-}
-
-function defineSVGPatterns() {
-  let pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'patternA', width: '7', height: '7', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '7', height: '7', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '3', height: '3', fill: '#505050' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '3', height: '3', fill: '#505050' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '3', height: '3', fill: '#505050' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '3', height: '3', fill: '#505050' });
-
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'patternB', width: '8', height: '8', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '8', height: '8', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '3', height: '3', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '5', width: '3', height: '3', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '5', y: '0', width: '3', height: '3', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '5', y: '5', width: '3', height: '3', fill: '#1f77b4' });
-
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid0', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#1f77b4' });
-
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid1', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#ff7f0e' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#ff7f0e' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#ff7f0e' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#ff7f0e' });
-
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid2', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#2ca02c' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#2ca02c' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#2ca02c' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#2ca02c' });
-
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid3', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#d62728' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#d62728' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#d62728' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#d62728' });
-
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid4', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#9467bd' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#9467bd' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#9467bd' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#9467bd' });
-
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid5', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#8c564b' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#8c564b' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#8c564b' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#8c564b' });
 }
 
 function drawTrackCurves(type) {
@@ -2393,7 +2106,7 @@ function drawTrackCurves(type) {
   });
 
   svg.selectAll('trackCurves')
-    .data(trackCurves)
+    .data(myTrackCurves)
     .enter().append('path')
     .attr('d', d => d.path)
     // .style('fill', d => color(d[5]); })
@@ -2401,9 +2114,12 @@ function drawTrackCurves(type) {
     .attr('trackID', d => d.id)
     .attr('class', d => `track${d.id}`)
     .attr('color', d => d.color)
+    .attr('opacity', d => trackIdToTrack[d.id].opacity || 1.0)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick);
+    .on('dblclick', trackDoubleClick)
+    .append('svg:title')
+        .text(d => d.name);
 }
 
 function drawTrackCorners(corners, type) {
@@ -2483,15 +2199,22 @@ function nodeMouseOut() {
 function trackDoubleClick() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr('trackID');
+  if (DEBUG) {
+    console.log(trackIdToTrack[trackID]);
+  }
+  if (trackIdToTrack[trackID].clickTarget) {
+    $(trackIdToTrack[trackID].clickTarget).text(JSON.stringify(trackIdToTrack[trackID].fullRecord, null, 2));
+  }
   let index = 0;
   // while (inputTracks[index].id !== trackID) index += 1;
   while ((index < inputTracks.length) && (inputTracks[index].id !== Number(trackID))) {
     index += 1;
   }
-  if (index >= inputTracks.length) return;
-  console.log(`moving index: ${index}`);
-  moveTrackToFirstPosition(index);
-  createTubeMap();
+  if (index < inputTracks.length) {
+    if (DEBUG) console.log(`moving index: ${index}`);
+    moveTrackToFirstPosition(index);
+    createTubeMap();
+  }
 }
 
 // Redraw with current node moved to beginning
@@ -2507,16 +2230,6 @@ function nodeDoubleClick() {
       document.getElementById('postButton').click();
     }
   }
-}
-
-// extract info about nodes from vg-json
-export function vgExtractNodes(vg) {
-  const result = [];
-  vg.node.forEach((node) => {
-    result.push({ name: `${node.id}`, sequenceLength: node.sequence.length, seq: node.sequence });
-    // console.log('name: ' + node.id + ', length: ' + node.sequence.length);
-  });
-  return result;
 }
 
 // calculate node widths depending on sequence lengths and chosen calculation method
@@ -2560,204 +2273,6 @@ function generateNodeWidth() {
         $('#dummytext').remove();
       });
   }
-}
-
-// extract track info from vg-json
-export function vgExtractTracks(vg) {
-  const result = [];
-  vg.path.forEach((path, index) => {
-    const sequence = [];
-    let isCompletelyReverse = true;
-    path.mapping.forEach((pos) => {
-      if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
-        sequence.push(`-${pos.position.node_id}`);
-      } else {
-        sequence.push(`${pos.position.node_id}`);
-        isCompletelyReverse = false;
-      }
-    });
-    if (isCompletelyReverse) {
-      sequence.reverse();
-      sequence.forEach((node, index2) => {
-        sequence[index2] = node.substr(1);
-      });
-    }
-    const track = {};
-    track.id = index;
-    track.sequence = sequence;
-    if (path.hasOwnProperty('freq')) track.freq = path.freq;
-    if (path.hasOwnProperty('name')) track.name = path.name;
-    if (path.hasOwnProperty('indexOfFirstBase')) track.indexOfFirstBase = Number(path.indexOfFirstBase);
-    result.push(track);
-  });
-  return result;
-}
-
-function compareReadsByLeftEnd(a, b) {
-  /* if (a.hasOwnProperty('order')) {
-    if (b.hasOwnProperty('order')) {
-      if (a.order < b.order) return -1;
-      else if (a.order > b.order) return 1;
-      else return 0;
-    } else return -1;
-  } else {
-    if (b.hasOwnProperty('order')) return 1;
-    else return 0;
-  } */
-  let leftNodeA;
-  let leftNodeB;
-  // let leftNodeAForward = true;
-  // let leftNodeBForward = true;
-  let leftIndexA;
-  let leftIndexB;
-
-  if (a.sequence[0].charAt(0) === '-') {
-    if (a.sequence[a.sequence.length - 1].charAt(0) === '-') {
-      leftNodeA = a.sequence[a.sequence.length - 1].substr(1);
-      // leftNodeAForward = false;
-      leftIndexA = nodes[nodeMap.get(leftNodeA)].sequenceLength - a.finalNodeCoverLength;
-    } else {
-      leftNodeA = a.sequence[a.sequence.length - 1];
-      leftIndexA = 0;
-    }
-  } else {
-    leftNodeA = a.sequence[0];
-    leftIndexA = a.firstNodeOffset;
-  }
-
-  if (b.sequence[0].charAt(0) === '-') {
-    if (b.sequence[b.sequence.length - 1].charAt(0) === '-') {
-      leftNodeB = b.sequence[b.sequence.length - 1].substr(1);
-      // leftNodeBForward = false;
-      leftIndexB = nodes[nodeMap.get(leftNodeB)].sequenceLength - b.finalNodeCoverLength;
-    } else {
-      leftNodeB = b.sequence[b.sequence.length - 1];
-      leftIndexB = 0;
-    }
-  } else {
-    leftNodeB = b.sequence[0];
-    leftIndexB = b.firstNodeOffset;
-  }
-
-  if (leftNodeA < leftNodeB) return -1;
-  else if (leftNodeA > leftNodeB) return 1;
-  if (leftIndexA < leftIndexB) return -1;
-  else if (leftIndexA > leftIndexB) return 1;
-  return 0;
-}
-
-function compareReadsByLeftEnd2(a, b) {
-  // compare by order of first node
-  if (nodes[a.indexSequence[0]].order < nodes[b.indexSequence[0]].order) return -1;
-  else if (nodes[a.indexSequence[0]].order > nodes[b.indexSequence[0]].order) return 1;
-
-  // compare by first base within first node
-  if (a.firstNodeOffset < b.firstNodeOffset) return -1;
-  else if (a.firstNodeOffset > b.firstNodeOffset) return 1;
-
-  // compare by order of last node
-  if (nodes[a.indexSequence[a.indexSequence.length - 1]].order < nodes[b.indexSequence[b.indexSequence.length - 1]].order) return -1;
-  else if (nodes[a.indexSequence[a.indexSequence.length - 1]].order > nodes[b.indexSequence[b.indexSequence.length - 1]].order) return 1;
-
-  // compare by last base withing last node
-  if (a.finalNodeCoverLength < b.finalNodeCoverLength) return -1;
-  else if (a.finalNodeCoverLength > b.finalNodeCoverLength) return 1;
-
-  return 0;
-}
-
-export function vgExtractReads(myNodes, myTracks, myReads) {
-  console.log(myReads);
-  const extracted = [];
-
-  const nodeNames = [];
-  myNodes.forEach((node) => {
-    nodeNames.push(parseInt(node.name, 10));
-  });
-
-  for (let i = 0; i < myReads.length; i += 1) {
-    const read = myReads[i];
-    const sequence = [];
-    const sequenceNew = [];
-    let firstIndex = -1; // index within mapping of the first node id contained in nodeNames
-    let lastIndex = -1; // index within mapping of the last node id contained in nodeNames
-    read.path.mapping.forEach((pos, j) => {
-      if (nodeNames.indexOf(pos.position.node_id) > -1) {
-        const edit = {};
-        let offset = 0;
-        if ((pos.position.hasOwnProperty('is_reverse')) && (pos.position.is_reverse === true)) {
-          sequence.push(`-${pos.position.node_id}`);
-          // console.log(`read ${i} is reverse`);
-          edit.nodeName = `-${pos.position.node_id}`;
-        } else {
-          sequence.push(`${pos.position.node_id}`);
-          edit.nodeName = pos.position.node_id.toString();
-        }
-        if (firstIndex < 0) {
-          firstIndex = j;
-          if (pos.position.hasOwnProperty('offset')) {
-            offset = pos.position.offset;
-          }
-        }
-        lastIndex = j;
-
-        const mismatches = [];
-        let posWithinNode = offset;
-        pos.edit.forEach((element) => {
-          if (element.hasOwnProperty('to_length') && !element.hasOwnProperty('from_length')) { // insertion
-            // console.log(`found insertion at read ${i}, node ${j} = ${pos.position.node_id}`);
-            mismatches.push({ type: 'insertion', pos: posWithinNode, seq: element.sequence });
-          } else if (!element.hasOwnProperty('to_length') && element.hasOwnProperty('from_length')) { // deletion
-            // console.log(`found deletion at read ${i}, node ${j} = ${pos.position.node_id}`);
-            mismatches.push({ type: 'deletion', pos: posWithinNode, length: element.from_length });
-          } else if (element.hasOwnProperty('sequence')) { // substitution
-            // console.log(`found substitution at read ${i}, node ${j} = ${pos.position.node_id}`);
-            if (element.sequence.length > 1) {
-              console.log(`found substitution at read ${i}, node ${j} = ${pos.position.node_id}, seq = ${element.sequence}`);
-            }
-            mismatches.push({ type: 'substitution', pos: posWithinNode, seq: element.sequence });
-          }
-          if (element.hasOwnProperty('from_length')) {
-            posWithinNode += element.from_length;
-          }
-        });
-        edit.mismatches = mismatches;
-        sequenceNew.push(edit);
-      }
-    });
-    if (sequence.length === 0) {
-      console.log(`read ${i} is empty`);
-    } else {
-      const track = {};
-      track.id = myTracks.length + extracted.length;
-      track.sequence = sequence;
-      track.sequenceNew = sequenceNew;
-      track.type = 'read';
-      if (read.path.hasOwnProperty('freq')) track.freq = read.path.freq;
-      if (read.path.hasOwnProperty('name')) track.name = read.path.name;
-
-      // where within node does read start
-      track.firstNodeOffset = 0;
-      if (read.path.mapping[firstIndex].position.hasOwnProperty('offset')) {
-        track.firstNodeOffset = read.path.mapping[firstIndex].position.offset;
-      }
-
-      // where within node does read end
-      const finalNodeEdit = read.path.mapping[lastIndex].edit;
-      track.finalNodeCoverLength = 0;
-      if (read.path.mapping[lastIndex].position.hasOwnProperty('offset')) {
-        track.finalNodeCoverLength += read.path.mapping[lastIndex].position.offset;
-      }
-      finalNodeEdit.forEach((edit) => {
-        if (edit.hasOwnProperty('from_length')) {
-          track.finalNodeCoverLength += edit.from_length;
-        }
-      });
-
-      extracted.push(track);
-    }
-  }
-  return extracted;
 }
 
 // remove redundant nodes
@@ -2917,7 +2432,6 @@ function mergeNodes() {
   // remove the nodes from node-array
   for (let i = nodes.length - 1; i >= 0; i -= 1) {
     if (mergeableWithPred(i, pred, succ)) {
-      // console.log('removing node ' + i);
       nodes.splice(i, 1);
     }
   }
@@ -2941,8 +2455,7 @@ function mergeableWithSucc(index, pred, succ) {
   if (successor.charAt(0) === '-') successor = successor.substr(1);
   const successorIndex = nodeMap.get(successor);
   if (pred[successorIndex].length !== 1) return false;
-  if (pred[successorIndex][0] === 'None') return false;
-  return true;
+  return pred[successorIndex][0] !== 'None';
 }
 
 function drawMismatches() {
