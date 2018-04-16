@@ -27,12 +27,14 @@ $('#dataSourceSelect').change(() => {
   $('#distance').prop('value', '100');
   $('#unitSelect').prop('value', '1');
   if ($('#dataSourceSelect').val() === 'custom') {
+    $('#reloadButton').prop('disabled', false);
     $('#xgFileSelect').prop('disabled', false);
     $('#gbwtFileSelect').prop('disabled', false);
     $('#gamIndexSelect').prop('disabled', false);
     $('#pathNameSelect').prop('disabled', false);
     $('#position').prop('value', '1');
   } else {
+    $('#reloadButton').prop('disabled', true);
     $('#xgFileSelect').prop('disabled', true);
     $('#gbwtFileSelect').prop('disabled', true);
     $('#gamIndexSelect').prop('disabled', true);
@@ -50,6 +52,10 @@ $('#xgFileSelect').change(() => {
   $('#pathNameSelect').empty();
   if ($('#xgFileSelect').val() === 'none') {
     // $('#pathNameSelect').empty();
+    const opt = document.createElement('option');
+    opt.value = 'none';
+    opt.innerHTML ='None';
+    $('#pathNameSelect').append(opt);
   } else {
     getPathNames();
     // $('#pathNameSelect').append('<option value="foo" selected>foo</option>');
@@ -66,6 +72,10 @@ function getPathNames() {
     dataType: 'json',
     success(response) {
       const pathNameSelect = document.getElementById('pathNameSelect');
+      const optNone = document.createElement('option');
+      optNone.value = 'none';
+      optNone.innerHTML ='None';
+      $('#pathNameSelect').append(optNone);
       response.pathNames.forEach((fn) => {
         const opt = document.createElement('option');
         $('#pathNameSelect').append(`<option value="${fn}" selected>${fn}</option>`);
@@ -91,6 +101,11 @@ function getPathNames() {
     .attr('data-content', fieldVal);
   }
 }); */
+
+document.getElementById('reloadButton').onclick = function () {
+  clearDropdownsWithFilenames();
+  populateDropdownsWithFilenames();
+}
 
 document.getElementById('goButton').onclick = function () {
   prepareForTubeMap();
@@ -285,6 +300,46 @@ document.getElementById('downloadButton').onclick = function () {
   downloadLink.click();
   document.body.removeChild(downloadLink);
 };
+
+function clearDropdownsWithFilenames() {
+  const xgSelect = document.getElementById('xgFileSelect');
+  // remove old files
+  while (xgSelect.hasChildNodes()) {
+    xgSelect.removeChild(xgSelect.lastChild);
+  }
+  // create none option
+  const opt1 = document.createElement('option');
+  opt1.value = 'none';
+  opt1.innerHTML ='None';
+  xgSelect.appendChild(opt1);
+
+  const gbwtSelect = document.getElementById('gbwtFileSelect'); 
+  while (gbwtSelect.hasChildNodes()) {
+    gbwtSelect.removeChild(gbwtSelect.lastChild);
+  }
+  const opt2 = document.createElement('option');
+  opt2.value = 'none';
+  opt2.innerHTML ='None';
+  gbwtSelect.appendChild(opt2);
+
+  const gamIndexSelect = document.getElementById('gamIndexSelect');
+  while (gamIndexSelect.hasChildNodes()) {
+    gamIndexSelect.removeChild(gamIndexSelect.lastChild);
+  }
+  const opt3 = document.createElement('option');
+  opt3.value = 'none';
+  opt3.innerHTML ='None';
+  gamIndexSelect.appendChild(opt3);
+
+  const pathNameSelect = document.getElementById('pathNameSelect');
+  while (pathNameSelect.hasChildNodes()) {
+    pathNameSelect.removeChild(pathNameSelect.lastChild);
+  }
+  const opt4 = document.createElement('option');
+  opt4.value = 'none';
+  opt4.innerHTML ='None';
+  pathNameSelect.appendChild(opt4);
+}
 
 function populateDropdownsWithFilenames() {
   $.ajax({
