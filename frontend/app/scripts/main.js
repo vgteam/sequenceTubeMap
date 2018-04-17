@@ -103,7 +103,7 @@ function getPathNames() {
 }); */
 
 document.getElementById('reloadButton').onclick = function () {
-  clearDropdownsWithFilenames();
+  //clearDropdownsWithFilenames();
   populateDropdownsWithFilenames();
 }
 
@@ -330,16 +330,8 @@ function clearDropdownsWithFilenames() {
   opt3.value = 'none';
   opt3.innerHTML ='None';
   gamIndexSelect.appendChild(opt3);
-
-  const pathNameSelect = document.getElementById('pathNameSelect');
-  while (pathNameSelect.hasChildNodes()) {
-    pathNameSelect.removeChild(pathNameSelect.lastChild);
-  }
-  const opt4 = document.createElement('option');
-  opt4.value = 'none';
-  opt4.innerHTML ='None';
-  pathNameSelect.appendChild(opt4);
 }
+
 
 function populateDropdownsWithFilenames() {
   $.ajax({
@@ -349,24 +341,38 @@ function populateDropdownsWithFilenames() {
     // dataType: 'json',
     success(response) {
       const xgSelect = document.getElementById('xgFileSelect');
+      var xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
+      const gbwtSelect = document.getElementById('gbwtFileSelect');
+      var gbwtSelectValue = gbwtSelect.options[gbwtSelect.selectedIndex].value;
+      const gamIndexSelect = document.getElementById('gamIndexSelect');
+      var gamSelectValue = gamIndexSelect.options[gamIndexSelect.selectedIndex].value;
+      clearDropdownsWithFilenames();
+
       response.xgFiles.forEach((filename) => {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
+        if (opt.value == xgSelectValue) {
+          opt.selected = "true";
+        }
         xgSelect.appendChild(opt);
       });
-      const gbwtSelect = document.getElementById('gbwtFileSelect');
       response.gbwtFiles.forEach((filename) => {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
+        if (opt.value == gbwtSelectValue) {
+          opt.selected = "true";
+        }
         gbwtSelect.appendChild(opt);
       });
-      const gamIndexSelect = document.getElementById('gamIndexSelect');
       response.gamIndices.forEach((filename) => {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
+        if (opt.value == gamSelectValue) {
+          opt.selected = "true";
+        }
         gamIndexSelect.appendChild(opt);
       });
     },
