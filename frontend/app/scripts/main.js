@@ -103,7 +103,6 @@ function getPathNames() {
 }); */
 
 document.getElementById('reloadButton').onclick = function () {
-  //clearDropdownsWithFilenames();
   populateDropdownsWithFilenames();
 }
 
