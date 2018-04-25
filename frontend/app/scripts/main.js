@@ -27,12 +27,14 @@ $('#dataSourceSelect').change(() => {
   $('#distance').prop('value', '100');
   $('#unitSelect').prop('value', '1');
   if ($('#dataSourceSelect').val() === 'custom') {
+    $('#reloadButton').prop('disabled', false);
     $('#xgFileSelect').prop('disabled', false);
     $('#gbwtFileSelect').prop('disabled', false);
     $('#gamIndexSelect').prop('disabled', false);
     $('#pathNameSelect').prop('disabled', false);
     $('#position').prop('value', '1');
   } else {
+    $('#reloadButton').prop('disabled', true);
     $('#xgFileSelect').prop('disabled', true);
     $('#gbwtFileSelect').prop('disabled', true);
     $('#gamIndexSelect').prop('disabled', true);
@@ -50,6 +52,10 @@ $('#xgFileSelect').change(() => {
   $('#pathNameSelect').empty();
   if ($('#xgFileSelect').val() === 'none') {
     // $('#pathNameSelect').empty();
+    const opt = document.createElement('option');
+    opt.value = 'none';
+    opt.innerHTML ='None';
+    $('#pathNameSelect').append(opt);
   } else {
     getPathNames();
     // $('#pathNameSelect').append('<option value="foo" selected>foo</option>');
@@ -66,6 +72,10 @@ function getPathNames() {
     dataType: 'json',
     success(response) {
       const pathNameSelect = document.getElementById('pathNameSelect');
+      const optNone = document.createElement('option');
+      optNone.value = 'none';
+      optNone.innerHTML ='None';
+      $('#pathNameSelect').append(optNone);
       response.pathNames.forEach((fn) => {
         const opt = document.createElement('option');
         $('#pathNameSelect').append(`<option value="${fn}" selected>${fn}</option>`);
@@ -91,6 +101,10 @@ function getPathNames() {
     .attr('data-content', fieldVal);
   }
 }); */
+
+document.getElementById('reloadButton').onclick = function () {
+  populateDropdownsWithFilenames();
+}
 
 document.getElementById('goButton').onclick = function () {
   prepareForTubeMap();
@@ -286,6 +300,38 @@ document.getElementById('downloadButton').onclick = function () {
   document.body.removeChild(downloadLink);
 };
 
+function clearDropdownsWithFilenames() {
+  const xgSelect = document.getElementById('xgFileSelect');
+  // remove old files
+  while (xgSelect.hasChildNodes()) {
+    xgSelect.removeChild(xgSelect.lastChild);
+  }
+  // create none option
+  const opt1 = document.createElement('option');
+  opt1.value = 'none';
+  opt1.innerHTML ='None';
+  xgSelect.appendChild(opt1);
+
+  const gbwtSelect = document.getElementById('gbwtFileSelect'); 
+  while (gbwtSelect.hasChildNodes()) {
+    gbwtSelect.removeChild(gbwtSelect.lastChild);
+  }
+  const opt2 = document.createElement('option');
+  opt2.value = 'none';
+  opt2.innerHTML ='None';
+  gbwtSelect.appendChild(opt2);
+
+  const gamIndexSelect = document.getElementById('gamIndexSelect');
+  while (gamIndexSelect.hasChildNodes()) {
+    gamIndexSelect.removeChild(gamIndexSelect.lastChild);
+  }
+  const opt3 = document.createElement('option');
+  opt3.value = 'none';
+  opt3.innerHTML ='None';
+  gamIndexSelect.appendChild(opt3);
+}
+
+
 function populateDropdownsWithFilenames() {
   $.ajax({
     type: 'POST',
@@ -294,24 +340,38 @@ function populateDropdownsWithFilenames() {
     // dataType: 'json',
     success(response) {
       const xgSelect = document.getElementById('xgFileSelect');
+      var xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
+      const gbwtSelect = document.getElementById('gbwtFileSelect');
+      var gbwtSelectValue = gbwtSelect.options[gbwtSelect.selectedIndex].value;
+      const gamIndexSelect = document.getElementById('gamIndexSelect');
+      var gamSelectValue = gamIndexSelect.options[gamIndexSelect.selectedIndex].value;
+      clearDropdownsWithFilenames();
+
       response.xgFiles.forEach((filename) => {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
+        if (opt.value == xgSelectValue) {
+          opt.selected = "true";
+        }
         xgSelect.appendChild(opt);
       });
-      const gbwtSelect = document.getElementById('gbwtFileSelect');
       response.gbwtFiles.forEach((filename) => {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
+        if (opt.value == gbwtSelectValue) {
+          opt.selected = "true";
+        }
         gbwtSelect.appendChild(opt);
       });
-      const gamIndexSelect = document.getElementById('gamIndexSelect');
       response.gamIndices.forEach((filename) => {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
+        if (opt.value == gamSelectValue) {
+          opt.selected = "true";
+        }
         gamIndexSelect.appendChild(opt);
       });
     },
@@ -319,6 +379,20 @@ function populateDropdownsWithFilenames() {
       console.log('POST failed.');
     },
   });
+}
+
+function setUpWebsocket() {
+  const ws = new WebSocket(BACKEND_URL.replace(/^http/, 'ws'));
+  ws.onmessage = function (message) {
+    console.log('Message received');
+    populateDropdownsWithFilenames();
+  }
+  ws.onclose = function(event) {
+    setTimeout(setUpWebsocket, 1000);
+  }
+  ws.onerror = function (event) {
+    ws.close();
+  }
 }
 
 window.onload = function () {
@@ -337,4 +411,5 @@ window.onload = function () {
 
   document.getElementById('goButton').click();
   populateDropdownsWithFilenames();
+  setUpWebsocket();
 };
