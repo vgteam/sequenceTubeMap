@@ -14,10 +14,12 @@ body {
 
 .tubeMapSVG {
   overflow: auto;
-  width: 100%;
+  width: calc(100% - 80px);
   position: relative;
-  margin-top: 20px;
-  margin-bottom: 0px;
+/*  margin-top: 20px;
+  margin-bottom: 0px;*/
+  margin: 40px;
+  border: 3px solid black;
 }
 
 .custom-file-control:after {
