@@ -382,6 +382,20 @@ function populateDropdownsWithFilenames() {
   });
 }
 
+function setUpWebsocket() {
+  const ws = new WebSocket(BACKEND_URL.replace(/^http/, 'ws'));
+  ws.onmessage = function (message) {
+    console.log('Message received');
+    populateDropdownsWithFilenames();
+  }
+  ws.onclose = function(event) {
+    setTimeout(setUpWebsocket, 1000);
+  }
+  ws.onerror = function (event) {
+    ws.close();
+  }
+}
+
 window.onload = function () {
   // populate UI 'data' dropdown with data from DATA_SOURCES
   const dsSelect = document.getElementById('dataSourceSelect');
@@ -398,4 +412,5 @@ window.onload = function () {
 
   document.getElementById('goButton').click();
   populateDropdownsWithFilenames();
+  setUpWebsocket();
 };

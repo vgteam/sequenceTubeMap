@@ -21,6 +21,7 @@ app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
   extended: true,
 }));
 
+
 // required for local usage (access docker container from outside)
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -290,4 +291,37 @@ app.post('/getPathNames', (req, res) => {
   });
 });
 
-app.listen(3000, () => console.log('TubeMapServer listening on port 3000!'));
+// Set-up for Web Sockets to notify client when files change in MOUNTED_DATA_PATH  
+// Get the server class of the node websocket module
+const WebSocketServer = require('websocket').server;
+// Start the server on port 3000 and save the HTTP server instance 
+// created by app.listen for the WebScoketServer
+const server = app.listen(3000, () => console.log('TubeMapServer listening on port 3000!'));
+// Create the WebSocketServer using the HTTP server instance
+const wss = new WebSocketServer ({ httpServer: server});
+// Set that holds all the WebSocketConnection instances that 
+// notify the client of file directory changes
+const connections = new Set();
+
+wss.on('request', function(request) {
+  // We recieved a websocket connection request and we need to accept it.
+  console.log((new Date()) + ' Connection from origin ' + request.origin + '.');
+  const connection = request.accept(null, request.origin)
+  // We save the connection so that we can notify them when there is a change in the file system
+  connections.add(connection);
+  connection.on('close', function(reasonCode, description) {
+    // When the websocket connection closes, we delete it from our set of open connections
+    connections.delete(connection);
+    console.log('A connection has been closed');
+  });
+});
+
+fs.watch(MOUNTED_DATA_PATH, function(event, filename) {
+  // There was a change in the file directory
+  console.log('Directory has been changed');
+  for (let conn of connections) {
+    // Notify all open connections about the change
+    conn.send('change');
+  };
+});
+
