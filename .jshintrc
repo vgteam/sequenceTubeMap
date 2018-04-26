@@ -2,5 +2,6 @@
     "globals": {
         "d3": false,
 		"console": false
-    }
+    },
+  "esversion": 6
 }
