@@ -94,9 +94,11 @@ app.post('/chr22_v4', (req, res) => {
   const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
   const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', '-']);
   let graphAsString = '';
+  req.error = new Buffer(0);
 
   vgChunkCall.stderr.on('data', (data) => {
     console.log(`vg chunk err data: ${data}`);
+    req.error += data;
   });
 
   vgChunkCall.stdout.on('data', function (data) {
@@ -129,7 +131,9 @@ app.post('/chr22_v4', (req, res) => {
 
 function returnError(req, res) {
   console.log('returning error');
-  res.json({});
+  const result = {};
+  result.error = req.error.toString("utf-8");
+  res.json(result);
   // Clean up the temp directory for the request recursively
   fs.remove(req.tempDir);
 }
@@ -235,6 +239,7 @@ function cleanUpAndSendResult(req, res) {
   fs.remove(req.tempDir);
 
   const result = {};
+  result.error = req.error.toString("utf-8");
   result.graph = req.graph;
   result.gam = req.withGam === true ? req.gamArr : [];
   res.json(result);
