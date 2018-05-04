@@ -12,6 +12,7 @@
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
     "fs-extra": "^5.0.0",
-    "uuid": "^3.0.1"
+    "uuid": "^3.0.1",
+    "websocket": "^1.0.26"
   }
 }

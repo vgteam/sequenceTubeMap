@@ -176,15 +176,24 @@ function getRemoteTubeMapData() {
     data: { nodeID, distance, byNode, xgFile, gbwtFile, gamIndex, anchorTrackName, useMountedPath },
     dataType: 'json',
     success(response) {
-      if ($.isEmptyObject(response)) {
-        console.log('empty');
+      // execute when the client recieves a response
+      if (response.graph === undefined) {
+        // We did not get back a graph, only (possibly) an error.
+        
+        // display error message if any
+        document.getElementById('inputError').innerText = response.error;
+        // when there is an error hide the loader
         document.getElementById('loader').style.display = 'none';
-        return;
+      } else {
+        // We did get back a graph. We may also have stderr text from vg, but we ignore it.
+        document.getElementById('inputError').innerText = '';
+        // otherwise extract the nodes, tracks, and reads from the response
+        const nodes = tubeMap.vgExtractNodes(response.graph);
+        const tracks = tubeMap.vgExtractTracks(response.graph);
+        const reads = tubeMap.vgExtractReads(nodes, tracks, response.gam);
+        // create the tube map from extracted data
+        createTubeMap(nodes, tracks, reads);
       }
-      const nodes = tubeMap.vgExtractNodes(response.graph);
-      const tracks = tubeMap.vgExtractTracks(response.graph);
-      const reads = tubeMap.vgExtractReads(nodes, tracks, response.gam);
-      createTubeMap(nodes, tracks, reads);
     },
     error(responseData, textStatus, errorThrown) {
       console.log('POST failed.');
