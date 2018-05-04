@@ -177,12 +177,15 @@ function getRemoteTubeMapData() {
     dataType: 'json',
     success(response) {
       // execute when the client recieves a response
-      if (response.error != '') {
+      if (response.graph === undefined) {
+        // We did not get back a graph, only (possibly) an error.
+        
         // display error message if any
         document.getElementById('inputError').innerHTML = response.error;
         // when there is an error hide the loader
         document.getElementById('loader').style.display = 'none';
       } else {
+        // We did get back a graph. We may also have stderr text from vg, but we ignore it.
         document.getElementById('inputError').innerHTML = '';
         // otherwise extract the nodes, tracks, and reads from the response
         const nodes = tubeMap.vgExtractNodes(response.graph);
