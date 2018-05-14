@@ -360,7 +360,7 @@ function populateDropdownsWithFilenames() {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
-        if (opt.value == xgSelectValue) {
+        if (opt.value === xgSelectValue) {
           opt.selected = "true";
         }
         xgSelect.appendChild(opt);
@@ -369,7 +369,7 @@ function populateDropdownsWithFilenames() {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
-        if (opt.value == gbwtSelectValue) {
+        if (opt.value === gbwtSelectValue) {
           opt.selected = "true";
         }
         gbwtSelect.appendChild(opt);
@@ -378,7 +378,7 @@ function populateDropdownsWithFilenames() {
         const opt = document.createElement('option');
         opt.value = filename;
         opt.innerHTML = filename;
-        if (opt.value == gamSelectValue) {
+        if (opt.value === gamSelectValue) {
           opt.selected = "true";
         }
         gamIndexSelect.appendChild(opt);
