@@ -3,7 +3,8 @@
   "private": true,
   "dependencies": {
     "bootstrap": "~3.3.5",
-    "d3": "v3.4.13"
+    "d3": "v3.4.13",
+    "ractive": "^0.10.3"
   },
   "overrides": {
     "bootstrap": {

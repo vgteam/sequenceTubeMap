@@ -404,6 +404,7 @@ function setUpWebsocket() {
   }
 }
 
+
 window.onload = function () {
   // populate UI 'data' dropdown with data from DATA_SOURCES
   const dsSelect = document.getElementById('dataSourceSelect');
@@ -420,5 +421,14 @@ window.onload = function () {
 
   document.getElementById('goButton').click();
   populateDropdownsWithFilenames();
+
+  document.getElementById('redundantNodesCheckbox').checked = true;
+  document.getElementById('compressedViewCheckbox').checked = false;
+  document.getElementById('showReadsCheckbox').checked = true;
+  document.getElementById('softClipsCheckbox').checked = true;
+  document.getElementById('colorsHaplo2').checked = true;
+  document.getElementById('colorsFwReads3').checked = true;
+  document.getElementById('colorsRevReads4').checked = true;
+
   setUpWebsocket();
 };
