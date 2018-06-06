@@ -276,7 +276,7 @@ app.post('/getPathNames', (req, res) => {
   };
 
   // call 'vg paths' to get path name information
-  const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-X', `${MOUNTED_DATA_PATH}${req.body.xgFile}`]);
+  const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-L', '-x', `${MOUNTED_DATA_PATH}${req.body.xgFile}`]);
 
   vgViewChild.stderr.on('data', (data) => {
     console.log(`err data: ${data}`);
