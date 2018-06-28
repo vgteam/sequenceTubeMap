@@ -129,21 +129,28 @@ document.getElementById('zoomInButton').onclick = function () {
   
   // get the selection object 
   var selection = d3.select('#svg')
-  
-  console.log(d3.select("#svg").attr("width"))
-  //console.log($('#svg').parent().width())
-  // Calculate the x-axis translation
 
   var currentX = -tubeMap.zoom.translate()[0]
+  
+  /* Calculate the x-axis translation
+  calculate the constant change in zoom in:
+           (zoomFactor * Width - Width )/2.0
 
+  Because the image is bigger in scale:
+
+    the new current location =  zoomFactor * currentX
+
+  Add putting all together
+        translate = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX
+  */ 
   var translateX = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX;
 
   tubeMap.zoom.translate([-translateX, 25]);
   // Apply the coords translation
   tubeMap.zoom.event(selection);
-
+  // Scale by zoom factor
   tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor)
-  // Apply the scale
+  // Apply the scale 
   tubeMap.zoom.event(selection);
 
 };
@@ -159,19 +166,26 @@ document.getElementById('zoomOutButton').onclick = function () {
   // Calculate the x-axis translation
   var currentX = -tubeMap.zoom.translate()[0]
 
+  /* Calculate the x-axis translation
+  calculate the constant change in zoom in:
+           (zoomFactor * Width - Width )/2.0
+
+  Because the image is bigger in scale:
+
+    the new current location =  zoomFactor * currentX
+
+  Add putting all together
+        translate = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX
+  */
   var translateX = (Width/zoomFactor - Width )/2.0 + currentX/zoomFactor;
 
-  // console.log("Current Width:", currentWidth)
-  // console.log("After Scale Width:", afterScaleWidth)
-  console.log("Translation:", translateX)
-  // console.log(tubeMap.zoom.translate())
   // Translate the selection
   tubeMap.zoom.translate([-translateX, 25]);
   // Apply the coords translation
   tubeMap.zoom.event(selection);
-
+  // Scale by zoom factor
   tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor)
-  // Apply the scale
+  // Apply the scale 
   tubeMap.zoom.event(selection);
 
 };
