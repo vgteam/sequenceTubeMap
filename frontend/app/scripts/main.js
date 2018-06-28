@@ -123,7 +123,7 @@ var zoomFactor = 2.0;
 
 
 
-document.getElementById('goUpButton').onclick = function () {
+document.getElementById('zoomInButton').onclick = function () {
   // Get Width of the x-axis 
   var Width = Math.max(99, $('#svg').parent().width())
   
@@ -149,7 +149,7 @@ document.getElementById('goUpButton').onclick = function () {
 };
 
 
-document.getElementById('goDownButton').onclick = function () {
+document.getElementById('zoomOutButton').onclick = function () {
 
   // Get Width of the x-axis 
   var Width = Math.max(99, $('#svg').parent().width())
