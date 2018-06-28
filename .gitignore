@@ -6,4 +6,6 @@ test/bower_components
 .publish
 dist
 frontend/config.json
+backend/internalData/
+backend/vg/
 *.swp
