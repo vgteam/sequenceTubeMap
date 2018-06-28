@@ -118,25 +118,32 @@ document.getElementById('goLeftButton').onclick = function () {
 };
 
 
-var zoomInFactor = 2.0;
-var zoomOutFactor = 0.5;
+var zoomFactor = 2.0;
+
+
 
 
 document.getElementById('goUpButton').onclick = function () {
-
-  var selection = d3.select('#svg')
-
-  var currentWidth = 1590 * tubeMap.zoom.scale()
-  var currentHeight = 760 * tubeMap.zoom.scale()
-
-  var currentX = tubeMap.zoom.translate()[0]
+  // Get Width of the x-axis 
+  var Width = Math.max(99, $('#svg').parent().width())
   
-  var translateX = currentX - currentWidth/zoomInFactor
+  // get the selection object 
+  var selection = d3.select('#svg')
+  
+  console.log(d3.select("#svg").attr("width"))
+  //console.log($('#svg').parent().width())
+  // Calculate the x-axis translation
 
-  tubeMap.zoom.translate([translateX, 25]);
+  var currentX = -tubeMap.zoom.translate()[0]
+
+  var translateX = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX;
+
+  tubeMap.zoom.translate([-translateX, 25]);
+  // Apply the coords translation
   tubeMap.zoom.event(selection);
 
-  tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomInFactor)
+  tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor)
+  // Apply the scale
   tubeMap.zoom.event(selection);
 
 };
@@ -144,24 +151,28 @@ document.getElementById('goUpButton').onclick = function () {
 
 document.getElementById('goDownButton').onclick = function () {
 
+  // Get Width of the x-axis 
+  var Width = Math.max(99, $('#svg').parent().width())
+  // get the selection object
   var selection = d3.select('#svg')
-
-
-  tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomOutFactor)
-  tubeMap.zoom.event(selection)
-
-  var currentX = tubeMap.zoom.translate()[0]
-  var currentY = tubeMap.zoom.translate()[1]
-
-  var currentWidth = 1590 * tubeMap.zoom.scale()
-  var currentHeight = 760 * tubeMap.zoom.scale()
-
-  var translateX = currentX + currentWidth/zoomInFactor
-
-  tubeMap.zoom.translate([translateX, 25]);
-  tubeMap.zoom.event(selection)
-
   
+  // Calculate the x-axis translation
+  var currentX = -tubeMap.zoom.translate()[0]
+
+  var translateX = (Width/zoomFactor - Width )/2.0 + currentX/zoomFactor;
+
+  // console.log("Current Width:", currentWidth)
+  // console.log("After Scale Width:", afterScaleWidth)
+  console.log("Translation:", translateX)
+  // console.log(tubeMap.zoom.translate())
+  // Translate the selection
+  tubeMap.zoom.translate([-translateX, 25]);
+  // Apply the coords translation
+  tubeMap.zoom.event(selection);
+
+  tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor)
+  // Apply the scale
+  tubeMap.zoom.event(selection);
 
 };
 
