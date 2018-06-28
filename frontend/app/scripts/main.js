@@ -117,6 +117,54 @@ document.getElementById('goLeftButton').onclick = function () {
   prepareForTubeMap();
 };
 
+
+var zoomInFactor = 2.0;
+var zoomOutFactor = 0.5;
+
+
+document.getElementById('goUpButton').onclick = function () {
+
+  var selection = d3.select('#svg')
+
+  var currentWidth = 1590 * tubeMap.zoom.scale()
+  var currentHeight = 760 * tubeMap.zoom.scale()
+
+  var currentX = tubeMap.zoom.translate()[0]
+  
+  var translateX = currentX - currentWidth/zoomInFactor
+
+  tubeMap.zoom.translate([translateX, 25]);
+  tubeMap.zoom.event(selection);
+
+  tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomInFactor)
+  tubeMap.zoom.event(selection);
+
+};
+
+
+document.getElementById('goDownButton').onclick = function () {
+
+  var selection = d3.select('#svg')
+
+
+  tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomOutFactor)
+  tubeMap.zoom.event(selection)
+
+  var currentX = tubeMap.zoom.translate()[0]
+  var currentY = tubeMap.zoom.translate()[1]
+
+  var currentWidth = 1590 * tubeMap.zoom.scale()
+  var currentHeight = 760 * tubeMap.zoom.scale()
+
+  var translateX = currentX + currentWidth/zoomInFactor
+
+  tubeMap.zoom.translate([translateX, 25]);
+  tubeMap.zoom.event(selection)
+
+  
+
+};
+
 document.getElementById('goRightButton').onclick = function () {
   const position = Number(document.getElementById('position').value);
   const distance = Number(document.getElementById('distance').value);
