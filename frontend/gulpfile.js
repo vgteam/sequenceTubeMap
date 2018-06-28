@@ -43,13 +43,14 @@ gulp.task('scripts', () => {
     })
     .bundle()
     .pipe(source(entry.substr(entry.lastIndexOf('/') + 1)))
+    .pipe(buffer())
     .pipe(rename({
       extname: '.bundle.js',
     }))
     .pipe($.plumber())
     // .pipe($.sourcemaps.init())
     // .pipe($.babel())
-    .pipe(buffer())
+    // .pipe(buffer())
     .pipe($.sourcemaps.init({ loadMaps: true }))
     .pipe($.sourcemaps.write('.'))
     .pipe(gulp.dest('.tmp/scripts'))
