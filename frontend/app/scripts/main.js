@@ -207,6 +207,11 @@ document.getElementById('zoomOutButton').onclick = function () {
       prepareForTubeMap().then(function(){
         tubeMap.zoom.scale(tubeMap.zoom.scaleExtent()[0]);
         tubeMap.zoom.event(selection);
+        var center = Width / 2.0;
+        var translateX = center - selection.node().getBBox()['width']/2
+        var translateY = currentY / zoomFactor;
+        tubeMap.zoom.translate([translateX, translateY]);
+        tubeMap.zoom.event(selection);
       })
     }
   }
