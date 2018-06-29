@@ -136,18 +136,31 @@ document.getElementById('zoomInButton').onclick = function () {
 
   if(tubeMap.zoom.scale() * zoomFactor <= tubeMap.zoom.scaleExtent()[1]){
   
-    /* Calculate the x-axis translation
-    calculate the constant change in zoom in:
-             (zoomFactor * Width - Width )/2.0
+    /* 
+      This formula centralize the zoom In.
+     ______________________                             ______________
+    |-----------W----------|                           |-------W------|
+    |----W/2----|          |                     |----deltaZ---|      |
+    |    ______.___________|_____                 _____|______________|______
+    |-T-|                  |     |               |     |       .      |      |
+    |   |-delta-|          |     |               |     |--W/2--|      |      |
+    |___|__________________|     |               |     |              |      |
+        |                        |               |--T'-|______________|      |
+        |                        |               |                           | 
+        |                        |               |                           | 
+        |__Before ZooM___________|               |___After Zoom______________|
 
-    Because the image is bigger in scale:
-
-      the new current location =  zoomFactor * currentX
-
-    Add putting all together
-          translate = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX
-    */ 
+     deltaZ = W'/2 + T' ; delta= W/2 + T
+     Z(W/2 + T) = W'/2 + T'
+     T' = (ZW- W)/2 + Z*T
+    */
     var translateX = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX;
+    /*
+      Current y-axis coordinate location multiplies by zoom factor
+      this feels natural. Notice y-axis works differently than x-axis.
+      This behavior makes if you are on top of the screen the bar fix 
+      in the same y-axis region.
+    */
     var translateY = zoomFactor * currentY;
 
     tubeMap.zoom.translate([-translateX, translateY]);
@@ -177,18 +190,31 @@ document.getElementById('zoomOutButton').onclick = function () {
 
   if(tubeMap.zoom.scale()/zoomFactor > tubeMap.zoom.scaleExtent()[0]){
 
-    /* Calculate the x-axis translation
-    calculate the constant change in zoom in:
-             (zoomFactor * Width - Width )/2.0
+    /* 
+      This formula centralize the zoom In.
+     ______________________                             ______________
+    |-----------W----------|                           |-------W------|
+    |----W/2----|          |                     |----deltaZ---|      |
+    |    _______.__________|_____                 _____|______________|______
+    |-T-|                  |     |               |     |       .      |      |
+    |   |-delta-|          |     |               |     |--W/2--|      |      |
+    |___|__________________|     |               |     |              |      |
+        |                        |               |--T'-|______________|      |
+        |                        |               |                           | 
+        |                        |               |                           | 
+        |__Before ZooM___________|               |___After Zoom______________|
 
-    Because the image is bigger in scale:
-
-      the new current location =  zoomFactor * currentX
-
-    Add putting all together
-          translate = (zoomFactor / Width - Width )/2.0 + zoomFactor / currentX
+     deltaZ = W'/2 + T' ; delta= W/2 + T
+     Z(W/2 + T) = W'/2 + T'
+     T' = (ZW- W)/2 + Z*T
     */
     var translateX = (Width/zoomFactor - Width )/2.0 + currentX/zoomFactor;
+    /*
+      Current y-axis coordinate location multiplies by zoom factor
+      this feels natural. Notice y-axis works differently than x-axis.
+      This behavior makes if you are on top of the screen the bar fix 
+      in the same y-axis region.
+    */
     var translateY = currentY / zoomFactor;
 
     // Translate the selection
