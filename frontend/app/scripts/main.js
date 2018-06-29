@@ -150,8 +150,6 @@ document.getElementById('zoomInButton').onclick = function () {
     var translateX = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX;
     var translateY = zoomFactor * currentY;
 
-    console.log(translateY)
-
     tubeMap.zoom.translate([-translateX, translateY]);
     // Apply the coords translation
     tubeMap.zoom.event(selection);
@@ -159,6 +157,7 @@ document.getElementById('zoomInButton').onclick = function () {
     tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor)
     // Apply the scale 
     tubeMap.zoom.event(selection);
+
   }
 
 };
@@ -175,7 +174,6 @@ document.getElementById('zoomOutButton').onclick = function () {
   var currentX = -tubeMap.zoom.translate()[0]
   var currentY = tubeMap.zoom.translate()[1]
 
-  console.log(selection.style('width'))
 
   if(tubeMap.zoom.scale()/zoomFactor > tubeMap.zoom.scaleExtent()[0]){
 
@@ -201,6 +199,16 @@ document.getElementById('zoomOutButton').onclick = function () {
     tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor)
     // Apply the scale 
     tubeMap.zoom.event(selection);
+
+  }else{
+    if(selection.node().getBBox()['width'] < Width){
+      var currentDistance = Number(document.getElementById('distance').value)
+      document.getElementById('distance').value = currentDistance * 2 
+      prepareForTubeMap().then(function(){
+        tubeMap.zoom.scale(tubeMap.zoom.scaleExtent()[0]);
+        tubeMap.zoom.event(selection);
+      })
+    }
   }
 
 };
@@ -209,7 +217,7 @@ document.getElementById('goRightButton').onclick = function () {
   const position = Number(document.getElementById('position').value);
   const distance = Number(document.getElementById('distance').value);
   document.getElementById('position').value = position + distance;
-  prepareForTubeMap();
+  prepareForTubeMap()
 };
 
 function prepareForTubeMap() {
@@ -229,7 +237,7 @@ function prepareForTubeMap() {
   } else {
     getRemoteTubeMapData();
   } */
-  getRemoteTubeMapData();
+  return getRemoteTubeMapData();
 }
 
 function getRemoteTubeMapData() {
@@ -257,7 +265,7 @@ function getRemoteTubeMapData() {
   console.log(`useMountedPath = ${useMountedPath}`);
   console.log(`anchorTrackName = ${anchorTrackName}`);
 
-  $.ajax({
+  return $.ajax({
     type: 'POST',
     url: `${BACKEND_URL}/chr22_v4`,
     crossDomain: true,
@@ -286,7 +294,7 @@ function getRemoteTubeMapData() {
     error(responseData, textStatus, errorThrown) {
       console.log('POST failed.');
     },
-  });
+  })
   // return false; // prevents browser from reloading page (button within form tag)
 }
 
