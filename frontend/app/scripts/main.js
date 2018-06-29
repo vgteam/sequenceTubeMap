@@ -125,33 +125,41 @@ var zoomFactor = 2.0;
 
 document.getElementById('zoomInButton').onclick = function () {
   // Get Width of the x-axis 
-  var Width = Math.max(99, $('#svg').parent().width())
+  var Width = $('#svg').parent().width()
   
   // get the selection object 
   var selection = d3.select('#svg')
 
   var currentX = -tubeMap.zoom.translate()[0]
+  var currentY = tubeMap.zoom.translate()[1]
+
+
+  if(tubeMap.zoom.scale() * zoomFactor <= tubeMap.zoom.scaleExtent()[1]){
   
-  /* Calculate the x-axis translation
-  calculate the constant change in zoom in:
-           (zoomFactor * Width - Width )/2.0
+    /* Calculate the x-axis translation
+    calculate the constant change in zoom in:
+             (zoomFactor * Width - Width )/2.0
 
-  Because the image is bigger in scale:
+    Because the image is bigger in scale:
 
-    the new current location =  zoomFactor * currentX
+      the new current location =  zoomFactor * currentX
 
-  Add putting all together
-        translate = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX
-  */ 
-  var translateX = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX;
+    Add putting all together
+          translate = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX
+    */ 
+    var translateX = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX;
+    var translateY = zoomFactor * currentY;
 
-  tubeMap.zoom.translate([-translateX, 25]);
-  // Apply the coords translation
-  tubeMap.zoom.event(selection);
-  // Scale by zoom factor
-  tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor)
-  // Apply the scale 
-  tubeMap.zoom.event(selection);
+    console.log(translateY)
+
+    tubeMap.zoom.translate([-translateX, translateY]);
+    // Apply the coords translation
+    tubeMap.zoom.event(selection);
+    // Scale by zoom factor
+    tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor)
+    // Apply the scale 
+    tubeMap.zoom.event(selection);
+  }
 
 };
 
@@ -159,34 +167,41 @@ document.getElementById('zoomInButton').onclick = function () {
 document.getElementById('zoomOutButton').onclick = function () {
 
   // Get Width of the x-axis 
-  var Width = Math.max(99, $('#svg').parent().width())
+  var Width = $('#svg').parent().width()
   // get the selection object
   var selection = d3.select('#svg')
   
   // Calculate the x-axis translation
   var currentX = -tubeMap.zoom.translate()[0]
+  var currentY = tubeMap.zoom.translate()[1]
 
-  /* Calculate the x-axis translation
-  calculate the constant change in zoom in:
-           (zoomFactor * Width - Width )/2.0
+  console.log(selection.style('width'))
 
-  Because the image is bigger in scale:
+  if(tubeMap.zoom.scale()/zoomFactor > tubeMap.zoom.scaleExtent()[0]){
 
-    the new current location =  zoomFactor * currentX
+    /* Calculate the x-axis translation
+    calculate the constant change in zoom in:
+             (zoomFactor * Width - Width )/2.0
 
-  Add putting all together
-        translate = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX
-  */
-  var translateX = (Width/zoomFactor - Width )/2.0 + currentX/zoomFactor;
+    Because the image is bigger in scale:
 
-  // Translate the selection
-  tubeMap.zoom.translate([-translateX, 25]);
-  // Apply the coords translation
-  tubeMap.zoom.event(selection);
-  // Scale by zoom factor
-  tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor)
-  // Apply the scale 
-  tubeMap.zoom.event(selection);
+      the new current location =  zoomFactor * currentX
+
+    Add putting all together
+          translate = (zoomFactor / Width - Width )/2.0 + zoomFactor / currentX
+    */
+    var translateX = (Width/zoomFactor - Width )/2.0 + currentX/zoomFactor;
+    var translateY = currentY / zoomFactor;
+
+    // Translate the selection
+    tubeMap.zoom.translate([-translateX, translateY]);
+    // Apply the coords translation
+    tubeMap.zoom.event(selection);
+    // Scale by zoom factor
+    tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor)
+    // Apply the scale 
+    tubeMap.zoom.event(selection);
+  }
 
 };
 
