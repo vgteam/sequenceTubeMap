@@ -117,11 +117,138 @@ document.getElementById('goLeftButton').onclick = function () {
   prepareForTubeMap();
 };
 
+
+var zoomFactor = 2.0;
+
+
+
+
+document.getElementById('zoomInButton').onclick = function () {
+  // Get Width of the x-axis 
+  var Width = $('#svg').parent().width()
+  
+  // get the selection object 
+  var selection = d3.select('#svg')
+
+  var currentX = -tubeMap.zoom.translate()[0]
+  var currentY = tubeMap.zoom.translate()[1]
+
+
+  if(tubeMap.zoom.scale() * zoomFactor <= tubeMap.zoom.scaleExtent()[1]){
+  
+    /* 
+      This formula centralize the zoom In.
+     ______________________                             ______________
+    |-----------W----------|                           |-------W------|
+    |----W/2----|          |                     |----deltaZ---|      |
+    |    ______.___________|_____                 _____|______________|______
+    |-T-|                  |     |               |     |       .      |      |
+    |   |-delta-|          |     |               |     |--W/2--|      |      |
+    |___|__________________|     |               |     |              |      |
+        |                        |               |--T'-|______________|      |
+        |                        |               |                           | 
+        |                        |               |                           | 
+        |__Before ZooM___________|               |___After Zoom______________|
+
+     deltaZ = W'/2 + T' ; delta= W/2 + T
+     Z(W/2 + T) = W'/2 + T'
+     T' = (ZW- W)/2 + Z*T
+    */
+    var translateX = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX;
+    /*
+      Current y-axis coordinate location multiplies by zoom factor
+      this feels natural. Notice y-axis works differently than x-axis.
+      This behavior makes if you are on top of the screen the bar fix 
+      in the same y-axis region.
+    */
+    var translateY = zoomFactor * currentY;
+
+    tubeMap.zoom.translate([-translateX, translateY]);
+    // Apply the coords translation
+    tubeMap.zoom.event(selection);
+    // Scale by zoom factor
+    tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor)
+    // Apply the scale 
+    tubeMap.zoom.event(selection);
+
+  }
+
+};
+
+
+document.getElementById('zoomOutButton').onclick = function () {
+
+  // Get Width of the x-axis 
+  var Width = $('#svg').parent().width()
+  // get the selection object
+  var selection = d3.select('#svg')
+  
+  // Calculate the x-axis translation
+  var currentX = -tubeMap.zoom.translate()[0]
+  var currentY = tubeMap.zoom.translate()[1]
+
+
+  if(tubeMap.zoom.scale()/zoomFactor > tubeMap.zoom.scaleExtent()[0]){
+
+    /* 
+      This formula centralize the zoom In.
+     ______________________                             ______________
+    |-----------W----------|                           |-------W------|
+    |----W/2----|          |                     |----deltaZ---|      |
+    |    _______.__________|_____                 _____|______________|______
+    |-T-|                  |     |               |     |       .      |      |
+    |   |-delta-|          |     |               |     |--W/2--|      |      |
+    |___|__________________|     |               |     |              |      |
+        |                        |               |--T'-|______________|      |
+        |                        |               |                           | 
+        |                        |               |                           | 
+        |__Before ZooM___________|               |___After Zoom______________|
+
+     deltaZ = W'/2 + T' ; delta= W/2 + T
+     Z(W/2 + T) = W'/2 + T'
+     T' = (ZW- W)/2 + Z*T
+    */
+    var translateX = (Width/zoomFactor - Width )/2.0 + currentX/zoomFactor;
+    /*
+      Current y-axis coordinate location multiplies by zoom factor
+      this feels natural. Notice y-axis works differently than x-axis.
+      This behavior makes if you are on top of the screen the bar fix 
+      in the same y-axis region.
+    */
+    var translateY = currentY / zoomFactor;
+
+    // Translate the selection
+    tubeMap.zoom.translate([-translateX, translateY]);
+    // Apply the coords translation
+    tubeMap.zoom.event(selection);
+    // Scale by zoom factor
+    tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor)
+    // Apply the scale 
+    tubeMap.zoom.event(selection);
+
+  }else{
+    if(selection.node().getBBox()['width'] < Width){
+      var currentDistance = Number(document.getElementById('distance').value)
+      document.getElementById('distance').value = currentDistance * 2 
+      prepareForTubeMap().then(function(){
+        tubeMap.zoom.scale(tubeMap.zoom.scaleExtent()[0]);
+        tubeMap.zoom.event(selection);
+        var center = Width / 2.0;
+        var translateX = center - selection.node().getBBox()['width']/2
+        var translateY = currentY / zoomFactor;
+        tubeMap.zoom.translate([translateX, translateY]);
+        tubeMap.zoom.event(selection);
+      })
+    }
+  }
+
+};
+
 document.getElementById('goRightButton').onclick = function () {
   const position = Number(document.getElementById('position').value);
   const distance = Number(document.getElementById('distance').value);
   document.getElementById('position').value = position + distance;
-  prepareForTubeMap();
+  prepareForTubeMap()
 };
 
 function prepareForTubeMap() {
@@ -141,7 +268,7 @@ function prepareForTubeMap() {
   } else {
     getRemoteTubeMapData();
   } */
-  getRemoteTubeMapData();
+  return getRemoteTubeMapData();
 }
 
 function getRemoteTubeMapData() {
@@ -169,7 +296,7 @@ function getRemoteTubeMapData() {
   console.log(`useMountedPath = ${useMountedPath}`);
   console.log(`anchorTrackName = ${anchorTrackName}`);
 
-  $.ajax({
+  return $.ajax({
     type: 'POST',
     url: `${BACKEND_URL}/chr22_v4`,
     crossDomain: true,
@@ -198,7 +325,7 @@ function getRemoteTubeMapData() {
     error(responseData, textStatus, errorThrown) {
       console.log('POST failed.');
     },
-  });
+  })
   // return false; // prevents browser from reloading page (button within form tag)
 }
 
