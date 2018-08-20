@@ -30,6 +30,7 @@ let exonColors = [];
 
 let svgID; // the (html-tag) ID of the svg
 let svg; // the svg
+export let zoom;
 let inputNodes = [];
 let inputTracks = [];
 let inputReads = [];
@@ -811,7 +812,7 @@ function getImageDimensions() {
 // align visualization to the top and left within svg and resize svg to correct size
 function alignSVG() {
   // enable Pan + Zoom
-  const zoom = d3.behavior.zoom().scaleExtent([0.1, 5]).on('zoom', () => {
+  zoom = d3.behavior.zoom().scaleExtent([0.1, 8]).on('zoom', () => {
     svg.attr('transform', `translate(${[0, (-minYCoordinate + 25) * d3.event.scale]}) scale(${d3.event.scale})`);
     const svg2 = d3.select(svgID);
     svg2.attr('width', Math.max(maxXCoordinate * d3.event.scale, $(svgID).parent().width()));
