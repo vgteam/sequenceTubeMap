@@ -22,6 +22,7 @@ try {
 
 const BACKEND_URL = CONFIG.BACKEND_URL || `http://${window.location.host}`;
 const DATA_SOURCES = CONFIG.DATA_SOURCES;
+let startTime = 0;
 
 $('#dataSourceSelect').change(() => {
   $('#distance').prop('value', '100');
@@ -54,7 +55,7 @@ $('#xgFileSelect').change(() => {
     // $('#pathNameSelect').empty();
     const opt = document.createElement('option');
     opt.value = 'none';
-    opt.innerHTML ='None';
+    opt.innerHTML = 'None';
     $('#pathNameSelect').append(opt);
   } else {
     getPathNames();
@@ -74,7 +75,7 @@ function getPathNames() {
       const pathNameSelect = document.getElementById('pathNameSelect');
       const optNone = document.createElement('option');
       optNone.value = 'none';
-      optNone.innerHTML ='None';
+      optNone.innerHTML = 'None';
       $('#pathNameSelect').append(optNone);
       response.pathNames.forEach((fn) => {
         const opt = document.createElement('option');
@@ -104,9 +105,10 @@ function getPathNames() {
 
 document.getElementById('reloadButton').onclick = function () {
   populateDropdownsWithFilenames();
-}
+};
 
 document.getElementById('goButton').onclick = function () {
+  startTime = performance.now();
   prepareForTubeMap();
 };
 
@@ -130,7 +132,7 @@ function prepareForTubeMap() {
     .selectAll('*')
     .remove();
   d3.select('#svg').attr('width', 100);
-  const w = $('.tubeMapSVG').width();
+  const w = $('#tubeMapSVG').width();
   $('#legendDiv').html('');
   document
     .getElementById('loader')
@@ -179,7 +181,7 @@ function getRemoteTubeMapData() {
       // execute when the client recieves a response
       if (response.graph === undefined) {
         // We did not get back a graph, only (possibly) an error.
-        
+
         // display error message if any
         document.getElementById('inputError').innerText = response.error;
         // when there is an error hide the loader
@@ -210,6 +212,8 @@ function createTubeMap(nodes, tracks, reads) {
     reads,
   });
   document.getElementById('loader').style.display = 'none';
+  const endTime = performance.now();
+  console.log('Took ' + (endTime - startTime) + ' milliseconds.');
 }
 
 /* function readsFromStringToArray(readsString) {
@@ -318,16 +322,16 @@ function clearDropdownsWithFilenames() {
   // create none option
   const opt1 = document.createElement('option');
   opt1.value = 'none';
-  opt1.innerHTML ='None';
+  opt1.innerHTML = 'None';
   xgSelect.appendChild(opt1);
 
-  const gbwtSelect = document.getElementById('gbwtFileSelect'); 
+  const gbwtSelect = document.getElementById('gbwtFileSelect');
   while (gbwtSelect.hasChildNodes()) {
     gbwtSelect.removeChild(gbwtSelect.lastChild);
   }
   const opt2 = document.createElement('option');
   opt2.value = 'none';
-  opt2.innerHTML ='None';
+  opt2.innerHTML = 'None';
   gbwtSelect.appendChild(opt2);
 
   const gamIndexSelect = document.getElementById('gamIndexSelect');
@@ -336,7 +340,7 @@ function clearDropdownsWithFilenames() {
   }
   const opt3 = document.createElement('option');
   opt3.value = 'none';
-  opt3.innerHTML ='None';
+  opt3.innerHTML = 'None';
   gamIndexSelect.appendChild(opt3);
 }
 
@@ -361,7 +365,7 @@ function populateDropdownsWithFilenames() {
         opt.value = filename;
         opt.innerHTML = filename;
         if (opt.value === xgSelectValue) {
-          opt.selected = "true";
+          opt.selected = 'true';
         }
         xgSelect.appendChild(opt);
       });
@@ -370,7 +374,7 @@ function populateDropdownsWithFilenames() {
         opt.value = filename;
         opt.innerHTML = filename;
         if (opt.value === gbwtSelectValue) {
-          opt.selected = "true";
+          opt.selected = 'true';
         }
         gbwtSelect.appendChild(opt);
       });
@@ -379,7 +383,7 @@ function populateDropdownsWithFilenames() {
         opt.value = filename;
         opt.innerHTML = filename;
         if (opt.value === gamSelectValue) {
-          opt.selected = "true";
+          opt.selected = 'true';
         }
         gamIndexSelect.appendChild(opt);
       });
@@ -395,13 +399,13 @@ function setUpWebsocket() {
   ws.onmessage = function (message) {
     console.log('Message received');
     populateDropdownsWithFilenames();
-  }
-  ws.onclose = function(event) {
+  };
+  ws.onclose = function (event) {
     setTimeout(setUpWebsocket, 1000);
-  }
+  };
   ws.onerror = function (event) {
     ws.close();
-  }
+  };
 }
 
 

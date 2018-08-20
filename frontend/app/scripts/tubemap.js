@@ -2672,7 +2672,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
 
   const nodeNames = [];
   myNodes.forEach((node) => {
-    nodeNames.push(parseInt(node.name, 10));
+    nodeNames.push(node.name, 10);
   });
 
   for (let i = 0; i < myReads.length; i += 1) {
@@ -2682,9 +2682,6 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
     let firstIndex = -1; // index within mapping of the first node id contained in nodeNames
     let lastIndex = -1; // index within mapping of the last node id contained in nodeNames
     read.path.mapping.forEach((pos, j) => {
-      pos.position.node_id = parseInt(pos.position.node_id, 10);
-      pos.rank = parseInt(pos.rank, 10);
-
       if (nodeNames.indexOf(pos.position.node_id) > -1) {
         const edit = {};
         let offset = 0;
