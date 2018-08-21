@@ -30,7 +30,7 @@ let exonColors = [];
 
 let svgID; // the (html-tag) ID of the svg
 let svg; // the svg
-export let zoom;
+export let zoom; // eslint-disable-line import/no-mutable-exports
 let inputNodes = [];
 let inputTracks = [];
 let inputReads = [];

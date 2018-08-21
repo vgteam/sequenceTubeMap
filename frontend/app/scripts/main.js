@@ -120,25 +120,19 @@ document.getElementById('goLeftButton').onclick = function () {
 };
 
 
-var zoomFactor = 2.0;
-
-
-
-
+const zoomFactor = 2.0;
 document.getElementById('zoomInButton').onclick = function () {
-  // Get Width of the x-axis 
-  var Width = $('#svg').parent().width()
-  
-  // get the selection object 
-  var selection = d3.select('#svg')
+  // Get Width of the x-axis
+  const Width = $('#svg').parent().width();
 
-  var currentX = -tubeMap.zoom.translate()[0]
-  var currentY = tubeMap.zoom.translate()[1]
+  // get the selection object
+  const selection = d3.select('#svg');
 
+  const currentX = -tubeMap.zoom.translate()[0];
+  const currentY = tubeMap.zoom.translate()[1];
 
-  if(tubeMap.zoom.scale() * zoomFactor <= tubeMap.zoom.scaleExtent()[1]){
-  
-    /* 
+  if (tubeMap.zoom.scale() * zoomFactor <= tubeMap.zoom.scaleExtent()[1]) {
+    /*
       This formula centralize the zoom In.
      ______________________                             ______________
     |-----------W----------|                           |-------W------|
@@ -148,51 +142,45 @@ document.getElementById('zoomInButton').onclick = function () {
     |   |-delta-|          |     |               |     |--W/2--|      |      |
     |___|__________________|     |               |     |              |      |
         |                        |               |--T'-|______________|      |
-        |                        |               |                           | 
-        |                        |               |                           | 
+        |                        |               |                           |
+        |                        |               |                           |
         |__Before ZooM___________|               |___After Zoom______________|
 
      deltaZ = W'/2 + T' ; delta= W/2 + T
      Z(W/2 + T) = W'/2 + T'
      T' = (ZW- W)/2 + Z*T
     */
-    var translateX = (zoomFactor * Width - Width )/2.0 + zoomFactor * currentX;
+    const translateX = (((zoomFactor * Width) - Width) / 2.0) + (zoomFactor * currentX);
     /*
       Current y-axis coordinate location multiplies by zoom factor
       this feels natural. Notice y-axis works differently than x-axis.
-      This behavior makes if you are on top of the screen the bar fix 
+      This behavior makes if you are on top of the screen the bar fix
       in the same y-axis region.
     */
-    var translateY = zoomFactor * currentY;
+    const translateY = zoomFactor * currentY;
 
     tubeMap.zoom.translate([-translateX, translateY]);
     // Apply the coords translation
     tubeMap.zoom.event(selection);
     // Scale by zoom factor
-    tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor)
-    // Apply the scale 
+    tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor);
+    // Apply the scale
     tubeMap.zoom.event(selection);
-
   }
-
 };
 
-
 document.getElementById('zoomOutButton').onclick = function () {
-
-  // Get Width of the x-axis 
-  var Width = $('#svg').parent().width()
+  // Get Width of the x-axis
+  const Width = $('#svg').parent().width();
   // get the selection object
-  var selection = d3.select('#svg')
-  
+  const selection = d3.select('#svg');
+
   // Calculate the x-axis translation
-  var currentX = -tubeMap.zoom.translate()[0]
-  var currentY = tubeMap.zoom.translate()[1]
+  const currentX = -tubeMap.zoom.translate()[0];
+  const currentY = tubeMap.zoom.translate()[1];
 
-
-  if(tubeMap.zoom.scale()/zoomFactor > tubeMap.zoom.scaleExtent()[0]){
-
-    /* 
+  if (tubeMap.zoom.scale() / zoomFactor > tubeMap.zoom.scaleExtent()[0]) {
+    /*
       This formula centralize the zoom In.
      ______________________                             ______________
     |-----------W----------|                           |-------W------|
@@ -202,55 +190,51 @@ document.getElementById('zoomOutButton').onclick = function () {
     |   |-delta-|          |     |               |     |--W/2--|      |      |
     |___|__________________|     |               |     |              |      |
         |                        |               |--T'-|______________|      |
-        |                        |               |                           | 
-        |                        |               |                           | 
+        |                        |               |                           |
+        |                        |               |                           |
         |__Before ZooM___________|               |___After Zoom______________|
 
      deltaZ = W'/2 + T' ; delta= W/2 + T
      Z(W/2 + T) = W'/2 + T'
      T' = (ZW- W)/2 + Z*T
     */
-    var translateX = (Width/zoomFactor - Width )/2.0 + currentX/zoomFactor;
+    const translateX = (((Width / zoomFactor) - Width) / 2.0) + (currentX / zoomFactor);
     /*
       Current y-axis coordinate location multiplies by zoom factor
       this feels natural. Notice y-axis works differently than x-axis.
-      This behavior makes if you are on top of the screen the bar fix 
+      This behavior makes if you are on top of the screen the bar fix
       in the same y-axis region.
     */
-    var translateY = currentY / zoomFactor;
+    const translateY = currentY / zoomFactor;
 
     // Translate the selection
     tubeMap.zoom.translate([-translateX, translateY]);
     // Apply the coords translation
     tubeMap.zoom.event(selection);
     // Scale by zoom factor
-    tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor)
-    // Apply the scale 
+    tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor);
+    // Apply the scale
     tubeMap.zoom.event(selection);
-
-  }else{
-    if(selection.node().getBBox()['width'] < Width){
-      var currentDistance = Number(document.getElementById('distance').value)
-      document.getElementById('distance').value = currentDistance * 2 
-      prepareForTubeMap().then(function(){
-        tubeMap.zoom.scale(tubeMap.zoom.scaleExtent()[0]);
-        tubeMap.zoom.event(selection);
-        var center = Width / 2.0;
-        var translateX = center - selection.node().getBBox()['width']/2
-        var translateY = currentY / zoomFactor;
-        tubeMap.zoom.translate([translateX, translateY]);
-        tubeMap.zoom.event(selection);
-      })
-    }
+  } else if (selection.node().getBBox().width < Width) {
+    const currentDistance = Number(document.getElementById('distance').value);
+    document.getElementById('distance').value = currentDistance * 2;
+    prepareForTubeMap().then(() => {
+      tubeMap.zoom.scale(tubeMap.zoom.scaleExtent()[0]);
+      tubeMap.zoom.event(selection);
+      const center = Width / 2.0;
+      const translateX = center - (selection.node().getBBox().width / 2);
+      const translateY = currentY / zoomFactor;
+      tubeMap.zoom.translate([translateX, translateY]);
+      tubeMap.zoom.event(selection);
+    });
   }
-
 };
 
 document.getElementById('goRightButton').onclick = function () {
   const position = Number(document.getElementById('position').value);
   const distance = Number(document.getElementById('distance').value);
   document.getElementById('position').value = position + distance;
-  prepareForTubeMap()
+  prepareForTubeMap();
 };
 
 function prepareForTubeMap() {
@@ -327,7 +311,7 @@ function getRemoteTubeMapData() {
     error(responseData, textStatus, errorThrown) {
       console.log('POST failed.');
     },
-  })
+  });
   // return false; // prevents browser from reloading page (button within form tag)
 }
 
@@ -340,7 +324,7 @@ function createTubeMap(nodes, tracks, reads) {
   });
   document.getElementById('loader').style.display = 'none';
   const endTime = performance.now();
-  console.log('Took ' + (endTime - startTime) + ' milliseconds.');
+  console.log(`Took ${endTime - startTime} milliseconds.`);
 }
 
 /* function readsFromStringToArray(readsString) {
@@ -480,11 +464,11 @@ function populateDropdownsWithFilenames() {
     // dataType: 'json',
     success(response) {
       const xgSelect = document.getElementById('xgFileSelect');
-      var xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
+      const xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
       const gbwtSelect = document.getElementById('gbwtFileSelect');
-      var gbwtSelectValue = gbwtSelect.options[gbwtSelect.selectedIndex].value;
+      const gbwtSelectValue = gbwtSelect.options[gbwtSelect.selectedIndex].value;
       const gamIndexSelect = document.getElementById('gamIndexSelect');
-      var gamSelectValue = gamIndexSelect.options[gamIndexSelect.selectedIndex].value;
+      const gamSelectValue = gamIndexSelect.options[gamIndexSelect.selectedIndex].value;
       clearDropdownsWithFilenames();
 
       response.xgFiles.forEach((filename) => {
