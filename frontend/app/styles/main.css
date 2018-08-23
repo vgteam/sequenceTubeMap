@@ -14,12 +14,11 @@ body {
 
 #tubeMapSVG {
   overflow: auto;
-  width: calc(100% - 80px);
+  width: calc(100% - 40px);
   position: relative;
-/*  margin-top: 20px;
-  margin-bottom: 0px;*/
-  margin: 40px;
-  border: 3px solid black;
+  margin: 20px;
+  border: 1px solid rgba(0,0,0,0.125);
+  border-radius: 0.25rem;
   max-height: 75vh;
 }
 
