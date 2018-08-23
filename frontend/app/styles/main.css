@@ -10,6 +10,15 @@ body {
 
 .custom-select {
   height: calc(2.25rem - 2px);
+  margin-right: 0px !important;
+}
+
+.tight-label {
+  margin-right: 3px !important;
+}
+
+.custom-input {
+  margin-right: 0px !important;
 }
 
 #tubeMapSVG {

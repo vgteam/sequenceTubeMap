@@ -23,26 +23,26 @@
         <form class="form-inline">
           <img src="images/logo.png" />
 
-          <label class="mb-2 mr-sm-2 mb-sm-0 ml-2" for="dataSourceSelect">Data:</label>
+          <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="dataSourceSelect">Data:</label>
           <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="dataSourceSelect">
           </select>
 
-          <label for="xgFileSelect" class="mb-2 mr-sm-2 mb-sm-0 ml-2">xg file:</label>
+          <label for="xgFileSelect" class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">xg file:</label>
           <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="xgFileSelect" disabled>
             <option value="none" selected>None</option>
           </select>
           
-          <label for="gbwtFileSelect" class="mb-2 mr-sm-2 mb-sm-0 ml-2">gbwt file:</label>
+          <label for="gbwtFileSelect" class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">gbwt file:</label>
           <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="gbwtFileSelect" disabled>
             <option value="none" selected>None</option>
           </select>
 
-          <label for="gamIndexSelect" class="mb-2 mr-sm-2 mb-sm-0 ml-2">gam index:</label>
+          <label for="gamIndexSelect" class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">gam index:</label>
           <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="gamIndexSelect" disabled>
             <option value="none" selected>None</option>
           </select>
 
-          <label for="pathName" class="mb-2 mr-sm-2 mb-sm-0 ml-2">Path name:</label>
+          <label for="pathName" class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">Path name:</label>
           <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="pathNameSelect" disabled>
             <option value="none" selected>None</option>
           </select>
@@ -54,18 +54,18 @@
 
       <div class="d-flex justify-content-center">
         <form class="form-inline">
-          <label class="mb-2 mr-sm-2 mb-sm-0" for="position">Start:</label>
-          <input type="text" class="form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="1">
+          <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="position">Start:</label>
+          <input type="text" class="custom-input form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="1">
 
-          <label class="mb-2 mr-sm-2 mb-sm-0" for="distance">Length:</label>
-          <input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="100">
+          <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="distance">Length:</label>
+          <input type="text" class="custom-input form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="100">
 
-          <label class="mb-2 mr-sm-2 mb-sm-0" for="unitSelect">Unit:</label>
+          <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="unitSelect">Unit:</label>
           <select class="custom-select mb-2 mr-sm-2 mb-sm-0" id="unitSelect">
             <option value="1" selected>Nucleotides</option>
             <option value="2">Nodes</option>
           </select>
-
+          &nbsp
           <button type="button" class="btn btn-primary m-1" id="goButton">Go</button>
           <button type="button" class="btn btn-primary m-1" id="goLeftButton"><i class="fa fa-step-backward fa-lg"></i></button>
           <button type="button" class="btn btn-primary m-1" id="zoomInButton"><i class="fa fa-search-plus fa-lg"></i></button>
