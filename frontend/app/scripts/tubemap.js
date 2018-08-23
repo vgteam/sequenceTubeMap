@@ -813,10 +813,12 @@ function getImageDimensions() {
 function alignSVG() {
   // enable Pan + Zoom
   zoom = d3.behavior.zoom().scaleExtent([0.1, 8]).on('zoom', () => {
-    svg.attr('transform', `translate(${[0, (-minYCoordinate + 25) * d3.event.scale]}) scale(${d3.event.scale})`);
+    const boundedScale = Math.max(d3.event.scale, $(svgID).parent().width() / maxXCoordinate);
+    zoom.scale(boundedScale);
+    svg.attr('transform', `translate(${[0, (-minYCoordinate + 25) * boundedScale]}) scale(${boundedScale})`);
     const svg2 = d3.select(svgID);
-    svg2.attr('width', Math.max(maxXCoordinate * d3.event.scale, $(svgID).parent().width()));
-    svg2.attr('height', (maxYCoordinate - minYCoordinate + 50) * d3.event.scale);
+    svg2.attr('width', Math.max(maxXCoordinate * boundedScale, $(svgID).parent().width()));
+    svg2.attr('height', (maxYCoordinate - minYCoordinate + 50) * boundedScale);
   });
   svg = svg.call(zoom).on('dblclick.zoom', null).append('g');
 
