@@ -548,29 +548,29 @@ window.onload = function () {
   setUpWebsocket();
 };
 
-let panX;
-let panY;
-let panTop;
-let panLeft;
-let panDown;
+// let panX;
+// let panY;
+// let panTop;
+// let panLeft;
+// let panDown;
 
-$('#tubeMapSVG').mousedown((e) => {
-  e.preventDefault();
-  panDown = true;
-  panX = e.pageX;
-  panY = e.pageY;
-  const container = document.getElementById('tubeMapSVG');
-  panLeft = container.scrollLeft;
-  panTop = container.scrollTop;
-});
+// $('#tubeMapSVG').mousedown((e) => {
+//   e.preventDefault();
+//   panDown = true;
+//   panX = e.pageX;
+//   panY = e.pageY;
+//   const container = document.getElementById('tubeMapSVG');
+//   panLeft = container.scrollLeft;
+//   panTop = container.scrollTop;
+// });
 
-$('body').mousemove((e) => {
-  if (panDown) {
-    const newX = e.pageX;
-    const newY = e.pageY;
-    document.getElementById('tubeMapSVG').scrollTop = panTop - newY + panY;
-    document.getElementById('tubeMapSVG').scrollLeft = panLeft - newX + panX;
-  }
-});
+// $('body').mousemove((e) => {
+//   if (panDown) {
+//     const newX = e.pageX;
+//     const newY = e.pageY;
+//     document.getElementById('tubeMapSVG').scrollTop = panTop - newY + panY;
+//     document.getElementById('tubeMapSVG').scrollLeft = panLeft - newX + panX;
+//   }
+// });
 
-$('body').mouseup((e) => { panDown = false; });
+// $('body').mouseup((e) => { panDown = false; });

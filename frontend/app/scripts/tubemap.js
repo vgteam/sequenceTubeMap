@@ -812,25 +812,37 @@ function getImageDimensions() {
 // align visualization to the top and left within svg and resize svg to correct size
 function alignSVG() {
   // enable Pan + Zoom
-  zoom = d3.behavior.zoom().scaleExtent([0.1, 8]).on('zoom', () => {
-    const boundedScale = Math.max(d3.event.scale, $(svgID).parent().width() / maxXCoordinate);
-    zoom.scale(boundedScale);
+  // zoom.scale(boundedScale);
+  svg = svg.append('g');
+  const rect = svg.append('rect')
+    .attr('width', $(svgID).parent().width())
+    .attr('height', window.screen.height)
+    .style('fill', 'none')
+    .style('pointer-events', 'all')
+    .call(d3.zoom()
+        .scaleExtent([0.1, 8])
+        .on('zoom', zoomed))
+        .on('dblclick.zoom', null);
+  svg = svg.append('g');
+
+  function zoomed() {
+    const boundedScale = Math.max(d3.event.transform.k, $(svgID).parent().width() / maxXCoordinate);
+    console.log(d3.event.transform);
+    // svg.attr('transform', d3.event.transform);
     svg.attr('transform', `translate(${[0, (-minYCoordinate + 25) * boundedScale]}) scale(${boundedScale})`);
+
     const svg2 = d3.select(svgID);
     svg2.attr('width', Math.max(maxXCoordinate * boundedScale, $(svgID).parent().width()));
     svg2.attr('height', (maxYCoordinate - minYCoordinate + 50) * boundedScale);
-  });
-  svg = svg.call(zoom).on('dblclick.zoom', null).append('g');
+  }
 
   // translate so that top of drawing is visible
-  zoom.translate([0, -minYCoordinate + 25]);
-  zoom.event(svg);
+  // zoom.event(svg);
+  svg.attr('transform', `translate(0, ${-minYCoordinate + 25})`);
 
   // resize svg depending on drawing size
-  // this feels dirty, but changing the attributes of the 'svg'-Variable does not have the desired effect
   const svg2 = d3.select(svgID);
   svg2.attr('height', maxYCoordinate - minYCoordinate + 50);
-  // svg2.attr('height', 800);
   svg2.attr('width', Math.max(maxXCoordinate, $(svgID).parent().width()));
 }
 
@@ -2268,117 +2280,117 @@ function compareCurvesByLineChanges(a, b) {
 }
 
 function defineSVGPatterns() {
-  let pattern = svg.append('defs')
+  const defs = svg.append('defs');
+  let pattern = defs
     .append('pattern')
-    .attr({ id: 'patternA', width: '7', height: '7', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '7', height: '7', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '3', height: '3', fill: '#505050' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '3', height: '3', fill: '#505050' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '3', height: '3', fill: '#505050' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '3', height: '3', fill: '#505050' });
+    .attrs({ id: 'patternA', width: '7', height: '7', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
 
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'patternB', width: '8', height: '8', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '8', height: '8', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '3', height: '3', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '5', width: '3', height: '3', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '5', y: '0', width: '3', height: '3', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '5', y: '5', width: '3', height: '3', fill: '#1f77b4' });
+  // const defs = svg.append('svg:defs').attr('foo', 5);
+  // const pattern = defs.append('svg:pattern').attr('foo', 6);
 
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid0', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#1f77b4' });
-  pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#1f77b4' });
+  // const pattern = defs.append('svg:pattern').attrs({ id: 'patternA', width: '7', height: '7', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
 
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid1', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .attrs({ x: '0', y: '0', width: '7', height: '7', fill: '#FFFFFF' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#ff7f0e' });
+    .attrs({ x: '0', y: '0', width: '3', height: '3', fill: '#505050' });
   pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#ff7f0e' });
+    .attrs({ x: '0', y: '4', width: '3', height: '3', fill: '#505050' });
   pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#ff7f0e' });
+    .attrs({ x: '4', y: '0', width: '3', height: '3', fill: '#505050' });
   pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#ff7f0e' });
+    .attrs({ x: '4', y: '4', width: '3', height: '3', fill: '#505050' });
 
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid2', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
+  pattern = defs.append('pattern')
+    .attrs({ id: 'patternB', width: '8', height: '8', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .attrs({ x: '0', y: '0', width: '8', height: '8', fill: '#FFFFFF' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#2ca02c' });
+    .attrs({ x: '0', y: '0', width: '3', height: '3', fill: '#1f77b4' });
   pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#2ca02c' });
+    .attrs({ x: '0', y: '5', width: '3', height: '3', fill: '#1f77b4' });
   pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#2ca02c' });
+    .attrs({ x: '5', y: '0', width: '3', height: '3', fill: '#1f77b4' });
   pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#2ca02c' });
+    .attrs({ x: '5', y: '5', width: '3', height: '3', fill: '#1f77b4' });
 
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid3', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
+  pattern = defs.append('pattern')
+    .attrs({ id: 'plaid0', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#d62728' });
+    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#1f77b4' });
   pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#d62728' });
+    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#1f77b4' });
   pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#d62728' });
+    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#1f77b4' });
   pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#d62728' });
+    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#1f77b4' });
 
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid4', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
+  pattern = defs.append('pattern')
+    .attrs({ id: 'plaid1', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#9467bd' });
+    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#ff7f0e' });
   pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#9467bd' });
+    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#ff7f0e' });
   pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#9467bd' });
+    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#ff7f0e' });
   pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#9467bd' });
+    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#ff7f0e' });
 
-  pattern = svg.append('defs')
-    .append('pattern')
-    .attr({ id: 'plaid5', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
+  pattern = defs.append('pattern')
+    .attrs({ id: 'plaid2', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
   pattern.append('rect')
-    .attr({ x: '0', y: '0', width: '2', height: '2', fill: '#8c564b' });
+    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#2ca02c' });
   pattern.append('rect')
-    .attr({ x: '0', y: '4', width: '2', height: '2', fill: '#8c564b' });
+    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#2ca02c' });
   pattern.append('rect')
-    .attr({ x: '4', y: '0', width: '2', height: '2', fill: '#8c564b' });
+    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#2ca02c' });
   pattern.append('rect')
-    .attr({ x: '4', y: '4', width: '2', height: '2', fill: '#8c564b' });
+    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#2ca02c' });
+
+  pattern = defs.append('pattern')
+    .attrs({ id: 'plaid3', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#d62728' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#d62728' });
+  pattern.append('rect')
+    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#d62728' });
+  pattern.append('rect')
+    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#d62728' });
+
+  pattern = defs.append('pattern')
+    .attrs({ id: 'plaid4', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#9467bd' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#9467bd' });
+  pattern.append('rect')
+    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#9467bd' });
+  pattern.append('rect')
+    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#9467bd' });
+
+  pattern = defs.append('pattern')
+    .attrs({ id: 'plaid5', width: '6', height: '6', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#8c564b' });
+  pattern.append('rect')
+    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#8c564b' });
+  pattern.append('rect')
+    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#8c564b' });
+  pattern.append('rect')
+    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#8c564b' });
 }
 
 function drawTrackCurves(type) {
