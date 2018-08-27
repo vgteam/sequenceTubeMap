@@ -810,40 +810,29 @@ function getImageDimensions() {
 }
 
 // align visualization to the top and left within svg and resize svg to correct size
+// enable zooming and panning
 function alignSVG() {
-  // enable Pan + Zoom
-  // zoom.scale(boundedScale);
-  svg = svg.append('g');
-  const rect = svg.append('rect')
-    .attr('width', $(svgID).parent().width())
-    .attr('height', window.screen.height)
-    .style('fill', 'none')
-    .style('pointer-events', 'all')
-    .call(d3.zoom()
-        .scaleExtent([0.1, 8])
-        .on('zoom', zoomed))
-        .on('dblclick.zoom', null);
-  svg = svg.append('g');
+  svg.attr('height', maxYCoordinate - minYCoordinate + 50);
+  svg.attr('width', $(svgID).parent().width());
 
   function zoomed() {
-    const boundedScale = Math.max(d3.event.transform.k, $(svgID).parent().width() / maxXCoordinate);
-    console.log(d3.event.transform);
-    // svg.attr('transform', d3.event.transform);
-    svg.attr('transform', `translate(${[0, (-minYCoordinate + 25) * boundedScale]}) scale(${boundedScale})`);
-
+    svg.attr('transform', d3.event.transform);
     const svg2 = d3.select(svgID);
-    svg2.attr('width', Math.max(maxXCoordinate * boundedScale, $(svgID).parent().width()));
-    svg2.attr('height', (maxYCoordinate - minYCoordinate + 50) * boundedScale);
+    // adjust height, so that vertical scroll bar is shown when necessary
+    svg2.attr('height', (maxYCoordinate - minYCoordinate + 50) * d3.event.transform.k);
+    // adjust width to compensate for verical scroll bar appearing
+    svg2.attr('width', document.getElementById('tubeMapSVG').clientWidth);
   }
 
-  // translate so that top of drawing is visible
-  // zoom.event(svg);
-  svg.attr('transform', `translate(0, ${-minYCoordinate + 25})`);
+  zoom = d3.zoom()
+    .scaleExtent([$(svgID).parent().width() / maxXCoordinate, 8])
+    .translateExtent([[-1, minYCoordinate - 25], [maxXCoordinate + 2, maxYCoordinate + 25]])
+    .on('zoom', zoomed);
 
-  // resize svg depending on drawing size
-  const svg2 = d3.select(svgID);
-  svg2.attr('height', maxYCoordinate - minYCoordinate + 50);
-  svg2.attr('width', Math.max(maxXCoordinate, $(svgID).parent().width()));
+  svg = svg.call(zoom).on('dblclick.zoom', null).append('g');
+
+  // translate to correct position on initial draw
+  d3.select(svgID).call(zoom.transform, d3.zoomIdentity.translate(0, 25 - minYCoordinate));
 }
 
 // map node names to node indices
