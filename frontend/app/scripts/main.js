@@ -52,14 +52,12 @@ $('#dataSourceSelect').change(() => {
 $('#xgFileSelect').change(() => {
   $('#pathNameSelect').empty();
   if ($('#xgFileSelect').val() === 'none') {
-    // $('#pathNameSelect').empty();
     const opt = document.createElement('option');
     opt.value = 'none';
     opt.innerHTML = 'None';
     $('#pathNameSelect').append(opt);
   } else {
     getPathNames();
-    // $('#pathNameSelect').append('<option value="foo" selected>foo</option>');
   }
 });
 
@@ -88,21 +86,6 @@ function getPathNames() {
   });
 }
 
-// display filename of chosen file in file picker
-/* $('input[type=file]').change(() => {
-  console.log('foo');
-  let fieldVal = $(this).val();
-  if (fieldVal !== undefined || fieldVal !== '') {
-    console.log(fieldVal);
-    console.log(/\\([^\\]+$)/.exec(fieldVal));
-    // removes 'fakepath' and keeps only filename after last '/'
-    fieldVal = /\\([^\\]+$)/.exec(fieldVal)[1];
-    $(this)
-    .next('.custom-file-control')
-    .attr('data-content', fieldVal);
-  }
-}); */
-
 document.getElementById('reloadButton').onclick = function () {
   populateDropdownsWithFilenames();
 };
@@ -119,115 +102,13 @@ document.getElementById('goLeftButton').onclick = function () {
   prepareForTubeMap();
 };
 
-
 const zoomFactor = 2.0;
 document.getElementById('zoomInButton').onclick = function () {
-  // Get Width of the x-axis
-  const Width = $('#svg').parent().width();
-
-  // get the selection object
-  const selection = d3.select('#svg');
-
-  const currentX = -tubeMap.zoom.translate()[0];
-  const currentY = tubeMap.zoom.translate()[1];
-
-  if (tubeMap.zoom.scale() * zoomFactor <= tubeMap.zoom.scaleExtent()[1]) {
-    /*
-      This formula centralize the zoom In.
-     ______________________                             ______________
-    |-----------W----------|                           |-------W------|
-    |----W/2----|          |                     |----deltaZ---|      |
-    |    ______.___________|_____                 _____|______________|______
-    |-T-|                  |     |               |     |       .      |      |
-    |   |-delta-|          |     |               |     |--W/2--|      |      |
-    |___|__________________|     |               |     |              |      |
-        |                        |               |--T'-|______________|      |
-        |                        |               |                           |
-        |                        |               |                           |
-        |__Before ZooM___________|               |___After Zoom______________|
-
-     deltaZ = W'/2 + T' ; delta= W/2 + T
-     Z(W/2 + T) = W'/2 + T'
-     T' = (ZW- W)/2 + Z*T
-    */
-    const translateX = (((zoomFactor * Width) - Width) / 2.0) + (zoomFactor * currentX);
-    /*
-      Current y-axis coordinate location multiplies by zoom factor
-      this feels natural. Notice y-axis works differently than x-axis.
-      This behavior makes if you are on top of the screen the bar fix
-      in the same y-axis region.
-    */
-    const translateY = zoomFactor * currentY;
-
-    tubeMap.zoom.translate([-translateX, translateY]);
-    // Apply the coords translation
-    tubeMap.zoom.event(selection);
-    // Scale by zoom factor
-    tubeMap.zoom.scale(tubeMap.zoom.scale() * zoomFactor);
-    // Apply the scale
-    tubeMap.zoom.event(selection);
-  }
+  tubeMap.zoomBy(zoomFactor);
 };
 
 document.getElementById('zoomOutButton').onclick = function () {
-  // Get Width of the x-axis
-  const Width = $('#svg').parent().width();
-  // get the selection object
-  const selection = d3.select('#svg');
-
-  // Calculate the x-axis translation
-  const currentX = -tubeMap.zoom.translate()[0];
-  const currentY = tubeMap.zoom.translate()[1];
-
-  if (tubeMap.zoom.scale() / zoomFactor > tubeMap.zoom.scaleExtent()[0]) {
-    /*
-      This formula centralize the zoom In.
-     ______________________                             ______________
-    |-----------W----------|                           |-------W------|
-    |----W/2----|          |                     |----deltaZ---|      |
-    |    _______.__________|_____                 _____|______________|______
-    |-T-|                  |     |               |     |       .      |      |
-    |   |-delta-|          |     |               |     |--W/2--|      |      |
-    |___|__________________|     |               |     |              |      |
-        |                        |               |--T'-|______________|      |
-        |                        |               |                           |
-        |                        |               |                           |
-        |__Before ZooM___________|               |___After Zoom______________|
-
-     deltaZ = W'/2 + T' ; delta= W/2 + T
-     Z(W/2 + T) = W'/2 + T'
-     T' = (ZW- W)/2 + Z*T
-    */
-    const translateX = (((Width / zoomFactor) - Width) / 2.0) + (currentX / zoomFactor);
-    /*
-      Current y-axis coordinate location multiplies by zoom factor
-      this feels natural. Notice y-axis works differently than x-axis.
-      This behavior makes if you are on top of the screen the bar fix
-      in the same y-axis region.
-    */
-    const translateY = currentY / zoomFactor;
-
-    // Translate the selection
-    tubeMap.zoom.translate([-translateX, translateY]);
-    // Apply the coords translation
-    tubeMap.zoom.event(selection);
-    // Scale by zoom factor
-    tubeMap.zoom.scale(tubeMap.zoom.scale() / zoomFactor);
-    // Apply the scale
-    tubeMap.zoom.event(selection);
-  } else if (selection.node().getBBox().width < Width) {
-    const currentDistance = Number(document.getElementById('distance').value);
-    document.getElementById('distance').value = currentDistance * 2;
-    prepareForTubeMap().then(() => {
-      tubeMap.zoom.scale(tubeMap.zoom.scaleExtent()[0]);
-      tubeMap.zoom.event(selection);
-      const center = Width / 2.0;
-      const translateX = center - (selection.node().getBBox().width / 2);
-      const translateY = currentY / zoomFactor;
-      tubeMap.zoom.translate([translateX, translateY]);
-      tubeMap.zoom.event(selection);
-    });
-  }
+  tubeMap.zoomBy(1.0 / zoomFactor);
 };
 
 document.getElementById('goRightButton').onclick = function () {
@@ -249,11 +130,6 @@ function prepareForTubeMap() {
     .getElementById('loader')
     .setAttribute('style', `left:${(w / 2) - 25}px`);
 
-  /* if ($('#dataSourceSelect').val() === 'cactus') {
-    getCactusTubeMapData();
-  } else {
-    getRemoteTubeMapData();
-  } */
   return getRemoteTubeMapData();
 }
 
@@ -327,17 +203,6 @@ function createTubeMap(nodes, tracks, reads) {
   console.log(`Took ${endTime - startTime} milliseconds.`);
 }
 
-/* function readsFromStringToArray(readsString) {
-  const lines = readsString.split('\n');
-  const result = [];
-  lines.forEach((line) => {
-    if (line.length > 0) {
-      result.push(JSON.parse(line));
-    }
-  });
-  return result;
-} */
-
 document.getElementById('redundantNodesCheckbox').onclick = function () {
   if (document.getElementById('redundantNodesCheckbox').checked === true) tubeMap.setMergeNodesFlag(true);
   else tubeMap.setMergeNodesFlag(false);
@@ -358,18 +223,9 @@ document.getElementById('softClipsCheckbox').onclick = function () {
   else tubeMap.setSoftClipsFlag(false);
 };
 
-/* document.getElementById('positionTypeSelect').onchange = function () {
-  document.getElementById('distanceTypeSelect').selectedIndex = this.selectedIndex;
-};
-
-document.getElementById('distanceTypeSelect').onchange = function () {
-  document.getElementById('positionTypeSelect').selectedIndex = this.selectedIndex;
-}; */
-
 const radios = document.getElementsByClassName('colorRadio');
 for (let i = 0; i < radios.length; i += 1) {
   let trackType;
-  // console.log(radios[i].name);
   switch (radios[i].name) {
     case 'colorsHaplo':
       trackType = 'haplotypeColors';
@@ -383,7 +239,6 @@ for (let i = 0; i < radios.length; i += 1) {
     default:
       console.log('Could not find track type in color set assignment');
   }
-  // console.log(radios[i].value);
   let colorSet;
   switch (radios[i].value) {
     case 'option1':
@@ -461,7 +316,6 @@ function populateDropdownsWithFilenames() {
     type: 'POST',
     url: `${BACKEND_URL}/getFilenames`,
     crossDomain: true,
-    // dataType: 'json',
     success(response) {
       const xgSelect = document.getElementById('xgFileSelect');
       const xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
@@ -519,7 +373,6 @@ function setUpWebsocket() {
   };
 }
 
-
 window.onload = function () {
   // populate UI 'data' dropdown with data from DATA_SOURCES
   const dsSelect = document.getElementById('dataSourceSelect');
@@ -547,30 +400,3 @@ window.onload = function () {
 
   setUpWebsocket();
 };
-
-// let panX;
-// let panY;
-// let panTop;
-// let panLeft;
-// let panDown;
-
-// $('#tubeMapSVG').mousedown((e) => {
-//   e.preventDefault();
-//   panDown = true;
-//   panX = e.pageX;
-//   panY = e.pageY;
-//   const container = document.getElementById('tubeMapSVG');
-//   panLeft = container.scrollLeft;
-//   panTop = container.scrollTop;
-// });
-
-// $('body').mousemove((e) => {
-//   if (panDown) {
-//     const newX = e.pageX;
-//     const newY = e.pageY;
-//     document.getElementById('tubeMapSVG').scrollTop = panTop - newY + panY;
-//     document.getElementById('tubeMapSVG').scrollLeft = panLeft - newX + panX;
-//   }
-// });
-
-// $('body').mouseup((e) => { panDown = false; });

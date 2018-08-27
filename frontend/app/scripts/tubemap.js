@@ -816,7 +816,11 @@ function alignSVG() {
   svg.attr('width', $(svgID).parent().width());
 
   function zoomed() {
-    svg.attr('transform', d3.event.transform);
+    const transform = d3.event.transform;
+    // vertical adjustment so that top of graph is at top of svg
+    // otherwise would violate translateExtent, which leads to graph "jumping" on next pan 
+    transform.y = (25 - minYCoordinate) * transform.k;
+    svg.attr('transform', transform);
     const svg2 = d3.select(svgID);
     // adjust height, so that vertical scroll bar is shown when necessary
     svg2.attr('height', (maxYCoordinate - minYCoordinate + 50) * d3.event.transform.k);
@@ -833,6 +837,23 @@ function alignSVG() {
 
   // translate to correct position on initial draw
   d3.select(svgID).call(zoom.transform, d3.zoomIdentity.translate(0, 25 - minYCoordinate));
+}
+
+export function zoomBy(zoomFactor) {
+  const minZoom = $(svgID).parent().width() / maxXCoordinate;
+  const maxZoom = 8;
+  const width = document.getElementById(svgID.substring(1)).parentElement.clientWidth;
+
+  const transform = d3.zoomTransform(d3.select(svgID).node());
+  const translateK = Math.min(maxZoom, Math.max(transform.k * zoomFactor, minZoom));
+  let translateX = (width / 2.0) - (((width / 2.0) - transform.x) * translateK / transform.k);
+  translateX = Math.min(translateX, 1 * translateK);
+  translateX = Math.max(translateX, width - ((maxXCoordinate + 2) * translateK));
+  const translateY = (25 - minYCoordinate) * translateK;
+  d3.select(svgID)
+    .transition()
+    .duration(750)
+    .call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(translateK));
 }
 
 // map node names to node indices
