@@ -77,3 +77,7 @@ body {
     transform: rotate(360deg);
   }
 }
+
+input[type=file] {
+  width: 200px;
+}

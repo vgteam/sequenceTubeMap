@@ -23,6 +23,10 @@ try {
 const BACKEND_URL = CONFIG.BACKEND_URL || `http://${window.location.host}`;
 const DATA_SOURCES = CONFIG.DATA_SOURCES;
 let startTime = 0;
+// flag is true if instead of selecting input files from mounted folder of docker containter,
+// they are uploaded via the web app (only possible for small files)
+const FILE_INPUT_FLAG = document.getElementById('xgFileSelect').nodeName.toLowerCase() !== 'select';
+const customInputFiles = {};
 
 $('#dataSourceSelect').change(() => {
   $('#distance').prop('value', '100');
@@ -31,14 +35,14 @@ $('#dataSourceSelect').change(() => {
     $('#reloadButton').prop('disabled', false);
     $('#xgFileSelect').prop('disabled', false);
     $('#gbwtFileSelect').prop('disabled', false);
-    $('#gamIndexSelect').prop('disabled', false);
+    $('#gamFileSelect').prop('disabled', false);
     $('#pathNameSelect').prop('disabled', false);
     $('#position').prop('value', '1');
   } else {
     $('#reloadButton').prop('disabled', true);
     $('#xgFileSelect').prop('disabled', true);
     $('#gbwtFileSelect').prop('disabled', true);
-    $('#gamIndexSelect').prop('disabled', true);
+    $('#gamFileSelect').prop('disabled', true);
     $('#pathNameSelect').prop('disabled', true);
 
     DATA_SOURCES.forEach((ds) => {
@@ -49,25 +53,104 @@ $('#dataSourceSelect').change(() => {
   }
 });
 
+function createDropDownNoneOption() {
+  const opt = document.createElement('option');
+  opt.value = 'none';
+  opt.innerHTML = 'None';
+  return opt;
+}
+
 $('#xgFileSelect').change(() => {
   $('#pathNameSelect').empty();
-  if ($('#xgFileSelect').val() === 'none') {
-    const opt = document.createElement('option');
-    opt.value = 'none';
-    opt.innerHTML = 'None';
-    $('#pathNameSelect').append(opt);
+  if (!FILE_INPUT_FLAG) {
+    if ($('#xgFileSelect').val() === 'none') {
+      $('#pathNameSelect').append(createDropDownNoneOption());
+    } else {
+      getPathNames();
+    }
+    return;
+  }
+  const file = document.getElementById('xgFileSelect').files[0];
+  if (file === undefined) {
+    $('#pathNameSelect').append(createDropDownNoneOption());
+    delete customInputFiles.xgFile;
   } else {
-    getPathNames();
+    const formData = new FormData();
+    formData.append('xgFile', file);
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        // Every thing ok, file uploaded
+        customInputFiles.xgFile = xhr.response.path;
+        getPathNames();
+      }
+    };
+    xhr.open('POST', `${BACKEND_URL}/xgFileSubmission`, true);
+    xhr.send(formData);
+  }
+});
+
+$('#gbwtFileSelect').change(() => {
+  if (FILE_INPUT_FLAG) {
+    const file = document.getElementById('gbwtFileSelect').files[0];
+    if (file === undefined) {
+      delete customInputFiles.gbwtFile;
+    } else {
+      const formData = new FormData();
+      formData.append('gbwtFile', file);
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = 'json';
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          // Every thing ok, file uploaded
+          customInputFiles.gbwtFile = xhr.response.path;
+        }
+      };
+      xhr.open('POST', `${BACKEND_URL}/gbwtFileSubmission`, true);
+      xhr.send(formData);
+    }
+  }
+});
+
+$('#gamFileSelect').change(() => {
+  if (FILE_INPUT_FLAG) {
+    const file = document.getElementById('gamFileSelect').files[0];
+    if (file === undefined) {
+      delete customInputFiles.gamFile;
+    } else {
+      const formData = new FormData();
+      formData.append('gamFile', file);
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = 'json';
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          // Every thing ok, file uploaded
+          customInputFiles.gamFile = xhr.response.path;
+          console.log(customInputFiles);
+        }
+      };
+      xhr.open('POST', `${BACKEND_URL}/gamFileSubmission`, true);
+      xhr.send(formData);
+    }
   }
 });
 
 function getPathNames() {
-  const xgFile = $('#xgFileSelect').val();
+  let xgFile;
+  let isUploadedFile;
+  if (FILE_INPUT_FLAG) {
+    xgFile = customInputFiles.xgFile;
+    isUploadedFile = true;
+  } else {
+    xgFile = $('#xgFileSelect').val();
+    isUploadedFile = false;
+  }
   $.ajax({
     type: 'POST',
     url: `${BACKEND_URL}/getPathNames`,
     crossDomain: true,
-    data: { xgFile },
+    data: { xgFile, isUploadedFile },
     dataType: 'json',
     success(response) {
       const pathNameSelect = document.getElementById('pathNameSelect');
@@ -138,31 +221,45 @@ function getRemoteTubeMapData() {
   const distance = document.getElementById('distance').value;
   const byNode = (document.getElementById('unitSelect').selectedIndex !== 0);
 
-  let xgFile = $('#xgFileSelect').val();
-  let gbwtFile = $('#gbwtFileSelect').val();
-  let gamIndex = $('#gamIndexSelect').val();
+  let xgFile;
+  let gbwtFile;
+  let gamFile;
+  if (FILE_INPUT_FLAG) {
+    xgFile = customInputFiles.xgFile;
+    gbwtFile = customInputFiles.gbwtFile;
+    gamFile = customInputFiles.gamFile;
+  } else {
+    xgFile = $('#xgFileSelect').val();
+    gbwtFile = $('#gbwtFileSelect').val();
+    gamFile = $('#gamFileSelect').val();
+  }
   let anchorTrackName = $('#pathNameSelect').val();
-  let useMountedPath = true;
+  let dataPath = customInputFiles.xgFile === undefined ? 'mounted' : 'upload';
 
   DATA_SOURCES.forEach((ds) => {
     if (ds.name === $('#dataSourceSelect').val()) {
-      console.log('found');
       xgFile = ds.xgFile;
       gbwtFile = ds.gbwtFile;
-      gamIndex = ds.gamIndex;
+      gamFile = ds.gamFile;
       anchorTrackName = ds.anchorTrackName;
-      useMountedPath = ds.useMountedPath;
+      dataPath = 'default';
     }
   });
-
-  console.log(`useMountedPath = ${useMountedPath}`);
-  console.log(`anchorTrackName = ${anchorTrackName}`);
 
   return $.ajax({
     type: 'POST',
     url: `${BACKEND_URL}/chr22_v4`,
     crossDomain: true,
-    data: { nodeID, distance, byNode, xgFile, gbwtFile, gamIndex, anchorTrackName, useMountedPath },
+    data: {
+      nodeID,
+      distance,
+      byNode,
+      xgFile,
+      gbwtFile,
+      gamFile,
+      anchorTrackName,
+      dataPath,
+    },
     dataType: 'json',
     success(response) {
       // execute when the client recieves a response
@@ -300,63 +397,66 @@ function clearDropdownsWithFilenames() {
   opt2.innerHTML = 'None';
   gbwtSelect.appendChild(opt2);
 
-  const gamIndexSelect = document.getElementById('gamIndexSelect');
-  while (gamIndexSelect.hasChildNodes()) {
-    gamIndexSelect.removeChild(gamIndexSelect.lastChild);
+  const gamFileSelect = document.getElementById('gamFileSelect');
+  while (gamFileSelect.hasChildNodes()) {
+    gamFileSelect.removeChild(gamFileSelect.lastChild);
   }
   const opt3 = document.createElement('option');
   opt3.value = 'none';
   opt3.innerHTML = 'None';
-  gamIndexSelect.appendChild(opt3);
+  gamFileSelect.appendChild(opt3);
 }
 
-
 function populateDropdownsWithFilenames() {
-  $.ajax({
-    type: 'POST',
-    url: `${BACKEND_URL}/getFilenames`,
-    crossDomain: true,
-    success(response) {
-      const xgSelect = document.getElementById('xgFileSelect');
-      const xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
-      const gbwtSelect = document.getElementById('gbwtFileSelect');
-      const gbwtSelectValue = gbwtSelect.options[gbwtSelect.selectedIndex].value;
-      const gamIndexSelect = document.getElementById('gamIndexSelect');
-      const gamSelectValue = gamIndexSelect.options[gamIndexSelect.selectedIndex].value;
-      clearDropdownsWithFilenames();
+  if (!FILE_INPUT_FLAG) {
+    $.ajax({
+      type: 'POST',
+      url: `${BACKEND_URL}/getFilenames`,
+      crossDomain: true,
+      success(response) {
+        const xgSelect = document.getElementById('xgFileSelect');
+        const xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
+        const gbwtSelect = document.getElementById('gbwtFileSelect');
+        const gbwtSelectValue =
+          gbwtSelect.options[gbwtSelect.selectedIndex].value;
+        const gamFileSelect = document.getElementById('gamFileSelect');
+        const gamSelectValue =
+          gamFileSelect.options[gamFileSelect.selectedIndex].value;
+        clearDropdownsWithFilenames();
 
-      response.xgFiles.forEach((filename) => {
-        const opt = document.createElement('option');
-        opt.value = filename;
-        opt.innerHTML = filename;
-        if (opt.value === xgSelectValue) {
-          opt.selected = 'true';
-        }
-        xgSelect.appendChild(opt);
-      });
-      response.gbwtFiles.forEach((filename) => {
-        const opt = document.createElement('option');
-        opt.value = filename;
-        opt.innerHTML = filename;
-        if (opt.value === gbwtSelectValue) {
-          opt.selected = 'true';
-        }
-        gbwtSelect.appendChild(opt);
-      });
-      response.gamIndices.forEach((filename) => {
-        const opt = document.createElement('option');
-        opt.value = filename;
-        opt.innerHTML = filename;
-        if (opt.value === gamSelectValue) {
-          opt.selected = 'true';
-        }
-        gamIndexSelect.appendChild(opt);
-      });
-    },
-    error(responseData, textStatus, errorThrown) {
-      console.log('POST failed.');
-    },
-  });
+        response.xgFiles.forEach((filename) => {
+          const opt = document.createElement('option');
+          opt.value = filename;
+          opt.innerHTML = filename;
+          if (opt.value === xgSelectValue) {
+            opt.selected = 'true';
+          }
+          xgSelect.appendChild(opt);
+        });
+        response.gbwtFiles.forEach((filename) => {
+          const opt = document.createElement('option');
+          opt.value = filename;
+          opt.innerHTML = filename;
+          if (opt.value === gbwtSelectValue) {
+            opt.selected = 'true';
+          }
+          gbwtSelect.appendChild(opt);
+        });
+        response.gamIndices.forEach((filename) => {
+          const opt = document.createElement('option');
+          opt.value = filename;
+          opt.innerHTML = filename;
+          if (opt.value === gamSelectValue) {
+            opt.selected = 'true';
+          }
+          gamFileSelect.appendChild(opt);
+        });
+      },
+      error(responseData, textStatus, errorThrown) {
+        console.log('POST failed.');
+      },
+    });
+  }
 }
 
 function setUpWebsocket() {

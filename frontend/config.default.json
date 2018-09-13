@@ -4,7 +4,7 @@
     {
       "name": "snp1kg-BRCA1",
       "xgFile": "snp1kg-BRCA1.vg.xg",
-      "gamIndex": "NA12878-BRCA1.gam.index",
+      "gamFile": "NA12878-BRCA1.sorted.gam",
       "anchorTrackName": "17",
       "useMountedPath": false,
       "defaultPosition": "1"
@@ -12,7 +12,7 @@
     {
       "name": "cactus",
       "xgFile": "cactus.vg.xg",
-      "gamIndex": "cactus-NA12879.gam.index",
+      "gamFile": "cactus-NA12879.sorted.gam",
       "anchorTrackName": "ref",
       "useMountedPath": false,
       "defaultPosition": "1"
