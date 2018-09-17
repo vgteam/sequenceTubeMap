@@ -75,6 +75,8 @@ $('#xgFileSelect').change(() => {
     $('#pathNameSelect').append(createDropDownNoneOption());
     delete customInputFiles.xgFile;
   } else {
+    document.getElementById('fileUploadSpinner').style.display = 'block';
+    document.getElementById('goButton').disabled = true;
     const formData = new FormData();
     formData.append('xgFile', file);
     const xhr = new XMLHttpRequest();
@@ -83,6 +85,8 @@ $('#xgFileSelect').change(() => {
       if (xhr.readyState === 4 && xhr.status === 200) {
         // Every thing ok, file uploaded
         customInputFiles.xgFile = xhr.response.path;
+        document.getElementById('fileUploadSpinner').style.display = 'none';
+        document.getElementById('goButton').disabled = false;
         getPathNames();
       }
     };
@@ -97,6 +101,8 @@ $('#gbwtFileSelect').change(() => {
     if (file === undefined) {
       delete customInputFiles.gbwtFile;
     } else {
+      document.getElementById('fileUploadSpinner').style.display = 'block';
+      document.getElementById('goButton').disabled = true;
       const formData = new FormData();
       formData.append('gbwtFile', file);
       const xhr = new XMLHttpRequest();
@@ -105,6 +111,8 @@ $('#gbwtFileSelect').change(() => {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           customInputFiles.gbwtFile = xhr.response.path;
+          document.getElementById('fileUploadSpinner').style.display = 'none';
+          document.getElementById('goButton').disabled = false;
         }
       };
       xhr.open('POST', `${BACKEND_URL}/gbwtFileSubmission`, true);
@@ -119,6 +127,8 @@ $('#gamFileSelect').change(() => {
     if (file === undefined) {
       delete customInputFiles.gamFile;
     } else {
+      document.getElementById('fileUploadSpinner').style.display = 'block';
+      document.getElementById('goButton').disabled = true;
       const formData = new FormData();
       formData.append('gamFile', file);
       const xhr = new XMLHttpRequest();
@@ -127,7 +137,8 @@ $('#gamFileSelect').change(() => {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           customInputFiles.gamFile = xhr.response.path;
-          console.log(customInputFiles);
+          document.getElementById('fileUploadSpinner').style.display = 'none';
+          document.getElementById('goButton').disabled = false;
         }
       };
       xhr.open('POST', `${BACKEND_URL}/gamFileSubmission`, true);

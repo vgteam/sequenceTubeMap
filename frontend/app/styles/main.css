@@ -45,6 +45,26 @@ body {
     top: 5px;
 }
 
+.smallLoader {
+  border: 5px solid #f3f3f3;
+  -webkit-animation: spin 1s linear infinite;
+  animation: spin 1s linear infinite;
+  border-top: 5px solid #555;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+
+  /* position: absolute; */
+  z-index: 1;
+  /* top: 50%; */
+  /* margin: -25px 0 0 0px; */
+  position: relative;
+  /* top: -30px; */
+  left: 21px;
+  margin-right: -21px;
+  background-color: #6fa9fb;
+}
+
 #loader {
   border: 5px solid #f3f3f3;
   -webkit-animation: spin 1s linear infinite;
