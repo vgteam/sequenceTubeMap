@@ -16,5 +16,3 @@ else
     echo "Generating xg index from vg file"
     ./vg/vg index "./mountedData/${1}" -x "./mountedData/${1}.xg"
 fi
-
-

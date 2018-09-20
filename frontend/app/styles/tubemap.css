@@ -1,5 +1,5 @@
 body {
-  margin: 25px
+  margin: 25px;
 }
 
 label {
@@ -51,13 +51,21 @@ label {
 }
 
 @-webkit-keyframes spin {
-  0% { -webkit-transform: rotate(0deg); }
-  100% { -webkit-transform: rotate(360deg); }
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .display-options {
@@ -68,11 +76,10 @@ label {
 }
 
 .color-box {
-    width: 15px;
-    height: 15px;
-    display: inline-block;
-    background-color: #ccc;
-    /* position: absolute;*/
-    left: 5px;
-    top: 5px;
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  background-color: #ccc;
+  left: 5px;
+  top: 5px;
 }

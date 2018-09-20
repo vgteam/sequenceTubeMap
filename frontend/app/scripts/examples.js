@@ -16,30 +16,33 @@ function readsFromStringToArray(readsString) {
   return result;
 }
 
-document.getElementById('redundantNodesCheckbox').onclick = function () {
-  if (document.getElementById('redundantNodesCheckbox').checked === true) tubeMap.setMergeNodesFlag(true);
-  else tubeMap.setMergeNodesFlag(false);
+document.getElementById('redundantNodesCheckbox').onclick = function() {
+  if (document.getElementById('redundantNodesCheckbox').checked === true) {
+    tubeMap.setMergeNodesFlag(true);
+  } else tubeMap.setMergeNodesFlag(false);
 };
 
-document.getElementById('compressedViewCheckbox').onclick = function () {
-  if (document.getElementById('compressedViewCheckbox').checked === true) tubeMap.setNodeWidthOption(1);
-  else tubeMap.setNodeWidthOption(0);
+document.getElementById('compressedViewCheckbox').onclick = function() {
+  if (document.getElementById('compressedViewCheckbox').checked === true) {
+    tubeMap.setNodeWidthOption(1);
+  } else tubeMap.setNodeWidthOption(0);
 };
 
-document.getElementById('showReadsCheckbox').onclick = function () {
-  if (document.getElementById('showReadsCheckbox').checked === true) tubeMap.setShowReadsFlag(true);
-  else tubeMap.setShowReadsFlag(false);
+document.getElementById('showReadsCheckbox').onclick = function() {
+  if (document.getElementById('showReadsCheckbox').checked === true) {
+    tubeMap.setShowReadsFlag(true);
+  } else tubeMap.setShowReadsFlag(false);
 };
 
-document.getElementById('softClipsCheckbox').onclick = function () {
-  if (document.getElementById('softClipsCheckbox').checked === true) tubeMap.setSoftClipsFlag(true);
-  else tubeMap.setSoftClipsFlag(false);
+document.getElementById('softClipsCheckbox').onclick = function() {
+  if (document.getElementById('softClipsCheckbox').checked === true) {
+    tubeMap.setSoftClipsFlag(true);
+  } else tubeMap.setSoftClipsFlag(false);
 };
 
 const radios = document.getElementsByClassName('colorRadio');
 for (let i = 0; i < radios.length; i += 1) {
   let trackType;
-  // console.log(radios[i].name);
   switch (radios[i].name) {
     case 'colorsHaplo':
       trackType = 'haplotypeColors';
@@ -73,15 +76,15 @@ for (let i = 0; i < radios.length; i += 1) {
     default:
       console.log('Could not find color type in color set assignment');
   }
-  radios[i].onclick = function () {
+  radios[i].onclick = function() {
     console.log(this);
     tubeMap.setColorSet(trackType, colorSet);
   };
 }
 
-document.getElementById('downloadButton').onclick = function () {
+document.getElementById('downloadButton').onclick = function() {
   const svgN = document.getElementById('svg');
-  const svgData = (new XMLSerializer()).serializeToString(svgN);
+  const svgData = new XMLSerializer().serializeToString(svgN);
   const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
   const svgUrl = URL.createObjectURL(svgBlob);
 
@@ -93,7 +96,7 @@ document.getElementById('downloadButton').onclick = function () {
   document.body.removeChild(downloadLink);
 };
 
-document.getElementById('example1').onclick = function () {
+document.getElementById('example1').onclick = function() {
   tubeMap.create({
     svgID: '#svg',
     nodes: data.inputNodes,
@@ -104,7 +107,7 @@ document.getElementById('example1').onclick = function () {
   document.getElementById('colorsHaplo1').checked = true;
 };
 
-document.getElementById('example2').onclick = function () {
+document.getElementById('example2').onclick = function() {
   $('#example1').removeClass('active');
   tubeMap.create({
     svgID: '#svg',
@@ -116,7 +119,7 @@ document.getElementById('example2').onclick = function () {
   document.getElementById('colorsHaplo1').checked = true;
 };
 
-document.getElementById('example3').onclick = function () {
+document.getElementById('example3').onclick = function() {
   $('#example1').removeClass('active');
   tubeMap.create({
     svgID: '#svg',
@@ -128,7 +131,7 @@ document.getElementById('example3').onclick = function () {
   document.getElementById('colorsHaplo1').checked = true;
 };
 
-document.getElementById('example4').onclick = function () {
+document.getElementById('example4').onclick = function() {
   $('#example1').removeClass('active');
   tubeMap.create({
     svgID: '#svg',
@@ -140,7 +143,7 @@ document.getElementById('example4').onclick = function () {
   document.getElementById('colorsHaplo1').checked = true;
 };
 
-document.getElementById('example5').onclick = function () {
+document.getElementById('example5').onclick = function() {
   $('#example1').removeClass('active');
   tubeMap.create({
     svgID: '#svg',
@@ -152,12 +155,16 @@ document.getElementById('example5').onclick = function () {
   document.getElementById('colorsHaplo1').checked = true;
 };
 
-document.getElementById('example6').onclick = function () {
+document.getElementById('example6').onclick = function() {
   $('#example1').removeClass('active');
   const vg = JSON.parse(data.k3138);
   const nodes = tubeMap.vgExtractNodes(vg);
   const tracks = tubeMap.vgExtractTracks(vg);
-  const reads = tubeMap.vgExtractReads(nodes, tracks, readsFromStringToArray(data.demoReads));
+  const reads = tubeMap.vgExtractReads(
+    nodes,
+    tracks,
+    readsFromStringToArray(data.demoReads)
+  );
   tubeMap.create({
     svgID: '#svg',
     nodes,
@@ -168,7 +175,6 @@ document.getElementById('example6').onclick = function () {
   document.getElementById('colorsHaplo2').checked = true;
 };
 
-window.onload = function () {
-  // tubeMap.setColorSet('haplotypeColors', 'plainColors');
+window.onload = function() {
   document.getElementById('example1').click();
 };

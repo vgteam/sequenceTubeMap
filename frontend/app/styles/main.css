@@ -26,7 +26,7 @@ body {
   width: calc(100% - 40px);
   position: relative;
   margin: 20px;
-  border: 1px solid rgba(0,0,0,0.125);
+  border: 1px solid rgba(0, 0, 0, 0.125);
   border-radius: 0.25rem;
   max-height: 75vh;
 }
@@ -36,13 +36,13 @@ body {
 }
 
 .color-box {
-    width: 15px;
-    height: 15px;
-    display: inline-block;
-    background-color: #ccc;
-    /* position: absolute;*/
-    left: 5px;
-    top: 5px;
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  background-color: #ccc;
+  /* position: absolute;*/
+  left: 5px;
+  top: 5px;
 }
 
 .smallLoader {
@@ -98,6 +98,6 @@ body {
   }
 }
 
-input[type=file] {
+input[type='file'] {
   width: 200px;
 }

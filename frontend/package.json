@@ -76,11 +76,24 @@
           "variables": true
         }
       ],
-      "no-mixed-operators": [
+      "no-mixed-operators": "off",
+      "space-before-function-paren": [
+        "error",
+        "never"
+      ],
+      "comma-dangle": [
         "error",
         {
-          "allowSamePrecedence": true
+          "arrays": "always-multiline",
+          "objects": "always-multiline",
+          "imports": "always",
+          "exports": "always",
+          "functions": "ignore"
         }
+      ],
+      "arrow-parens": [
+        "error",
+        "always"
       ]
     },
     "parserOptions": {
@@ -90,5 +103,10 @@
     "globals": {
       "d3": true
     }
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "arrowParens": "always"
   }
 }

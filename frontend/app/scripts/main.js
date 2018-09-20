@@ -16,8 +16,8 @@ try {
   // browserify-optional transform that makes it work great.
   CONFIG = mergeJSON.merge(CONFIG, require('../../config.json'));
 } catch (err) {
-    // Ignore errors; probably means the override config didn't exist at build
-    // time.
+  // Ignore errors; probably means the override config didn't exist at build
+  // time.
 }
 
 const BACKEND_URL = CONFIG.BACKEND_URL || `http://${window.location.host}`;
@@ -155,7 +155,9 @@ function getPathNames(xgFile, isUploadedFile) {
       $('#pathNameSelect').append(optNone);
       response.pathNames.forEach((fn) => {
         const opt = document.createElement('option');
-        $('#pathNameSelect').append(`<option value="${fn}" selected>${fn}</option>`);
+        $('#pathNameSelect').append(
+          `<option value="${fn}" selected>${fn}</option>`
+        );
       });
     },
     error(responseData, textStatus, errorThrown) {
@@ -164,16 +166,16 @@ function getPathNames(xgFile, isUploadedFile) {
   });
 }
 
-document.getElementById('reloadButton').onclick = function () {
+document.getElementById('reloadButton').onclick = function() {
   populateDropdownsWithFilenames();
 };
 
-document.getElementById('goButton').onclick = function () {
+document.getElementById('goButton').onclick = function() {
   startTime = performance.now();
   prepareForTubeMap();
 };
 
-document.getElementById('goLeftButton').onclick = function () {
+document.getElementById('goLeftButton').onclick = function() {
   const position = Number(document.getElementById('position').value);
   const distance = Number(document.getElementById('distance').value);
   document.getElementById('position').value = Math.max(position - distance, 0);
@@ -181,15 +183,15 @@ document.getElementById('goLeftButton').onclick = function () {
 };
 
 const zoomFactor = 2.0;
-document.getElementById('zoomInButton').onclick = function () {
+document.getElementById('zoomInButton').onclick = function() {
   tubeMap.zoomBy(zoomFactor);
 };
 
-document.getElementById('zoomOutButton').onclick = function () {
+document.getElementById('zoomOutButton').onclick = function() {
   tubeMap.zoomBy(1.0 / zoomFactor);
 };
 
-document.getElementById('goRightButton').onclick = function () {
+document.getElementById('goRightButton').onclick = function() {
   const position = Number(document.getElementById('position').value);
   const distance = Number(document.getElementById('distance').value);
   document.getElementById('position').value = position + distance;
@@ -197,16 +199,13 @@ document.getElementById('goRightButton').onclick = function () {
 };
 
 function prepareForTubeMap() {
-  d3
-    .select('#svg')
+  d3.select('#svg')
     .selectAll('*')
     .remove();
   d3.select('#svg').attr('width', 100);
-  const w = $('#tubeMapSVG').width();
+  const w = $('#tubeMapSVG').width() / 2;
   $('#legendDiv').html('');
-  document
-    .getElementById('loader')
-    .setAttribute('style', `left:${(w / 2) - 25}px`);
+  document.getElementById('loader').setAttribute('style', `left:${w - 25}px`);
 
   return getRemoteTubeMapData();
 }
@@ -214,7 +213,7 @@ function prepareForTubeMap() {
 function getRemoteTubeMapData() {
   const nodeID = document.getElementById('position').value;
   const distance = document.getElementById('distance').value;
-  const byNode = (document.getElementById('unitSelect').selectedIndex !== 0);
+  const byNode = document.getElementById('unitSelect').selectedIndex !== 0;
 
   let xgFile;
   let gbwtFile;
@@ -280,7 +279,6 @@ function getRemoteTubeMapData() {
       console.log('POST failed.');
     },
   });
-  // return false; // prevents browser from reloading page (button within form tag)
 }
 
 function createTubeMap(nodes, tracks, reads) {
@@ -295,24 +293,36 @@ function createTubeMap(nodes, tracks, reads) {
   console.log(`Took ${endTime - startTime} milliseconds.`);
 }
 
-document.getElementById('redundantNodesCheckbox').onclick = function () {
-  if (document.getElementById('redundantNodesCheckbox').checked === true) tubeMap.setMergeNodesFlag(true);
-  else tubeMap.setMergeNodesFlag(false);
+document.getElementById('redundantNodesCheckbox').onclick = function() {
+  if (document.getElementById('redundantNodesCheckbox').checked === true) {
+    tubeMap.setMergeNodesFlag(true);
+  } else {
+    tubeMap.setMergeNodesFlag(false);
+  }
 };
 
-document.getElementById('compressedViewCheckbox').onclick = function () {
-  if (document.getElementById('compressedViewCheckbox').checked === true) tubeMap.setNodeWidthOption(1);
-  else tubeMap.setNodeWidthOption(0);
+document.getElementById('compressedViewCheckbox').onclick = function() {
+  if (document.getElementById('compressedViewCheckbox').checked === true) {
+    tubeMap.setNodeWidthOption(1);
+  } else {
+    tubeMap.setNodeWidthOption(0);
+  }
 };
 
-document.getElementById('showReadsCheckbox').onclick = function () {
-  if (document.getElementById('showReadsCheckbox').checked === true) tubeMap.setShowReadsFlag(true);
-  else tubeMap.setShowReadsFlag(false);
+document.getElementById('showReadsCheckbox').onclick = function() {
+  if (document.getElementById('showReadsCheckbox').checked === true) {
+    tubeMap.setShowReadsFlag(true);
+  } else {
+    tubeMap.setShowReadsFlag(false);
+  }
 };
 
-document.getElementById('softClipsCheckbox').onclick = function () {
-  if (document.getElementById('softClipsCheckbox').checked === true) tubeMap.setSoftClipsFlag(true);
-  else tubeMap.setSoftClipsFlag(false);
+document.getElementById('softClipsCheckbox').onclick = function() {
+  if (document.getElementById('softClipsCheckbox').checked === true) {
+    tubeMap.setSoftClipsFlag(true);
+  } else {
+    tubeMap.setSoftClipsFlag(false);
+  }
 };
 
 const radios = document.getElementsByClassName('colorRadio');
@@ -351,15 +361,15 @@ for (let i = 0; i < radios.length; i += 1) {
     default:
       console.log('Could not find color type in color set assignment');
   }
-  radios[i].onclick = function () {
+  radios[i].onclick = function() {
     console.log(this);
     tubeMap.setColorSet(trackType, colorSet);
   };
 }
 
-document.getElementById('downloadButton').onclick = function () {
+document.getElementById('downloadButton').onclick = function() {
   const svgN = document.getElementById('svg');
-  const svgData = (new XMLSerializer()).serializeToString(svgN);
+  const svgData = new XMLSerializer().serializeToString(svgN);
   const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
   const svgUrl = URL.createObjectURL(svgBlob);
 
@@ -454,19 +464,19 @@ function populateDropdownsWithFilenames() {
 
 function setUpWebsocket() {
   const ws = new WebSocket(BACKEND_URL.replace(/^http/, 'ws'));
-  ws.onmessage = function (message) {
+  ws.onmessage = function(message) {
     console.log('Message received');
     populateDropdownsWithFilenames();
   };
-  ws.onclose = function (event) {
+  ws.onclose = function(event) {
     setTimeout(setUpWebsocket, 1000);
   };
-  ws.onerror = function (event) {
+  ws.onerror = function(event) {
     ws.close();
   };
 }
 
-window.onload = function () {
+window.onload = function() {
   $('.customData').hide();
   $('.customDataMounted').hide();
   $('.customDataUpload').hide();

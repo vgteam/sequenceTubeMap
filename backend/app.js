@@ -30,15 +30,18 @@ var storage = multer.diskStorage({
 });
 var limits = {
   files: 1, // allow only 1 file per request
-  fileSize: 1024 * 1024 * 5, // 5 MB (max file size)
+  fileSize: 1024 * 1024 * 5 // 5 MB (max file size)
 };
 var upload = multer({ storage, limits });
 
 const app = express();
 app.use(bodyParser.json()); // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
-  extended: true
-}));
+app.use(
+  bodyParser.urlencoded({
+    // to support URL-encoded bodies
+    extended: true
+  })
+);
 
 // required for local usage (access docker container from outside)
 app.use((req, res, next) => {
@@ -151,7 +154,7 @@ app.post('/chr22_v4', (req, res) => {
   // What path should be our anchoring path?
   const anchorTrackName = req.body.anchorTrackName;
 
-  // Decide where to pull the data from 
+  // Decide where to pull the data from
   // (builtin examples, mounted user data folder or uploaded data)
   let dataPath;
   switch (req.body.dataPath) {
@@ -399,13 +402,8 @@ app.post('/getPathNames', (req, res) => {
     req.body.isUploadedFile === 'true'
       ? `./${req.body.xgFile}`
       : `${MOUNTED_DATA_PATH}${req.body.xgFile}`;
-  
-  const vgViewChild = spawn(`${VG_PATH}vg`, [
-    'paths',
-    '-L',
-    '-x',
-    xgFile
-  ]);
+
+  const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-L', '-x', xgFile]);
 
   vgViewChild.stderr.on('data', data => {
     console.log(`err data: ${data}`);

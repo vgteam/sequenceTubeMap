@@ -25,4 +25,3 @@ do
     NO_EXTENSION=${f%.gam}
     vg gamsort -i "../backend/internalData/${NO_EXTENSION}.sorted.gam.gai" "./${NO_EXTENSION}.gam" > "../backend/internalData/${NO_EXTENSION}.sorted.gam"
 done
-
