@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -19,61 +20,66 @@
 
   <body>
     <div class="container-fluid">
-      <div class="d-flex justify-content-center">
-        <form class="form-inline">
+      <div class="row">
+        <div class="col-md-auto">
           <img src="images/logo.png" />
+        </div>
+        <div class="col">
+          <form class="form-inline">
+            <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="dataSourceSelect">Data:</label>
+            <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="dataSourceSelect">
+            </select>
 
-          <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="dataSourceSelect">Data:</label>
-          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="dataSourceSelect">
-          </select>
+            <label class="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">xg file:</label>
+            <select class="customDataMounted custom-select mb-2 mr-sm-4 mb-sm-0" id="xgFileMounted">
+              <option value="none" selected>None</option>
+            </select>
+            <input type="file" class="customDataUpload form-control-file" id="xgFileUpload" accept=".xg">
 
-          <label for="xgFileSelect" class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">xg file:</label>
-          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="xgFileSelect" disabled>
-            <option value="none" selected>None</option>
-          </select>
-          
-          <label for="gbwtFileSelect" class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">gbwt file:</label>
-          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="gbwtFileSelect" disabled>
-            <option value="none" selected>None</option>
-          </select>
+            <label for="gbwtFileSelect" class="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">gbwt file:</label>
+            <select class="customDataMounted custom-select mb-2 mr-sm-4 mb-sm-0" id="gbwtFileMounted">
+              <option value="none" selected>None</option>
+            </select>
+            <input type="file" class="customDataUpload form-control-file" id="gbwtFileUpload" accept=".gbwt">
 
-          <label for="gamFileSelect" class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">gam index:</label>
-          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="gamFileSelect" disabled>
-            <option value="none" selected>None</option>
-          </select>
+            <label for="gamFileSelect" class="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">gam index:</label>
+            <select class="customDataMounted custom-select mb-2 mr-sm-4 mb-sm-0" id="gamFileMounted">
+              <option value="none" selected>None</option>
+            </select>
+            <input type="file" class="customDataUpload form-control-file" id="gamFileUpload" accept=".gam">
 
-          <label for="pathName" class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">Path name:</label>
-          <select class="custom-select mb-2 mr-sm-4 mb-sm-0" id="pathNameSelect" disabled>
-            <option value="none" selected>None</option>
-          </select>
+            <label for="pathName" class="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">Path name:</label>
+            <select class="customData custom-select mb-2 mr-sm-4 mb-sm-0" id="pathNameSelect">
+              <option value="none" selected>None</option>
+            </select>
 
-          <button type="button" class="btn btn-primary m-1" id="reloadButton" disabled><i class="fa fa-refresh fa-lg"></i> Reload</button>
+            <button type="button" class="customDataMounted btn btn-primary m-1" id="reloadButton">
+              <i class="fa fa-refresh fa-lg"></i>Reload
+            </button>
+          </form>
+          <form class="form-inline">
+              <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="position">Start:</label>
+              <input type="text" class="custom-input form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="1">
 
-        </form>
-      </div>
+              <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="distance">Length:</label>
+              <input type="text" class="custom-input form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="100">
 
-      <div class="d-flex justify-content-center">
-        <form class="form-inline">
-          <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="position">Start:</label>
-          <input type="text" class="custom-input form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="1">
-
-          <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="distance">Length:</label>
-          <input type="text" class="custom-input form-control mb-2 mr-sm-2 mb-sm-0" id="distance" size="4" value="100">
-
-          <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="unitSelect">Unit:</label>
-          <select class="custom-select mb-2 mr-sm-2 mb-sm-0" id="unitSelect">
-            <option value="1" selected>Nucleotides</option>
-            <option value="2">Nodes</option>
-          </select>
-          &nbsp
-          <button type="button" class="btn btn-primary m-1" id="goButton">Go</button>
-          <button type="button" class="btn btn-primary m-1" id="goLeftButton"><i class="fa fa-step-backward fa-lg"></i></button>
-          <button type="button" class="btn btn-primary m-1" id="zoomInButton"><i class="fa fa-search-plus fa-lg"></i></button>
-          <button type="button" class="btn btn-primary m-1" id="zoomOutButton"><i class="fa fa-search-minus fa-lg"></i></button>
-          <button type="button" class="btn btn-primary m-1" id="goRightButton"><i class="fa fa-step-forward fa-lg"></i></button>
-          <button type="button" class="btn btn-secondary m-1" id="downloadButton">Download Image</button>
-          <!--<button type="button" class="btn btn-secondary m-1" id="helpButton">Help</button>-->
-        </form>
+              <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="unitSelect">Unit:</label>
+              <select class="custom-select mb-2 mr-sm-2 mb-sm-0" id="unitSelect">
+                <option value="1" selected>Nucleotides</option>
+                <option value="2">Nodes</option>
+              </select>
+              &nbsp
+              <div class="smallLoader" id="fileUploadSpinner" style="display:none;"></div>
+              <button type="button" class="btn btn-primary m-1" id="goButton">Go</button>
+              <button type="button" class="btn btn-primary m-1" id="goLeftButton"><i class="fa fa-step-backward fa-lg"></i></button>
+              <button type="button" class="btn btn-primary m-1" id="zoomInButton"><i class="fa fa-search-plus fa-lg"></i></button>
+              <button type="button" class="btn btn-primary m-1" id="zoomOutButton"><i class="fa fa-search-minus fa-lg"></i></button>
+              <button type="button" class="btn btn-primary m-1" id="goRightButton"><i class="fa fa-step-forward fa-lg"></i></button>
+              <button type="button" class="btn btn-secondary m-1" id="downloadButton">Download Image</button>
+              <!--<button type="button" class="btn btn-secondary m-1" id="helpButton">Help</button>-->
+            </form>
+        </div>
       </div>
     </div>
 

@@ -23,28 +23,24 @@ try {
 const BACKEND_URL = CONFIG.BACKEND_URL || `http://${window.location.host}`;
 const DATA_SOURCES = CONFIG.DATA_SOURCES;
 let startTime = 0;
-// flag is true if instead of selecting input files from mounted folder of docker containter,
-// they are uploaded via the web app (only possible for small files)
-const FILE_INPUT_FLAG = document.getElementById('xgFileSelect').nodeName.toLowerCase() !== 'select';
 const customInputFiles = {};
 
 $('#dataSourceSelect').change(() => {
   $('#distance').prop('value', '100');
   $('#unitSelect').prop('value', '1');
-  if ($('#dataSourceSelect').val() === 'custom') {
-    $('#reloadButton').prop('disabled', false);
-    $('#xgFileSelect').prop('disabled', false);
-    $('#gbwtFileSelect').prop('disabled', false);
-    $('#gamFileSelect').prop('disabled', false);
-    $('#pathNameSelect').prop('disabled', false);
-    $('#position').prop('value', '1');
+  $('#position').prop('value', '1');
+  if ($('#dataSourceSelect').val() === 'customFileUpload') {
+    $('.customData').show();
+    $('.customDataMounted').hide();
+    $('.customDataUpload').show();
+  } else if ($('#dataSourceSelect').val() === 'customMounted') {
+    $('.customData').show();
+    $('.customDataMounted').show();
+    $('.customDataUpload').hide();
   } else {
-    $('#reloadButton').prop('disabled', true);
-    $('#xgFileSelect').prop('disabled', true);
-    $('#gbwtFileSelect').prop('disabled', true);
-    $('#gamFileSelect').prop('disabled', true);
-    $('#pathNameSelect').prop('disabled', true);
-
+    $('.customData').hide();
+    $('.customDataMounted').hide();
+    $('.customDataUpload').hide();
     DATA_SOURCES.forEach((ds) => {
       if (ds.name === $('#dataSourceSelect').val()) {
         $('#position').prop('value', ds.defaultPosition);
@@ -60,17 +56,18 @@ function createDropDownNoneOption() {
   return opt;
 }
 
-$('#xgFileSelect').change(() => {
+$('#xgFileMounted').change(() => {
   $('#pathNameSelect').empty();
-  if (!FILE_INPUT_FLAG) {
-    if ($('#xgFileSelect').val() === 'none') {
-      $('#pathNameSelect').append(createDropDownNoneOption());
-    } else {
-      getPathNames();
-    }
-    return;
+  if ($('#xgFileMounted').val() === 'none') {
+    $('#pathNameSelect').append(createDropDownNoneOption());
+  } else {
+    getPathNames($('#xgFileMounted').val(), false);
   }
-  const file = document.getElementById('xgFileSelect').files[0];
+});
+
+$('#xgFileUpload').change(() => {
+  $('#pathNameSelect').empty();
+  const file = document.getElementById('xgFileUpload').files[0];
   if (file === undefined) {
     $('#pathNameSelect').append(createDropDownNoneOption());
     delete customInputFiles.xgFile;
@@ -87,7 +84,7 @@ $('#xgFileSelect').change(() => {
         customInputFiles.xgFile = xhr.response.path;
         document.getElementById('fileUploadSpinner').style.display = 'none';
         document.getElementById('goButton').disabled = false;
-        getPathNames();
+        getPathNames(customInputFiles.xgFile, true);
       }
     };
     xhr.open('POST', `${BACKEND_URL}/xgFileSubmission`, true);
@@ -95,68 +92,55 @@ $('#xgFileSelect').change(() => {
   }
 });
 
-$('#gbwtFileSelect').change(() => {
-  if (FILE_INPUT_FLAG) {
-    const file = document.getElementById('gbwtFileSelect').files[0];
-    if (file === undefined) {
-      delete customInputFiles.gbwtFile;
-    } else {
-      document.getElementById('fileUploadSpinner').style.display = 'block';
-      document.getElementById('goButton').disabled = true;
-      const formData = new FormData();
-      formData.append('gbwtFile', file);
-      const xhr = new XMLHttpRequest();
-      xhr.responseType = 'json';
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          // Every thing ok, file uploaded
-          customInputFiles.gbwtFile = xhr.response.path;
-          document.getElementById('fileUploadSpinner').style.display = 'none';
-          document.getElementById('goButton').disabled = false;
-        }
-      };
-      xhr.open('POST', `${BACKEND_URL}/gbwtFileSubmission`, true);
-      xhr.send(formData);
-    }
-  }
-});
-
-$('#gamFileSelect').change(() => {
-  if (FILE_INPUT_FLAG) {
-    const file = document.getElementById('gamFileSelect').files[0];
-    if (file === undefined) {
-      delete customInputFiles.gamFile;
-    } else {
-      document.getElementById('fileUploadSpinner').style.display = 'block';
-      document.getElementById('goButton').disabled = true;
-      const formData = new FormData();
-      formData.append('gamFile', file);
-      const xhr = new XMLHttpRequest();
-      xhr.responseType = 'json';
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          // Every thing ok, file uploaded
-          customInputFiles.gamFile = xhr.response.path;
-          document.getElementById('fileUploadSpinner').style.display = 'none';
-          document.getElementById('goButton').disabled = false;
-        }
-      };
-      xhr.open('POST', `${BACKEND_URL}/gamFileSubmission`, true);
-      xhr.send(formData);
-    }
-  }
-});
-
-function getPathNames() {
-  let xgFile;
-  let isUploadedFile;
-  if (FILE_INPUT_FLAG) {
-    xgFile = customInputFiles.xgFile;
-    isUploadedFile = true;
+$('#gbwtFileUpload').change(() => {
+  const file = document.getElementById('gbwtFileUpload').files[0];
+  if (file === undefined) {
+    delete customInputFiles.gbwtFile;
   } else {
-    xgFile = $('#xgFileSelect').val();
-    isUploadedFile = false;
+    document.getElementById('fileUploadSpinner').style.display = 'block';
+    document.getElementById('goButton').disabled = true;
+    const formData = new FormData();
+    formData.append('gbwtFile', file);
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        // Every thing ok, file uploaded
+        customInputFiles.gbwtFile = xhr.response.path;
+        document.getElementById('fileUploadSpinner').style.display = 'none';
+        document.getElementById('goButton').disabled = false;
+      }
+    };
+    xhr.open('POST', `${BACKEND_URL}/gbwtFileSubmission`, true);
+    xhr.send(formData);
   }
+});
+
+$('#gamFileUpload').change(() => {
+  const file = document.getElementById('gamFileUpload').files[0];
+  if (file === undefined) {
+    delete customInputFiles.gamFile;
+  } else {
+    document.getElementById('fileUploadSpinner').style.display = 'block';
+    document.getElementById('goButton').disabled = true;
+    const formData = new FormData();
+    formData.append('gamFile', file);
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        // Every thing ok, file uploaded
+        customInputFiles.gamFile = xhr.response.path;
+        document.getElementById('fileUploadSpinner').style.display = 'none';
+        document.getElementById('goButton').disabled = false;
+      }
+    };
+    xhr.open('POST', `${BACKEND_URL}/gamFileSubmission`, true);
+    xhr.send(formData);
+  }
+});
+
+function getPathNames(xgFile, isUploadedFile) {
   $.ajax({
     type: 'POST',
     url: `${BACKEND_URL}/getPathNames`,
@@ -235,14 +219,14 @@ function getRemoteTubeMapData() {
   let xgFile;
   let gbwtFile;
   let gamFile;
-  if (FILE_INPUT_FLAG) {
+  if ($('#dataSourceSelect').val() === 'customFileUpload') {
     xgFile = customInputFiles.xgFile;
     gbwtFile = customInputFiles.gbwtFile;
     gamFile = customInputFiles.gamFile;
   } else {
-    xgFile = $('#xgFileSelect').val();
-    gbwtFile = $('#gbwtFileSelect').val();
-    gamFile = $('#gamFileSelect').val();
+    xgFile = $('#xgFileMounted').val();
+    gbwtFile = $('#gbwtFileMounted').val();
+    gamFile = $('#gamFileMounted').val();
   }
   let anchorTrackName = $('#pathNameSelect').val();
   let dataPath = customInputFiles.xgFile === undefined ? 'mounted' : 'upload';
@@ -388,7 +372,7 @@ document.getElementById('downloadButton').onclick = function () {
 };
 
 function clearDropdownsWithFilenames() {
-  const xgSelect = document.getElementById('xgFileSelect');
+  const xgSelect = document.getElementById('xgFileMounted');
   // remove old files
   while (xgSelect.hasChildNodes()) {
     xgSelect.removeChild(xgSelect.lastChild);
@@ -399,7 +383,7 @@ function clearDropdownsWithFilenames() {
   opt1.innerHTML = 'None';
   xgSelect.appendChild(opt1);
 
-  const gbwtSelect = document.getElementById('gbwtFileSelect');
+  const gbwtSelect = document.getElementById('gbwtFileMounted');
   while (gbwtSelect.hasChildNodes()) {
     gbwtSelect.removeChild(gbwtSelect.lastChild);
   }
@@ -408,7 +392,7 @@ function clearDropdownsWithFilenames() {
   opt2.innerHTML = 'None';
   gbwtSelect.appendChild(opt2);
 
-  const gamFileSelect = document.getElementById('gamFileSelect');
+  const gamFileSelect = document.getElementById('gamFileMounted');
   while (gamFileSelect.hasChildNodes()) {
     gamFileSelect.removeChild(gamFileSelect.lastChild);
   }
@@ -419,55 +403,53 @@ function clearDropdownsWithFilenames() {
 }
 
 function populateDropdownsWithFilenames() {
-  if (!FILE_INPUT_FLAG) {
-    $.ajax({
-      type: 'POST',
-      url: `${BACKEND_URL}/getFilenames`,
-      crossDomain: true,
-      success(response) {
-        const xgSelect = document.getElementById('xgFileSelect');
-        const xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
-        const gbwtSelect = document.getElementById('gbwtFileSelect');
-        const gbwtSelectValue =
-          gbwtSelect.options[gbwtSelect.selectedIndex].value;
-        const gamFileSelect = document.getElementById('gamFileSelect');
-        const gamSelectValue =
-          gamFileSelect.options[gamFileSelect.selectedIndex].value;
-        clearDropdownsWithFilenames();
+  $.ajax({
+    type: 'POST',
+    url: `${BACKEND_URL}/getFilenames`,
+    crossDomain: true,
+    success(response) {
+      const xgSelect = document.getElementById('xgFileMounted');
+      const xgSelectValue = xgSelect.options[xgSelect.selectedIndex].value;
+      const gbwtSelect = document.getElementById('gbwtFileMounted');
+      const gbwtSelectValue =
+        gbwtSelect.options[gbwtSelect.selectedIndex].value;
+      const gamFileSelect = document.getElementById('gamFileMounted');
+      const gamSelectValue =
+        gamFileSelect.options[gamFileSelect.selectedIndex].value;
+      clearDropdownsWithFilenames();
 
-        response.xgFiles.forEach((filename) => {
-          const opt = document.createElement('option');
-          opt.value = filename;
-          opt.innerHTML = filename;
-          if (opt.value === xgSelectValue) {
-            opt.selected = 'true';
-          }
-          xgSelect.appendChild(opt);
-        });
-        response.gbwtFiles.forEach((filename) => {
-          const opt = document.createElement('option');
-          opt.value = filename;
-          opt.innerHTML = filename;
-          if (opt.value === gbwtSelectValue) {
-            opt.selected = 'true';
-          }
-          gbwtSelect.appendChild(opt);
-        });
-        response.gamIndices.forEach((filename) => {
-          const opt = document.createElement('option');
-          opt.value = filename;
-          opt.innerHTML = filename;
-          if (opt.value === gamSelectValue) {
-            opt.selected = 'true';
-          }
-          gamFileSelect.appendChild(opt);
-        });
-      },
-      error(responseData, textStatus, errorThrown) {
-        console.log('POST failed.');
-      },
-    });
-  }
+      response.xgFiles.forEach((filename) => {
+        const opt = document.createElement('option');
+        opt.value = filename;
+        opt.innerHTML = filename;
+        if (opt.value === xgSelectValue) {
+          opt.selected = 'true';
+        }
+        xgSelect.appendChild(opt);
+      });
+      response.gbwtFiles.forEach((filename) => {
+        const opt = document.createElement('option');
+        opt.value = filename;
+        opt.innerHTML = filename;
+        if (opt.value === gbwtSelectValue) {
+          opt.selected = 'true';
+        }
+        gbwtSelect.appendChild(opt);
+      });
+      response.gamIndices.forEach((filename) => {
+        const opt = document.createElement('option');
+        opt.value = filename;
+        opt.innerHTML = filename;
+        if (opt.value === gamSelectValue) {
+          opt.selected = 'true';
+        }
+        gamFileSelect.appendChild(opt);
+      });
+    },
+    error(responseData, textStatus, errorThrown) {
+      console.log('POST failed.');
+    },
+  });
 }
 
 function setUpWebsocket() {
@@ -485,6 +467,10 @@ function setUpWebsocket() {
 }
 
 window.onload = function () {
+  $('.customData').hide();
+  $('.customDataMounted').hide();
+  $('.customDataUpload').hide();
+
   // populate UI 'data' dropdown with data from DATA_SOURCES
   const dsSelect = document.getElementById('dataSourceSelect');
   DATA_SOURCES.forEach((ds) => {
@@ -493,10 +479,15 @@ window.onload = function () {
     opt.innerHTML = ds.name;
     dsSelect.appendChild(opt);
   });
-  const opt = document.createElement('option');
-  opt.value = 'custom';
-  opt.innerHTML = 'custom';
-  dsSelect.appendChild(opt);
+  const uploadOption = document.createElement('option');
+  uploadOption.value = 'customFileUpload';
+  uploadOption.innerHTML = 'custom (file upload)';
+  dsSelect.appendChild(uploadOption);
+
+  const mountedOption = document.createElement('option');
+  mountedOption.value = 'customMounted';
+  mountedOption.innerHTML = 'custom (mounted files)';
+  dsSelect.appendChild(mountedOption);
 
   document.getElementById('goButton').click();
   populateDropdownsWithFilenames();
