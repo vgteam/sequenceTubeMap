@@ -23,4 +23,6 @@ for f in *.gam
 do
 	echo "${f}":
 	vg index -N "${f}" -d "./out/${f}.index"
+    NO_EXTENSION=${f%.gam}
+    vg gamsort -i "./out/${NO_EXTENSION}.sorted.gam.gai" "./${NO_EXTENSION}.gam" > "./out/${NO_EXTENSION}.sorted.gam"
 done
