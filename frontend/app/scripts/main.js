@@ -236,7 +236,7 @@ function getRemoteTubeMapData() {
       gbwtFile = ds.gbwtFile;
       gamFile = ds.gamFile;
       anchorTrackName = ds.anchorTrackName;
-      dataPath = 'default';
+      dataPath = ds.useMountedPath ? 'mounted' : 'default';
     }
   });
 
