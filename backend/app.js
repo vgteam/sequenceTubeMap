@@ -70,26 +70,8 @@ app.post('/gbwtFileSubmission', upload.single('gbwtFile'), (req, res) => {
 app.post('/gamFileSubmission', upload.single('gamFile'), (req, res) => {
   console.log('/gamFileSubmission');
   console.log(req.file);
-  indexGam(req, res);
+  indexGamSorted(req, res);
 });
-
-function indexGam(req, res) {
-  const vgIndexChild = spawn(`${VG_PATH}vg`, [
-    'index',
-    '-N',
-    req.file.path,
-    '-d',
-    req.file.path + '.index'
-  ]);
-
-  vgIndexChild.stderr.on('data', data => {
-    console.log(`err data: ${data}`);
-  });
-
-  vgIndexChild.on('close', () => {
-    indexGamSorted(req, res);
-  });
-}
 
 function indexGamSorted(req, res) {
   const prefix = req.file.path.substring(0, req.file.path.lastIndexOf('.'));
