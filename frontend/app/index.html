@@ -58,6 +58,10 @@
             <i class="fa fa-refresh fa-lg"></i>Reload
           </button>
         </form>
+
+        <div id="alertContainer">
+        </div>
+
         <form class="form-inline">
           <label class="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="position">Start:</label>
           <input type="text" class="custom-input form-control mb-2 mr-sm-4 mb-sm-0" id="position" size="12" value="1">
@@ -121,7 +125,8 @@
             <h5>General</h5>
             <div class="form-check">
               <label class="form-check-label">
-                <input class="form-check-input" type="checkbox" id="redundantNodesCheckbox" checked> Remove redundant nodes
+                <input class="form-check-input" type="checkbox" id="redundantNodesCheckbox" checked> Remove redundant
+                nodes
               </label>
             </div>
             <div class="form-check">
@@ -151,35 +156,40 @@
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo1" value="option1">&nbsp;colorful
+                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo1"
+                        value="option1">&nbsp;colorful
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo2" value="option2" checked>&nbsp;greyscale
+                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo2"
+                        value="option2" checked>&nbsp;greyscale
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo3" value="option3">&nbsp;reds
+                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo3"
+                        value="option3">&nbsp;reds
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo4" value="option4">&nbsp;blues
+                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo4"
+                        value="option4">&nbsp;blues
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo5" value="option5">&nbsp;pale
+                      <input class="form-check-input colorRadio" type="radio" name="colorsHaplo" id="colorsHaplo5"
+                        value="option5">&nbsp;pale
                       colors
                     </label>
                   </div>
@@ -193,35 +203,40 @@
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads1" value="option1">&nbsp;colorful
+                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads1"
+                        value="option1">&nbsp;colorful
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads2" value="option2">&nbsp;greyscale
+                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads2"
+                        value="option2">&nbsp;greyscale
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads3" value="option3" checked>&nbsp;reds
+                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads3"
+                        value="option3" checked>&nbsp;reds
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads4" value="option4">&nbsp;blues
+                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads4"
+                        value="option4">&nbsp;blues
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads5" value="option5">&nbsp;pale
+                      <input class="form-check-input colorRadio" type="radio" name="colorsFwReads" id="colorsFwReads5"
+                        value="option5">&nbsp;pale
                       colors
                     </label>
                   </div>
@@ -235,35 +250,40 @@
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads1" value="option1">&nbsp;colorful
+                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads1"
+                        value="option1">&nbsp;colorful
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads2" value="option2">&nbsp;greyscale
+                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads2"
+                        value="option2">&nbsp;greyscale
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads3" value="option3">&nbsp;reds
+                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads3"
+                        value="option3">&nbsp;reds
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads4" value="option4" checked>&nbsp;blues
+                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads4"
+                        value="option4" checked>&nbsp;blues
                     </label>
                   </div>
                 </div>
                 <div class="col-auto">
                   <div class="form-check">
                     <label class="form-check-label">
-                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads5" value="option5">&nbsp;pale
+                      <input class="form-check-input colorRadio" type="radio" name="colorsRevReads" id="colorsRevReads5"
+                        value="option5">&nbsp;pale
                       colors
                     </label>
                   </div>

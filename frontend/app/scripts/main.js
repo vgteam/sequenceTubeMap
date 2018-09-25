@@ -22,6 +22,8 @@ try {
 
 const BACKEND_URL = CONFIG.BACKEND_URL || `http://${window.location.host}`;
 const DATA_SOURCES = CONFIG.DATA_SOURCES;
+const MAX_UPLOAD_SIZE = 5242880;
+const MAX_UPLOAD_SIZE_DESCRIPTION = '5 MB';
 let startTime = 0;
 const customInputFiles = {};
 
@@ -56,6 +58,18 @@ function createDropDownNoneOption() {
   return opt;
 }
 
+function showFileSizeWarning() {
+  $('#alertContainer').append(
+    `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <strong>File size too big!</strong>
+      You may only upload files with a maximum size of ${MAX_UPLOAD_SIZE_DESCRIPTION}.
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>`
+  );
+}
+
 $('#xgFileMounted').change(() => {
   $('#pathNameSelect').empty();
   if ($('#xgFileMounted').val() === 'none') {
@@ -72,6 +86,11 @@ $('#xgFileUpload').change(() => {
     $('#pathNameSelect').append(createDropDownNoneOption());
     delete customInputFiles.xgFile;
   } else {
+    if (file.size > MAX_UPLOAD_SIZE) {
+      $('#xgFileUpload').val('');
+      showFileSizeWarning();
+      return;
+    }
     document.getElementById('fileUploadSpinner').style.display = 'block';
     document.getElementById('goButton').disabled = true;
     const formData = new FormData();
@@ -97,6 +116,11 @@ $('#gbwtFileUpload').change(() => {
   if (file === undefined) {
     delete customInputFiles.gbwtFile;
   } else {
+    if (file.size > MAX_UPLOAD_SIZE) {
+      $('#gbwtFileUpload').val('');
+      showFileSizeWarning();
+      return;
+    }
     document.getElementById('fileUploadSpinner').style.display = 'block';
     document.getElementById('goButton').disabled = true;
     const formData = new FormData();
@@ -121,6 +145,11 @@ $('#gamFileUpload').change(() => {
   if (file === undefined) {
     delete customInputFiles.gamFile;
   } else {
+    if (file.size > MAX_UPLOAD_SIZE) {
+      $('#gamFileUpload').val('');
+      showFileSizeWarning();
+      return;
+    }
     document.getElementById('fileUploadSpinner').style.display = 'block';
     document.getElementById('goButton').disabled = true;
     const formData = new FormData();
