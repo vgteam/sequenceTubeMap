@@ -99,7 +99,7 @@ function indexGamSorted(req, res) {
   });
 }
 
-app.post('/chr22_v4', (req, res) => {
+app.post('/getChunkedData', (req, res) => {
   console.time('request-duration');
   console.log('http POST chr22_v4 received');
   console.log(`nodeID = ${req.body.nodeID}`);

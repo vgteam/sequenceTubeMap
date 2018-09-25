@@ -271,7 +271,7 @@ function getRemoteTubeMapData() {
 
   return $.ajax({
     type: 'POST',
-    url: `${BACKEND_URL}/chr22_v4`,
+    url: `${BACKEND_URL}/getChunkedData`,
     crossDomain: true,
     data: {
       nodeID,
