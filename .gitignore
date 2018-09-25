@@ -4,8 +4,11 @@ bower_components
 test/bower_components
 .DS_store
 .publish
+.vscode
 dist
 frontend/config.json
 backend/internalData/
+backend/mountedData/
 backend/vg/
+backend/uploads/
 *.swp
