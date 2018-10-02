@@ -1,112 +1,32 @@
 {
-  "name": "sequence_tube_maps",
-  "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Wolfgang Beyer",
-  "license": "MIT",
-  "engines": {
-    "node": ">=4"
-  },
+  "name": "cra-frontend",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
-    "body-parser": "^1.15.2",
-    "bower": "^1.8.2",
-    "cors": "^2.8.1",
-    "event-stream": "^3.3.4",
-    "express": "^4.14.0",
-    "lazypipe": "^1.0.1",
-    "merge-json": "0.1.0-b.3"
+    "@fortawesome/fontawesome-svg-core": "^1.2.4",
+    "@fortawesome/free-solid-svg-icons": "^5.3.1",
+    "@fortawesome/react-fontawesome": "^0.1.3",
+    "bootstrap": "4",
+    "d3": "^5.7.0",
+    "d3-selection-multi": "^1.0.1",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
+    "react-scripts": "2.0.0",
+    "reactstrap": "^6.4.0"
   },
-  "devDependencies": {
-    "babel-core": "^6.4.0",
-    "babel-preset-es2015": "^6.3.13",
-    "babel-register": "^6.5.2",
-    "babelify": "^7.3.0",
-    "browser-sync": "^2.2.1",
-    "browserify": "^14.0.0",
-    "browserify-optional": "^1.0.1",
-    "del": "^2.2.0",
-    "eslint": "^3.14.1",
-    "eslint-config-airbnb": "^14.0.0",
-    "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-jsx-a11y": "^3.0.2",
-    "eslint-plugin-react": "^6.9.0",
-    "gulp": "^3.9.0",
-    "gulp-autoprefixer": "^3.0.1",
-    "gulp-babel": "^6.1.1",
-    "gulp-cache": "^0.4.2",
-    "gulp-cssnano": "^2.0.0",
-    "gulp-eslint": "^3.0.0",
-    "gulp-gh-pages": "^0.5.4",
-    "gulp-htmlmin": "^3.0.0",
-    "gulp-if": "^2.0.2",
-    "gulp-imagemin": "^3.0.1",
-    "gulp-load-plugins": "^1.2.4",
-    "gulp-plumber": "^1.0.1",
-    "gulp-rename": "^1.2.2",
-    "gulp-size": "^2.1.0",
-    "gulp-sourcemaps": "^2.2.0",
-    "gulp-uglify": "^2.0.0",
-    "gulp-useref": "^3.0.0",
-    "main-bower-files": "^2.5.0",
-    "run-sequence": "^1.2.2",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0",
-    "wiredep": "^4.0.0"
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "env": {
-      "es6": true,
-      "browser": true,
-      "jquery": true
-    },
-    "extends": "airbnb",
-    "rules": {
-      "quotes": [
-        2,
-        "single"
-      ],
-      "no-use-before-define": [
-        "error",
-        {
-          "functions": false,
-          "variables": true
-        }
-      ],
-      "no-mixed-operators": "off",
-      "space-before-function-paren": [
-        "error",
-        "never"
-      ],
-      "comma-dangle": [
-        "error",
-        {
-          "arrays": "always-multiline",
-          "objects": "always-multiline",
-          "imports": "always",
-          "exports": "always",
-          "functions": "ignore"
-        }
-      ],
-      "arrow-parens": [
-        "error",
-        "always"
-      ]
-    },
-    "parserOptions": {
-      "ecmaVersion": 6,
-      "sourceType": "module"
-    },
-    "globals": {
-      "d3": true
-    }
+    "extends": "react-app"
   },
-  "prettier": {
-    "singleQuote": true,
-    "trailingComma": "es5",
-    "arrowParens": "always"
-  }
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }

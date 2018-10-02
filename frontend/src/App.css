@@ -1,4 +1,3 @@
-/* Move down content because we have a fixed navbar that is 3.5rem tall */
 body {
   padding-top: 1.5rem;
   font-size: 85%;
@@ -6,6 +5,7 @@ body {
 
 .form-control {
   font-size: 100%;
+  line-height: 1.25;
 }
 
 .custom-select {
@@ -21,8 +21,17 @@ body {
   margin-right: 0px !important;
 }
 
+.form-inline button {
+  margin: 0.25rem !important;
+}
+
+input[type='file'] {
+  width: 200px;
+}
+
+/* the div containing the tubemap svg */
 #tubeMapSVG {
-  overflow: auto;
+  /* overflow: auto; */
   width: calc(100% - 40px);
   position: relative;
   margin: 20px;
@@ -31,40 +40,13 @@ body {
   max-height: 75vh;
 }
 
-.custom-file-control:after {
-  content: attr(data-content) !important;
+/* contains the spinning loader */
+#loaderContainer {
+  margin: 0 auto;
+  padding: 40px;
 }
 
-.color-box {
-  width: 15px;
-  height: 15px;
-  display: inline-block;
-  background-color: #ccc;
-  /* position: absolute;*/
-  left: 5px;
-  top: 5px;
-}
-
-.smallLoader {
-  border: 5px solid #f3f3f3;
-  -webkit-animation: spin 1s linear infinite;
-  animation: spin 1s linear infinite;
-  border-top: 5px solid #555;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-
-  /* position: absolute; */
-  z-index: 1;
-  /* top: 50%; */
-  /* margin: -25px 0 0 0px; */
-  position: relative;
-  /* top: -30px; */
-  left: 21px;
-  margin-right: -21px;
-  background-color: #6fa9fb;
-}
-
+/* spinning loader during graph construction */
 #loader {
   border: 5px solid #f3f3f3;
   -webkit-animation: spin 1s linear infinite;
@@ -73,11 +55,6 @@ body {
   border-radius: 50%;
   width: 50px;
   height: 50px;
-
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  margin: -25px 0 0 0px;
 }
 
 @-webkit-keyframes spin {
@@ -98,6 +75,28 @@ body {
   }
 }
 
-input[type='file'] {
-  width: 200px;
+/* spinning loader covering the "Go"-button during file uploads */
+.smallLoader {
+  border: 5px solid #f3f3f3;
+  -webkit-animation: spin 1s linear infinite;
+  animation: spin 1s linear infinite;
+  border-top: 5px solid #555;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  z-index: 1;
+  position: relative;
+  left: 21px;
+  margin-right: -21px;
+  background-color: #6fa9fb;
+}
+
+/* small colored squares which are part of the graph's legen */
+.color-box {
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  background-color: #ccc;
+  left: 5px;
+  top: 5px;
 }

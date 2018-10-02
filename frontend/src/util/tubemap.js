@@ -8,6 +8,8 @@
 /* eslint no-loop-func: "off" */
 /* eslint no-unused-vars: "off" */
 /* eslint no-return-assign: "off" */
+import * as d3 from 'd3';
+import 'd3-selection-multi';
 
 const DEBUG = false;
 
@@ -18,7 +20,7 @@ const greys = [
   '#737373',
   '#525252',
   '#252525',
-  '#000000',
+  '#000000'
 ];
 
 const blues = [
@@ -28,7 +30,7 @@ const blues = [
   '#4292c6',
   '#2171b5',
   '#08519c',
-  '#08306b',
+  '#08306b'
 ];
 
 const reds = [
@@ -38,7 +40,7 @@ const reds = [
   '#ef3b2c',
   '#cb181d',
   '#a50f15',
-  '#67000d',
+  '#67000d'
 ];
 
 // d3 category10
@@ -52,7 +54,7 @@ const plainColors = [
   '#e377c2',
   '#7f7f7f',
   '#bcbd22',
-  '#17becf',
+  '#17becf'
 ];
 
 // d3 category10
@@ -66,7 +68,7 @@ const lightColors = [
   '#F4CCE8',
   '#CFCFCF',
   '#E6E6AC',
-  '#A8E7ED',
+  '#A8E7ED'
 ];
 
 let haplotypeColors = [];
@@ -108,7 +110,7 @@ const config = {
   forwardReadColors: 'reds',
   reverseReadColors: 'blues',
   exonColors: 'lightColors',
-  hideLegendFlag: false,
+  hideLegendFlag: false
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -188,7 +190,7 @@ function straightenTrack(index) {
   }
 
   // invert the sequence within the nodes
-  inputNodes.forEach((node) => {
+  inputNodes.forEach(node => {
     if (nodesToInvert.indexOf(node.name) !== -1) {
       node.seq = node.seq
         .split('')
@@ -386,7 +388,7 @@ function generateReadOnlyNodeAttributes() {
   }
 
   const orderY = new Map();
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     if (node.hasOwnProperty('order') && node.hasOwnProperty('y')) {
       if (orderY.has(node.order)) {
         orderY.set(
@@ -410,7 +412,7 @@ function generateReadOnlyNodeAttributes() {
 
 // add info about reads to nodes (incoming, outgoing and internal reads)
 function assignReadsToNodes() {
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     node.incomingReads = [];
     node.outgoingReads = [];
     node.internalReads = [];
@@ -432,7 +434,7 @@ function assignReadsToNodes() {
 }
 
 function removeNonPathNodesFromReads() {
-  reads.forEach((read) => {
+  reads.forEach(read => {
     for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
       let nodeName = read.sequence[i];
       if (nodeName.charAt(0) === '-') {
@@ -455,14 +457,14 @@ function placeReads() {
   sortedNodes.sort(compareNodesByOrder);
 
   // iterate over all nodes
-  sortedNodes.forEach((node) => {
+  sortedNodes.forEach(node => {
     // sort incoming reads
     node.incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
 
     // place incoming reads
     let currentY = node.y + node.contentHeight;
     const occupiedUntil = new Map();
-    node.incomingReads.forEach((readElement) => {
+    node.incomingReads.forEach(readElement => {
       reads[readElement[0]].path[readElement[1]].y = currentY;
       setOccupiedUntil(
         occupiedUntil,
@@ -481,7 +483,7 @@ function placeReads() {
     // place outgoing reads
     const occupiedFrom = new Map();
     currentY = node.y + node.contentHeight;
-    node.outgoingReads.forEach((readElement) => {
+    node.outgoingReads.forEach(readElement => {
       // place in next lane
       reads[readElement[0]].path[readElement[1]].y = currentY;
       occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
@@ -495,7 +497,7 @@ function placeReads() {
       } else {
         // otherwise push down incoming reads to make place for outgoing Read
         occupiedUntil.set(currentY, 0);
-        node.incomingReads.forEach((incReadElementIndices) => {
+        node.incomingReads.forEach(incReadElementIndices => {
           const incRead = reads[incReadElementIndices[0]];
           const incReadPathElement = incRead.path[incReadElementIndices[1]];
           if (incReadPathElement.y >= currentY) {
@@ -518,7 +520,7 @@ function placeReads() {
     node.internalReads.sort(compareInternalReads);
 
     // place internal reads
-    node.internalReads.forEach((readIdx) => {
+    node.internalReads.forEach(readIdx => {
       const currentRead = reads[readIdx];
       currentY = node.y + node.contentHeight;
       while (
@@ -547,13 +549,13 @@ function placeReads() {
         elementsWithoutNode.push({
           readIndex: idx,
           pathIndex: pathIdx,
-          previousY: reads[idx].path[pathIdx - 1].y,
+          previousY: reads[idx].path[pathIdx - 1].y
         });
       }
     });
   });
   elementsWithoutNode.sort(compareNoNodeReadsByPreviousY);
-  elementsWithoutNode.forEach((element) => {
+  elementsWithoutNode.forEach(element => {
     const segment = reads[element.readIndex].path[element.pathIndex];
     segment.y = bottomY[segment.order];
     bottomY[segment.order] += reads[element.readIndex].width;
@@ -665,15 +667,15 @@ function calculateBottomY() {
     bottomY.push(0);
   }
 
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     bottomY[node.order] = Math.max(
       bottomY[node.order],
       node.y + node.contentHeight + 20
     );
   });
 
-  tracks.forEach((track) => {
-    track.path.forEach((element) => {
+  tracks.forEach(track => {
+    track.path.forEach(element => {
       bottomY[element.order] = Math.max(
         bottomY[element.order],
         element.y + track.width
@@ -691,9 +693,9 @@ function generateBasicPathsForReads() {
   let currentNode;
   let previousNode;
   let previousNodeIsForward;
-  const isPositive = (n) => ((n = +n) || 1 / n) >= 0;
+  const isPositive = n => ((n = +n) || 1 / n) >= 0;
 
-  reads.forEach((read) => {
+  reads.forEach(read => {
     // add info for start of track
     currentNodeIndex = Math.abs(read.indexSequence[0]);
     currentNodeIsForward = isPositive(read.indexSequence[0]);
@@ -703,7 +705,7 @@ function generateBasicPathsForReads() {
     read.path.push({
       order: currentNode.order,
       isForward: currentNodeIsForward,
-      node: currentNodeIndex,
+      node: currentNodeIndex
     });
 
     for (let i = 1; i < read.sequence.length; i += 1) {
@@ -720,7 +722,7 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: previousNode.order,
             isForward: true,
-            node: null,
+            node: null
           });
         }
         for (let j = previousNode.order + 1; j < currentNode.order; j += 1) {
@@ -732,19 +734,19 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: currentNode.order,
             isForward: true,
-            node: null,
+            node: null
           });
           read.path.push({
             order: currentNode.order,
             isForward: false,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
         } else {
           // current Node forward
           read.path.push({
             order: currentNode.order,
             isForward: true,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
         }
       } else if (currentNode.order < previousNode.order) {
@@ -753,7 +755,7 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: previousNode.order,
             isForward: false,
-            node: null,
+            node: null
           });
         }
         for (let j = previousNode.order - 1; j > currentNode.order; j -= 1) {
@@ -765,19 +767,19 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: currentNode.order,
             isForward: false,
-            node: null,
+            node: null
           });
           read.path.push({
             order: currentNode.order,
             isForward: true,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
         } else {
           // backward at current node
           read.path.push({
             order: currentNode.order,
             isForward: false,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
         }
       } else {
@@ -785,18 +787,18 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: currentNode.order,
             isForward: currentNodeIsForward,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
         } else {
           read.path.push({
             order: currentNode.order,
             isForward: !currentNodeIsForward,
-            node: null,
+            node: null
           });
           read.path.push({
             order: currentNode.order,
             isForward: currentNodeIsForward,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
         }
       }
@@ -806,7 +808,7 @@ function generateBasicPathsForReads() {
 
 // reverse reads which are reversed
 function reverseReversedReads() {
-  reads.forEach((read) => {
+  reads.forEach(read => {
     let pos = 0;
     while (pos < read.sequence.length && read.sequence[pos].charAt(0) === '-') {
       pos += 1;
@@ -824,7 +826,7 @@ function reverseReversedReads() {
         read.sequenceNew[i].nodeName = read.sequenceNew[i].nodeName.substr(1); // remove '-'
         const nodeWidth =
           nodes[nodeMap.get(read.sequenceNew[i].nodeName)].width;
-        read.sequenceNew[i].mismatches.forEach((mm) => {
+        read.sequenceNew[i].mismatches.forEach(mm => {
           if (mm.type === 'insertion') {
             mm.pos = nodeWidth - mm.pos;
             mm.seq = getReverseComplement(mm.seq);
@@ -880,9 +882,9 @@ function getReverseComplement(s) {
 
 // for each track: generate sequence of node indices from seq. of node names
 function generateTrackIndexSequencesNEW(tracksOrReads) {
-  tracksOrReads.forEach((track) => {
+  tracksOrReads.forEach(track => {
     track.indexSequence = [];
-    track.sequence.forEach((edit) => {
+    track.sequence.forEach(edit => {
       if (edit.nodeName.charAt(0) === '-') {
         track.indexSequence.push(-nodeMap.get(edit.nodeName.substr(1)));
       } else {
@@ -894,9 +896,9 @@ function generateTrackIndexSequencesNEW(tracksOrReads) {
 
 // for each track: generate sequence of node indices from seq. of node names
 function generateTrackIndexSequences(tracksOrReads) {
-  tracksOrReads.forEach((track) => {
+  tracksOrReads.forEach(track => {
     track.indexSequence = [];
-    track.sequence.forEach((nodeName) => {
+    track.sequence.forEach(nodeName => {
       if (nodeName.charAt(0) === '-') {
         track.indexSequence.push(-nodeMap.get(nodeName.substr(1)));
       } else {
@@ -924,7 +926,7 @@ function getImageDimensions() {
   minYCoordinate = 99;
   maxYCoordinate = -99;
 
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     if (node.hasOwnProperty('x')) {
       maxXCoordinate = Math.max(maxXCoordinate, node.x + 20 + node.pixelWidth);
     }
@@ -937,8 +939,8 @@ function getImageDimensions() {
     }
   });
 
-  tracks.forEach((track) => {
-    track.path.forEach((segment) => {
+  tracks.forEach(track => {
+    track.path.forEach(segment => {
       maxYCoordinate = Math.max(maxYCoordinate, segment.y + track.width);
       minYCoordinate = Math.min(minYCoordinate, segment.y);
     });
@@ -949,11 +951,15 @@ function getImageDimensions() {
 // enable zooming and panning
 function alignSVG() {
   svg.attr('height', maxYCoordinate - minYCoordinate + 50);
+  // svg.attr(
+  //   'width',
+  //   $(svgID)
+  //     .parent()
+  //     .width()
+  // );
   svg.attr(
     'width',
-    $(svgID)
-      .parent()
-      .width()
+    document.getElementById(svgID.substring(1)).parentNode.offsetWidth
   );
 
   function zoomed() {
@@ -975,14 +981,16 @@ function alignSVG() {
   zoom = d3
     .zoom()
     .scaleExtent([
-      $(svgID)
-        .parent()
-        .width() / maxXCoordinate,
-      8,
+      // $(svgID)
+      //   .parent()
+      //   .width() / maxXCoordinate,
+      document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
+        maxXCoordinate,
+      8
     ])
     .translateExtent([
       [-1, minYCoordinate - 25],
-      [maxXCoordinate + 2, maxYCoordinate + 25],
+      [maxXCoordinate + 2, maxYCoordinate + 25]
     ])
     .on('zoom', zoomed);
 
@@ -1000,9 +1008,11 @@ function alignSVG() {
 
 export function zoomBy(zoomFactor) {
   const minZoom =
-    $(svgID)
-      .parent()
-      .width() / maxXCoordinate;
+    // $(svgID)
+    //   .parent()
+    //   .width() / maxXCoordinate;
+    document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
+    maxXCoordinate;
   const maxZoom = 8;
   const width = document.getElementById(svgID.substring(1)).parentElement
     .clientWidth;
@@ -1040,12 +1050,12 @@ function generateNodeSuccessors() {
   let current;
   let follower;
 
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     node.successors = [];
     node.predecessors = [];
   });
 
-  tracks.forEach((track) => {
+  tracks.forEach(track => {
     for (let i = 0; i < track.indexSequence.length - 1; i += 1) {
       current = Math.abs(track.indexSequence[i]);
       follower = Math.abs(track.indexSequence[i + 1]);
@@ -1059,7 +1069,7 @@ function generateNodeSuccessors() {
   });
 
   if (reads && config.showReads) {
-    reads.forEach((track) => {
+    reads.forEach(track => {
       for (let i = 0; i < track.indexSequence.length - 1; i += 1) {
         current = Math.abs(track.indexSequence[i]);
         follower = Math.abs(track.indexSequence[i + 1]);
@@ -1080,7 +1090,7 @@ function generateNodeOrderOfSingleTrack(sequence) {
   let currentNode;
   let minOrder = 0;
 
-  sequence.forEach((nodeIndex) => {
+  sequence.forEach(nodeIndex => {
     if (nodeIndex < 0) {
       currentNode = nodes[Math.abs(nodeIndex)];
       if (!currentNode.hasOwnProperty('order')) {
@@ -1159,7 +1169,7 @@ function generateNodeOrder() {
   if (reads && config.showReads) tracksAndReads = tracks.concat(reads);
   else tracksAndReads = tracks;
 
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     delete node.order;
   });
 
@@ -1296,7 +1306,7 @@ function isSuccessor(first, second) {
 // get order number of the rightmost node
 function getMaxOrder() {
   let max = -1;
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     if (node.hasOwnProperty('order') && node.order > max) max = node.order;
   });
   return max;
@@ -1317,7 +1327,7 @@ function uninvert(sequence) {
 
 // increases the order-value of all nodes by amount
 function increaseOrderForAllNodes(amount) {
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     if (node.hasOwnProperty('order')) node.order += amount;
   });
 }
@@ -1342,7 +1352,7 @@ function increaseOrderForSuccessors(startingNode, tabuNode, newOrder) {
         increasedOrders.get(currentNode) < currentOrder
       ) {
         increasedOrders.set(currentNode, currentOrder);
-        nodes[currentNode].successors.forEach((successor) => {
+        nodes[currentNode].successors.forEach(successor => {
           if (
             nodes[successor].order > nodes[currentNode].order &&
             successor !== tabuNode
@@ -1352,7 +1362,7 @@ function increaseOrderForSuccessors(startingNode, tabuNode, newOrder) {
           }
         });
         if (currentNode !== startingNode) {
-          nodes[currentNode].predecessors.forEach((predecessor) => {
+          nodes[currentNode].predecessors.forEach(predecessor => {
             if (
               nodes[predecessor].order > currentNode.order &&
               predecessor !== tabuNode
@@ -1373,17 +1383,17 @@ function increaseOrderForSuccessors(startingNode, tabuNode, newOrder) {
 
 // calculates the node degree: the number of tracks passing through the node / the node height
 function generateNodeDegree() {
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     node.tracks = [];
   });
 
-  tracks.forEach((track) => {
-    track.indexSequence.forEach((nodeIndex) => {
+  tracks.forEach(track => {
+    track.indexSequence.forEach(nodeIndex => {
       nodes[Math.abs(nodeIndex)].tracks.push(track.id);
     });
   });
 
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     if (node.hasOwnProperty('tracks')) node.degree = node.tracks.length;
   });
 }
@@ -1483,7 +1493,7 @@ function generateNodeXCoords() {
   sortedNodes.sort(compareNodesByOrder);
   const extra = calculateExtraSpace();
 
-  sortedNodes.forEach((node) => {
+  sortedNodes.forEach(node => {
     if (node.hasOwnProperty('order')) {
       if (node.order > currentOrder) {
         currentOrder = node.order;
@@ -1508,7 +1518,7 @@ function calculateExtraSpace() {
     rightSideEdges.push(0);
   }
 
-  tracks.forEach((track) => {
+  tracks.forEach(track => {
     for (let i = 1; i < track.path.length; i += 1) {
       if (track.path[i].order === track.path[i - 1].order) {
         // repeat or translocation
@@ -1539,7 +1549,7 @@ function generateLaneAssignment() {
   let previousNode;
   let previousNodeIsForward;
   const prevSegmentPerOrderPerTrack = [];
-  const isPositive = (n) => ((n = +n) || 1 / n) >= 0;
+  const isPositive = n => ((n = +n) || 1 / n) >= 0;
 
   // create empty variables
   for (let i = 0; i <= maxOrder; i += 1) {
@@ -1561,7 +1571,7 @@ function generateLaneAssignment() {
       order: currentNode.order,
       lane: null,
       isForward: currentNodeIsForward,
-      node: currentNodeIndex,
+      node: currentNodeIndex
     });
     addToAssignment(
       currentNode.order,
@@ -1587,7 +1597,7 @@ function generateLaneAssignment() {
             order: previousNode.order,
             lane: null,
             isForward: true,
-            node: null,
+            node: null
           });
           addToAssignment(
             previousNode.order,
@@ -1604,7 +1614,7 @@ function generateLaneAssignment() {
             order: j,
             lane: null,
             isForward: true,
-            node: null,
+            node: null
           });
           addToAssignment(
             j,
@@ -1621,7 +1631,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: true,
-            node: null,
+            node: null
           });
           addToAssignment(
             currentNode.order,
@@ -1635,7 +1645,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: false,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
           addToAssignment(
             currentNode.order,
@@ -1651,7 +1661,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: true,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
           addToAssignment(
             currentNode.order,
@@ -1669,7 +1679,7 @@ function generateLaneAssignment() {
             order: previousNode.order,
             lane: null,
             isForward: false,
-            node: null,
+            node: null
           });
           addToAssignment(
             previousNode.order,
@@ -1686,7 +1696,7 @@ function generateLaneAssignment() {
             order: j,
             lane: null,
             isForward: false,
-            node: null,
+            node: null
           });
           addToAssignment(
             j,
@@ -1703,7 +1713,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: false,
-            node: null,
+            node: null
           });
           addToAssignment(
             currentNode.order,
@@ -1717,7 +1727,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: true,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
           addToAssignment(
             currentNode.order,
@@ -1733,7 +1743,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: false,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
           addToAssignment(
             currentNode.order,
@@ -1750,7 +1760,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: currentNodeIsForward,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
           addToAssignment(
             currentNode.order,
@@ -1765,7 +1775,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: !currentNodeIsForward,
-            node: null,
+            node: null
           });
           addToAssignment(
             currentNode.order,
@@ -1779,7 +1789,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: currentNodeIsForward,
-            node: currentNodeIndex,
+            node: currentNodeIndex
           });
           addToAssignment(
             currentNode.order,
@@ -1812,7 +1822,7 @@ function addToAssignment(
     assignments[order].push({
       type: 'single',
       node: null,
-      tracks: [{ trackID: trackNo, segmentID, compareToFromSame }],
+      tracks: [{ trackID: trackNo, segmentID, compareToFromSame }]
     });
     prevSegmentPerOrderPerTrack[order][trackNo] =
       assignments[order][assignments[order].length - 1].tracks[0];
@@ -1824,7 +1834,7 @@ function addToAssignment(
         assignments[order][i].tracks.push({
           trackID: trackNo,
           segmentID,
-          compareToFromSame,
+          compareToFromSame
         });
         prevSegmentPerOrderPerTrack[order][trackNo] =
           assignments[order][i].tracks[assignments[order][i].tracks.length - 1];
@@ -1835,7 +1845,7 @@ function addToAssignment(
     assignments[order].push({
       type: 'single',
       node: nodeIndex,
-      tracks: [{ trackID: trackNo, segmentID, compareToFromSame }],
+      tracks: [{ trackID: trackNo, segmentID, compareToFromSame }]
     });
     prevSegmentPerOrderPerTrack[order][trackNo] =
       assignments[order][assignments[order].length - 1].tracks[0];
@@ -1846,9 +1856,9 @@ function addToAssignment(
 function getIdealLanesAndCoords(assignment, order) {
   let index;
 
-  assignment.forEach((node) => {
+  assignment.forEach(node => {
     node.idealLane = 0;
-    node.tracks.forEach((track) => {
+    node.tracks.forEach(track => {
       if (track.segmentID === 0) {
         track.idealLane = track.trackID;
         track.idealY = null;
@@ -1904,7 +1914,7 @@ function generateSingleLaneAssignment(assignment, order) {
   getIdealLanesAndCoords(assignment, order);
   assignment.sort(compareByIdealLane);
 
-  assignment.forEach((node) => {
+  assignment.forEach(node => {
     if (node.node !== null) {
       nodes[node.node].topLane = currentLane;
       if (prevNameIsNull) currentY -= 10;
@@ -1918,7 +1928,7 @@ function generateSingleLaneAssignment(assignment, order) {
     }
 
     node.tracks.sort(compareByIdealLane);
-    node.tracks.forEach((track) => {
+    node.tracks.forEach(track => {
       track.lane = currentLane;
       if (track.trackID === prevTrack && node.node === null && prevNameIsNull) {
         currentY += 10;
@@ -1946,18 +1956,18 @@ function adjustVertically(assignment, potentialAdjustmentValues) {
   let verticalAdjustment = 0;
   let minAdjustmentCost = Number.MAX_SAFE_INTEGER;
 
-  potentialAdjustmentValues.forEach((moveBy) => {
+  potentialAdjustmentValues.forEach(moveBy => {
     if (getVerticalAdjustmentCost(assignment, moveBy) < minAdjustmentCost) {
       minAdjustmentCost = getVerticalAdjustmentCost(assignment, moveBy);
       verticalAdjustment = moveBy;
     }
   });
 
-  assignment.forEach((node) => {
+  assignment.forEach(node => {
     if (node.node !== null) {
       nodes[node.node].y += verticalAdjustment;
     }
-    node.tracks.forEach((track) => {
+    node.tracks.forEach(track => {
       tracks[track.trackID].path[track.segmentID].y += verticalAdjustment;
     });
   });
@@ -1965,18 +1975,18 @@ function adjustVertically(assignment, potentialAdjustmentValues) {
 
 function adjustVertically3(node, adjustBy) {
   if (node.hasOwnProperty('order')) {
-    assignments[node.order].forEach((assignmentNode) => {
+    assignments[node.order].forEach(assignmentNode => {
       if (assignmentNode.node !== null) {
         const aNode = nodes[assignmentNode.node];
         if (aNode !== node && aNode.y > node.y) {
           aNode.y += adjustBy;
-          assignmentNode.tracks.forEach((track) => {
+          assignmentNode.tracks.forEach(track => {
             tracks[track.trackID].path[track.segmentID].y += adjustBy;
           });
         }
       } else {
         // track-segment not within a node
-        assignmentNode.tracks.forEach((track) => {
+        assignmentNode.tracks.forEach(track => {
           if (tracks[track.trackID].path[track.segmentID].y >= node.y) {
             tracks[track.trackID].path[track.segmentID].y += adjustBy;
           }
@@ -1984,7 +1994,7 @@ function adjustVertically3(node, adjustBy) {
       }
     });
     if (nodesPerOrder[node.order].length > 0) {
-      nodesPerOrder[node.order].forEach((nodeIndex) => {
+      nodesPerOrder[node.order].forEach(nodeIndex => {
         if (nodes[nodeIndex] !== node && nodes[nodeIndex].y > node.y) {
           nodes[nodeIndex].y += adjustBy;
         }
@@ -1996,8 +2006,8 @@ function adjustVertically3(node, adjustBy) {
 // calculates cost of vertical adjustment as vertical distance * width of track
 function getVerticalAdjustmentCost(assignment, moveBy) {
   let result = 0;
-  assignment.forEach((node) => {
-    node.tracks.forEach((track) => {
+  assignment.forEach(node => {
+    node.tracks.forEach(track => {
       if (track.idealY !== null && tracks[track.trackID].type !== 'read') {
         result +=
           Math.abs(
@@ -2054,12 +2064,12 @@ function addTrackFeatures() {
   let nodeEnd;
   let feature = {};
 
-  bed.forEach((line) => {
+  bed.forEach(line => {
     let i = 0;
     while (i < numberOfTracks && tracks[i].name !== line.track) i += 1;
     if (i < numberOfTracks) {
       nodeStart = 0;
-      tracks[i].path.forEach((node) => {
+      tracks[i].path.forEach(node => {
         if (node.node !== null) {
           feature = {};
           if (nodes[node.node].hasOwnProperty('sequenceLength')) {
@@ -2098,7 +2108,7 @@ function calculateTrackWidth() {
   // flag: if vg returns freq of 0 for all tracks, we will increase width manually
   let allAreFour = true;
 
-  tracks.forEach((track) => {
+  tracks.forEach(track => {
     if (track.hasOwnProperty('freq')) {
       // custom track width
       track.width = Math.round((Math.log(track.freq) + 1) * 4);
@@ -2115,7 +2125,7 @@ function calculateTrackWidth() {
   });
 
   if (allAreFour) {
-    tracks.forEach((track) => {
+    tracks.forEach(track => {
       if (track.hasOwnProperty('freq')) {
         track.width = 15;
       }
@@ -2258,7 +2268,7 @@ function generateSVGShapesFromPath() {
   // generate x coords where each order starts and ends
   const orderStartX = [];
   const orderEndX = [];
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     if (node.hasOwnProperty('order')) {
       orderStartX[node.order] = node.x;
       if (orderEndX[node.order] === undefined) {
@@ -2272,7 +2282,7 @@ function generateSVGShapesFromPath() {
     }
   });
 
-  tracks.forEach((track) => {
+  tracks.forEach(track => {
     highlight = 'plain';
     trackColor = generateTrackColor(track, highlight);
 
@@ -2325,7 +2335,7 @@ function generateSVGShapesFromPath() {
             yEnd: yStart + track.width - 1,
             color: trackColor,
             id: track.id,
-            type: track.type,
+            type: track.type
           });
         }
 
@@ -2344,7 +2354,7 @@ function generateSVGShapesFromPath() {
             color: trackColor,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
-            type: track.type,
+            type: track.type
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -2363,7 +2373,7 @@ function generateSVGShapesFromPath() {
             color: trackColor,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
-            type: track.type,
+            type: track.type
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -2438,7 +2448,7 @@ function generateSVGShapesFromPath() {
       yEnd: yStart + track.width - 1,
       color: trackColor,
       id: track.id,
-      type: track.type,
+      type: track.type
     });
   });
 }
@@ -2470,7 +2480,7 @@ function createFeatureRectangle(
   }
 
   node.features.sort((a, b) => a.start - b.start);
-  node.features.forEach((feature) => {
+  node.features.forEach(feature => {
     if (currentHighlight !== feature.type) {
       // finish incoming rectangle
       c = generateTrackColor(track, currentHighlight);
@@ -2495,7 +2505,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: co,
             id: track.id,
-            type: track.type,
+            type: track.type
           });
         }
 
@@ -2507,7 +2517,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: c,
             id: track.id,
-            type: track.type,
+            type: track.type
           });
         }
       } else {
@@ -2531,7 +2541,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: co,
             id: track.id,
-            type: track.type,
+            type: track.type
           });
         }
 
@@ -2543,7 +2553,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: c,
             id: track.id,
-            type: track.type,
+            type: track.type
           });
         }
       }
@@ -2567,7 +2577,7 @@ function createFeatureRectangle(
           yEnd: yStart + track.width - 1,
           color: c,
           id: track.id,
-          type: track.type,
+          type: track.type
         });
       } else {
         featureXEnd =
@@ -2583,7 +2593,7 @@ function createFeatureRectangle(
           yEnd: yStart + track.width - 1,
           color: c,
           id: track.id,
-          type: track.type,
+          type: track.type
         });
       }
       rectXStart = featureXEnd + 1;
@@ -2616,7 +2626,7 @@ function generateForwardToReverse(
     yEnd: yStart + trackWidth - 1,
     color: trackColor,
     id: trackID,
-    type,
+    type
   });
   trackVerticalRectangles.push({
     // vertical rectangle
@@ -2626,7 +2636,7 @@ function generateForwardToReverse(
     yEnd: yBottom - radius + 1,
     color: trackColor,
     id: trackID,
-    type,
+    type
   });
   trackVerticalRectangles.push({
     xStart: x - 10 * extraRight[order],
@@ -2635,7 +2645,7 @@ function generateForwardToReverse(
     yEnd: yEnd + trackWidth - 1,
     color: trackColor,
     id: trackID,
-    type,
+    type
   }); // elongate outgoing rectangle a bit to the right
 
   let d = `M ${x + 5} ${yBottom}`;
@@ -2681,7 +2691,7 @@ function generateReverseToForward(
     yEnd: yStart + trackWidth - 1,
     color: trackColor,
     id: trackID,
-    type,
+    type
   }); // elongate incoming rectangle a bit to the left
   trackVerticalRectangles.push({
     xStart: x - 5 - radius - Math.min(7, trackWidth),
@@ -2690,7 +2700,7 @@ function generateReverseToForward(
     yEnd: yBottom - radius + 1,
     color: trackColor,
     id: trackID,
-    type,
+    type
   }); // vertical rectangle
   trackVerticalRectangles.push({
     xStart: x - 6,
@@ -2699,7 +2709,7 @@ function generateReverseToForward(
     yEnd: yEnd + trackWidth - 1,
     color: trackColor,
     id: trackID,
-    type,
+    type
   }); // elongate outgoing rectangle a bit to the left
 
   // Path for bottom 90 degree bend
@@ -2729,10 +2739,10 @@ function generateReverseToForward(
 function drawReversalsByColor(corners, rectangles, type) {
   if (typeof type === 'undefined') type = 'haplo';
   const co = new Set();
-  rectangles.forEach((rect) => {
+  rectangles.forEach(rect => {
     co.add(rect.color);
   });
-  co.forEach((c) => {
+  co.forEach(c => {
     drawTrackRectangles(
       rectangles.filter(filterObjectByAttribute('color', c)),
       type
@@ -2746,7 +2756,7 @@ function drawNodes(dNodes) {
   let x;
   let y;
 
-  dNodes.forEach((node) => {
+  dNodes.forEach(node => {
     // top left arc
     node.d = `M ${node.x - 9} ${node.y} Q ${node.x - 9} ${node.y - 9} ${
       node.x
@@ -2799,8 +2809,8 @@ function drawNodes(dNodes) {
     .data(dNodes)
     .enter()
     .append('path')
-    .attr('id', (d) => d.name)
-    .attr('d', (d) => d.d)
+    .attr('id', d => d.name)
+    .attr('d', d => d.d)
     .on('mouseover', nodeMouseOver)
     .on('mouseout', nodeMouseOut)
     .on('dblclick', nodeDoubleClick)
@@ -2809,7 +2819,7 @@ function drawNodes(dNodes) {
     .style('stroke', 'black')
     .style('stroke-width', '2px')
     .append('svg:title')
-    .text((d) => d.name);
+    .text(d => d.name);
 }
 
 // draw seqence labels for nodes
@@ -2820,9 +2830,9 @@ function drawLabels(dNodes) {
       .data(dNodes)
       .enter()
       .append('text')
-      .attr('x', (d) => d.x - 4)
-      .attr('y', (d) => d.y + 4)
-      .text((d) => d.seq)
+      .attr('x', d => d.x - 4)
+      .attr('y', d => d.y + 4)
+      .text(d => d.seq)
       .attr('font-family', 'Courier, "Lucida Console", monospace')
       .attr('font-size', '14px')
       .attr('fill', 'black')
@@ -2861,7 +2871,7 @@ function drawRuler() {
     atLeastOneMarkingDrawn = true;
   }
 
-  rulerTrack.indexSequence.forEach((nodeIndex) => {
+  rulerTrack.indexSequence.forEach(nodeIndex => {
     const currentNode = nodes[nodeIndex];
     let nextMarking =
       Math.ceil(indexOfFirstBaseInNode / markingInterval) * markingInterval;
@@ -2902,7 +2912,7 @@ function drawRulerMarking(sequencePosition, xCoordinate) {
 }
 
 function filterObjectByAttribute(attribute, value) {
-  return (item) => item[attribute] === value;
+  return item => item[attribute] === value;
 }
 
 function drawTrackRectangles(rectangles, type) {
@@ -2914,14 +2924,14 @@ function drawTrackRectangles(rectangles, type) {
     .data(rectangles)
     .enter()
     .append('rect')
-    .attr('x', (d) => d.xStart)
-    .attr('y', (d) => d.yStart)
-    .attr('width', (d) => d.xEnd - d.xStart + 1)
-    .attr('height', (d) => d.yEnd - d.yStart + 1)
-    .style('fill', (d) => d.color)
-    .attr('trackID', (d) => d.id)
-    .attr('class', (d) => `track${d.id}`)
-    .attr('color', (d) => d.color)
+    .attr('x', d => d.xStart)
+    .attr('y', d => d.yStart)
+    .attr('width', d => d.xEnd - d.xStart + 1)
+    .attr('height', d => d.yEnd - d.yStart + 1)
+    .style('fill', d => d.color)
+    .attr('trackID', d => d.id)
+    .attr('class', d => `track${d.id}`)
+    .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
     .on('dblclick', trackDoubleClick);
@@ -2940,7 +2950,7 @@ function defineSVGPatterns() {
     width: '7',
     height: '7',
     patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)',
+    patternTransform: 'rotate(45)'
   });
 
   pattern
@@ -2964,7 +2974,7 @@ function defineSVGPatterns() {
     width: '8',
     height: '8',
     patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)',
+    patternTransform: 'rotate(45)'
   });
   pattern
     .append('rect')
@@ -2987,7 +2997,7 @@ function defineSVGPatterns() {
     width: '6',
     height: '6',
     patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)',
+    patternTransform: 'rotate(45)'
   });
   pattern
     .append('rect')
@@ -3010,7 +3020,7 @@ function defineSVGPatterns() {
     width: '6',
     height: '6',
     patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)',
+    patternTransform: 'rotate(45)'
   });
   pattern
     .append('rect')
@@ -3033,7 +3043,7 @@ function defineSVGPatterns() {
     width: '6',
     height: '6',
     patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)',
+    patternTransform: 'rotate(45)'
   });
   pattern
     .append('rect')
@@ -3056,7 +3066,7 @@ function defineSVGPatterns() {
     width: '6',
     height: '6',
     patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)',
+    patternTransform: 'rotate(45)'
   });
   pattern
     .append('rect')
@@ -3079,7 +3089,7 @@ function defineSVGPatterns() {
     width: '6',
     height: '6',
     patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)',
+    patternTransform: 'rotate(45)'
   });
   pattern
     .append('rect')
@@ -3102,7 +3112,7 @@ function defineSVGPatterns() {
     width: '6',
     height: '6',
     patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)',
+    patternTransform: 'rotate(45)'
   });
   pattern
     .append('rect')
@@ -3129,7 +3139,7 @@ function drawTrackCurves(type) {
 
   myTrackCurves.sort(compareCurvesByLineChanges);
 
-  myTrackCurves.forEach((curve) => {
+  myTrackCurves.forEach(curve => {
     const xMiddle = (curve.xStart + curve.xEnd) / 2;
     let d = `M ${curve.xStart} ${curve.yStart}`;
     d += ` C ${xMiddle} ${curve.yStart} ${xMiddle} ${curve.yEnd} ${
@@ -3147,11 +3157,11 @@ function drawTrackCurves(type) {
     .data(trackCurves)
     .enter()
     .append('path')
-    .attr('d', (d) => d.path)
-    .style('fill', (d) => d.color)
-    .attr('trackID', (d) => d.id)
-    .attr('class', (d) => `track${d.id}`)
-    .attr('color', (d) => d.color)
+    .attr('d', d => d.path)
+    .style('fill', d => d.color)
+    .attr('trackID', d => d.id)
+    .attr('class', d => `track${d.id}`)
+    .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
     .on('dblclick', trackDoubleClick);
@@ -3166,11 +3176,11 @@ function drawTrackCorners(corners, type) {
     .data(corners)
     .enter()
     .append('path')
-    .attr('d', (d) => d.path)
-    .style('fill', (d) => d.color)
-    .attr('trackID', (d) => d.id)
-    .attr('class', (d) => `track${d.id}`)
-    .attr('color', (d) => d.color)
+    .attr('d', d => d.path)
+    .style('fill', d => d.color)
+    .attr('trackID', d => d.id)
+    .attr('class', d => `track${d.id}`)
+    .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
     .on('dblclick', trackDoubleClick);
@@ -3196,8 +3206,9 @@ function drawLegend() {
     }
   }
   content += '</table';
-  $('#legendDiv').html(content);
-  listeners.forEach((i) => {
+  // $('#legendDiv').html(content);
+  document.getElementById('legendDiv').innerHTML = content;
+  listeners.forEach(i => {
     document
       .getElementById(`showTrack${i}`)
       .addEventListener('click', () => changeTrackVisibility(i), false);
@@ -3268,11 +3279,11 @@ function nodeDoubleClick() {
 // extract info about nodes from vg-json
 export function vgExtractNodes(vg) {
   const result = [];
-  vg.node.forEach((node) => {
+  vg.node.forEach(node => {
     result.push({
       name: `${node.id}`,
       sequenceLength: node.sequence.length,
-      seq: node.sequence,
+      seq: node.sequence
     });
   });
   return result;
@@ -3280,7 +3291,7 @@ export function vgExtractNodes(vg) {
 
 // calculate node widths depending on sequence lengths and chosen calculation method
 function generateNodeWidth() {
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     if (!node.hasOwnProperty('sequenceLength')) {
       node.sequenceLength = node.seq.length;
     }
@@ -3288,19 +3299,19 @@ function generateNodeWidth() {
 
   switch (config.nodeWidthOption) {
     case 1:
-      nodes.forEach((node) => {
+      nodes.forEach(node => {
         node.width = 1 + Math.log(node.sequenceLength) / Math.log(2);
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
     case 2:
-      nodes.forEach((node) => {
+      nodes.forEach(node => {
         node.width = node.sequenceLength / 100;
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
     default:
-      nodes.forEach((node) => {
+      nodes.forEach(node => {
         node.width = node.sequenceLength;
 
         // get width of node's text label by writing label, measuring it and removing label
@@ -3317,7 +3328,8 @@ function generateNodeWidth() {
         node.pixelWidth = Math.round(
           document.getElementById('dummytext').getComputedTextLength()
         );
-        $('#dummytext').remove();
+        document.getElementById('dummytext').remove();
+        // $('#dummytext').remove();
       });
   }
 }
@@ -3328,7 +3340,7 @@ export function vgExtractTracks(vg) {
   vg.path.forEach((path, index) => {
     const sequence = [];
     let isCompletelyReverse = true;
-    path.mapping.forEach((pos) => {
+    path.mapping.forEach(pos => {
       if (
         pos.position.hasOwnProperty('is_reverse') &&
         pos.position.is_reverse === true
@@ -3441,7 +3453,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
   const extracted = [];
 
   const nodeNames = [];
-  myNodes.forEach((node) => {
+  myNodes.forEach(node => {
     nodeNames.push(node.name, 10);
   });
 
@@ -3476,7 +3488,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
 
         const mismatches = [];
         let posWithinNode = offset;
-        pos.edit.forEach((element) => {
+        pos.edit.forEach(element => {
           if (
             element.hasOwnProperty('to_length') &&
             !element.hasOwnProperty('from_length')
@@ -3485,7 +3497,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
             mismatches.push({
               type: 'insertion',
               pos: posWithinNode,
-              seq: element.sequence,
+              seq: element.sequence
             });
           } else if (
             !element.hasOwnProperty('to_length') &&
@@ -3495,7 +3507,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
             mismatches.push({
               type: 'deletion',
               pos: posWithinNode,
-              length: element.from_length,
+              length: element.from_length
             });
           } else if (element.hasOwnProperty('sequence')) {
             // substitution
@@ -3511,7 +3523,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
             mismatches.push({
               type: 'substitution',
               pos: posWithinNode,
-              seq: element.sequence,
+              seq: element.sequence
             });
           }
           if (element.hasOwnProperty('from_length')) {
@@ -3548,7 +3560,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
         track.finalNodeCoverLength +=
           read.path.mapping[lastIndex].position.offset;
       }
-      finalNodeEdit.forEach((edit) => {
+      finalNodeEdit.forEach(edit => {
         if (edit.hasOwnProperty('from_length')) {
           track.finalNodeCoverLength += edit.from_length;
         }
@@ -3578,7 +3590,7 @@ function mergeNodes() {
   if (reads && config.showReads) tracksAndReads = tracks.concat(reads);
   else tracksAndReads = tracks;
 
-  tracksAndReads.forEach((track) => {
+  tracksAndReads.forEach(track => {
     for (let i = 0; i < track.sequence.length; i += 1) {
       if (track.sequence[i].charAt(0) !== '-') {
         // forward Node
@@ -3647,7 +3659,7 @@ function mergeNodes() {
     // iterate over all nodes and calculate their position within the new merged node
     const mergeOffset = new Map();
     const mergeOrigin = new Map(); // maps to leftmost node of a node's "merging cascade"
-    sortedNodes.forEach((node) => {
+    sortedNodes.forEach(node => {
       const predecessor = mergeableWithPred(nodeMap.get(node.name), pred, succ);
       if (predecessor) {
         mergeOffset.set(
@@ -3662,7 +3674,7 @@ function mergeNodes() {
       }
     });
 
-    reads.forEach((read) => {
+    reads.forEach(read => {
       read.firstNodeOffset += mergeOffset.get(read.sequence[0]);
       read.finalNodeCoverLength += mergeOffset.get(
         read.sequence[read.sequence.length - 1]
@@ -3678,7 +3690,7 @@ function mergeNodes() {
             if (i > 0) {
               read.sequence.splice(i, 1);
               // adjust position of mismatches
-              read.sequenceNew[i].mismatches.forEach((mismatch) => {
+              read.sequenceNew[i].mismatches.forEach(mismatch => {
                 mismatch.pos += nodes[nodeMap.get(predecessor)].sequenceLength;
               });
               // append mismatches to previous entry's mismatches
@@ -3688,7 +3700,7 @@ function mergeNodes() {
               read.sequenceNew.splice(i, 1);
             } else {
               read.sequence[0] = mergeOrigin.get(read.sequence[0]);
-              read.sequenceNew[i].mismatches.forEach((mismatch) => {
+              read.sequenceNew[i].mismatches.forEach(mismatch => {
                 mismatch.pos += mergeOffset.get(read.sequenceNew[0].nodeName);
               });
               read.sequenceNew[0].nodeName = mergeOrigin.get(
@@ -3720,7 +3732,7 @@ function mergeNodes() {
   }
 
   // actually merge the nodes by removing the corresponding nodes from track data
-  tracks.forEach((track) => {
+  tracks.forEach(track => {
     for (let i = track.sequence.length - 1; i >= 0; i -= 1) {
       nodeName = track.sequence[i];
       if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
@@ -3765,7 +3777,7 @@ function drawMismatches() {
   tracks.forEach((read, trackIdx) => {
     if (read.type === 'read') {
       read.sequenceNew.forEach((element, i) => {
-        element.mismatches.forEach((mm) => {
+        element.mismatches.forEach(mm => {
           const nodeIndex = nodeMap.get(element.nodeName);
           const node = nodes[nodeIndex];
           const x = getXCoordinateOfBaseWithinNode(node, mm.pos);

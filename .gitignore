@@ -1,12 +1,11 @@
 node_modules
 .tmp
-bower_components
-test/bower_components
 .DS_store
 .publish
 .vscode
 dist
-frontend/config.json
+frontend/src/config.json
+frontend/build/
 backend/internalData/
 backend/mountedData/
 backend/vg/
