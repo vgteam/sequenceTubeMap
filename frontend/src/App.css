@@ -100,3 +100,13 @@ input[type='file'] {
   left: 5px;
   top: 5px;
 }
+
+.btn-secondary {
+  background-color: #868e96;
+  border-color: #868e96;
+}
+
+.btn-secondary:hover {
+  background-color: #727b84;
+  border-color: #6c757d;
+}
