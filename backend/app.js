@@ -11,6 +11,7 @@ const multer = require('multer');
 const uuid = require('uuid/v1');
 const fs = require('fs-extra');
 const rl = require('readline');
+const compression = require('compression');
 
 const VG_PATH = './vg/';
 const MOUNTED_DATA_PATH = './mountedData/';
@@ -42,6 +43,7 @@ app.use(
     extended: true
   })
 );
+app.use(compression());
 
 // required for local usage (access docker container from outside)
 app.use((req, res, next) => {
