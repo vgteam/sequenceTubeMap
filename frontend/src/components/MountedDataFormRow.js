@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
-import { Label, Input, Button } from 'reactstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSyncAlt } from '@fortawesome/free-solid-svg-icons';
+import { Label, Input } from 'reactstrap';
 
 class MountedDataFormRow extends Component {
   render() {
@@ -101,15 +99,6 @@ class MountedDataFormRow extends Component {
         >
           {pathDropdownOptions}
         </Input>
-        <Button
-          color="primary"
-          className="customDataMounted"
-          id="refreshButton"
-          onClick={this.props.getMountedFilenames}
-        >
-          <FontAwesomeIcon icon={faSyncAlt} size="lg" />
-          &nbsp;Refresh
-        </Button>
       </React.Fragment>
     );
   }

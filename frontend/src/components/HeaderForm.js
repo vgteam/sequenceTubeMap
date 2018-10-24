@@ -42,6 +42,7 @@ class HeaderForm extends Component {
 
   componentDidMount() {
     this.getMountedFilenames();
+    this.setUpWebsocket();
   }
 
   getMountedFilenames = async () => {
@@ -224,6 +225,20 @@ class HeaderForm extends Component {
 
   setUploadInProgress = val => {
     this.setState({ uploadInProgress: val });
+  };
+
+  setUpWebsocket = () => {
+    this.ws = new WebSocket(BACKEND_URL.replace(/^http/, 'ws'));
+    this.ws.onmessage = message => {
+      console.log('Message received');
+      this.getMountedFilenames();
+    };
+    this.ws.onclose = event => {
+      setTimeout(this.setUpWebsocket, 1000);
+    };
+    this.ws.onerror = event => {
+      this.ws.close();
+    };
   };
 
   render() {
