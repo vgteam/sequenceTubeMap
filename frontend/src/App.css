@@ -110,3 +110,7 @@ input[type='file'] {
   background-color: #727b84;
   border-color: #6c757d;
 }
+
+.custom-input {
+  height: calc(2.25rem - 2px);
+}
