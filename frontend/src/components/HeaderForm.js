@@ -175,10 +175,6 @@ class HeaderForm extends Component {
     this.props.updateFetchParams(fetchParams);
   };
 
-  // handleChange = () => {
-  //   console.log('handleChange');
-  // };
-
   handleInputChange = event => {
     const id = event.target.id;
     const value = event.target.value;
