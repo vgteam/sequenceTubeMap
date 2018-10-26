@@ -13,16 +13,11 @@ class TubeMap extends Component {
   }
 
   createTubeMap = () => {
-    const nodes = tubeMap.vgExtractNodes(this.props.graph);
-    console.log(nodes);
-    const tracks = tubeMap.vgExtractTracks(this.props.graph);
-    console.log(tracks);
-    const reads = tubeMap.vgExtractReads(nodes, tracks, this.props.gam);
     tubeMap.create({
       svgID: '#svg',
-      nodes,
-      tracks,
-      reads
+      nodes: this.props.nodes,
+      tracks: this.props.tracks,
+      reads: this.props.reads
     });
   };
 

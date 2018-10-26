@@ -3,7 +3,7 @@ import './App.css';
 import HeaderForm from './components/HeaderForm';
 import TubeMapContainer from './components/TubeMapContainer';
 import CustomizationAccordion from './components/CustomizationAccordion';
-import { dataTypes } from './enums';
+import { dataTypes, dataSource } from './enums';
 
 class App extends Component {
   constructor(props) {
@@ -19,7 +19,8 @@ class App extends Component {
         gamFile: '',
         anchorTrackName: 'x',
         dataPath: 'default'
-      }
+      },
+      dataSource: dataSource.FROM_API
     };
   }
 
@@ -27,11 +28,22 @@ class App extends Component {
     this.setState({ fetchParams: fetchParams });
   };
 
+  setDataSource = ds => {
+    console.log('updating data source');
+    this.setState({ dataSource: ds });
+  };
+
   render() {
     return (
       <div>
-        <HeaderForm updateFetchParams={this.updateFetchParams} />
-        <TubeMapContainer fetchParams={this.state.fetchParams} />
+        <HeaderForm
+          updateFetchParams={this.updateFetchParams}
+          setDataSource={this.setDataSource}
+        />
+        <TubeMapContainer
+          fetchParams={this.state.fetchParams}
+          dataSource={this.state.dataSource}
+        />
         <CustomizationAccordion />
       </div>
     );

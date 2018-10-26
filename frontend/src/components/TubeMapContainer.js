@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import TubeMap from './TubeMap';
 import config from '../config.json';
 import { Container, Row } from 'reactstrap';
+import * as tubeMap from '../util/tubemap';
+import * as data from '../util/demo-data'; // TODO: lazy load
+import { dataSource } from '../enums';
 
 const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
 
@@ -17,8 +20,11 @@ class TubeMapContainer extends Component {
 
   componentDidUpdate(prevProps) {
     console.log('TubeMapContainer componentDidUpdate');
-    if (this.props.fetchParams !== prevProps.fetchParams) {
-      console.log('inner');
+    if (this.props.dataSource !== prevProps.dataSource) {
+      this.props.dataSource === dataSource.FROM_API
+        ? this.getRemoteTubeMapData()
+        : this.getExampleData();
+    } else if (this.props.fetchParams !== prevProps.fetchParams) {
       this.getRemoteTubeMapData();
     }
   }
@@ -49,7 +55,11 @@ class TubeMapContainer extends Component {
 
     return (
       <div id="tubeMapSVG">
-        <TubeMap graph={this.state.graph} gam={this.state.gam} />
+        <TubeMap
+          nodes={this.state.nodes}
+          tracks={this.state.tracks}
+          reads={this.state.reads}
+        />
       </div>
     );
   }
@@ -70,11 +80,68 @@ class TubeMapContainer extends Component {
         // We did not get back a graph, only (possibly) an error.
         this.setState({ error: json.error, isLoading: false });
       } else {
-        this.setState({ graph: json.graph, gam: json.gam, isLoading: false });
+        const nodes = tubeMap.vgExtractNodes(json.graph);
+        console.log(nodes);
+        const tracks = tubeMap.vgExtractTracks(json.graph);
+        console.log(tracks);
+        const reads = tubeMap.vgExtractReads(nodes, tracks, json.gam);
+        this.setState({
+          isLoading: false,
+          nodes,
+          tracks,
+          reads
+        });
       }
     } catch (error) {
       this.setState({ error: error, isLoading: false });
     }
+  };
+
+  getExampleData = () => {
+    let nodes, tracks, reads;
+    nodes = data.inputNodes;
+    switch (this.props.dataSource) {
+      case dataSource.EXAMPLE_1:
+        tracks = data.inputTracks1;
+        break;
+      case dataSource.EXAMPLE_2:
+        tracks = data.inputTracks2;
+        break;
+      case dataSource.EXAMPLE_3:
+        tracks = data.inputTracks3;
+        break;
+      case dataSource.EXAMPLE_4:
+        tracks = data.inputTracks4;
+        break;
+      case dataSource.EXAMPLE_5:
+        tracks = data.inputTracks5;
+        break;
+      case dataSource.EXAMPLE_6:
+        const vg = JSON.parse(data.k3138);
+        nodes = tubeMap.vgExtractNodes(vg);
+        tracks = tubeMap.vgExtractTracks(vg);
+        reads = tubeMap.vgExtractReads(
+          nodes,
+          tracks,
+          this.readsFromStringToArray(data.demoReads)
+        );
+        break;
+      default:
+        console.log('invalid data source');
+    }
+
+    this.setState({ isLoading: false, nodes, tracks, reads });
+  };
+
+  readsFromStringToArray = readsString => {
+    const lines = readsString.split('\n');
+    const result = [];
+    lines.forEach(line => {
+      if (line.length > 0) {
+        result.push(JSON.parse(line));
+      }
+    });
+    return result;
   };
 }
 

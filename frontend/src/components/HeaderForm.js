@@ -6,6 +6,7 @@ import config from '../config.json';
 import DataPositionFormRow from './DataPositionFormRow';
 import MountedDataFormRow from './MountedDataFormRow';
 import FileUploadFormRow from './FileUploadFormRow';
+import ExampleSelectButtons from './ExampleSelectButtons';
 
 const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
 const DATA_SOURCES = defaultConfig.DATA_SOURCES.concat(config.DATA_SOURCES);
@@ -155,6 +156,8 @@ class HeaderForm extends Component {
           dataType: dataTypes.MOUNTED_FILES
         };
       });
+    } else if (value === 'syntheticExamples') {
+      this.setState({ dataType: dataTypes.EXAMPLES });
     }
   };
 
@@ -172,9 +175,9 @@ class HeaderForm extends Component {
     this.props.updateFetchParams(fetchParams);
   };
 
-  handleChange = () => {
-    console.log('handleChange');
-  };
+  // handleChange = () => {
+  //   console.log('handleChange');
+  // };
 
   handleInputChange = event => {
     const id = event.target.id;
@@ -250,6 +253,9 @@ class HeaderForm extends Component {
       );
     });
     dataSourceDropdownOptions.push(
+      <option value="syntheticExamples" key="syntheticExamples">
+        synthetic data examples
+      </option>,
       <option value="customFileUpload" key="customFileUpload">
         custom (file upload)
       </option>,
@@ -260,6 +266,7 @@ class HeaderForm extends Component {
 
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
+    const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
 
     return (
       <div>
@@ -322,16 +329,22 @@ class HeaderForm extends Component {
                 You may only upload files with a maximum size of{' '}
                 {MAX_UPLOAD_SIZE_DESCRIPTION}.
               </Alert>
-              <DataPositionFormRow
-                nodeID={this.state.nodeID}
-                distance={this.state.distance}
-                byNode={this.state.byNode}
-                handleInputChange={this.handleInputChange}
-                handleGoLeft={this.handleGoLeft}
-                handleGoRight={this.handleGoRight}
-                handleGoButton={this.handleGoButton}
-                uploadInProgress={this.state.uploadInProgress}
-              />
+              {examplesFlag ? (
+                <ExampleSelectButtons
+                  setDataSource={this.props.setDataSource}
+                />
+              ) : (
+                <DataPositionFormRow
+                  nodeID={this.state.nodeID}
+                  distance={this.state.distance}
+                  byNode={this.state.byNode}
+                  handleInputChange={this.handleInputChange}
+                  handleGoLeft={this.handleGoLeft}
+                  handleGoRight={this.handleGoRight}
+                  handleGoButton={this.handleGoButton}
+                  uploadInProgress={this.state.uploadInProgress}
+                />
+              )}
             </Col>
           </Row>
         </Container>
