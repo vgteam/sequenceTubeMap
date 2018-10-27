@@ -983,11 +983,8 @@ function alignSVG() {
   zoom = d3
     .zoom()
     .scaleExtent([
-      // $(svgID)
-      //   .parent()
-      //   .width() / maxXCoordinate,
       document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
-        maxXCoordinate,
+        (maxXCoordinate + 10),
       8
     ])
     .translateExtent([
@@ -1002,19 +999,22 @@ function alignSVG() {
     .append('g');
 
   // translate to correct position on initial draw
+  const containerWidth = document.getElementById(svgID.substring(1)).parentNode
+    .offsetWidth;
+  const scaleFactor =
+    maxXCoordinate < containerWidth
+      ? containerWidth / (maxXCoordinate + 10)
+      : 1;
   d3.select(svgID).call(
     zoom.transform,
-    d3.zoomIdentity.translate(0, 25 - minYCoordinate)
+    d3.zoomIdentity.translate(0, 25 - minYCoordinate).scale(scaleFactor)
   );
 }
 
 export function zoomBy(zoomFactor) {
   const minZoom =
-    // $(svgID)
-    //   .parent()
-    //   .width() / maxXCoordinate;
     document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
-    maxXCoordinate;
+    (maxXCoordinate + 10);
   const maxZoom = 8;
   const width = document.getElementById(svgID.substring(1)).parentElement
     .clientWidth;
