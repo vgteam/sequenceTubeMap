@@ -3,13 +3,13 @@ import './App.css';
 import HeaderForm from './components/HeaderForm';
 import TubeMapContainer from './components/TubeMapContainer';
 import CustomizationAccordion from './components/CustomizationAccordion';
-import { dataTypes, dataSource } from './enums';
+import { dataOriginTypes } from './enums';
+import * as tubeMap from './util/tubemap';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      dataType: dataTypes.BUILT_IN,
       fetchParams: {
         nodeID: '1',
         distance: '100',
@@ -20,31 +20,82 @@ class App extends Component {
         anchorTrackName: 'x',
         dataPath: 'default'
       },
-      dataSource: dataSource.FROM_API
+      dataOrigin: dataOriginTypes.API,
+      visOptions: {
+        removeRedundantNodes: true,
+        compressedView: false,
+        showReads: true,
+        showSoftClips: true,
+        haplotypeColors: 'greys',
+        forwardReadColors: 'reds',
+        reverseReadColors: 'blues'
+      }
     };
   }
 
-  updateFetchParams = fetchParams => {
-    this.setState({ fetchParams: fetchParams });
+  componentDidUpdate() {
+    const { visOptions } = this.state;
+    visOptions.compressedView
+      ? tubeMap.setNodeWidthOption(1)
+      : tubeMap.setNodeWidthOption(0);
+    tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);
+    tubeMap.setShowReadsFlag(visOptions.showReads);
+    tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
+    tubeMap.setColorSet('haplotypeColors', visOptions.haplotypeColors);
+    tubeMap.setColorSet('forwardReadColors', visOptions.forwardReadColors);
+    tubeMap.setColorSet('reverseReadColors', visOptions.reverseReadColors);
+  }
+
+  setFetchParams = fetchParams => {
+    this.setState(
+      state => ({
+        fetchParams: fetchParams,
+        dataOrigin: dataOriginTypes.API
+      }),
+      () => console.log(this.state)
+    );
   };
 
-  setDataSource = ds => {
-    console.log('updating data source');
-    this.setState({ dataSource: ds });
+  toggleVisOptionFlag = flagName => {
+    this.setState(state => ({
+      visOptions: {
+        ...state.visOptions,
+        [flagName]: !state.visOptions[flagName]
+      }
+    }));
+  };
+
+  setColorSetting = (key, value) => {
+    this.setState(state => ({
+      visOptions: {
+        ...state.visOptions,
+        [key]: value
+      }
+    }));
+  };
+
+  setDataOrigin = dataOrigin => {
+    this.setState({ dataOrigin });
   };
 
   render() {
     return (
       <div>
         <HeaderForm
-          updateFetchParams={this.updateFetchParams}
-          setDataSource={this.setDataSource}
+          setFetchParams={this.setFetchParams}
+          setDataOrigin={this.setDataOrigin}
+          setColorSetting={this.setColorSetting}
+          dataOrigin={this.state.dataOrigin}
         />
         <TubeMapContainer
           fetchParams={this.state.fetchParams}
-          dataSource={this.state.dataSource}
+          dataOrigin={this.state.dataOrigin}
         />
-        <CustomizationAccordion />
+        <CustomizationAccordion
+          visOptions={this.state.visOptions}
+          toggleFlag={this.toggleVisOptionFlag}
+          setColorSetting={this.setColorSetting}
+        />
       </div>
     );
   }

@@ -4,7 +4,7 @@ import config from '../config.json';
 import { Container, Row } from 'reactstrap';
 import * as tubeMap from '../util/tubemap';
 import * as data from '../util/demo-data'; // TODO: lazy load
-import { dataSource } from '../enums';
+import { dataOriginTypes } from '../enums';
 
 const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
 
@@ -20,8 +20,8 @@ class TubeMapContainer extends Component {
 
   componentDidUpdate(prevProps) {
     console.log('TubeMapContainer componentDidUpdate');
-    if (this.props.dataSource !== prevProps.dataSource) {
-      this.props.dataSource === dataSource.FROM_API
+    if (this.props.dataOrigin !== prevProps.dataOrigin) {
+      this.props.dataOrigin === dataOriginTypes.API
         ? this.getRemoteTubeMapData()
         : this.getExampleData();
     } else if (this.props.fetchParams !== prevProps.fetchParams) {
@@ -100,23 +100,23 @@ class TubeMapContainer extends Component {
   getExampleData = () => {
     let nodes, tracks, reads;
     nodes = data.inputNodes;
-    switch (this.props.dataSource) {
-      case dataSource.EXAMPLE_1:
+    switch (this.props.dataOrigin) {
+      case dataOriginTypes.EXAMPLE_1:
         tracks = data.inputTracks1;
         break;
-      case dataSource.EXAMPLE_2:
+      case dataOriginTypes.EXAMPLE_2:
         tracks = data.inputTracks2;
         break;
-      case dataSource.EXAMPLE_3:
+      case dataOriginTypes.EXAMPLE_3:
         tracks = data.inputTracks3;
         break;
-      case dataSource.EXAMPLE_4:
+      case dataOriginTypes.EXAMPLE_4:
         tracks = data.inputTracks4;
         break;
-      case dataSource.EXAMPLE_5:
+      case dataOriginTypes.EXAMPLE_5:
         tracks = data.inputTracks5;
         break;
-      case dataSource.EXAMPLE_6:
+      case dataOriginTypes.EXAMPLE_6:
         const vg = JSON.parse(data.k3138);
         nodes = tubeMap.vgExtractNodes(vg);
         tracks = tubeMap.vgExtractTracks(vg);
@@ -127,7 +127,7 @@ class TubeMapContainer extends Component {
         );
         break;
       default:
-        console.log('invalid data source');
+        console.log('invalid data origin type');
     }
 
     this.setState({ isLoading: false, nodes, tracks, reads });

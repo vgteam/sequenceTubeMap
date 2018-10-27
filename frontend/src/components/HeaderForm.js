@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Container, Row, Col, Form, Label, Input, Alert } from 'reactstrap';
-import { dataTypes } from '../enums';
+import { dataOriginTypes } from '../enums';
 import defaultConfig from '../config.default.json';
 import config from '../config.json';
 import DataPositionFormRow from './DataPositionFormRow';
@@ -11,6 +11,12 @@ import ExampleSelectButtons from './ExampleSelectButtons';
 const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
 const DATA_SOURCES = defaultConfig.DATA_SOURCES.concat(config.DATA_SOURCES);
 const MAX_UPLOAD_SIZE_DESCRIPTION = '5 MB';
+const dataTypes = {
+  BUILT_IN: 'built-in',
+  FILE_UPLOAD: 'file-upload',
+  MOUNTED_FILES: 'mounted files',
+  EXAMPLES: 'examples'
+};
 
 class HeaderForm extends Component {
   state = {
@@ -162,6 +168,10 @@ class HeaderForm extends Component {
   };
 
   handleGoButton = () => {
+    if (this.props.dataOrigin !== dataOriginTypes.API) {
+      this.props.setColorSetting('haplotypeColors', 'greys');
+      this.props.setColorSetting('forwardReadColors', 'reds');
+    }
     const fetchParams = {
       nodeID: this.state.nodeID,
       distance: this.state.distance,
@@ -172,14 +182,12 @@ class HeaderForm extends Component {
       anchorTrackName: this.state.anchorTrackName,
       dataPath: this.state.dataPath
     };
-    this.props.updateFetchParams(fetchParams);
+    this.props.setFetchParams(fetchParams);
   };
 
   handleInputChange = event => {
     const id = event.target.id;
     const value = event.target.value;
-    console.log(event.target.id);
-    console.log(event.target.value);
     this.setState({ [id]: value });
     if (id === 'xgSelect') {
       this.getPathNames(value, false);
@@ -327,7 +335,8 @@ class HeaderForm extends Component {
               </Alert>
               {examplesFlag ? (
                 <ExampleSelectButtons
-                  setDataSource={this.props.setDataSource}
+                  setDataOrigin={this.props.setDataOrigin}
+                  setColorSetting={this.props.setColorSetting}
                 />
               ) : (
                 <DataPositionFormRow

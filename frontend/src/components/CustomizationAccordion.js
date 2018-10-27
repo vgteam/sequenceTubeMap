@@ -11,26 +11,11 @@ import {
   FormGroup
 } from 'reactstrap';
 import RadioRow from './RadioRow';
-import * as tubeMap from '../util/tubemap';
 
 class VisualizationOptions extends Component {
   state = {
     isOpenLegend: false,
-    isOpenVisualizationOptions: true,
-    removeRedundantNodes: true,
-    compressedView: false,
-    showReads: true,
-    showSoftClips: true
-  };
-
-  onChange = event => {
-    const target = event.target;
-    const value = target.type === 'checkbox' ? target.checked : target.value;
-    const name = target.name;
-
-    this.setState({
-      [name]: value
-    });
+    isOpenVisualizationOptions: true
   };
 
   toggleLegend = e => {
@@ -45,35 +30,8 @@ class VisualizationOptions extends Component {
     e.preventDefault();
   };
 
-  toggleCompressedView = () => {
-    const newCompressedView = !this.state.compressedView;
-    newCompressedView
-      ? tubeMap.setNodeWidthOption(1)
-      : tubeMap.setNodeWidthOption(0);
-    this.setState(state => ({ compressedView: !state.compressedView }));
-  };
-
-  toggleRedundantNodesRemoval = () => {
-    const newRemoveRedundantNodes = !this.state.removeRedundantNodes;
-    tubeMap.setMergeNodesFlag(newRemoveRedundantNodes);
-    this.setState(state => ({
-      removeRedundantNodes: !state.removeRedundantNodes
-    }));
-  };
-
-  toggleShowReads = () => {
-    const newShowReads = !this.state.showReads;
-    tubeMap.setShowReadsFlag(newShowReads);
-    this.setState(state => ({ showReads: !state.showReads }));
-  };
-
-  toggleShowSoftClips = () => {
-    const newShowSoftClips = !this.state.showSoftClips;
-    tubeMap.setSoftClipsFlag(newShowSoftClips);
-    this.setState(state => ({ showSoftClips: !state.showSoftClips }));
-  };
-
   render() {
+    const { visOptions, toggleFlag } = this.props;
     return (
       <Container>
         <div id="accordion">
@@ -108,8 +66,8 @@ class VisualizationOptions extends Component {
                     <Label check>
                       <Input
                         type="checkbox"
-                        checked={this.state.removeRedundantNodes}
-                        onChange={this.toggleRedundantNodesRemoval}
+                        checked={visOptions.removeRedundantNodes}
+                        onChange={() => toggleFlag('removeRedundantNodes')}
                       />
                       Remove redundant nodes
                     </Label>
@@ -118,8 +76,8 @@ class VisualizationOptions extends Component {
                     <Label check>
                       <Input
                         type="checkbox"
-                        checked={this.state.compressedView}
-                        onChange={this.toggleCompressedView}
+                        checked={visOptions.compressedView}
+                        onChange={() => toggleFlag('compressedView')}
                       />
                       Compressed view
                     </Label>
@@ -132,8 +90,8 @@ class VisualizationOptions extends Component {
                     <Label check>
                       <Input
                         type="checkbox"
-                        checked={this.state.showReads}
-                        onChange={this.toggleShowReads}
+                        checked={visOptions.showReads}
+                        onChange={() => toggleFlag('showReads')}
                       />
                       Show sequence reads
                     </Label>
@@ -142,8 +100,8 @@ class VisualizationOptions extends Component {
                     <Label check>
                       <Input
                         type="checkbox"
-                        checked={this.state.showSoftClips}
-                        onChange={this.toggleShowSoftClips}
+                        checked={visOptions.showSoftClips}
+                        onChange={() => toggleFlag('showSoftClips')}
                       />
                       Show soft clips
                     </Label>
@@ -154,18 +112,21 @@ class VisualizationOptions extends Component {
                 <Form>
                   <RadioRow
                     rowHeading="Haplotypes"
-                    initialColor="greyscale"
+                    color={visOptions.haplotypeColors}
                     trackType="haplotypeColors"
+                    setColorSetting={this.props.setColorSetting}
                   />
                   <RadioRow
                     rowHeading="Reads (forward strand)"
-                    initialColor="reds"
+                    color={visOptions.forwardReadColors}
                     trackType="forwardReadColors"
+                    setColorSetting={this.props.setColorSetting}
                   />
                   <RadioRow
                     rowHeading="Reads (reverse strand)"
-                    initialColor="blues"
+                    color={visOptions.reverseReadColors}
                     trackType="reverseReadColors"
+                    setColorSetting={this.props.setColorSetting}
                   />
                 </Form>
               </CardBody>

@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { Col, Label, Input, FormGroup } from 'reactstrap';
-import * as tubeMap from '../util/tubemap';
 
 const colorMap = new Map([
   ['colorful', 'plainColors'],
@@ -11,14 +10,11 @@ const colorMap = new Map([
 ]);
 
 class RadioRow extends Component {
-  state = {
-    color: this.props.initialColor
-  };
-
   onChange = event => {
-    console.log('setting state');
-    this.setState({ color: event.target.value });
-    tubeMap.setColorSet(this.props.trackType, colorMap.get(event.target.value));
+    this.props.setColorSetting(
+      this.props.trackType,
+      colorMap.get(event.target.value)
+    );
   };
 
   render() {
@@ -30,7 +26,7 @@ class RadioRow extends Component {
               <Input
                 type="radio"
                 value={keyColor}
-                checked={this.state.color === keyColor}
+                checked={this.props.color === valueColor}
                 onChange={this.onChange}
               />
               {keyColor}

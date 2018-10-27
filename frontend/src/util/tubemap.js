@@ -246,9 +246,11 @@ export function setShowReadsFlag(value) {
 }
 
 export function setColorSet(trackType, colorSet) {
-  config[trackType] = colorSet;
-  const tr = createTubeMap();
-  if (!config.hideLegendFlag) drawLegend(tr);
+  if (config[trackType] !== colorSet) {
+    config[trackType] = colorSet;
+    const tr = createTubeMap();
+    if (!config.hideLegendFlag) drawLegend(tr);
+  }
 }
 
 // sets which option should be used for calculating the node width from its sequence length
