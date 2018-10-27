@@ -3,7 +3,6 @@ import TubeMap from './TubeMap';
 import config from '../config.json';
 import { Container, Row } from 'reactstrap';
 import * as tubeMap from '../util/tubemap';
-import * as data from '../util/demo-data'; // TODO: lazy load
 import { dataOriginTypes } from '../enums';
 
 const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
@@ -97,8 +96,10 @@ class TubeMapContainer extends Component {
     }
   };
 
-  getExampleData = () => {
+  getExampleData = async () => {
+    this.setState({ isLoading: true, error: null });
     let nodes, tracks, reads;
+    const data = await import('../util/demo-data');
     nodes = data.inputNodes;
     switch (this.props.dataOrigin) {
       case dataOriginTypes.EXAMPLE_1:
