@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import TubeMap from './TubeMap';
 import config from '../config.json';
-import { Container, Row } from 'reactstrap';
+import { Container, Row, Alert } from 'reactstrap';
 import * as tubeMap from '../util/tubemap';
 import { dataOriginTypes } from '../enums';
 
@@ -33,11 +33,14 @@ class TubeMapContainer extends Component {
 
     if (error) {
       console.log(error);
-      if (error.message) {
-        return <div id="inputError">{error.message}</div>;
-      } else {
-        return <div id="inputError">{error}</div>;
-      }
+      const message = error.message ? error.message : error;
+      return (
+        <Container>
+          <Row>
+            <Alert color="danger">{message}</Alert>
+          </Row>
+        </Container>
+      );
     }
 
     if (isLoading) {

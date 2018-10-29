@@ -287,6 +287,10 @@ function createTubeMap() {
   tracks = JSON.parse(JSON.stringify(inputTracks));
   reads = JSON.parse(JSON.stringify(inputReads));
 
+  // early exit is necessary when visualization options such as colors are
+  // changed before any graph has been rendered
+  if (nodes.length === 0 || tracks.length === 0) return;
+
   assignColorSets();
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
