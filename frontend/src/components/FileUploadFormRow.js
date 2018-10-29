@@ -33,7 +33,6 @@ class FileUploadFormRow extends Component {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
-          console.log('file uploaded');
           this.props.handleFileUpload('xgFile', xhr.response.path);
           this.props.getPathNames(xhr.response.path, 'true');
         }
@@ -62,7 +61,6 @@ class FileUploadFormRow extends Component {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
-          console.log('file uploaded');
           this.props.handleFileUpload('gbwtFile', xhr.response.path);
         }
       };
@@ -90,7 +88,6 @@ class FileUploadFormRow extends Component {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
-          console.log('file uploaded');
           this.props.handleFileUpload('gamFile', xhr.response.path);
         }
       };

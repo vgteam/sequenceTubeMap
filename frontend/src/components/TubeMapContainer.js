@@ -18,7 +18,6 @@ class TubeMapContainer extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    console.log('TubeMapContainer componentDidUpdate');
     if (this.props.dataOrigin !== prevProps.dataOrigin) {
       this.props.dataOrigin === dataOriginTypes.API
         ? this.getRemoteTubeMapData()
@@ -68,7 +67,6 @@ class TubeMapContainer extends Component {
 
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
-    console.log(this.props.fetchParams);
     try {
       const response = await fetch(`${BACKEND_URL}/getChunkedData`, {
         method: 'POST',
@@ -83,9 +81,7 @@ class TubeMapContainer extends Component {
         this.setState({ error: json.error, isLoading: false });
       } else {
         const nodes = tubeMap.vgExtractNodes(json.graph);
-        console.log(nodes);
         const tracks = tubeMap.vgExtractTracks(json.graph);
-        console.log(tracks);
         const reads = tubeMap.vgExtractReads(nodes, tracks, json.gam);
         this.setState({
           isLoading: false,

@@ -64,7 +64,6 @@ class HeaderForm extends Component {
       json.xgFiles.unshift('none');
       json.gbwtFiles.unshift('none');
       json.gamIndices.unshift('none');
-      console.log(json);
 
       this.setState(state => {
         const xgSelect = json.xgFiles.includes(state.xgSelect)
@@ -91,7 +90,6 @@ class HeaderForm extends Component {
   };
 
   getPathNames = async (xgFile, isUploadedFile) => {
-    console.log(xgFile);
     try {
       const response = await fetch(`${BACKEND_URL}/getPathNames`, {
         method: 'POST',
@@ -101,7 +99,6 @@ class HeaderForm extends Component {
         body: JSON.stringify({ xgFile, isUploadedFile })
       });
       const json = await response.json();
-      console.log(json);
       this.setState(state => {
         const pathSelect = json.pathNames.includes(state.pathSelect)
           ? state.pathSelect
@@ -237,7 +234,6 @@ class HeaderForm extends Component {
   setUpWebsocket = () => {
     this.ws = new WebSocket(BACKEND_URL.replace(/^http/, 'ws'));
     this.ws.onmessage = message => {
-      console.log('Message received');
       this.getMountedFilenames();
     };
     this.ws.onclose = event => {

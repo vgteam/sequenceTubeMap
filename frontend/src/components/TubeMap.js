@@ -3,12 +3,10 @@ import * as tubeMap from '../util/tubemap';
 
 class TubeMap extends Component {
   componentDidMount() {
-    console.log('tubeMap mount');
     this.createTubeMap();
   }
 
   componentDidUpdate() {
-    console.log('tubeMap update');
     this.createTubeMap();
   }
 

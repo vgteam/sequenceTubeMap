@@ -14,10 +14,10 @@ class App extends Component {
         nodeID: '1',
         distance: '100',
         byNode: 'false',
-        xgFile: 'x.vg.xg',
-        gbwtFile: 'x.vg.gbwt',
-        gamFile: '',
-        anchorTrackName: 'x',
+        xgFile: 'snp1kg-BRCA1.vg.xg',
+        gbwtFile: '',
+        gamFile: 'NA12878-BRCA1.sorted.gam',
+        anchorTrackName: '17',
         dataPath: 'default'
       },
       dataOrigin: dataOriginTypes.API,
@@ -47,13 +47,10 @@ class App extends Component {
   }
 
   setFetchParams = fetchParams => {
-    this.setState(
-      state => ({
-        fetchParams: fetchParams,
-        dataOrigin: dataOriginTypes.API
-      }),
-      () => console.log(this.state)
-    );
+    this.setState({
+      fetchParams: fetchParams,
+      dataOrigin: dataOriginTypes.API
+    });
   };
 
   toggleVisOptionFlag = flagName => {
