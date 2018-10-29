@@ -9,16 +9,19 @@
     "bootstrap": "4",
     "d3": "^5.7.0",
     "d3-selection-multi": "^1.0.1",
+    "gh-pages": "^2.0.1",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
-    "react-scripts": "2.0.0",
+    "react-scripts": "2.0.5",
     "reactstrap": "^6.4.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -28,5 +31,6 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "homepage": "https://vgteam.github.io/sequenceTubeMap/"
 }
