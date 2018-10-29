@@ -957,12 +957,6 @@ function getImageDimensions() {
 // enable zooming and panning
 function alignSVG() {
   svg.attr('height', maxYCoordinate - minYCoordinate + 50);
-  // svg.attr(
-  //   'width',
-  //   $(svgID)
-  //     .parent()
-  //     .width()
-  // );
   svg.attr(
     'width',
     document.getElementById(svgID.substring(1)).parentNode.offsetWidth
@@ -984,11 +978,15 @@ function alignSVG() {
     svg2.attr('width', document.getElementById('tubeMapSVG').clientWidth);
   }
 
+  const minZoom = Math.min(
+    1,
+    document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
+      (maxXCoordinate + 10)
+  );
   zoom = d3
     .zoom()
     .scaleExtent([
-      document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
-        (maxXCoordinate + 10),
+      minZoom,
       8
     ])
     .translateExtent([
@@ -1005,20 +1003,22 @@ function alignSVG() {
   // translate to correct position on initial draw
   const containerWidth = document.getElementById(svgID.substring(1)).parentNode
     .offsetWidth;
-  const scaleFactor =
-    maxXCoordinate < containerWidth
-      ? containerWidth / (maxXCoordinate + 10)
-      : 1;
+  const xOffset =
+    maxXCoordinate + 10 < containerWidth
+      ? (containerWidth - maxXCoordinate - 10) / 2
+      : 0;
   d3.select(svgID).call(
     zoom.transform,
-    d3.zoomIdentity.translate(0, 25 - minYCoordinate).scale(scaleFactor)
+    d3.zoomIdentity.translate(xOffset, 25 - minYCoordinate)
   );
 }
 
 export function zoomBy(zoomFactor) {
-  const minZoom =
+  const minZoom = Math.min(
+    1,
     document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
-    (maxXCoordinate + 10);
+      (maxXCoordinate + 10)
+  );
   const maxZoom = 8;
   const width = document.getElementById(svgID.substring(1)).parentElement
     .clientWidth;
