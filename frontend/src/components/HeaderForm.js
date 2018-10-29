@@ -32,10 +32,10 @@ class HeaderForm extends Component {
     pathSelectOptions: ['none'],
     pathSelect: 'none',
 
-    xgFile: 'x.vg.xg',
-    gbwtFile: 'x.vg.gbwt',
-    gamFile: '',
-    anchorTrackName: 'x',
+    xgFile: 'snp1kg-BRCA1.vg.xg',
+    gbwtFile: '',
+    gamFile: 'NA12878-BRCA1.sorted.gam',
+    anchorTrackName: '17',
     dataPath: 'default',
 
     nodeID: '1',
