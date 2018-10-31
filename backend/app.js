@@ -55,7 +55,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static('../frontend/dist'));
+app.use(express.static('../frontend/build'));
 
 app.post('/xgFileSubmission', upload.single('xgFile'), (req, res) => {
   console.log('/xgFileSubmission');
