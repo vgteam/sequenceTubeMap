@@ -78,7 +78,8 @@ class TubeMapContainer extends Component {
       const json = await response.json();
       if (json.graph === undefined) {
         // We did not get back a graph, only (possibly) an error.
-        this.setState({ error: json.error, isLoading: false });
+        const error = json.error || 'Fetching remote data returned error';
+        this.setState({ error: error, isLoading: false });
       } else {
         const nodes = tubeMap.vgExtractNodes(json.graph);
         const tracks = tubeMap.vgExtractTracks(json.graph);

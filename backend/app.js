@@ -102,6 +102,7 @@ function indexGamSorted(req, res) {
 }
 
 app.post('/getChunkedData', (req, res) => {
+  let sentErrorResponse = false;
   console.time('request-duration');
   console.log('http POST chr22_v4 received');
   console.log(`nodeID = ${req.body.nodeID}`);
@@ -192,6 +193,15 @@ app.post('/getChunkedData', (req, res) => {
   let graphAsString = '';
   req.error = new Buffer(0);
 
+  vgChunkCall.on('error', function(err) {
+    console.log('Error executing "vg chunk": ' + err);
+    if (!sentErrorResponse) {
+      sentErrorResponse = true;
+      returnError(req, res);
+    }
+    return;
+  });
+
   vgChunkCall.stderr.on('data', data => {
     console.log(`vg chunk err data: ${data}`);
     req.error += data;
@@ -206,6 +216,15 @@ app.post('/getChunkedData', (req, res) => {
     vgViewCall.stdin.end();
   });
 
+  vgViewCall.on('error', function(err) {
+    console.log('Error executing "vg view": ' + err);
+    if (!sentErrorResponse) {
+      sentErrorResponse = true;
+      returnError(req, res);
+    }
+    return;
+  });
+
   vgViewCall.stderr.on('data', data => {
     console.log(`vg view err data: ${data}`);
   });
@@ -218,7 +237,10 @@ app.post('/getChunkedData', (req, res) => {
     console.log(`vg view exited with code ${code}`);
     console.timeEnd('vg chunk');
     if (graphAsString === '') {
-      returnError(req, res);
+      if (!sentErrorResponse) {
+        sentErrorResponse = true;
+        returnError(req, res);
+      }
       return;
     }
     req.graph = JSON.parse(graphAsString);
