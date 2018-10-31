@@ -192,6 +192,12 @@ app.post('/getChunkedData', (req, res) => {
   let graphAsString = '';
   req.error = new Buffer(0);
 
+  vgChunkCall.on('error', function(err) {
+    console.log('Error executing "vg chunk": ' + err);
+    returnError(req, res);
+    return;
+  });
+
   vgChunkCall.stderr.on('data', data => {
     console.log(`vg chunk err data: ${data}`);
     req.error += data;
@@ -204,6 +210,12 @@ app.post('/getChunkedData', (req, res) => {
   vgChunkCall.on('close', code => {
     console.log(`vg chunk exited with code ${code}`);
     vgViewCall.stdin.end();
+  });
+
+  vgViewCall.on('error', function(err) {
+    console.log('Error executing "vg view": ' + err);
+    returnError(req, res);
+    return;
   });
 
   vgViewCall.stderr.on('data', data => {
