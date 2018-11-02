@@ -9,4 +9,4 @@ fi
 
 echo "Generating index from gam file"
 NO_EXTENSION=${1%.gam}
-./vg/vg gamsort -i "./mountedData/${NO_EXTENSION}.sorted.gam.gai" "./mountedData/${NO_EXTENSION}.gam" > "./mountedData/${NO_EXTENSION}.sorted.gam"
+vg gamsort -i "${NO_EXTENSION}.sorted.gam.gai" "${NO_EXTENSION}.gam" > "${NO_EXTENSION}.sorted.gam"

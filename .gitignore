@@ -3,9 +3,5 @@ node_modules
 .DS_store
 .publish
 .vscode
-dist
-frontend/build/
-backend/mountedData/
-backend/vg/
-backend/uploads/
+build/
 *.swp

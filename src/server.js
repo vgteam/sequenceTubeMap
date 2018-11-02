@@ -56,7 +56,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static('../frontend/build'));
+app.use(express.static('./build'));
 
 app.post('/xgFileSubmission', upload.single('xgFile'), (req, res) => {
   console.log('/xgFileSubmission');
@@ -389,7 +389,7 @@ app.post('/getFilenames', (req, res) => {
     if (file.endsWith('.gbwt')) {
       result.gbwtFiles.push(file);
     }
-    if (file.endsWith('.gam')) {
+    if (file.endsWith('.sorted.gam')) {
       result.gamIndices.push(file);
     }
   });

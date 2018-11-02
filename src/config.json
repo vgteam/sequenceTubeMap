@@ -25,5 +25,8 @@
       "useMountedPath": false,
       "defaultPosition": "1"
     }
-  ]
+  ],
+  "vgPath": "",
+  "dataPath": "./exampleData/",
+  "internalDataPath": "./exampleData/"
 }
