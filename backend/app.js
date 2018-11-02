@@ -12,10 +12,11 @@ const uuid = require('uuid/v1');
 const fs = require('fs-extra');
 const rl = require('readline');
 const compression = require('compression');
+const config = require('./config.json');
 
-const VG_PATH = './vg/';
-const MOUNTED_DATA_PATH = './mountedData/';
-const INTERNAL_DATA_PATH = './internalData/';
+const VG_PATH = config.vgPath;
+const MOUNTED_DATA_PATH = config.dataPath;
+const INTERNAL_DATA_PATH = config.internalDataPath;
 
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
