@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Container, Row, Col, Form, Label, Input, Alert } from 'reactstrap';
 import { dataOriginTypes } from '../enums';
-import defaultConfig from '../config.default.json';
+// import defaultConfig from '../config.default.json';
 import config from '../config.json';
 import DataPositionFormRow from './DataPositionFormRow';
 import MountedDataFormRow from './MountedDataFormRow';
@@ -9,9 +9,7 @@ import FileUploadFormRow from './FileUploadFormRow';
 import ExampleSelectButtons from './ExampleSelectButtons';
 
 const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
-const DATA_SOURCES = config.DATA_SOURCES
-  ? defaultConfig.DATA_SOURCES.concat(config.DATA_SOURCES)
-  : defaultConfig.DATA_SOURCES;
+const DATA_SOURCES = config.DATA_SOURCES;
 const MAX_UPLOAD_SIZE_DESCRIPTION = '5 MB';
 const dataTypes = {
   BUILT_IN: 'built-in',
