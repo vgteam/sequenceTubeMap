@@ -313,15 +313,15 @@ function createTubeMap() {
   if (reads && config.showReads) generateTrackIndexSequences(reads);
   generateNodeWidth();
 
-  if (reads && config.mergeNodesFlag) {
+  if (reads) {
     generateNodeSuccessors(); // requires indexSequence
     generateNodeOrder(); // requires successors
-    if (reads && config.showReads) reverseReversedReads();
-    mergeNodes();
+    if (config.showReads) reverseReversedReads();
+    if (config.mergeNodesFlag) mergeNodes();
     nodeMap = generateNodeMap(nodes);
     generateNodeWidth();
     generateTrackIndexSequences(tracks);
-    if (reads && config.showReads) generateTrackIndexSequences(reads);
+    if (config.showReads) generateTrackIndexSequences(reads);
   }
 
   numberOfNodes = nodes.length;
@@ -396,14 +396,16 @@ function generateReadOnlyNodeAttributes() {
   const orderY = new Map();
   nodes.forEach(node => {
     if (node.hasOwnProperty('order') && node.hasOwnProperty('y')) {
-      if (orderY.has(node.order)) {
-        orderY.set(
-          node.order,
-          Math.max(node.y + node.contentHeight, orderY.get(node.order))
-        );
-      } else {
-        orderY.set(node.order, node.y + node.contentHeight);
-      }
+      setMapToMax(orderY, node.order, node.y + node.contentHeight);
+    }
+  });
+
+  // for order values where there is no node with haplotypes, orderY is calculated via tracks
+  tracks.forEach(track => {
+    if (track.type === 'haplo') {
+      track.path.forEach(step => {
+        setMapToMax(orderY, step.order, step.y + track.width);
+      });
     }
   });
 
@@ -414,6 +416,14 @@ function generateReadOnlyNodeAttributes() {
       nodesPerOrder[node.order].push(i);
     }
   });
+}
+
+function setMapToMax(map, key, value) {
+  if (map.has(key)) {
+    map.set(key, Math.max(map.get(key), value));
+  } else {
+    map.set(key, value);
+  }
 }
 
 // add info about reads to nodes (incoming, outgoing and internal reads)
@@ -985,10 +995,7 @@ function alignSVG() {
   );
   zoom = d3
     .zoom()
-    .scaleExtent([
-      minZoom,
-      8
-    ])
+    .scaleExtent([minZoom, 8])
     .translateExtent([
       [-1, minYCoordinate - 25],
       [maxXCoordinate + 2, maxYCoordinate + 25]
