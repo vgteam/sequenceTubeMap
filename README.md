@@ -2,7 +2,7 @@
 
 ![Header Graphic](/images/header.png)
 
-### A JavaScript module for the visualization of genomic sequence graphs. It automatically generates a "tube map"-like visualization of given sequence graphs.
+### A JavaScript module for the visualization of genomic sequence graphs. It automatically generates a "tube map"-like visualization of sequence graphs which have been created with [vg](https://github.com/vgteam/vg).
 
 ### Link to working demo: [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/)
 
@@ -18,8 +18,8 @@ The purpose of this module is to generate visual representations of genomic sequ
 
 Genomic sequence graphs consist of nodes and paths:
 
-* A **Node** represents a specific sequence of bases. The length of this sequence determines the node's width in the graphical display.
-* A **Path** connects multiple nodes. Each path represents one of the sequences underlying the graph data structure and its walk along multiple nodes.
+- A **Node** represents a specific sequence of bases. The length of this sequence determines the node's width in the graphical display.
+- A **Path** connects multiple nodes. Each path represents one of the sequences underlying the graph data structure and its walk along multiple nodes.
 
 This simple example shows two paths along three nodes:
 
@@ -40,108 +40,88 @@ There already exist various JavaScript tools for the visualization of graphs (se
 ## Usage
 
 ### Online Version: Explore Without Installing Anything
-The easiest way to have a look at some graph visualizations is to check out the online demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/). There you can play with visualizations from a few different data sets as well as look at some examples showcasing different structural features of variation graphs.
 
-### Docker Version: Visualizing Your Custom Data
-If you are using vg and want visualize the graphs it generates, the easiest way to do that is to use the docker container provided at [https://hub.docker.com/r/wolfib/sequencetubemap/](https://hub.docker.com/r/wolfib/sequencetubemap/). The ```sequencetubemap``` docker image contains the build of this repo as well as a vg executable, which is needed for data preprocessing and extraction.
+The easiest way to have a look at some graph visualizations is to check out the online demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/). There you can play with visualizations from a few different data sets as well as look at some examples showcasing different structural features of variation graphs. You can even provide your own [vg](https://github.com/vgteam/vg)-generated data as an input (limited to small file sizes only).
 
-Follow these steps to use the docker image:
+### Run Sequence Tube Maps On Your Own
 
- - The vg files you want to visualize need to contain haplotype/path info. Generating visualizations for the graph itself only is not supported. In addition to the haplotype graph, you can optionally visualize aligned reads from a gam file.
- - Install docker (https://docs.docker.com/engine/installation/)
- - Pull the docker image:
- ```
- docker pull wolfib/sequencetubemap:vg2018 
- ```
- - Alternatively you can build the docker image directly from the repo
- ```
- git clone https://github.com/vgteam/sequenceTubeMap.git
- cd sequencetubemap
- docker build -t wolfib/sequencetubemap:vg2018 .
- ```
- - Start the container: 
-	There is some demo data included, but if you want to look at your own data, put vg and gam files in the same folder. This folder needs to be mounted for the docker container, so that the vg executable within the container can access those files:
-    ```
-    docker run -v <path_do_data>:/usr/src/app/mountedData --restart unless-stopped -p 80:3000 -d wolfib/sequencetubemap:vg2018
-    ```
-    (leave out the `-v` part if you don't have your own data)
- - Your data needs to be indexed by vg. This is done within the container to avoid issues with differing versions of vg.
- - To generate an index of your vg file:
-    ```
-    docker exec -it <container_id> ./prepare_vg.sh <vg_file>
-    ```
-	Run `docker ps`to see the id of the running container.
-    If there are `.vcf.gz` and `.vcf.gz.tbi` files next to your `.vg`, they will be used to generate a GBWT index of haplotypes from the VCF. In this case, the `.vg` file must contain alt paths, from the `-a` option of vg construct.
-  `<vg_file>` is the file name of your vg file without any path information.
- - To generate an index of your gam file (optional, you can view vg only too): 
-    ```
-    docker exec -it <container_id> ./prepare_gam.sh <gam_file>
-    ```
-	 `<gam_file>` is the file name of your gam file without any path information.
- - open `localhost` in the browser, pick data -> custom, select xg file and optionally gam index
- - pick the location with start, length and unit input fields (or keep them the way they are)
- - Click go and hope to see a graph visualization
- 
-### Local Version: Build And Modify Sequence Tube Maps Yourself
-If you need full control over Sequence Tube Maps and want to be able to modify its source code, you need to build it yourself.
+If you are using vg and want visualize the graphs it generates, the online version is limited to small file sizes. For visualizing bigger data sets you can run Sequence Tube Maps on your own. You can either run Tube Maps completely on your local (Linux) machine or use your local browser to access Tube Maps running on any other (Linux) machine you have access to.
 
-#### Prerequisites: 
-npm, nodejs, and [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
+(Previously we provided a docker image at [https://hub.docker.com/r/wolfib/sequencetubemap/](https://hub.docker.com/r/wolfib/sequencetubemap/), which contained the build of this repo as well as a vg executable for data preprocessing and extraction. We now recommend a different installation approach.)
 
-If you have gulp and bower installed globally, you will be able to use the ```gulp``` and ```bower``` commands, rather than ```node_modules/gulp/bin/gulp.js``` and ```node_modules/bower/bin/bower```, when working on the frontend.
+#### Prerequisites:
 
-#### Backend:
+yarn or npm, nodejs, and [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
+
+The directory containing the vg executable needs to be added to your environment path:
+
+```
+PATH=/<your_path_to_vg>:$PATH
+```
+
+#### Installation:
+
 - Clone the repo:
   ```
   git clone https://github.com/vgteam/sequenceTubeMap.git
   ```
-- Switch to the ```sequenceTubeMap/backend/``` folder
+- Switch to the `sequenceTubeMap` folder
 - Install npm dependencies:
+  ```
+  yarn install
+  ```
+  or
   ```
   npm install
   ```
-  
-#### Data:
-- ```mkdir /<your_path>/sequenceTubeMap/backend/vg```
-- Copy the vg executable to ```sequenceTubeMap/backend/vg/```
-- Add vg to your environment path:
+- Build the frontend:
   ```
-  PATH=/<your_path>/sequenceTubeMap/backend/vg:$PATH
+  yarn build
   ```
-- Switch to the ```sequenceTubeMap/data``` folder and build indices for the test data:
+  or
   ```
-  ./prepare_dev.sh
-  ```
-- Switch to the ```sequenceTubeMap/backend/``` folder and start server:
-  ```
-  nodejs app.js
+  npm run build
   ```
 
-#### Frontend:
-- Switch to the ```sequenceTubeMap/frontend/``` folder
-- Install npm dependencies:
-  ```
-  npm install
-  ```
-- Install bower dependencies:
-  ```
-  node_modules/bower/bin/bower install
-  ```
-- Create a local configuration setting BACKEND_URL to the location of your backend. If you ran `nodejs app.js` for the backend, and are working on a single machine, this will be `http://localhost:3000`. You can do:
-  ```
-  echo '{"BACKEND_URL": "http://localhost:3000"}' > config.json
-  ```
-  Make sure not to include a trailing slash in the URL.
-- Run ```node_modules/gulp/bin/gulp.js``` to build the frontend into the `sequenceTubeMap/frontend/dist` directory.
-- An easy way to view the built frontend is with the ```http-server``` module:
-  ```
-  npm install -g http-server
-  http-server ./dist
-  ```
-  This serves the frontend on ```localhost:8080```.
-- Alternatively use ```node_modules/gulp/bin/gulp.js serve``` to build and continually rebuild the frontend after each change. Open ```localhost:9000``` in the browser for the page, and ```localhost:3001``` for the instrumentation and cross-device page synchronization UI.
+#### Execution:
 
-  
+- Start the node server:
+  ```
+  yarn serve
+  ```
+  or
+  ```
+  npm run serve
+  ```
+- If the node server is running on your local machine, open a browser tab and go to `localhost:3000`.
+- If the node server is running on a different machine, open a local browser tab and go to the server's URL on port 3000 `http://<your server's IP or URL>:3000/`.
+  If you cannot access the server's port 3000 from the browser, instead of configuring firewall rules etc., it's probably easiest to set up an SSH tunnel.
+
+```
+ssh -N -L 3000:localhost:3000 <your username>@<your server>
+```
+
+#### Adding your own data:
+
+- The vg files you want to visualize need to contain haplotype/path info. Generating visualizations for the graph itself only is not supported. In addition to the haplotype graph, you can optionally visualize aligned reads from a gam file.
+- Your data needs to be indexed by vg. To generate an index of your vg file, go to the `sequenceTubeMap/scripts/` directory and run
+  ```
+  ./prepare_vg.sh <vg_file>
+  ```
+  `<vg_file>` is the file name of your vg file including path information.
+  If there are `.vcf.gz` and `.vcf.gz.tbi` files next to your `.vg`, they will be used to generate a GBWT index of haplotypes from the VCF. In this case, the `.vg` file must contain alt paths, from the `-a` option of vg construct.
+- To generate an index of your gam file (optional, you can view vg only too):
+  ```
+  ./prepare_gam.sh <gam_file>
+  ```
+  `<gam_file>` is the file name of your gam file including path information.
+- The output files will be generated in the same folder as the original files. To tell Sequence Tube Maps this location, edit `sequenceTubeMpas/src/config.json` and modify the entry for `dataPath`:
+  ```
+  "dataPath": "<path to my data folder>/",
+  ```
+  If you want to use a relative path, this path should be relative to the `sequenceTubeMaps/` folder.
+- restart the server and choose `custom (mounted files)` from the data dropdown in the UI to be able to pick from the files in your data folder.
 
 ## License
-Copyright (c) 2017 Wolfgang Beyer, licensed under the MIT License.
+
+Copyright (c) 2018 Wolfgang Beyer, licensed under the MIT License.
