@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/sequenceTubeMap/precache-manifest.f6f26fcd3226bb789818a83b714fce7b.js"
+  "/sequenceTubeMap/precache-manifest.670171cf47fdd3f1c55143eb5621ccb1.js"
 );
 
 workbox.clientsClaim();
