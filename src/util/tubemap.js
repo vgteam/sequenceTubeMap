@@ -303,10 +303,11 @@ function createTubeMap() {
         tracks.splice(i, 1);
       }
     }
-    if (tracks[i].hasOwnProperty('indexOfFirstBase')) {
+    if (tracks[i] && tracks[i].hasOwnProperty('indexOfFirstBase')) {
       trackForRuler = tracks[i].name;
     }
   }
+  if (tracks.length === 0) return;
 
   nodeMap = generateNodeMap(nodes);
   generateTrackIndexSequences(tracks);
@@ -643,7 +644,11 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
 
 // compare read segments by (y-coord of) where they are coming from
 function compareReadIncomingSegmentsByComingFrom(a, b) {
-  // TODO: incoming from reversal (u-turn)
+  // these boundary conditions avoid errors for incoming reads
+  // from inverted nodes (u-turns)
+  if (a[1] === 0) return -1;
+  if (b[1] === 0) return 1;
+
   const pathA = reads[a[0]].path[a[1] - 1];
   const pathB = reads[b[0]].path[b[1] - 1];
   if (pathA.hasOwnProperty('y')) {
@@ -1194,9 +1199,13 @@ function generateNodeOrder() {
       tracksAndReads[i].indexSequence
     ); // calculate order values for all nodes until the first anchor
     if (rightIndex === null) {
+      if (tracksAndReads[i].type === 'haplo') {
+        generateNodeOrderOfSingleTrack(tracksAndReads[i].indexSequence);
+      } else {
       tracksAndReads.splice(i, 1);
       reads.splice(i - tracks.length, 1);
       i -= 1;
+      }
       continue;
     }
     modifiedSequence = uninvert(tracksAndReads[i].indexSequence);
