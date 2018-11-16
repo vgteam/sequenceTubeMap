@@ -314,15 +314,15 @@ function createTubeMap() {
   if (reads && config.showReads) generateTrackIndexSequences(reads);
   generateNodeWidth();
 
-  if (reads) {
+  if (config.mergeNodesFlag) {
     generateNodeSuccessors(); // requires indexSequence
     generateNodeOrder(); // requires successors
-    if (config.showReads) reverseReversedReads();
-    if (config.mergeNodesFlag) mergeNodes();
+    if (reads && config.showReads) reverseReversedReads();
+    mergeNodes();
     nodeMap = generateNodeMap(nodes);
     generateNodeWidth();
     generateTrackIndexSequences(tracks);
-    if (config.showReads) generateTrackIndexSequences(reads);
+    if (reads && config.showReads) generateTrackIndexSequences(reads);
   }
 
   numberOfNodes = nodes.length;
@@ -375,8 +375,8 @@ function createTubeMap() {
 
   // draw only those nodes which have coords assigned to them
   const dNodes = removeUnusedNodes(nodes);
-  drawNodes(dNodes);
   drawReversalsByColor(trackCorners, trackVerticalRectangles, 'read');
+  drawNodes(dNodes);
   if (config.nodeWidthOption === 0) drawLabels(dNodes);
   if (trackForRuler !== undefined) drawRuler();
   if (config.nodeWidthOption === 0) drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
@@ -1202,9 +1202,9 @@ function generateNodeOrder() {
       if (tracksAndReads[i].type === 'haplo') {
         generateNodeOrderOfSingleTrack(tracksAndReads[i].indexSequence);
       } else {
-      tracksAndReads.splice(i, 1);
-      reads.splice(i - tracks.length, 1);
-      i -= 1;
+        tracksAndReads.splice(i, 1);
+        reads.splice(i - tracks.length, 1);
+        i -= 1;
       }
       continue;
     }
@@ -3689,10 +3689,18 @@ function mergeNodes() {
           mergeOffset.get(predecessor) +
             nodes[nodeMap.get(predecessor)].sequenceLength
         );
+        mergeOffset.set(
+          '-' + node.name,
+          mergeOffset.get(predecessor) +
+            nodes[nodeMap.get(predecessor)].sequenceLength
+        );
         mergeOrigin.set(node.name, mergeOrigin.get(predecessor));
+        mergeOrigin.set('-' + node.name, mergeOrigin.get(predecessor));
       } else {
         mergeOffset.set(node.name, 0);
+        mergeOffset.set('-' + node.name, 0);
         mergeOrigin.set(node.name, node.name);
+        mergeOrigin.set('-' + node.name, node.name);
       }
     });
 
@@ -3702,9 +3710,13 @@ function mergeNodes() {
         read.sequence[read.sequence.length - 1]
       );
       for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
-        if (mergeableWithPred(nodeMap.get(read.sequence[i]), pred, succ)) {
+        const nodeName =
+          read.sequence[i][0] === '-'
+            ? read.sequence[i].substr(1)
+            : read.sequence[i];
+        if (mergeableWithPred(nodeMap.get(nodeName), pred, succ)) {
           const predecessor = mergeableWithPred(
-            nodeMap.get(read.sequence[i]),
+            nodeMap.get(nodeName),
             pred,
             succ
           );
@@ -3800,7 +3812,11 @@ function drawMismatches() {
     if (read.type === 'read') {
       read.sequenceNew.forEach((element, i) => {
         element.mismatches.forEach(mm => {
-          const nodeIndex = nodeMap.get(element.nodeName);
+          const nodeName =
+            element.nodeName[0] === '-'
+              ? element.nodeName.substr(1)
+              : element.nodeName;
+          const nodeIndex = nodeMap.get(nodeName);
           const node = nodes[nodeIndex];
           const x = getXCoordinateOfBaseWithinNode(node, mm.pos);
           let pathIndex = i;
