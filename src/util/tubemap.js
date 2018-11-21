@@ -110,7 +110,9 @@ const config = {
   forwardReadColors: 'reds',
   reverseReadColors: 'blues',
   exonColors: 'lightColors',
-  hideLegendFlag: false
+  hideLegendFlag: false,
+  colorReadsByMappingQuality: false,
+  mappingQualityCutoff: 0
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -266,6 +268,24 @@ export function setNodeWidthOption(value) {
   }
 }
 
+export function setColorReadsByMappingQualityFlag(value) {
+  if (config.colorReadsByMappingQuality !== value) {
+    config.colorReadsByMappingQuality = value;
+    svg = d3.select(svgID);
+    createTubeMap();
+  }
+}
+
+export function setMappingQualityCutoff(value) {
+  if (config.mappingQualityCutoff !== value) {
+    config.mappingQualityCutoff = value;
+    if (svg !== undefined) {
+      svg = d3.select(svgID);
+      createTubeMap();
+    }
+  }
+}
+
 // main
 function createTubeMap() {
   trackRectangles = [];
@@ -292,6 +312,7 @@ function createTubeMap() {
   if (nodes.length === 0 || tracks.length === 0) return;
 
   assignColorSets();
+  reads = filterReads(reads);
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty('type')) {
@@ -2190,46 +2211,22 @@ function generateTrackColor(track, highlight) {
   if (typeof highlight === 'undefined') highlight = 'plain';
   let trackColor;
   if (track.hasOwnProperty('type') && track.type === 'read') {
-    if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
-      trackColor = reverseReadColors[track.id % reverseReadColors.length];
+    if (config.colorReadsByMappingQuality) {
+      trackColor = d3.interpolateRdYlGn(
+        Math.min(60, track.mapping_quality) / 60
+      );
     } else {
-      trackColor = forwardReadColors[track.id % forwardReadColors.length];
+      if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
+        trackColor = reverseReadColors[track.id % reverseReadColors.length];
+      } else {
+        trackColor = forwardReadColors[track.id % forwardReadColors.length];
+      }
     }
   } else {
     if (config.showExonsFlag === false || highlight !== 'plain') {
       trackColor = haplotypeColors[track.id % haplotypeColors.length];
     } else {
       trackColor = exonColors[track.id % exonColors.length];
-    }
-  }
-  return trackColor;
-}
-
-function generateTrackColorOLD(track, highlight) {
-  if (typeof highlight === 'undefined') highlight = 'plain';
-  let trackColor;
-  // Color reads in red and reverse reads in blue
-  if (track.hasOwnProperty('type') && track.type === 'read') {
-    if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
-      trackColor = blues[track.id % blues.length];
-    } else {
-      trackColor = reds[track.id % reds.length];
-    }
-  } else {
-    if (config.colorScheme === 0) {
-      // colorful color scheme
-      if (config.showExonsFlag === false || highlight !== 'plain') {
-        trackColor = plainColors[track.id % plainColors.length];
-      } else {
-        trackColor = lightColors[track.id % lightColors.length];
-      }
-    } else if (config.colorScheme === 1) {
-      // blue-ish color scheme
-      if (config.showExonsFlag === false || highlight === 'plain') {
-        trackColor = greys[track.id % greys.length];
-      } else {
-        trackColor = reds[track.id % reds.length];
-      }
     }
   }
   return trackColor;
@@ -3588,6 +3585,9 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
         }
       });
 
+      track.mapping_quality = read.mapping_quality || 0;
+      track.is_secondary = read.is_secondary || false;
+
       extracted.push(track);
     }
   }
@@ -3980,4 +3980,12 @@ function substitutionMouseOut() {
   /* jshint validthis: true */
   d3.select(this).attr('fill', 'black');
   d3.selectAll('.substitutionHighlight').remove();
+}
+
+function filterReads(reads) {
+  if (!reads) return reads;
+  return reads.filter(
+    read =>
+      !read.is_secondary && read.mapping_quality >= config.mappingQualityCutoff
+  );
 }

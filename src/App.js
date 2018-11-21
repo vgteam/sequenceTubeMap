@@ -28,7 +28,9 @@ class App extends Component {
         showSoftClips: true,
         haplotypeColors: 'greys',
         forwardReadColors: 'reds',
-        reverseReadColors: 'blues'
+        reverseReadColors: 'blues',
+        colorReadsByMappingQuality: false,
+        mappingQualityCutoff: 0
       }
     };
   }
@@ -44,6 +46,10 @@ class App extends Component {
     tubeMap.setColorSet('haplotypeColors', visOptions.haplotypeColors);
     tubeMap.setColorSet('forwardReadColors', visOptions.forwardReadColors);
     tubeMap.setColorSet('reverseReadColors', visOptions.reverseReadColors);
+    tubeMap.setColorReadsByMappingQualityFlag(
+      visOptions.colorReadsByMappingQuality
+    );
+    tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }
 
   setFetchParams = fetchParams => {
@@ -58,6 +64,15 @@ class App extends Component {
       visOptions: {
         ...state.visOptions,
         [flagName]: !state.visOptions[flagName]
+      }
+    }));
+  };
+
+  handleMappingQualityCutoffChange = value => {
+    this.setState(state => ({
+      visOptions: {
+        ...state.visOptions,
+        mappingQualityCutoff: value
       }
     }));
   };
@@ -91,6 +106,9 @@ class App extends Component {
         <CustomizationAccordion
           visOptions={this.state.visOptions}
           toggleFlag={this.toggleVisOptionFlag}
+          handleMappingQualityCutoffChange={
+            this.handleMappingQualityCutoffChange
+          }
           setColorSetting={this.setColorSetting}
         />
       </div>
