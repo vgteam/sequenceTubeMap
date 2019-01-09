@@ -17,6 +17,8 @@ const config = require('./config.json');
 const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
+const SERVER_PORT = 3000
+
 
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -433,10 +435,10 @@ app.post('/getPathNames', (req, res) => {
 // Set-up for Web Sockets to notify client when files change in MOUNTED_DATA_PATH
 // Get the server class of the node websocket module
 const WebSocketServer = require('websocket').server;
-// Start the server on port 3000 and save the HTTP server instance
+// Start the server on the selected port and save the HTTP server instance
 // created by app.listen for the WebScoketServer
-const server = app.listen(3000, () =>
-  console.log('TubeMapServer listening on port 3000!')
+const server = app.listen(SERVER_PORT, () =>
+  console.log('TubeMapServer listening on port ' + SERVER_PORT + '!')
 );
 // Create the WebSocketServer using the HTTP server instance
 const wss = new WebSocketServer({ httpServer: server });
