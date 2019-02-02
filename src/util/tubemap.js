@@ -2844,7 +2844,6 @@ function drawNodes(dNodes) {
     .on('mouseout', nodeMouseOut)
     .on('dblclick', nodeDoubleClick)
     .style('fill', config.transparentNodesFlag ? 'none' : '#fff')
-    // .style('fill', '#fff')
     .style('fill-opacity', config.showExonsFlag ? '0.4' : '0.6')
     .style('stroke', 'black')
     .style('stroke-width', '2px')
