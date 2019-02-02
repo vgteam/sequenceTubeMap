@@ -96,6 +96,7 @@ let maxOrder; // horizontal order of the rightmost node
 
 const config = {
   mergeNodesFlag: true,
+  transparentNodesFlag: false,
   clickableNodesFlag: false,
   showExonsFlag: false,
   colorScheme: 0,
@@ -224,6 +225,15 @@ export function changeExonVisibility() {
 export function setMergeNodesFlag(value) {
   if (config.mergeNodesFlag !== value) {
     config.mergeNodesFlag = value;
+    svg = d3.select(svgID);
+    createTubeMap();
+  }
+}
+
+// sets the flag for whether nodes should be fully transparent or not
+export function setTransparentNodesFlag(value) {
+  if (config.transparentNodesFlag !== value) {
+    config.transparentNodesFlag = value;
     svg = d3.select(svgID);
     createTubeMap();
   }
@@ -2835,7 +2845,7 @@ function drawNodes(dNodes) {
     .on('mouseover', nodeMouseOver)
     .on('mouseout', nodeMouseOut)
     .on('dblclick', nodeDoubleClick)
-    .style('fill', '#fff')
+    .style('fill', config.transparentNodesFlag ? 'none' : '#fff')
     .style('fill-opacity', config.showExonsFlag ? '0.4' : '0.6')
     .style('stroke', 'black')
     .style('stroke-width', '2px')
