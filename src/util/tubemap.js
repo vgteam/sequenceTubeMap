@@ -302,14 +302,15 @@ function createTubeMap() {
   trackForRuler = undefined;
   svg = d3.select(svgID);
   svg.selectAll('*').remove(); // clear svg for (re-)drawing
+  
+  // early exit is necessary when visualization options such as colors are
+  // changed before any graph has been rendered
+  if (inputNodes.length === 0 || inputTracks.length === 0) return;
 
+  straightenTrack(0);
   nodes = JSON.parse(JSON.stringify(inputNodes)); // deep copy (can add stuff to copy and leave original unchanged)
   tracks = JSON.parse(JSON.stringify(inputTracks));
   reads = JSON.parse(JSON.stringify(inputReads));
-
-  // early exit is necessary when visualization options such as colors are
-  // changed before any graph has been rendered
-  if (nodes.length === 0 || tracks.length === 0) return;
 
   assignColorSets();
   reads = filterReads(reads);
@@ -330,6 +331,7 @@ function createTubeMap() {
   }
   if (tracks.length === 0) return;
 
+  
   nodeMap = generateNodeMap(nodes);
   generateTrackIndexSequences(tracks);
   if (reads && config.showReads) generateTrackIndexSequences(reads);
