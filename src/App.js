@@ -24,6 +24,7 @@ class App extends Component {
       visOptions: {
         removeRedundantNodes: true,
         compressedView: false,
+        transparentNodes: false,
         showReads: true,
         showSoftClips: true,
         haplotypeColors: 'greys',
@@ -41,6 +42,7 @@ class App extends Component {
       ? tubeMap.setNodeWidthOption(1)
       : tubeMap.setNodeWidthOption(0);
     tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);
+    tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
     tubeMap.setShowReadsFlag(visOptions.showReads);
     tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
     tubeMap.setColorSet('haplotypeColors', visOptions.haplotypeColors);
