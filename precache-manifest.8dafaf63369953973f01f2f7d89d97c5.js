@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "23fee766ea92c5fd16c45a9aaa0ca9cd",
+    "revision": "29d874d32f43de32eaa297cd773f3123",
     "url": "/sequenceTubeMap/index.html"
   },
   {
@@ -8,7 +8,7 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/sequenceTubeMap/static/css/2.b837a2f7.chunk.css"
   },
   {
-    "revision": "37495a18114a8aa907c4",
+    "revision": "ec896e585b0f89b46678",
     "url": "/sequenceTubeMap/static/css/main.fdb4a4c7.chunk.css"
   },
   {
@@ -20,8 +20,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/sequenceTubeMap/static/js/3.275d7138.chunk.js"
   },
   {
-    "revision": "37495a18114a8aa907c4",
-    "url": "/sequenceTubeMap/static/js/main.dce84d13.chunk.js"
+    "revision": "ec896e585b0f89b46678",
+    "url": "/sequenceTubeMap/static/js/main.a865f5c5.chunk.js"
   },
   {
     "revision": "1527413d0dca8d097dc6",
