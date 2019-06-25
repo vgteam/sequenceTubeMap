@@ -312,7 +312,7 @@ function createTubeMap() {
   trackForRuler = undefined;
   svg = d3.select(svgID);
   svg.selectAll('*').remove(); // clear svg for (re-)drawing
-  
+
   // early exit is necessary when visualization options such as colors are
   // changed before any graph has been rendered
   if (inputNodes.length === 0 || inputTracks.length === 0) return;
@@ -341,7 +341,6 @@ function createTubeMap() {
   }
   if (tracks.length === 0) return;
 
-  
   nodeMap = generateNodeMap(nodes);
   generateTrackIndexSequences(tracks);
   if (reads && config.showReads) generateTrackIndexSequences(reads);
@@ -2850,7 +2849,18 @@ function drawNodes(dNodes) {
     .style('stroke', 'black')
     .style('stroke-width', '2px')
     .append('svg:title')
-    .text(d => d.name);
+    .text(d => getPopUpText(d));
+}
+
+function getPopUpText(node) {
+  return (
+    `Node ID: ${node.name}\n` +
+    `Node Length: ${node.sequenceLength} bases\n` +
+    `Haplotypes: ${node.degree}\n` +
+    `Aligned Reads: ${node.incomingReads.length +
+      node.internalReads.length +
+      node.outgoingReads.length}`
+  );
 }
 
 // draw seqence labels for nodes
