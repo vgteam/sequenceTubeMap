@@ -197,7 +197,7 @@ app.post('/getChunkedData', (req, res) => {
   req.error = new Buffer(0);
 
   vgChunkCall.on('error', function(err) {
-    console.log('Error executing "vg chunk": ' + err);
+    console.log('Error executing ' + VG_PATH + 'vg ' + vgChunkParams.join(' ') + ': ' + err);
     if (!sentErrorResponse) {
       sentErrorResponse = true;
       returnError(req, res);
@@ -216,6 +216,9 @@ app.post('/getChunkedData', (req, res) => {
 
   vgChunkCall.on('close', code => {
     console.log(`vg chunk exited with code ${code}`);
+    if (code != 0) {
+        console.log('Error from ' + VG_PATH + 'vg ' + vgChunkParams.join(' '));
+    }
     vgViewCall.stdin.end();
   });
 
