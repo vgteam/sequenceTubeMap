@@ -17,7 +17,7 @@ const config = require('./config.json');
 const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
-const SERVER_PORT = 3139
+const SERVER_PORT = config.serverPort || 3000;
 
 
 var storage = multer.diskStorage({
