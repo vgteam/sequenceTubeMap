@@ -93,6 +93,16 @@ class VisualizationOptions extends Component {
                       Compressed view
                     </Label>
                   </FormGroup>
+                  <FormGroup check>
+                    <Label check>
+                      <Input
+                        type="checkbox"
+                        checked={visOptions.transparentNodes}
+                        onChange={() => toggleFlag('transparentNodes')}
+                      />
+                      Fully transparent nodes
+                    </Label>
+                  </FormGroup>
                 </FormGroup>
 
                 <FormGroup>

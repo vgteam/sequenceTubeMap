@@ -96,6 +96,7 @@ let maxOrder; // horizontal order of the rightmost node
 
 const config = {
   mergeNodesFlag: true,
+  transparentNodesFlag: false,
   clickableNodesFlag: false,
   showExonsFlag: false,
   colorScheme: 0,
@@ -229,6 +230,15 @@ export function setMergeNodesFlag(value) {
   }
 }
 
+// sets the flag for whether nodes should be fully transparent or not
+export function setTransparentNodesFlag(value) {
+  if (config.transparentNodesFlag !== value) {
+    config.transparentNodesFlag = value;
+    svg = d3.select(svgID);
+    createTubeMap();
+  }
+}
+
 // sets the flag for whether read soft clips should be displayed or not
 export function setSoftClipsFlag(value) {
   if (config.showSoftClips !== value) {
@@ -303,13 +313,14 @@ function createTubeMap() {
   svg = d3.select(svgID);
   svg.selectAll('*').remove(); // clear svg for (re-)drawing
 
+  // early exit is necessary when visualization options such as colors are
+  // changed before any graph has been rendered
+  if (inputNodes.length === 0 || inputTracks.length === 0) return;
+
+  straightenTrack(0);
   nodes = JSON.parse(JSON.stringify(inputNodes)); // deep copy (can add stuff to copy and leave original unchanged)
   tracks = JSON.parse(JSON.stringify(inputTracks));
   reads = JSON.parse(JSON.stringify(inputReads));
-
-  // early exit is necessary when visualization options such as colors are
-  // changed before any graph has been rendered
-  if (nodes.length === 0 || tracks.length === 0) return;
 
   assignColorSets();
   reads = filterReads(reads);
@@ -2833,12 +2844,23 @@ function drawNodes(dNodes) {
     .on('mouseover', nodeMouseOver)
     .on('mouseout', nodeMouseOut)
     .on('dblclick', nodeDoubleClick)
-    .style('fill', '#fff')
+    .style('fill', config.transparentNodesFlag ? 'none' : '#fff')
     .style('fill-opacity', config.showExonsFlag ? '0.4' : '0.6')
     .style('stroke', 'black')
     .style('stroke-width', '2px')
     .append('svg:title')
-    .text(d => d.name);
+    .text(d => getPopUpText(d));
+}
+
+function getPopUpText(node) {
+  return (
+    `Node ID: ${node.name}\n` +
+    `Node Length: ${node.sequenceLength} bases\n` +
+    `Haplotypes: ${node.degree}\n` +
+    `Aligned Reads: ${node.incomingReads.length +
+      node.internalReads.length +
+      node.outgoingReads.length}`
+  );
 }
 
 // draw seqence labels for nodes
