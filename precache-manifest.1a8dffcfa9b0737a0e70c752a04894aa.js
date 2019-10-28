@@ -1,18 +1,18 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "29d874d32f43de32eaa297cd773f3123",
+    "revision": "d468af1faa938c4ea70dbaed219eb283",
     "url": "/sequenceTubeMap/index.html"
   },
   {
-    "revision": "9e8baf979914df98365e",
+    "revision": "449ae1f2f789b0993ec7",
     "url": "/sequenceTubeMap/static/css/2.b837a2f7.chunk.css"
   },
   {
-    "revision": "ec896e585b0f89b46678",
+    "revision": "c487a4af90577a67d1a0",
     "url": "/sequenceTubeMap/static/css/main.fdb4a4c7.chunk.css"
   },
   {
-    "revision": "9e8baf979914df98365e",
+    "revision": "449ae1f2f789b0993ec7",
     "url": "/sequenceTubeMap/static/js/2.73715943.chunk.js"
   },
   {
@@ -20,8 +20,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/sequenceTubeMap/static/js/3.275d7138.chunk.js"
   },
   {
-    "revision": "ec896e585b0f89b46678",
-    "url": "/sequenceTubeMap/static/js/main.a865f5c5.chunk.js"
+    "revision": "c487a4af90577a67d1a0",
+    "url": "/sequenceTubeMap/static/js/main.afac73a9.chunk.js"
   },
   {
     "revision": "1527413d0dca8d097dc6",
