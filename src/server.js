@@ -17,7 +17,7 @@ const config = require('./config.json');
 const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
-const SERVER_PORT = 3000
+const SERVER_PORT = config.serverPort || 3000;
 
 
 var storage = multer.diskStorage({
@@ -428,7 +428,8 @@ app.post('/getPathNames', (req, res) => {
 
   vgViewChild.on('close', () => {
     result.pathNames = pathNames.split('\n').filter(function(a) {
-      return a != '';
+      // Eliminate empty names or underscore-prefixed internal names (like _alt paths) 
+      return a != '' && !a.startsWith('_');
     });
     console.log(result);
     res.json(result);
