@@ -959,11 +959,7 @@ function generateTrackIndexSequences(tracksOrReads) {
   tracksOrReads.forEach(track => {
     track.indexSequence = [];
     track.sequence.forEach(nodeName => {
-      if (nodeName.charAt(0) === '-') {
-        track.indexSequence.push(-nodeMap.get(nodeName.substr(1)));
-      } else {
-        track.indexSequence.push(nodeMap.get(nodeName));
-      }
+        track.indexSequence.push(Math.abs(nodeMap.get(nodeName.substr(1))));
     });
   });
 }
