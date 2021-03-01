@@ -133,7 +133,7 @@ let bed;
 // main function to call from outside
 // which starts the process of creating a tube map visualization
 export function create(params) {
-  // mandatory parameters: svgID, nodes, tracks
+  // mandatory parameters: svgID (really a selector, but must be an ID selector), nodes, tracks
   // optional parameters: bed, clickableNodes, reads, showLegend
   svgID = params.svgID;
   svg = d3.select(params.svgID);
@@ -145,6 +145,42 @@ export function create(params) {
   config.hideLegendFlag = params.hideLegend || false;
   const tr = createTubeMap();
   if (!config.hideLegendFlag) drawLegend(tr);
+}
+
+// Return true if the given name names a reverse strand node, and false otherwise.
+function isReverse(nodeName) {
+  const s = String(nodeName);
+  return (s.length >= 1 && s.charAt(0) === '-');
+}
+
+// Get the forward version of a node name, which may be either forward or backward (negative)
+function forward(nodeName) {
+  if (isReverse(nodeName)) {
+    // It looks like a negative value.
+    // Make sure it's a string and cut off the -.
+    return String(nodeName).substr(1);
+  } else {
+    // It's forward.
+    return nodeName;
+  }
+}
+
+// Get the reverse version of a node name, which may be either forward or backward (negative)
+function reverse(nodeName) {
+  if (isReverse(nodeName)) {
+    return nodeName;
+  } else {
+    return `-${nodeName}`;
+  }
+}
+
+// Get the opposite orientation node name for the given node.
+function flip(nodeName) {
+  if (isReverse(nodeName)) {
+    return forward(nodeName);
+  } else {
+    return reverse(nodeName);
+  }
 }
 
 // moves a specific track to the top
@@ -166,14 +202,14 @@ function straightenTrack(index) {
   // find out which nodes should be inverted
   currentSequence = inputTracks[index].sequence;
   for (i = 0; i < currentSequence.length; i += 1) {
-    if (currentSequence[i].charAt(0) === '-') {
-      nodeName = currentSequence[i].substr(1);
+    if (isReverse(currentSequence[i])) {
+      nodeName = forward(currentSequence[i]);
       if (
         currentSequence.indexOf(nodeName) === -1 ||
         currentSequence.indexOf(nodeName) > i
       ) {
         // only if this inverted node is no repeat
-        nodesToInvert.push(currentSequence[i].substr(1));
+        nodesToInvert.push(nodeName);
       }
     }
   }
@@ -182,12 +218,12 @@ function straightenTrack(index) {
   for (i = 0; i < inputTracks.length; i += 1) {
     currentSequence = inputTracks[i].sequence;
     for (j = 0; j < currentSequence.length; j += 1) {
-      if (currentSequence[j].charAt(0) !== '-') {
+      if (!isReverse(currentSequence[j])) {
         if (nodesToInvert.indexOf(currentSequence[j]) !== -1) {
-          currentSequence[j] = `-${currentSequence[j]}`;
+          currentSequence[j] = reverse(currentSequence[j]);
         }
-      } else if (nodesToInvert.indexOf(currentSequence[j].substr(1)) !== -1) {
-        currentSequence[j] = currentSequence[j].substr(1);
+      } else if (nodesToInvert.indexOf(forward(currentSequence[j])) !== -1) {
+        currentSequence[j] = forward(currentSequence[j]);
       }
     }
   }
@@ -492,10 +528,7 @@ function assignReadsToNodes() {
 function removeNonPathNodesFromReads() {
   reads.forEach(read => {
     for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
-      let nodeName = read.sequence[i];
-      if (nodeName.charAt(0) === '-') {
-        nodeName = nodeName.substr(1);
-      }
+      let nodeName = forward(read.sequence[i]);
       if (!nodeMap.has(nodeName) || nodes[nodeMap.get(nodeName)].degree === 0) {
         read.sequence.splice(i, 1);
       }
@@ -878,12 +911,14 @@ function reverseReversedReads() {
       read.is_reverse = true;
       read.sequence = read.sequence.reverse(); // invert sequence
       for (let i = 0; i < read.sequence.length; i += 1) {
-        read.sequence[i] = read.sequence[i].substr(1); // remove '-'
+        read.sequence[i] = forward(read.sequence[i]); // visit nodes forward
+        // TODO: Do we really want to visit all the nodes forward here? Are we
+        // sure we aren't in mixed orientation?
       }
 
       read.sequenceNew = read.sequenceNew.reverse(); // invert sequence
       for (let i = 0; i < read.sequenceNew.length; i += 1) {
-        read.sequenceNew[i].nodeName = read.sequenceNew[i].nodeName.substr(1); // remove '-'
+        read.sequenceNew[i].nodeName = forward(read.sequenceNew[i].nodeName); // visit nodes forward
         const nodeWidth =
           nodes[nodeMap.get(read.sequenceNew[i].nodeName)].width;
         read.sequenceNew[i].mismatches.forEach(mm => {
@@ -945,8 +980,8 @@ function generateTrackIndexSequencesNEW(tracksOrReads) {
   tracksOrReads.forEach(track => {
     track.indexSequence = [];
     track.sequence.forEach(edit => {
-      if (edit.nodeName.charAt(0) === '-') {
-        track.indexSequence.push(-nodeMap.get(edit.nodeName.substr(1)));
+      if (isReverse(edit.nodeName)) {
+        track.indexSequence.push(-nodeMap.get(forward(edit.nodeName)));
       } else {
         track.indexSequence.push(nodeMap.get(edit.nodeName));
       }
@@ -959,7 +994,11 @@ function generateTrackIndexSequences(tracksOrReads) {
   tracksOrReads.forEach(track => {
     track.indexSequence = [];
     track.sequence.forEach(nodeName => {
-        track.indexSequence.push(Math.abs(nodeMap.get(nodeName.substr(1))));
+      if (isReverse(nodeName)) {
+        track.indexSequence.push(-nodeMap.get(forward(nodeName)));
+      } else {
+        track.indexSequence.push(nodeMap.get(forward(nodeName)));
+      }
     });
   });
 }
@@ -1009,6 +1048,7 @@ function alignSVG() {
   svg.attr('height', maxYCoordinate - minYCoordinate + 50);
   svg.attr(
     'width',
+    // Trim off the leading "#" from the SVG ID.
     document.getElementById(svgID.substring(1)).parentNode.offsetWidth
   );
 
@@ -1243,6 +1283,8 @@ function generateNodeOrder() {
       }
       continue;
     }
+    // Create a sequence with orientation removed and everything
+    // positive/forward
     modifiedSequence = uninvert(tracksAndReads[i].indexSequence);
 
     while (rightIndex < modifiedSequence.length) {
@@ -1469,23 +1511,15 @@ function switchNodeOrientation() {
   for (let i = 1; i < tracks.length; i += 1) {
     for (let j = 0; j < tracks[i].sequence.length; j += 1) {
       nodeName = tracks[i].sequence[j];
-      if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
+      nodeName = forward(nodeName);
       currentNode = nodes[nodeMap.get(nodeName)];
       if (tracks[0].sequence.indexOf(nodeName) === -1) {
         // do not change orientation for nodes which are part of the pivot track
         if (j > 0) {
-          if (tracks[i].sequence[j - 1].charAt(0) !== '-') {
-            prevNode = nodes[nodeMap.get(tracks[i].sequence[j - 1])];
-          } else {
-            prevNode = nodes[nodeMap.get(tracks[i].sequence[j - 1].substr(1))];
-          }
+          prevNode = nodes[nodeMap.get(forward(tracks[i].sequence[j - 1]))]
         }
         if (j < tracks[i].sequence.length - 1) {
-          if (tracks[i].sequence[j + 1].charAt(0) !== '-') {
-            nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1])];
-          } else {
-            nextNode = nodes[nodeMap.get(tracks[i].sequence[j + 1].substr(1))];
-          }
+            nextNode = nodes[nodeMap.get(forward(tracks[i].sequence[j + 1]))];
         }
         if (
           (j === 0 || prevNode.order < currentNode.order) &&
@@ -1493,7 +1527,7 @@ function switchNodeOrientation() {
             currentNode.order < nextNode.order)
         ) {
           if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
-          if (tracks[i].sequence[j].charAt(0) === '-') {
+          if (isReverse(tracks[i].sequence[j])) {
             toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
           } else {
             toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
@@ -1505,7 +1539,7 @@ function switchNodeOrientation() {
             currentNode.order > nextNode.order)
         ) {
           if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
-          if (tracks[i].sequence[j].charAt(0) === '-') {
+          if (isReverse(tracks[i].sequence[j])) {
             toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
           } else {
             toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
@@ -1517,14 +1551,9 @@ function switchNodeOrientation() {
 
   tracks.forEach((track, trackIndex) => {
     track.sequence.forEach((node, nodeIndex) => {
-      nodeName = node;
-      if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
+      nodeName = forward(node);
       if (toSwitch.has(nodeName) && toSwitch.get(nodeName) > 0) {
-        if (node.charAt(0) === '-') {
-          tracks[trackIndex].sequence[nodeIndex] = node.substr(1);
-        } else {
-          tracks[trackIndex].sequence[nodeIndex] = `-${node}`;
-        }
+        tracks[trackIndex].sequence[nodeIndex] = flip(node);
       }
     });
   });
@@ -2909,14 +2938,14 @@ function drawRuler() {
   // draw ruler marking at the left end of chart for compressed charts
   // (this marking is on purpose not at a 0 % 100 position)
   if (config.nodeWidthOption !== 0) {
-    const firstNode = nodes[rulerTrack.indexSequence[0]];
+    const firstNode = nodes[Math.abs(rulerTrack.indexSequence[0])];
     xCoordOfPreviousMarking = getXCoordinateOfBaseWithinNode(firstNode, 0);
     drawRulerMarking(indexOfFirstBaseInNode, xCoordOfPreviousMarking);
     atLeastOneMarkingDrawn = true;
   }
 
   rulerTrack.indexSequence.forEach(nodeIndex => {
-    const currentNode = nodes[nodeIndex];
+    const currentNode = nodes[Math.abs(nodeIndex)];
     let nextMarking =
       Math.ceil(indexOfFirstBaseInNode / markingInterval) * markingInterval;
     while (nextMarking < indexOfFirstBaseInNode + currentNode.sequenceLength) {
@@ -2931,14 +2960,14 @@ function drawRuler() {
       }
       nextMarking += markingInterval;
     }
-    indexOfFirstBaseInNode += nodes[nodeIndex].sequenceLength;
+    indexOfFirstBaseInNode += nodes[Math.abs(nodeIndex)].sequenceLength;
   });
 
   // if no markings drawn, draw one at the very beginning
   if (!atLeastOneMarkingDrawn) {
     drawRulerMarking(
       rulerTrack.indexOfFirstBase,
-      nodes[rulerTrack.indexSequence[0]].x - 4
+      nodes[Math.abs(rulerTrack.indexSequence[0])].x - 4
     );
   }
 }
@@ -3389,7 +3418,7 @@ export function vgExtractTracks(vg) {
         pos.position.hasOwnProperty('is_reverse') &&
         pos.position.is_reverse === true
       ) {
-        sequence.push(`-${pos.position.node_id}`);
+        sequence.push(reverse(`${pos.position.node_id}`));
       } else {
         sequence.push(`${pos.position.node_id}`);
         isCompletelyReverse = false;
@@ -3398,7 +3427,7 @@ export function vgExtractTracks(vg) {
     if (isCompletelyReverse) {
       sequence.reverse();
       sequence.forEach((node, index2) => {
-        sequence[index2] = node.substr(1);
+        sequence[index2] = forward(node);
       });
     }
     const track = {};
@@ -3420,9 +3449,9 @@ function compareReadsByLeftEnd(a, b) {
   let leftIndexA;
   let leftIndexB;
 
-  if (a.sequence[0].charAt(0) === '-') {
-    if (a.sequence[a.sequence.length - 1].charAt(0) === '-') {
-      leftNodeA = a.sequence[a.sequence.length - 1].substr(1);
+  if (isReverse(a.sequence[0])) {
+    if (isReverse(a.sequence[a.sequence.length - 1])) {
+      leftNodeA = forward(a.sequence[a.sequence.length - 1]);
       leftIndexA =
         nodes[nodeMap.get(leftNodeA)].sequenceLength - a.finalNodeCoverLength;
     } else {
@@ -3434,9 +3463,9 @@ function compareReadsByLeftEnd(a, b) {
     leftIndexA = a.firstNodeOffset;
   }
 
-  if (b.sequence[0].charAt(0) === '-') {
-    if (b.sequence[b.sequence.length - 1].charAt(0) === '-') {
-      leftNodeB = b.sequence[b.sequence.length - 1].substr(1);
+  if (isReverse(b.sequence[0])) {
+    if (isReverse(b.sequence[b.sequence.length - 1])) {
+      leftNodeB = forward(b.sequence[b.sequence.length - 1]);
       leftIndexB =
         nodes[nodeMap.get(leftNodeB)].sequenceLength - b.finalNodeCoverLength;
     } else {
@@ -3457,10 +3486,10 @@ function compareReadsByLeftEnd(a, b) {
 
 function compareReadsByLeftEnd2(a, b) {
   // compare by order of first node
-  if (nodes[a.indexSequence[0]].order < nodes[b.indexSequence[0]].order) {
+  if (nodes[Math.abs(a.indexSequence[0])].order < nodes[Math.abs(b.indexSequence[0])].order) {
     return -1;
   } else if (
-    nodes[a.indexSequence[0]].order > nodes[b.indexSequence[0]].order
+    nodes[Math.abs(a.indexSequence[0])].order > nodes[Math.abs(b.indexSequence[0])].order
   ) {
     return 1;
   }
@@ -3471,13 +3500,13 @@ function compareReadsByLeftEnd2(a, b) {
 
   // compare by order of last node
   if (
-    nodes[a.indexSequence[a.indexSequence.length - 1]].order <
-    nodes[b.indexSequence[b.indexSequence.length - 1]].order
+    nodes[Math.abs(a.indexSequence[a.indexSequence.length - 1])].order <
+    nodes[Math.abs(b.indexSequence[b.indexSequence.length - 1])].order
   ) {
     return -1;
   } else if (
-    nodes[a.indexSequence[a.indexSequence.length - 1]].order >
-    nodes[b.indexSequence[b.indexSequence.length - 1]].order
+    nodes[Math.abs(a.indexSequence[a.indexSequence.length - 1])].order >
+    nodes[Math.abs(b.indexSequence[b.indexSequence.length - 1])].order
   ) {
     return 1;
   }
@@ -3515,8 +3544,8 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
           pos.position.hasOwnProperty('is_reverse') &&
           pos.position.is_reverse === true
         ) {
-          sequence.push(`-${pos.position.node_id}`);
-          edit.nodeName = `-${pos.position.node_id}`;
+          sequence.push(reverse(`${pos.position.node_id}`));
+          edit.nodeName = reverse(`${pos.position.node_id}`);
         } else {
           sequence.push(`${pos.position.node_id}`);
           edit.nodeName = pos.position.node_id.toString();
@@ -3639,14 +3668,14 @@ function mergeNodes() {
 
   tracksAndReads.forEach(track => {
     for (let i = 0; i < track.sequence.length; i += 1) {
-      if (track.sequence[i].charAt(0) !== '-') {
+      if (!isReverse(track.sequence[i])) {
         // forward Node
         if (i > 0) {
           nodeName = track.sequence[i - 1];
           pred[nodeMap.get(track.sequence[i])].add(nodeName);
-          if (nodeName.charAt(0) === '-') {
+          if (isReverse(nodeName)) {
             // add 2 predecessors, to make sure there is no node merging in this case
-            pred[nodeMap.get(track.sequence[i])].add(nodeName.substr(1));
+            pred[nodeMap.get(track.sequence[i])].add(forward(nodeName));
           }
         } else if (track.type === 'haplo') {
           pred[nodeMap.get(track.sequence[i])].add('None');
@@ -3654,35 +3683,35 @@ function mergeNodes() {
         if (i < track.sequence.length - 1) {
           nodeName = track.sequence[i + 1];
           succ[nodeMap.get(track.sequence[i])].add(nodeName);
-          if (nodeName.charAt(0) === '-') {
+          if (isReverse(nodeName)) {
             // add 2 successors, to make sure there is no node merging in this case
-            succ[nodeMap.get(track.sequence[i])].add(nodeName.substr(1));
+            succ[nodeMap.get(track.sequence[i])].add(forward(nodeName));
           }
         } else if (track.type === 'haplo') {
           succ[nodeMap.get(track.sequence[i])].add('None');
         }
       } else {
         // reverse Node
-        nodeName = track.sequence[i].substr(1);
+        nodeName = forward(track.sequence[i]);
         if (i > 0) {
           nodeName2 = track.sequence[i - 1];
-          if (nodeName2.charAt(0) === '-') {
-            succ[nodeMap.get(nodeName)].add(nodeName2.substr(1));
+          if (isReverse(nodeName2)) {
+            succ[nodeMap.get(nodeName)].add(forward(nodeName2));
           } else {
             // add 2 successors, to make sure there is no node merging in this case
             succ[nodeMap.get(nodeName)].add(nodeName2);
-            succ[nodeMap.get(nodeName)].add(`-${nodeName2}`);
+            succ[nodeMap.get(nodeName)].add(reverse(nodeName2));
           }
         } else if (track.type === 'haplo') {
           succ[nodeMap.get(nodeName)].add('None');
         }
         if (i < track.sequence.length - 1) {
           nodeName2 = track.sequence[i + 1];
-          if (nodeName2.charAt(0) === '-') {
-            pred[nodeMap.get(nodeName)].add(nodeName2.substr(1));
+          if (isReverse(nodeName2)) {
+            pred[nodeMap.get(nodeName)].add(forward(nodeName2));
           } else {
             pred[nodeMap.get(nodeName)].add(nodeName2);
-            pred[nodeMap.get(nodeName)].add(`-${nodeName2}`);
+            pred[nodeMap.get(nodeName)].add(reverse(nodeName2));
           }
         } else if (track.type === 'haplo') {
           pred[nodeMap.get(nodeName)].add('None');
@@ -3720,12 +3749,12 @@ function mergeNodes() {
             nodes[nodeMap.get(predecessor)].sequenceLength
         );
         mergeOrigin.set(node.name, mergeOrigin.get(predecessor));
-        mergeOrigin.set('-' + node.name, mergeOrigin.get(predecessor));
+        mergeOrigin.set(reverse(node.name), mergeOrigin.get(predecessor));
       } else {
         mergeOffset.set(node.name, 0);
-        mergeOffset.set('-' + node.name, 0);
+        mergeOffset.set(reverse(node.name), 0);
         mergeOrigin.set(node.name, node.name);
-        mergeOrigin.set('-' + node.name, node.name);
+        mergeOrigin.set(reverse(node.name), node.name);
       }
     });
 
@@ -3735,10 +3764,7 @@ function mergeNodes() {
         read.sequence[read.sequence.length - 1]
       );
       for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
-        const nodeName =
-          read.sequence[i][0] === '-'
-            ? read.sequence[i].substr(1)
-            : read.sequence[i];
+        const nodeName = forward(read.sequence[i]);
         if (mergeableWithPred(nodeMap.get(nodeName), pred, succ)) {
           const predecessor = mergeableWithPred(
             nodeMap.get(nodeName),
@@ -3777,8 +3803,7 @@ function mergeNodes() {
     if (mergeableWithSucc(i, pred, succ) && !mergeableWithPred(i, pred, succ)) {
       let donor = i;
       while (mergeableWithSucc(donor, pred, succ)) {
-        donor = succ[donor][0];
-        if (donor.charAt(0) === '-') donor = donor.substr(1);
+        donor = forward(succ[donor][0]);
         donor = nodeMap.get(donor);
         if (nodes[i].hasOwnProperty('sequenceLength')) {
           nodes[i].sequenceLength += nodes[donor].sequenceLength;
@@ -3793,8 +3818,7 @@ function mergeNodes() {
   // actually merge the nodes by removing the corresponding nodes from track data
   tracks.forEach(track => {
     for (let i = track.sequence.length - 1; i >= 0; i -= 1) {
-      nodeName = track.sequence[i];
-      if (nodeName.charAt(0) === '-') nodeName = nodeName.substr(1);
+      nodeName = forward(track.sequence[i]);
       const nodeIndex = nodeMap.get(nodeName);
       if (mergeableWithPred(nodeIndex, pred, succ)) {
         track.sequence.splice(i, 1);
@@ -3813,8 +3837,7 @@ function mergeNodes() {
 function mergeableWithPred(index, pred, succ) {
   if (pred[index].length !== 1) return false;
   if (pred[index][0] === 'None') return false;
-  let predecessor = pred[index][0];
-  if (predecessor.charAt(0) === '-') predecessor = predecessor.substr(1);
+  let predecessor = forward(pred[index][0]);
   const predecessorIndex = nodeMap.get(predecessor);
   if (succ[predecessorIndex].length !== 1) return false;
   if (succ[predecessorIndex][0] === 'None') return false;
@@ -3824,8 +3847,7 @@ function mergeableWithPred(index, pred, succ) {
 function mergeableWithSucc(index, pred, succ) {
   if (succ[index].length !== 1) return false;
   if (succ[index][0] === 'None') return false;
-  let successor = succ[index][0];
-  if (successor.charAt(0) === '-') successor = successor.substr(1);
+  let successor = forward(succ[index][0]);
   const successorIndex = nodeMap.get(successor);
   if (pred[successorIndex].length !== 1) return false;
   if (pred[successorIndex][0] === 'None') return false;
@@ -3837,15 +3859,14 @@ function drawMismatches() {
     if (read.type === 'read') {
       read.sequenceNew.forEach((element, i) => {
         element.mismatches.forEach(mm => {
-          const nodeName =
-            element.nodeName[0] === '-'
-              ? element.nodeName.substr(1)
-              : element.nodeName;
+          const nodeName = forward(element.nodeName);
           const nodeIndex = nodeMap.get(nodeName);
           const node = nodes[nodeIndex];
           const x = getXCoordinateOfBaseWithinNode(node, mm.pos);
           let pathIndex = i;
-          while (read.path[pathIndex].node !== nodeIndex) pathIndex += 1;
+          while (read.path[pathIndex].node !== nodeIndex) {
+            pathIndex += 1;
+          }
           const y = read.path[pathIndex].y;
           if (mm.type === 'insertion') {
             if (
