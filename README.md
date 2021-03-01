@@ -49,7 +49,7 @@ If you are using vg and want visualize the graphs it generates, the online versi
 
 (Previously we provided a docker image at [https://hub.docker.com/r/wolfib/sequencetubemap/](https://hub.docker.com/r/wolfib/sequencetubemap/), which contained the build of this repo as well as a vg executable for data preprocessing and extraction. We now recommend a different installation approach.)
 
-#### Prerequisites:
+#### Prerequisites
 
 yarn or npm, nodejs, and [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
 
@@ -59,7 +59,7 @@ The directory containing the vg executable needs to be added to your environment
 PATH=/<your_path_to_vg>:$PATH
 ```
 
-#### Installation:
+#### Installation
 
 - Clone the repo:
   ```
@@ -83,7 +83,7 @@ PATH=/<your_path_to_vg>:$PATH
   npm run build
   ```
 
-#### Execution:
+#### Execution
 
 - Start the node server:
   ```
@@ -101,7 +101,7 @@ PATH=/<your_path_to_vg>:$PATH
 ssh -N -L 3000:localhost:3000 <your username>@<your server>
 ```
 
-#### Adding your own data:
+#### Adding Your Own Data
 
 - The vg files you want to visualize need to contain haplotype/path info. Generating visualizations for the graph itself only is not supported. In addition to the haplotype graph, you can optionally visualize aligned reads from a gam file.
 - Your data needs to be indexed by vg. To generate an index of your vg file, go to the `sequenceTubeMap/scripts/` directory and run
@@ -121,6 +121,20 @@ ssh -N -L 3000:localhost:3000 <your username>@<your server>
   ```
   If you want to use a relative path, this path should be relative to the `sequenceTubeMaps/` folder.
 - restart the server and choose `custom (mounted files)` from the data dropdown in the UI to be able to pick from the files in your data folder.
+
+#### Development Mode
+
+The `build`/`serve` pipeline can only produce minified code, which can be difficult to debug. In development, you should instead use:
+  ```
+  yarn start
+  ```
+  or
+  ```
+  npm run start
+  ```
+This will use React's development mode server to serve the frontend, and run the backend in a separate process, behind React's proxy. Local ports 3000 and 3001 must both be free.
+
+Running in this mode allows the application to produce human-readable stack traces when something goes wrong in the browser.
 
 ## License
 
