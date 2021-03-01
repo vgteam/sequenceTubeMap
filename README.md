@@ -136,6 +136,32 @@ This will use React's development mode server to serve the frontend, and run the
 
 Running in this mode allows the application to produce human-readable stack traces when something goes wrong in the browser.
 
+#### Running Tests
+
+For interactive development, you can use:
+  ```
+  yarn test
+  ```
+  or
+  ```
+  npm run test
+  ```
+
+This will start the tests in a watching mode, where files that are changed will prompt apparently-dependent tests to rerun. Note that this only looks for changes versus the currently checked-out Git commit; if you have committed your changes, you cannot test them this way. On Mac, it also requires that the `watchman` package be installed, because it needs to watch the jillions of files in `node_modules` for changes.
+
+If you want to run all the tests, you can run:
+  ```
+  yarn test -- --watchAll=false
+  ```
+  or
+  ```
+  npm run test -- --watchAll=false
+  ```
+
+You can also set the environment variable `CI=true`, or [look sufficiently like a kind of CI environment known to `reach-scripts`](https://create-react-app.dev/docs/running-tests/#command-line-interface).
+
+
+
 ## License
 
 Copyright (c) 2018 Wolfgang Beyer, licensed under the MIT License.
