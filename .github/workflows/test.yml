@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Install vg
-        run: curl -sSL 'https://github.com/vgteam/vg/releases/download/v1.31.0/vg' >/usr/bin/vg && chmod +x /usr/bin/vg
+        run: mkdir -p bin && curl -sSL 'https://github.com/vgteam/vg/releases/download/v1.31.0/vg' >bin/vg && chmod +x bin/vg
       - name: Run tests
-        run: CI=true npm run test
+        run: PATH=$PATH:$(pwd)/bin CI=true npm run test
 
