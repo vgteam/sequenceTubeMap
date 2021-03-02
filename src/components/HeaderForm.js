@@ -8,7 +8,6 @@ import MountedDataFormRow from './MountedDataFormRow';
 import FileUploadFormRow from './FileUploadFormRow';
 import ExampleSelectButtons from './ExampleSelectButtons';
 
-const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
 const DATA_SOURCES = config.DATA_SOURCES;
 const MAX_UPLOAD_SIZE_DESCRIPTION = '5 MB';
 const dataTypes = {
@@ -54,7 +53,7 @@ class HeaderForm extends Component {
 
   getMountedFilenames = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/getFilenames`, {
+      const response = await fetch(`${this.props.backendUrl}/getFilenames`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -85,13 +84,13 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      console.log('POST to /getFilenames failed');
+      console.log(`POST to ${this.props.backendUrl}/getFilenames failed:`, error);
     }
   };
 
   getPathNames = async (xgFile, isUploadedFile) => {
     try {
-      const response = await fetch(`${BACKEND_URL}/getPathNames`, {
+      const response = await fetch(`${this.props.backendUrl}/getPathNames`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -110,7 +109,7 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      console.log('POST to /getPathNames failed');
+      console.log(`POST to ${this.props.backendUrl}/getPathNames failed:`, error);
     }
   };
 
@@ -232,7 +231,7 @@ class HeaderForm extends Component {
   };
 
   setUpWebsocket = () => {
-    this.ws = new WebSocket(BACKEND_URL.replace(/^http/, 'ws'));
+    this.ws = new WebSocket(this.props.backendUrl.replace(/^http/, 'ws'));
     this.ws.onmessage = message => {
       this.getMountedFilenames();
     };

@@ -5,6 +5,7 @@ import TubeMapContainer from './components/TubeMapContainer';
 import CustomizationAccordion from './components/CustomizationAccordion';
 import { dataOriginTypes } from './enums';
 import * as tubeMap from './util/tubemap';
+import config from './config.json';
 
 class App extends Component {
   constructor(props) {
@@ -100,10 +101,12 @@ class App extends Component {
           setDataOrigin={this.setDataOrigin}
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
+          backendUrl={this.props.backendUrl}
         />
         <TubeMapContainer
           fetchParams={this.state.fetchParams}
           dataOrigin={this.state.dataOrigin}
+          backendUrl={this.props.backendUrl}
         />
         <CustomizationAccordion
           visOptions={this.state.visOptions}
@@ -117,5 +120,13 @@ class App extends Component {
     );
   }
 }
+
+App.defaultProps = {
+  // Backend the whole app will hit against. Usually should be picked up from
+  // the config or the browser, but needs to be swapped out in the fake
+  // browser testing environment to point to a real testing backend.
+  // Note that host includes the port.
+  backendUrl: config.BACKEND_URL || `http://${window.location.host}`
+};
 
 export default App;

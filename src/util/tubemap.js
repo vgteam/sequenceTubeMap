@@ -143,8 +143,13 @@ export function create(params) {
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
   config.hideLegendFlag = params.hideLegend || false;
+  
+  console.log(`Creating tube map of ${inputNodes.length} nodes`);
+  
   const tr = createTubeMap();
   if (!config.hideLegendFlag) drawLegend(tr);
+  
+  console.log(`Tube map of ${inputNodes.length} nodes is created`);
 }
 
 // Return true if the given name names a reverse strand node, and false otherwise.
@@ -1045,11 +1050,16 @@ function getImageDimensions() {
 // align visualization to the top and left within svg and resize svg to correct size
 // enable zooming and panning
 function alignSVG() {
+  // Find the SVG element.
+  // Trim off the leading "#" from the SVG ID.
+  let svgElement = document.getElementById(svgID.substring(1));
+  // And find its parent holding element.
+  let parentElement = svgElement.parentNode;
+
   svg.attr('height', maxYCoordinate - minYCoordinate + 50);
   svg.attr(
     'width',
-    // Trim off the leading "#" from the SVG ID.
-    document.getElementById(svgID.substring(1)).parentNode.offsetWidth
+    parentElement.offsetWidth
   );
 
   function zoomed() {
@@ -1070,11 +1080,13 @@ function alignSVG() {
 
   const minZoom = Math.min(
     1,
-    document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
-      (maxXCoordinate + 10)
+    parentElement.offsetWidth / (maxXCoordinate + 10)
   );
   zoom = d3
     .zoom()
+    // We need to set an extent here because auto-determination of the region
+    // to zoom breaks on the React testing jsdom
+    .extent([[0, 0], [svg.attr('width'), svg.attr('height')]]) 
     .scaleExtent([minZoom, 8])
     .translateExtent([
       [-1, minYCoordinate - 25],
@@ -1088,27 +1100,30 @@ function alignSVG() {
     .append('g');
 
   // translate to correct position on initial draw
-  const containerWidth = document.getElementById(svgID.substring(1)).parentNode
-    .offsetWidth;
+  const containerWidth = parentElement.offsetWidth;
   const xOffset =
     maxXCoordinate + 10 < containerWidth
       ? (containerWidth - maxXCoordinate - 10) / 2
       : 0;
-  d3.select(svgID).call(
+  d3.select(document).select(svgID).call(
     zoom.transform,
     d3.zoomIdentity.translate(xOffset, 25 - minYCoordinate)
   );
 }
 
 export function zoomBy(zoomFactor) {
+  // Find the SVG element.
+  // Trim off the leading "#" from the SVG ID.
+  let svgElement = document.getElementById(svgID.substring(1));
+  // And find its parent holding element.
+  let parentElement = svgElement.parentNode;
+  
   const minZoom = Math.min(
     1,
-    document.getElementById(svgID.substring(1)).parentNode.offsetWidth /
-      (maxXCoordinate + 10)
+    parentElement.offsetWidth / (maxXCoordinate + 10)
   );
   const maxZoom = 8;
-  const width = document.getElementById(svgID.substring(1)).parentElement
-    .clientWidth;
+  const width = parentElement.clientWidth;
 
   const transform = d3.zoomTransform(d3.select(svgID).node());
   const translateK = Math.min(
@@ -3398,11 +3413,12 @@ function generateNodeWidth() {
           .attr('font-size', '14px')
           .attr('fill', 'black')
           .style('pointer-events', 'none');
-        node.pixelWidth = Math.round(
-          document.getElementById('dummytext').getComputedTextLength()
-        );
+        let element = document.getElementById('dummytext');
+        if (element.getComputedTextLength) {
+          // We are on a platform where text length computation is possible (i.e. a real browser)
+          node.pixelWidth = Math.round(element.getComputedTextLength());
+        }
         document.getElementById('dummytext').remove();
-        // $('#dummytext').remove();
       });
   }
 }

@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import { Label, Input } from 'reactstrap';
-import config from '../config.json';
 
-const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
 const MAX_UPLOAD_SIZE = 5242880;
 
 class FileUploadFormRow extends Component {
@@ -37,7 +35,7 @@ class FileUploadFormRow extends Component {
           this.props.getPathNames(xhr.response.path, 'true');
         }
       };
-      xhr.open('POST', `${BACKEND_URL}/xgFileSubmission`, true);
+      xhr.open('POST', `${this.props.backendUrl}/xgFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -64,7 +62,7 @@ class FileUploadFormRow extends Component {
           this.props.handleFileUpload('gbwtFile', xhr.response.path);
         }
       };
-      xhr.open('POST', `${BACKEND_URL}/gbwtFileSubmission`, true);
+      xhr.open('POST', `${this.props.backendUrl}/gbwtFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -91,7 +89,7 @@ class FileUploadFormRow extends Component {
           this.props.handleFileUpload('gamFile', xhr.response.path);
         }
       };
-      xhr.open('POST', `${BACKEND_URL}/gamFileSubmission`, true);
+      xhr.open('POST', `${this.props.backendUrl}/gamFileSubmission`, true);
       xhr.send(formData);
     }
   };
