@@ -17,10 +17,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Install dependencies
+      - name: Install node modules
         run: npm install
-      - name: Install vg
-        run: mkdir -p bin && curl -sSL 'https://github.com/vgteam/vg/releases/download/v1.31.0/vg' >bin/vg && chmod +x bin/vg
+      - name: Install latest vg release
+        # See https://gist.github.com/steinwaywhw/a4cd19cda655b8249d908261a62687f8 for how we pull out the right URL
+        run: |
+          mkdir -p bin
+          curl -sSL "$(curl -sSL https://api.github.com/repos/vgteam/vg/releases/latest | grep 'browser_download_url.*vg"' | cut -d ':' -f 2,3 | tr -d '"')" >bin/vg
+          chmod +x bin/vg
       - name: Run tests
         run: PATH=$PATH:$(pwd)/bin CI=true npm run test
 
