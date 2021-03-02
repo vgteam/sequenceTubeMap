@@ -63,7 +63,7 @@ class DataPositionFormRow extends Component {
         />
         <Label
           className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
-          for="unitSelect"
+          for="byNode"
         >
           Unit:
         </Label>

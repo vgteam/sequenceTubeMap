@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  push:
+    branches:    
+      - master
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  npmtest:
+    name: Run npm tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install node modules
+        run: npm install
+      - name: Install latest vg release
+        # See https://gist.github.com/steinwaywhw/a4cd19cda655b8249d908261a62687f8 for how we pull out the right URL
+        run: |
+          mkdir -p bin
+          curl -sSL "$(curl -sSL https://api.github.com/repos/vgteam/vg/releases/latest | grep 'browser_download_url.*vg"' | cut -d ':' -f 2,3 | tr -d '"' | sed 's/^ *//g')" >bin/vg
+          chmod +x bin/vg
+      - name: Run tests
+        run: PATH=$PATH:$(pwd)/bin CI=true npm run test
+

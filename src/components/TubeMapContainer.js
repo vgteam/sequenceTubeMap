@@ -1,11 +1,8 @@
 import React, { Component } from 'react';
 import TubeMap from './TubeMap';
-import config from '../config.json';
 import { Container, Row, Alert } from 'reactstrap';
 import * as tubeMap from '../util/tubemap';
 import { dataOriginTypes } from '../enums';
-
-const BACKEND_URL = config.BACKEND_URL || `http://${window.location.host}`;
 
 class TubeMapContainer extends Component {
   state = {
@@ -18,12 +15,24 @@ class TubeMapContainer extends Component {
   }
 
   componentDidUpdate(prevProps) {
+    // TODO: this is the way the React docs say to make requests (do them when
+    // the component updates), but when we make a request we pop ourselves into
+    // a loading state and immediately do another update, which then means we
+    // have to mess around with deep comparison to see we don't need yet a
+    // third update. Is there a way to let React keep track of the fact that we
+    // aren't up to date with the requested state yet? 
     if (this.props.dataOrigin !== prevProps.dataOrigin) {
       this.props.dataOrigin === dataOriginTypes.API
         ? this.getRemoteTubeMapData()
         : this.getExampleData();
-    } else if (this.props.fetchParams !== prevProps.fetchParams) {
-      this.getRemoteTubeMapData();
+    } else {
+      if (JSON.stringify(this.props.fetchParams) !== JSON.stringify(prevProps.fetchParams)) {
+        // We need to compare the fetch parameters with stringification because
+        // they will get swapped out for a different object all the time, and we
+        // don't want to compare object identity. TODO: stringify isn't
+        // guaranteed to be stable so we can still make extra requests.
+        this.getRemoteTubeMapData();
+      } 
     }
   }
 
@@ -34,33 +43,39 @@ class TubeMapContainer extends Component {
       console.log(error);
       const message = error.message ? error.message : error;
       return (
-        <Container>
-          <Row>
-            <Alert color="danger">{message}</Alert>
-          </Row>
-        </Container>
+        <div id="tubeMapContainer">
+          <Container>
+            <Row>
+              <Alert color="danger">{message}</Alert>
+            </Row>
+          </Container>
+        </div>
       );
     }
 
     if (isLoading) {
       return (
-        <Container>
-          <Row>
-            <div id="loaderContainer">
-              <div id="loader" />
-            </div>
-          </Row>
-        </Container>
+        <div id="tubeMapContainer">
+          <Container>
+            <Row>
+              <div id="loaderContainer">
+                <div id="loader" />
+              </div>
+            </Row>
+          </Container>
+        </div>
       );
     }
 
     return (
-      <div id="tubeMapSVG">
-        <TubeMap
-          nodes={this.state.nodes}
-          tracks={this.state.tracks}
-          reads={this.state.reads}
-        />
+      <div id="tubeMapContainer">
+        <div id="tubeMapSVG">
+          <TubeMap
+            nodes={this.state.nodes}
+            tracks={this.state.tracks}
+            reads={this.state.reads}
+          />
+        </div>
       </div>
     );
   }
@@ -68,7 +83,7 @@ class TubeMapContainer extends Component {
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${BACKEND_URL}/getChunkedData`, {
+      const response = await fetch(`${this.props.backendUrl}/getChunkedData`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

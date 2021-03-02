@@ -12,6 +12,7 @@ const uuid = require('uuid/v1');
 const fs = require('fs-extra');
 const rl = require('readline');
 const compression = require('compression');
+const WebSocketServer = require('websocket').server;
 const config = require('./config.json');
 
 const VG_PATH = config.vgPath;
@@ -436,38 +437,116 @@ app.post('/getPathNames', (req, res) => {
   });
 });
 
-// Set-up for Web Sockets to notify client when files change in MOUNTED_DATA_PATH
-// Get the server class of the node websocket module
-const WebSocketServer = require('websocket').server;
-// Start the server on the selected port and save the HTTP server instance
-// created by app.listen for the WebScoketServer
-const server = app.listen(SERVER_PORT, () =>
-  console.log('TubeMapServer listening on port ' + SERVER_PORT + '!')
-);
-// Create the WebSocketServer using the HTTP server instance
-const wss = new WebSocketServer({ httpServer: server });
-// Set that holds all the WebSocketConnection instances that
-// notify the client of file directory changes
-const connections = new Set();
+// Start the server. Returns a promise that resolves when the server is ready.
+// To stop the server, close() the result. Server base URL can be obtained with
+// getUrl().
+function start() {
+  
+  return new Promise((resolve, reject) => {
+    
+    // This holds the top-level state of the server and lets us close things up.
+    // TODO: use a real class.
+    let state = {
+      // Express server
+      server: undefined,
+      // Web socket server
+      wss: undefined,
+      // Filesystem watch
+      watcher: undefined,
+      // Outstanding websocket connections
+      connections: undefined,
+      // Shut down the server
+      close: async () => {
+        // Close out all the servers
+        state.wss.shutDown();
+        state.server.close();
+        state.watcher.close();
+        
+        // Wait for all the web sockets to be closed.
+        await new Promise((resolve, reject) => {
+          function stopIfReady() {
+            if (state.connections.size == 0) {
+              // No more open connections!
+              resolve();
+            } else {
+              // Check back later
+              setTimeout(stopIfReady, 10);
+            }
+          }
+          stopIfReady();
+        });
+        
+        console.log('TubeMapServer stopped.');
+        // TODO: do we have to do more to wait for the close to take effect?
+      },
+      // Get the URL the server is listening on
+      getUrl: () => {
+        return 'http://[::]:' + SERVER_PORT;
+      }
+    };
 
-wss.on('request', function(request) {
-  // We recieved a websocket connection request and we need to accept it.
-  console.log(new Date() + ' Connection from origin ' + request.origin + '.');
-  const connection = request.accept(null, request.origin);
-  // We save the connection so that we can notify them when there is a change in the file system
-  connections.add(connection);
-  connection.on('close', function(reasonCode, description) {
-    // When the websocket connection closes, we delete it from our set of open connections
-    connections.delete(connection);
-    console.log('A connection has been closed');
+    // If the state fields are all filled in, resolve the promise for the closeable server object.
+    function resolveIfReady() {
+      if (state.server !== undefined &&
+          state.wss !== undefined &&
+          state.watcher !== undefined) {
+        resolve(state);
+      }
+    }
+
+    // Start the server on the selected port and save the HTTP server instance
+    // created by app.listen for the WebScoketServer
+    const server = app.listen(SERVER_PORT, () => {
+      console.log('TubeMapServer listening on port ' + SERVER_PORT + '!');
+      // Server is ready so add to state.
+      state.server = server;
+      // See if the other server components are up yet and, if so, resolve our promise.
+      resolveIfReady();
+    });
+    // Create the WebSocketServer, for watching for updated files, using the HTTP server instance
+    const wss = new WebSocketServer({ httpServer: server });
+
+    // Set that holds all the WebSocketConnection instances that
+    // notify the client of file directory changes
+    state.connections = new Set();
+
+    wss.on('request', function(request) {
+      // We recieved a websocket connection request and we need to accept it.
+      console.log(new Date() + ' Connection from origin ' + request.origin + '.');
+      const connection = request.accept(null, request.origin);
+      // We save the connection so that we can notify them when there is a change in the file system
+      state.connections.add(connection);
+      connection.on('close', function(reasonCode, description) {
+        // When the websocket connection closes, we delete it from our set of open connections
+        state.connections.delete(connection);
+        console.log('A connection has been closed');
+      });
+    });
+
+    // Web socket server is now ready
+    state.wss = wss;
+
+    // Start a watch. We can stop it by closing the watcher.
+    const watcher = fs.watch(MOUNTED_DATA_PATH, function(event, filename) {
+      // There was a change in the file directory
+      console.log('Directory has been changed');
+      for (let conn of state.connections) {
+        // Notify all open connections about the change
+        conn.send('change');
+      }
+    });
+
+    // fs watcher is now ready
+    state.watcher = watcher;
+
+    // See if the server itself is up yet and, if so, resolve our promise.
+    resolveIfReady();
   });
-});
+}
 
-fs.watch(MOUNTED_DATA_PATH, function(event, filename) {
-  // There was a change in the file directory
-  console.log('Directory has been changed');
-  for (let conn of connections) {
-    // Notify all open connections about the change
-    conn.send('change');
-  }
-});
+module.exports = {start};
+
+if (require.main === module) {
+  // We are running on the command line. Start the server.
+  start();
+}
