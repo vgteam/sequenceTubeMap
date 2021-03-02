@@ -17,7 +17,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Install dependencies
-        uses: actions/npm@master
         run: npm install
       - name: Install vg
         run: curl -sSL 'https://github.com/vgteam/vg/releases/download/v1.31.0/vg' >/usr/bin/vg && chmod +x /usr/bin/vg
