@@ -34,33 +34,39 @@ class TubeMapContainer extends Component {
       console.log(error);
       const message = error.message ? error.message : error;
       return (
-        <Container>
-          <Row>
-            <Alert color="danger">{message}</Alert>
-          </Row>
-        </Container>
+        <div id="tubeMapContainer">
+          <Container>
+            <Row>
+              <Alert color="danger">{message}</Alert>
+            </Row>
+          </Container>
+        </div>
       );
     }
 
     if (isLoading) {
       return (
-        <Container>
-          <Row>
-            <div id="loaderContainer">
-              <div id="loader" />
-            </div>
-          </Row>
-        </Container>
+        <div id="tubeMapContainer">
+          <Container>
+            <Row>
+              <div id="loaderContainer">
+                <div id="loader" />
+              </div>
+            </Row>
+          </Container>
+        </div>
       );
     }
 
     return (
-      <div id="tubeMapSVG">
-        <TubeMap
-          nodes={this.state.nodes}
-          tracks={this.state.tracks}
-          reads={this.state.reads}
-        />
+      <div id="tubeMapContainer">
+        <div id="tubeMapSVG">
+          <TubeMap
+            nodes={this.state.nodes}
+            tracks={this.state.tracks}
+            reads={this.state.reads}
+          />
+        </div>
       </div>
     );
   }
