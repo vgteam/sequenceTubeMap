@@ -2,8 +2,8 @@
 
 import server from './server'
 import React from 'react';
-import ReactDOM from 'react-dom';
-import { act } from "react-dom/test-utils";
+// testing-library provides a render() that auto-cleans-up from the global DOM.
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
@@ -19,27 +19,11 @@ async function setUp() {
   serverState = await server.start();
   
   // Create the application.
-  // See https://reactjs.org/docs/testing-recipes.html#rendering
-  root = document.createElement('div');
-  
-  // To get things by ID we need to attach to the DOM
-  document.body.appendChild(root);
-  act(() => {
-    ReactDOM.render(<App backendUrl={serverState.getUrl()} />, root);
-  });
+  render(<App backendUrl={serverState.getUrl()} />)
 }
 
 // This needs to be called by global and per-scope afterEach
 async function tearDown() {
-  // Shut down the client
-  try {
-    ReactDOM.unmountComponentAtNode(root);
-    root.remove();
-    root = undefined;
-  } catch (e) {
-    console.error(e);
-  }
-
   try {
     // Shut down the server
     await serverState.close();
@@ -139,55 +123,41 @@ describe('When we wait for it to load', () => {
     expect(loader).toBeFalsy();
   });
 
-  describe('When we draw the vg "small" example', () => {
-    
-    beforeEach(async (done) => {
-      act(() => {
-        let dropdown = document.getElementById('dataSourceSelect');
-        userEvent.selectOptions(dropdown, 'vg "small" example');
-      });
-      act(() => {
-        let start = document.getElementById('nodeID');
-        userEvent.type(start, '{selectall}1');
-      });
-      act(() => {
-        let units = document.getElementById('byNode');
-        userEvent.selectOptions(units, 'true');
-      });
-      act(() => {
-        let distance = document.getElementById('distance');
-        userEvent.type(distance, '{selectall}10');
-      });
-      act(() => {
-        let dropdown = document.getElementById('dataSourceSelect');
-        let start = document.getElementById('nodeID');
-        let distance = document.getElementById('distance');
-        let units = document.getElementById('byNode');
-        
-        userEvent.type(distance, '{selectall}10');
-        
-        console.log(dropdown.value); 
-        console.log(dropdown.outerHTML); 
-        console.log(start.outerHTML);
-        console.log(distance.outerHTML);
-        console.log(units.value);
-        console.log(units.outerHTML);
-        
-        let go = document.getElementById('goButton');
-        console.log('Clicking button for small');
-        userEvent.click(go);
-      });
-      
-      await waitForLoadEnd();
-      done();
-    });
   
-    it('draws the right SVG', () => {
-      let svg = document.getElementById('svg');
-      expect(svg).toBeTruthy();
-      expect(svg.childNodes.length).toEqual(1);
-      // When I do this manually I get a 77 item SVG.
-      expect(svg.childNodes[0].childNodes.length).toEqual(77);
+  it('draws the right SVG for vg "small"', async () => {
+  
+    await act(async () => {
+      let dropdown = document.getElementById('dataSourceSelect');
+      let start = document.getElementById('nodeID');
+      let distance = document.getElementById('distance');
+      let units = document.getElementById('byNode');
+      
+      await userEvent.selectOptions(screen.getByLabelText(/Data/i), 'vg "small" example');
+      await userEvent.clear(screen.getByLabelText(/Start/i));
+      await userEvent.type(screen.getByLabelText(/Start/i), '1');
+      await userEvent.clear(screen.getByLabelText(/Length/i));
+      await userEvent.type(screen.getByLabelText(/Length/i), '10');
+      await userEvent.selectOptions(screen.getByLabelText(/Unit/i), screen.getByText('Nodes'))
+      
+      console.log(dropdown.value); 
+      console.log(dropdown.outerHTML); 
+      console.log(start.outerHTML);
+      console.log(distance.outerHTML);
+      console.log(units.value);
+      console.log(units.outerHTML);
+    
+      let go = document.getElementById('goButton');
+      console.log('Clicking button for small');
+      await userEvent.click(go);
     });
+    
+    let loader = document.getElementById('loader');
+    expect(loader).toBeTruthy();
+    
+    await waitForLoadEnd();
+  
+    let svg = document.getElementById('svg');
+    expect(svg).toBeTruthy();
+    expect(svg.getElementsByTagName('title').length).toEqual(17);
   });
 });
