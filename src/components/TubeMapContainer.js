@@ -31,11 +31,8 @@ class TubeMapContainer extends Component {
         // they will get swapped out for a different object all the time, and we
         // don't want to compare object identity. TODO: stringify isn't
         // guaranteed to be stable so we can still make extra requests.
-        console.log('Adopting new fetch params:', this.props.fetchParams);
         this.getRemoteTubeMapData();
-      } else {
-        console.log('Keeping old fetch params:', this.props.fetchParams);
-      }
+      } 
     }
   }
 

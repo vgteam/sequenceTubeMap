@@ -143,13 +143,8 @@ export function create(params) {
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
   config.hideLegendFlag = params.hideLegend || false;
-  
-  console.log(`Creating tube map of ${inputNodes.length} nodes`);
-  
   const tr = createTubeMap();
   if (!config.hideLegendFlag) drawLegend(tr);
-  
-  console.log(`Tube map of ${inputNodes.length} nodes is created`);
 }
 
 // Return true if the given name names a reverse strand node, and false otherwise.
