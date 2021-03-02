@@ -481,7 +481,7 @@ function start() {
       },
       // Get the URL the server is listening on
       getUrl: () => {
-        return 'http://[::]:' + SERVER_PORT;
+        return 'http://localhost:' + SERVER_PORT;
       }
     };
 
