@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { Form, Label, Input, Button } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -120,5 +121,16 @@ class DataPositionFormRow extends Component {
     );
   }
 }
+
+DataPositionFormRow.propTypes = {
+  byNode: PropTypes.oneOf(['true', 'false']).isRequired,
+  distance: PropTypes.string.isRequired, 
+  handleGoButton: PropTypes.func.isRequired,
+  handleGoLeft: PropTypes.func.isRequired,
+  handleGoRight: PropTypes.func.isRequired,
+  handleInputChange: PropTypes.func.isRequired,
+  nodeID: PropTypes.string.isRequired,
+  uploadInProgress: PropTypes.bool.isRequired,
+};
 
 export default DataPositionFormRow;

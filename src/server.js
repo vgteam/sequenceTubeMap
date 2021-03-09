@@ -108,9 +108,10 @@ function indexGamSorted(req, res) {
 app.post('/getChunkedData', (req, res) => {
   let sentErrorResponse = false;
   console.time('request-duration');
-  console.log('http POST chr22_v4 received');
-  console.log(`nodeID = ${req.body.nodeID}`);
+  console.log('http POST getChunkedData received');
+  console.log(`start = ${req.body.nodeID}`);
   console.log(`distance = ${req.body.distance}`);
+  console.log(`byNode = ${req.body.byNode}`);
 
   // Assign each request a UUID. v1 UUIDs can be very similar for similar
   // timestamps on the same node, but are still guaranteed to be unique within
@@ -190,6 +191,8 @@ app.post('/getChunkedData', (req, res) => {
     '-E',
     `${req.tempDir}/regions.tsv`
   );
+
+  console.log(`vg chunk ${vgChunkParams.join(' ')}`);
 
   console.time('vg chunk');
   const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
@@ -352,6 +355,7 @@ function processRegionFile(req, res) {
   });
 
   lineReader.on('line', line => {
+    console.log('Region: ' + line);
     const arr = line.replace(/\s+/g, ' ').split(' ');
     req.graph.path.forEach(path => {
       if (path.name === arr[0]) path.indexOfFirstBase = arr[1];

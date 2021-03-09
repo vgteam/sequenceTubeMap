@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { Label, Input } from 'reactstrap';
 
 const MAX_UPLOAD_SIZE = 5242880;
@@ -163,5 +164,17 @@ class FileUploadFormRow extends Component {
     );
   }
 }
+
+FileUploadFormRow.propTypes = {
+  backendUrl: PropTypes.string.isRequired,
+  getPathNames: PropTypes.func.isRequired,
+  handleFileUpload: PropTypes.func.isRequired,
+  handleInputChange: PropTypes.func.isRequired,
+  pathSelect: PropTypes.string.isRequired, 
+  pathSelectOptions: PropTypes.array.isRequired, 
+  resetPathNames: PropTypes.func.isRequired,
+  setUploadInProgress: PropTypes.func.isRequired,
+  showFileSizeAlert: PropTypes.func.isRequired
+};
 
 export default FileUploadFormRow;

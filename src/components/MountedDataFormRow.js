@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { Label, Input } from 'reactstrap';
 
 class MountedDataFormRow extends Component {
@@ -103,5 +104,17 @@ class MountedDataFormRow extends Component {
     );
   }
 }
+
+MountedDataFormRow.propTypes = {
+  gamSelect: PropTypes.string.isRequired,
+  gamSelectOptions: PropTypes.array.isRequired,
+  gbwtSelect: PropTypes.string.isRequired,
+  gbwtSelectOptions: PropTypes.array.isRequired,
+  handleInputChange: PropTypes.func.isRequired,
+  pathSelect: PropTypes.string.isRequired,
+  pathSelectOptions: PropTypes.array.isRequired,
+  xgSelect: PropTypes.string.isRequired,
+  xgSelectOptions: PropTypes.array.isRequired
+};
 
 export default MountedDataFormRow;

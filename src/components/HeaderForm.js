@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { Container, Row, Col, Form, Label, Input, Alert } from 'reactstrap';
 import { dataOriginTypes } from '../enums';
 // import defaultConfig from '../config.default.json';
@@ -305,6 +306,7 @@ class HeaderForm extends Component {
                 )}
                 {uploadFilesFlag && (
                   <FileUploadFormRow
+                    backendUrl={this.props.backendUrl}
                     pathSelect={this.state.pathSelect}
                     pathSelectOptions={this.state.pathSelectOptions}
                     handleInputChange={this.handleInputChange}
@@ -352,5 +354,13 @@ class HeaderForm extends Component {
     );
   }
 }
+
+HeaderForm.propTypes = {
+  backendUrl: PropTypes.string.isRequired,
+  dataOrigin: PropTypes.string.isRequired,
+  setColorSetting: PropTypes.func.isRequired,
+  setDataOrigin: PropTypes.func.isRequired,
+  setFetchParams: PropTypes.func.isRequired
+};
 
 export default HeaderForm;

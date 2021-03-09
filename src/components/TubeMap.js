@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import * as tubeMap from '../util/tubemap';
 
 class TubeMap extends Component {
@@ -23,5 +24,11 @@ class TubeMap extends Component {
     return <svg id="svg" />;
   }
 }
+
+TubeMap.propTypes = {
+  nodes: PropTypes.array.isRequired,
+  tracks: PropTypes.array.isRequired,
+  reads: PropTypes.array.isRequired 
+};
 
 export default TubeMap;
