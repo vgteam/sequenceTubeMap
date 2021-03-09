@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { Form, Button } from 'reactstrap';
 import { dataOriginTypes } from '../enums';
 
@@ -72,5 +73,10 @@ class ExampleSelectButtons extends Component {
     );
   }
 }
+
+ExampleSelectButtons.propTypes = {
+  setColorSetting: PropTypes.func.isRequired,
+  setDataOrigin: PropTypes.func.isRequired
+};
 
 export default ExampleSelectButtons;

@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import './App.css';
 import HeaderForm from './components/HeaderForm';
 import TubeMapContainer from './components/TubeMapContainer';
@@ -119,6 +120,10 @@ class App extends Component {
       </div>
     );
   }
+}
+
+App.propTypes = {
+  backendUrl: PropTypes.string
 }
 
 App.defaultProps = {

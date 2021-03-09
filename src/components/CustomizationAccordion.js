@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import {
   Container,
   Collapse,
@@ -193,5 +194,10 @@ class VisualizationOptions extends Component {
     );
   }
 }
+
+VisualizationOptions.propTypes = {
+  handleMappingQualityCutoffChange: PropTypes.func.isRequired,
+  setColorSetting: PropTypes.func.isRequired
+};
 
 export default VisualizationOptions;

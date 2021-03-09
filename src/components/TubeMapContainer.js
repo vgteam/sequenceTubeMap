@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import TubeMap from './TubeMap';
 import { Container, Row, Alert } from 'reactstrap';
 import * as tubeMap from '../util/tubemap';
@@ -160,5 +161,11 @@ class TubeMapContainer extends Component {
     return result;
   };
 }
+
+TubeMapContainer.propTypes = {
+  backendUrl: PropTypes.string.isRequired,
+  dataOrigin: PropTypes.oneOf(Object.values(dataOriginTypes)).isRequired,
+  fetchParams: PropTypes.object.isRequired 
+};
 
 export default TubeMapContainer;

@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { Col, Label, Input, FormGroup } from 'reactstrap';
 
 const colorMap = new Map([
@@ -43,5 +44,12 @@ class RadioRow extends Component {
     );
   }
 }
+
+RadioRow.propTypes = {
+  color: PropTypes.string.isRequired,
+  rowHeading: PropTypes.string.isRequired,
+  setColorSetting: PropTypes.func.isRequired,
+  trackType: PropTypes.string.isRequired 
+};
 
 export default RadioRow;
