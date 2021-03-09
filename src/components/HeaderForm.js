@@ -54,7 +54,7 @@ class HeaderForm extends Component {
 
   getMountedFilenames = async () => {
     try {
-      const response = await fetch(`${this.props.backendUrl}/getFilenames`, {
+      const response = await fetch(`${this.props.apiUrl}/getFilenames`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -85,13 +85,13 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      console.log(`GET to ${this.props.backendUrl}/getFilenames failed:`, error);
+      console.log(`GET to ${this.props.apiUrl}/getFilenames failed:`, error);
     }
   };
 
   getPathNames = async (xgFile, isUploadedFile) => {
     try {
-      const response = await fetch(`${this.props.backendUrl}/getPathNames`, {
+      const response = await fetch(`${this.props.apiUrl}/getPathNames`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -110,7 +110,7 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      console.log(`POST to ${this.props.backendUrl}/getPathNames failed:`, error);
+      console.log(`POST to ${this.props.apiUrl}/getPathNames failed:`, error);
     }
   };
 
@@ -232,7 +232,7 @@ class HeaderForm extends Component {
   };
 
   setUpWebsocket = () => {
-    this.ws = new WebSocket(this.props.backendUrl.replace(/^http/, 'ws'));
+    this.ws = new WebSocket(this.props.apiUrl.replace(/^http/, 'ws'));
     this.ws.onmessage = message => {
       this.getMountedFilenames();
     };
@@ -306,7 +306,7 @@ class HeaderForm extends Component {
                 )}
                 {uploadFilesFlag && (
                   <FileUploadFormRow
-                    backendUrl={this.props.backendUrl}
+                    apiUrl={this.props.apiUrl}
                     pathSelect={this.state.pathSelect}
                     pathSelectOptions={this.state.pathSelectOptions}
                     handleInputChange={this.handleInputChange}
@@ -356,7 +356,7 @@ class HeaderForm extends Component {
 }
 
 HeaderForm.propTypes = {
-  backendUrl: PropTypes.string.isRequired,
+  apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,

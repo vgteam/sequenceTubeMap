@@ -19,7 +19,7 @@ async function setUp() {
   serverState = await server.start();
   
   // Create the application.
-  render(<App backendUrl={serverState.getUrl()} />)
+  render(<App apiUrl={serverState.getApiUrl()} />)
 }
 
 // This needs to be called by global and per-scope afterEach

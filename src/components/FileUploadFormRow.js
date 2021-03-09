@@ -36,7 +36,7 @@ class FileUploadFormRow extends Component {
           this.props.getPathNames(xhr.response.path, 'true');
         }
       };
-      xhr.open('POST', `${this.props.backendUrl}/xgFileSubmission`, true);
+      xhr.open('POST', `${this.props.apiUrl}/xgFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -63,7 +63,7 @@ class FileUploadFormRow extends Component {
           this.props.handleFileUpload('gbwtFile', xhr.response.path);
         }
       };
-      xhr.open('POST', `${this.props.backendUrl}/gbwtFileSubmission`, true);
+      xhr.open('POST', `${this.props.apiUrl}/gbwtFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -90,7 +90,7 @@ class FileUploadFormRow extends Component {
           this.props.handleFileUpload('gamFile', xhr.response.path);
         }
       };
-      xhr.open('POST', `${this.props.backendUrl}/gamFileSubmission`, true);
+      xhr.open('POST', `${this.props.apiUrl}/gamFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -166,7 +166,7 @@ class FileUploadFormRow extends Component {
 }
 
 FileUploadFormRow.propTypes = {
-  backendUrl: PropTypes.string.isRequired,
+  apiUrl: PropTypes.string.isRequired,
   getPathNames: PropTypes.func.isRequired,
   handleFileUpload: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,

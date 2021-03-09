@@ -84,7 +84,7 @@ class TubeMapContainer extends Component {
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${this.props.backendUrl}/getChunkedData`, {
+      const response = await fetch(`${this.props.apiUrl}/getChunkedData`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -163,7 +163,7 @@ class TubeMapContainer extends Component {
 }
 
 TubeMapContainer.propTypes = {
-  backendUrl: PropTypes.string.isRequired,
+  apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.oneOf(Object.values(dataOriginTypes)).isRequired,
   fetchParams: PropTypes.object.isRequired 
 };

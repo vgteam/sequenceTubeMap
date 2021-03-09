@@ -496,6 +496,10 @@ function start() {
       // Get the URL the server is listening on
       getUrl: () => {
         return 'http://localhost:' + SERVER_PORT;
+      },
+      // Get the URL the server is listening on for the API
+      getApiUrl: () => {
+        return state.getUrl() + '/api/v0';
       }
     };
 
