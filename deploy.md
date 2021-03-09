@@ -8,7 +8,7 @@ Here are the steps to deploy an update to the demo at [https://vgteam.github.io/
 "homepage": "https://vgteam.github.io/sequenceTubeMap/"
 ```
 
-- Modify the `BACKEND_URL` in `src/config.json`:
+- Modify the `BACKEND_URL` in `src/config.json`. Note that it should not include `/api` or anything after it:
 
 ```
 "BACKEND_URL": "https://api.tubemap.graphs.vg",

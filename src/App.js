@@ -102,12 +102,12 @@ class App extends Component {
           setDataOrigin={this.setDataOrigin}
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
-          backendUrl={this.props.backendUrl}
+          apiUrl={this.props.apiUrl}
         />
         <TubeMapContainer
           fetchParams={this.state.fetchParams}
           dataOrigin={this.state.dataOrigin}
-          backendUrl={this.props.backendUrl}
+          apiUrl={this.props.apiUrl}
         />
         <CustomizationAccordion
           visOptions={this.state.visOptions}
@@ -123,7 +123,7 @@ class App extends Component {
 }
 
 App.propTypes = {
-  backendUrl: PropTypes.string
+  apiUrl: PropTypes.string
 }
 
 App.defaultProps = {
@@ -131,7 +131,7 @@ App.defaultProps = {
   // the config or the browser, but needs to be swapped out in the fake
   // browser testing environment to point to a real testing backend.
   // Note that host includes the port.
-  backendUrl: config.BACKEND_URL || `http://${window.location.host}`
+  apiUrl: (config.BACKEND_URL || `http://${window.location.host}`) + '/api/v0'
 };
 
 export default App;
