@@ -55,7 +55,7 @@ class HeaderForm extends Component {
   getMountedFilenames = async () => {
     try {
       const response = await fetch(`${this.props.backendUrl}/getFilenames`, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
@@ -85,7 +85,7 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      console.log(`POST to ${this.props.backendUrl}/getFilenames failed:`, error);
+      console.log(`GET to ${this.props.backendUrl}/getFilenames failed:`, error);
     }
   };
 

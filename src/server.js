@@ -40,6 +40,8 @@ var limits = {
 var upload = multer({ storage, limits });
 
 const app = express();
+
+// Configure global server settings
 app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(
   bodyParser.urlencoded({
@@ -49,8 +51,18 @@ app.use(
 );
 app.use(compression());
 
-// required for local usage (access docker container from outside)
-app.use((req, res, next) => {
+// Serve the frontend
+app.use(express.static('./build'));
+
+// Make another Express object to keep all the API calls on a sensible path
+// that can be proxied around if needed.
+const api = express();
+app.use('/api/v0', api);
+
+// Open up CORS.
+// TODO: can we avoid this?
+// required for local usage with the Docker container (access docker container from outside)
+api.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header(
     'Access-Control-Allow-Headers',
@@ -59,21 +71,19 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static('./build'));
-
-app.post('/xgFileSubmission', upload.single('xgFile'), (req, res) => {
+api.post('/xgFileSubmission', upload.single('xgFile'), (req, res) => {
   console.log('/xgFileSubmission');
   console.log(req.file);
   res.json({ path: req.file.path });
 });
 
-app.post('/gbwtFileSubmission', upload.single('gbwtFile'), (req, res) => {
+api.post('/gbwtFileSubmission', upload.single('gbwtFile'), (req, res) => {
   console.log('/gbwtFileSubmission');
   console.log(req.file);
   res.json({ path: req.file.path });
 });
 
-app.post('/gamFileSubmission', upload.single('gamFile'), (req, res) => {
+api.post('/gamFileSubmission', upload.single('gamFile'), (req, res) => {
   console.log('/gamFileSubmission');
   console.log(req.file);
   indexGamSorted(req, res);
@@ -105,7 +115,7 @@ function indexGamSorted(req, res) {
   });
 }
 
-app.post('/getChunkedData', (req, res) => {
+api.post('/getChunkedData', (req, res) => {
   let sentErrorResponse = false;
   console.time('request-duration');
   console.log('http POST getChunkedData received');
@@ -384,7 +394,7 @@ function cleanUpAndSendResult(req, res) {
   console.timeEnd('request-duration');
 }
 
-app.post('/getFilenames', (req, res) => {
+api.get('/getFilenames', (req, res) => {
   console.log('received request for filenames');
   const result = {
     xgFiles: [],
@@ -408,7 +418,7 @@ app.post('/getFilenames', (req, res) => {
   res.json(result);
 });
 
-app.post('/getPathNames', (req, res) => {
+api.post('/getPathNames', (req, res) => {
   console.log('received request for pathNames');
   const result = {
     pathNames: []
@@ -508,6 +518,7 @@ function start() {
       resolveIfReady();
     });
     // Create the WebSocketServer, for watching for updated files, using the HTTP server instance
+    // Note that all websocket connections on any path end up here!
     const wss = new WebSocketServer({ httpServer: server });
 
     // Set that holds all the WebSocketConnection instances that
