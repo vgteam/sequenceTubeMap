@@ -131,7 +131,7 @@ App.defaultProps = {
   // the config or the browser, but needs to be swapped out in the fake
   // browser testing environment to point to a real testing backend.
   // Note that host includes the port.
-  backendUrl: config.BACKEND_URL || `http://${window.location.host}/api/v0`
+  backendUrl: (config.BACKEND_URL || `http://${window.location.host}`) + '/api/v0'
 };
 
 export default App;
