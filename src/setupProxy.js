@@ -16,7 +16,10 @@ function addressToHost(address) {
 }
 
 module.exports = function(app) {
-  // When we set up the proxy this way we don't have to do anything special for the websockets.
-  app.use(proxy('http://' + addressToHost(config.serverBindAddress) + ':' + (config.serverPort || '3000') + '/api'));
+  let serverBase = 'http://' + addressToHost(config.serverBindAddress) + ':' + (config.serverPort || '3000');
+  app.use(proxy(serverBase + '/api'));
+  // Websockets don't seem to get through unless we ask for them explicitly.
+  // They can just go to the root because the server ignores websocket paths.
+  app.use(proxy('/api/v0', {ws: true, target: serverBase}));
 };
 
