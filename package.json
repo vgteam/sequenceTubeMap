@@ -24,13 +24,15 @@
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1",
+    "react-scripts": "4.0.3",
     "reactstrap": "^8.0.0",
     "uuid": "^3.0.1",
+    "webpack": "4.44.2",
+    "webpack-dev-server": "^3.11.2",
     "websocket": "^1.0.26"
   },
   "scripts": {
-    "start": "concurrently -n frontend,backend -c red,green 'PORT=3001 react-scripts start' 'npm:serve'",
+    "start": "concurrently -n frontend,backend -c red,green 'HOST=127.0.0.1 PORT=3001 react-scripts start' 'npm:serve'",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
