@@ -446,7 +446,7 @@ api.post('/getPathNames', (req, res) => {
     result.pathNames = pathNames.split('\n').filter(function(a) {
       // Eliminate empty names or underscore-prefixed internal names (like _alt paths) 
       return a != '' && !a.startsWith('_');
-    });
+    }).sort();
     console.log(result);
     res.json(result);
   });
