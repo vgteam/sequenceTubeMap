@@ -71,6 +71,12 @@ const lightColors = [
   '#A8E7ED'
 ];
 
+// Font stack we will use in the SVG
+// We start with Courier New because it exists a lot more places than
+// "Courier", and because tools like Inkscape can't interpret the text properly
+// if they don't have the first font named here.
+const fonts = '"Courier New", "Courier", "Lucida Console", monospace';
+
 let haplotypeColors = [];
 let forwardReadColors = [];
 let reverseReadColors = [];
@@ -2916,7 +2922,7 @@ function drawLabels(dNodes) {
       .attr('x', d => d.x - 4)
       .attr('y', d => d.y + 4)
       .text(d => d.seq)
-      .attr('font-family', 'Courier, "Lucida Console", monospace')
+      .attr('font-family', fonts)
       .attr('font-size', '14px')
       .attr('fill', 'black')
       .style('pointer-events', 'none');
@@ -2988,7 +2994,7 @@ function drawRulerMarking(sequencePosition, xCoordinate) {
     .attr('x', xCoordinate)
     .attr('y', minYCoordinate - 13)
     .text(`|${sequencePosition}`)
-    .attr('font-family', 'Courier, "Lucida Console", monospace')
+    .attr('font-family', fonts)
     .attr('font-size', '12px')
     .attr('fill', 'black')
     .style('pointer-events', 'none');
@@ -3404,7 +3410,7 @@ function generateNodeWidth() {
           .attr('y', 100)
           .attr('id', 'dummytext')
           .text(node.seq.substr(1))
-          .attr('font-family', 'Courier, "Lucida Console", monospace')
+          .attr('font-family', fonts)
           .attr('font-size', '14px')
           .attr('fill', 'black')
           .style('pointer-events', 'none');
@@ -3910,7 +3916,7 @@ function drawInsertion(x, y, seq, nodeY) {
     .attr('x', x)
     .attr('y', y)
     .text('*')
-    .attr('font-family', 'Courier, "Lucida Console", monospace')
+    .attr('font-family', fonts)
     .attr('font-size', '12px')
     .attr('fill', 'black')
     .attr('nodeY', nodeY)
@@ -3926,7 +3932,7 @@ function drawSubstitution(x1, x2, y, nodeY, seq) {
     .attr('x', x1)
     .attr('y', y)
     .text(seq)
-    .attr('font-family', 'Courier, "Lucida Console", monospace')
+    .attr('font-family', fonts)
     .attr('font-size', '12px')
     .attr('fill', 'black')
     .attr('nodeY', nodeY)
