@@ -2869,7 +2869,7 @@
     "readable-stream" "^2.2.2"
     "typedarray" "^0.0.6"
 
-"concurrently@^6.0.0":
+"concurrently@^6.0.2":
   "version" "6.0.2"
   dependencies:
     "chalk" "^4.1.0"
