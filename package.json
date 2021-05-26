@@ -14,7 +14,7 @@
     "body-parser": "^1.19.0",
     "bootstrap": "4.3.1",
     "compression": "^1.7.4",
-    "concurrently": "^6.0.0",
+    "concurrently": "^6.0.2",
     "d3": "^5.9.2",
     "d3-selection-multi": "^1.0.1",
     "express": "^4.17.1",
@@ -24,13 +24,15 @@
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1",
+    "react-scripts": "4.0.3",
     "reactstrap": "^8.0.0",
     "uuid": "^3.0.1",
+    "webpack": "4.44.2",
+    "webpack-dev-server": "3.11.1",
     "websocket": "^1.0.26"
   },
   "scripts": {
-    "start": "concurrently -n frontend,backend -c red,green 'PORT=3001 react-scripts start' 'npm:serve'",
+    "start": "concurrently -n frontend,backend -c red,green 'HOST=${HOST:=127.0.0.1} PORT=${PORT:=3001} react-scripts start' 'npm:serve'",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -38,7 +40,6 @@
     "deploy": "gh-pages -d build",
     "serve": "node ./src/server.js"
   },
-  "proxy": "http://localhost:3000",
   "eslintConfig": {
     "extends": "react-app"
   },

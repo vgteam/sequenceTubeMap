@@ -19,6 +19,7 @@ const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
 const SERVER_PORT = config.serverPort || 3000;
+const SERVER_BIND_ADDRESS = config.serverBindAddress || undefined;
 
 
 var storage = multer.diskStorage({
@@ -445,11 +446,18 @@ api.post('/getPathNames', (req, res) => {
     result.pathNames = pathNames.split('\n').filter(function(a) {
       // Eliminate empty names or underscore-prefixed internal names (like _alt paths) 
       return a != '' && !a.startsWith('_');
-    });
+    }).sort();
     console.log(result);
     res.json(result);
   });
 });
+
+// Return the string URL for the host and port at which the given Express app
+// server is listening, with HTTP scheme.
+function getServerURL(server) {
+  let address = server.address();
+  return 'http://' + (address.family == 'IPv6' ? ('[' + address.address + ']') : address.address) + ':' + address.port;
+}
 
 // Start the server. Returns a promise that resolves when the server is ready.
 // To stop the server, close() the result. Server base URL can be obtained with
@@ -495,7 +503,7 @@ function start() {
       },
       // Get the URL the server is listening on
       getUrl: () => {
-        return 'http://localhost:' + SERVER_PORT;
+        return getServerURL(state.server);
       },
       // Get the URL the server is listening on for the API
       getApiUrl: () => {
@@ -514,8 +522,8 @@ function start() {
 
     // Start the server on the selected port and save the HTTP server instance
     // created by app.listen for the WebScoketServer
-    const server = app.listen(SERVER_PORT, () => {
-      console.log('TubeMapServer listening on port ' + SERVER_PORT + '!');
+    const server = app.listen(SERVER_PORT, SERVER_BIND_ADDRESS, () => {
+      console.log('TubeMapServer listening on ' + getServerURL(server));
       // Server is ready so add to state.
       state.server = server;
       // See if the other server components are up yet and, if so, resolve our promise.

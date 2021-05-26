@@ -63,14 +63,12 @@ async function waitForLoadEnd() {
   })
 }
 
-beforeEach(async (done) => {
+beforeEach(async () => {
   await setUp();
-  done();
 })
 
-afterEach(async (done) => {
+afterEach(async () => {
   await tearDown();
-  done();
 })
 
 it('initially renders as loading', () => {
@@ -97,12 +95,11 @@ it('populates the available example dropdown', () => {
 });
 
 describe('When we wait for it to load', () => {
-  beforeEach(async (done) => {
+  beforeEach(async () => {
     // Wait for the loader to go away the new way.
     // See https://jasmine.github.io/2.0/upgrading.html#section-9
     // Note that Jest imposes a 5000 ms timeout for being done.
     await waitForLoadEnd();
-    done();
   });
   
   it('eventually stops rendering as loading', () => {
