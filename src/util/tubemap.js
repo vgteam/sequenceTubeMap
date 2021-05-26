@@ -982,20 +982,6 @@ function getReverseComplement(s) {
 }
 
 // for each track: generate sequence of node indices from seq. of node names
-function generateTrackIndexSequencesNEW(tracksOrReads) {
-  tracksOrReads.forEach(track => {
-    track.indexSequence = [];
-    track.sequence.forEach(edit => {
-      if (isReverse(edit.nodeName)) {
-        track.indexSequence.push(-nodeMap.get(forward(edit.nodeName)));
-      } else {
-        track.indexSequence.push(nodeMap.get(edit.nodeName));
-      }
-    });
-  });
-}
-
-// for each track: generate sequence of node indices from seq. of node names
 function generateTrackIndexSequences(tracksOrReads) {
   tracksOrReads.forEach(track => {
     track.indexSequence = [];
@@ -2944,48 +2930,90 @@ function drawRuler() {
     .attr('stroke-width', 1)
     .attr('stroke', 'black');
 
+  // How often should we have a tick in bp?
   let markingInterval = 100;
   if (config.nodeWidthOption === 0) markingInterval = 20;
+  // How close may markings be in image space?
+  const markingClearance = 80;
+  
+  // We need to call drawRulerMarking(base pair number, layout X coordinate)
+  // for each tick mark we want in our legend. But we can't just walk the path
+  // and X at the same time, placing ticks periodically because the ruler path
+  // isn't nexessarily used for the layout backbone, and can go all over the
+  // place, including backward through nodes. 
 
+  // So we walk along the path, place ticks, and then drop the ones that are
+  // too close together.
+  
+  // This will hold pairs of base position, x coordinate.
+  let ticks = []
+  
+  // We keep a cursor to the start of the current node traversal along the path
   let indexOfFirstBaseInNode = rulerTrack.indexOfFirstBase;
-  let atLeastOneMarkingDrawn = false;
-  let xCoordOfPreviousMarking = -100;
-
-  // draw ruler marking at the left end of chart for compressed charts
-  // (this marking is on purpose not at a 0 % 100 position)
-  if (config.nodeWidthOption !== 0) {
-    const firstNode = nodes[Math.abs(rulerTrack.indexSequence[0])];
-    xCoordOfPreviousMarking = getXCoordinateOfBaseWithinNode(firstNode, 0);
-    drawRulerMarking(indexOfFirstBaseInNode, xCoordOfPreviousMarking);
-    atLeastOneMarkingDrawn = true;
-  }
-
-  rulerTrack.indexSequence.forEach(nodeIndex => {
+  // And the next index along the path that doesn't have a mark but could.
+  let nextUnmarkedIndex = indexOfFirstBaseInNode;
+  
+  for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
+    const nodeIndex = rulerTrack.indexSequence[i];
     const currentNode = nodes[Math.abs(nodeIndex)];
-    let nextMarking =
-      Math.ceil(indexOfFirstBaseInNode / markingInterval) * markingInterval;
-    while (nextMarking < indexOfFirstBaseInNode + currentNode.sequenceLength) {
-      const xCoordOfMarking = getXCoordinateOfBaseWithinNode(
-        currentNode,
-        nextMarking - indexOfFirstBaseInNode
-      );
-      if (xCoordOfPreviousMarking + 80 <= xCoordOfMarking) {
-        drawRulerMarking(nextMarking, xCoordOfMarking);
-        atLeastOneMarkingDrawn = true;
-        xCoordOfPreviousMarking = xCoordOfMarking;
+    // Each node may actually have the track go through it backward. In fact,
+    // the whole track may be laid out backward.
+    const currentNodeIsReverse = isReverse(rulerTrack.sequence[i]);
+    
+    // For some displayus we want to mark each node only once.
+    let alreadyMarkedNode = false;
+    
+    while (nextUnmarkedIndex < indexOfFirstBaseInNode + currentNode.sequenceLength) {
+      // We are thinking of marking a position on this node.
+    
+      // What base along our traversal of this node should we be marking?
+      let indexIntoVisitToMark = nextUnmarkedIndex - indexOfFirstBaseInNode;
+      
+      // What offset into the node should we mark at, relative to its forward-strand start?
+      let offsetIntoNodeForward = currentNodeIsReverse ?
+        // If going in reverse, take off bases of the node we use from the right side
+        currentNode.sequenceLength - 1 - indexIntoVisitToMark :
+        // Otherwise, add them to the left side
+        indexIntoVisitToMark;
+      
+      if (config.nodeWidthOption !== 0) {
+        // Actually always mark at an edge of the node, if we are scaling the node nonlinearly
+        offsetIntoNodeForward = currentNodeIsReverse ? currentNode.sequenceLength - 1 : 0;
       }
-      nextMarking += markingInterval;
+      
+      // Where should we mark in the visualization?
+      let xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, offsetIntoNodeForward);
+      
+      if (config.nodeWidthOption === 0 || !alreadyMarkedNode) {
+        // This is a mark we are not filtering due to node compression.
+        // Make the mark
+        ticks.push([indexOfFirstBaseInNode + indexIntoVisitToMark, xCoordOfMarking]);
+        alreadyMarkedNode = true;
+      }
+      
+      // Think about the next place along the path we care about.
+      nextUnmarkedIndex += markingInterval;
     }
-    indexOfFirstBaseInNode += nodes[Math.abs(nodeIndex)].sequenceLength;
-  });
-
-  // if no markings drawn, draw one at the very beginning
-  if (!atLeastOneMarkingDrawn) {
-    drawRulerMarking(
-      rulerTrack.indexOfFirstBase,
-      nodes[Math.abs(rulerTrack.indexSequence[0])].x - 4
-    );
+    // Advance to the next node
+    indexOfFirstBaseInNode += currentNode.sequenceLength;
   }
+  
+  // Sort ticks on X coordinate
+  ticks.sort(([bp1, x1], [bp2, x2]) => x1 > x2)
+  
+  // Filter ticks for a minimum X separartion
+  let separatedTicks = []
+  ticks.forEach(tick => {
+    if (separatedTicks.length === 0 || tick[1] - separatedTicks[separatedTicks.length - 1][1] >= markingClearance) {
+      // Take only the first tick or ticks far enough from the previous tick taken.
+      separatedTicks.push(tick);
+    }
+  })
+  ticks = separatedTicks;
+  
+  // Plot all the ticks
+  ticks.forEach(tick => drawRulerMarking(tick[0], tick[1]))
+  
 }
 
 function drawRulerMarking(sequencePosition, xCoordinate) {
@@ -3429,7 +3457,6 @@ export function vgExtractTracks(vg) {
   const result = [];
   vg.path.forEach((path, index) => {
     const sequence = [];
-    let isCompletelyReverse = true;
     path.mapping.forEach(pos => {
       if (
         pos.position.hasOwnProperty('is_reverse') &&
@@ -3438,15 +3465,8 @@ export function vgExtractTracks(vg) {
         sequence.push(reverse(`${pos.position.node_id}`));
       } else {
         sequence.push(`${pos.position.node_id}`);
-        isCompletelyReverse = false;
       }
     });
-    if (isCompletelyReverse) {
-      sequence.reverse();
-      sequence.forEach((node, index2) => {
-        sequence[index2] = forward(node);
-      });
-    }
     const track = {};
     track.id = index;
     track.sequence = sequence;
