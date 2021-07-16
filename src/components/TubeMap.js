@@ -21,7 +21,7 @@ class TubeMap extends Component {
   };
 
   render() {
-    return <svg id="svg" />;
+    return <svg id="svg" alt="Rendered sequence tube map visualization" />;
   }
 }
 
