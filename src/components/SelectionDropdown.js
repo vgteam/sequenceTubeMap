@@ -56,6 +56,7 @@ class SelectionDropdown extends Component {
         isSearchable={true}
         onChange={onChange}
         options={dropdownOptions}
+        openMenuOnClick={dropdownOptions.length < 2000}
       />
     )
   }
