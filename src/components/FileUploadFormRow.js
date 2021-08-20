@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Label, Input } from 'reactstrap';
+import SelectionDropdown from "./SelectionDropdown";
 
 const MAX_UPLOAD_SIZE = 5242880;
 
@@ -96,14 +97,6 @@ class FileUploadFormRow extends Component {
   };
 
   render() {
-    const pathDropdownOptions = this.props.pathSelectOptions.map(pathName => {
-      return (
-        <option value={pathName} key={pathName}>
-          {pathName}
-        </option>
-      );
-    });
-
     return (
       <React.Fragment>
         <Label className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">
@@ -151,15 +144,14 @@ class FileUploadFormRow extends Component {
         >
           Path name:
         </Label>
-        <Input
-          type="select"
-          className="customData custom-select mb-2 mr-sm-4 mb-sm-0"
+        <SelectionDropdown
+          className="customData dropdown mb-2 mr-sm-4 mb-sm-0"
           id="pathSelect"
           value={this.props.pathSelect}
           onChange={this.props.handleInputChange}
-        >
-          {pathDropdownOptions}
-        </Input>
+          options={this.props.pathSelectOptions}
+        />
+
       </React.Fragment>
     );
   }
@@ -170,8 +162,8 @@ FileUploadFormRow.propTypes = {
   getPathNames: PropTypes.func.isRequired,
   handleFileUpload: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  pathSelect: PropTypes.string.isRequired, 
-  pathSelectOptions: PropTypes.array.isRequired, 
+  pathSelect: PropTypes.string.isRequired,
+  pathSelectOptions: PropTypes.array.isRequired,
   resetPathNames: PropTypes.func.isRequired,
   setUploadInProgress: PropTypes.func.isRequired,
   showFileSizeAlert: PropTypes.func.isRequired
