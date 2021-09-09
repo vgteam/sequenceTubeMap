@@ -2954,11 +2954,13 @@ function drawRuler() {
   let nextUnmarkedIndex = indexOfFirstBaseInNode;
   
   for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
-    const nodeIndex = rulerTrack.indexSequence[i];
+    // Walk along the ruler track in ascending coordinate order.
+    const nodeIndex = rulerTrack.indexSequence[rulerTrack.isCompletelyReverse ? (rulerTrack.indexSequence.length - 1 - i) : i];
     const currentNode = nodes[Math.abs(nodeIndex)];
-    // Each node may actually have the track go through it backward. In fact,
-    // the whole track may be laid out backward.
-    const currentNodeIsReverse = isReverse(rulerTrack.sequence[i]);
+    // Each node may actually have the track's coordinates go through it
+    // backward. In fact, the whole track may be laid out backward.
+    // So xor the reverse flags, which we assume to be bools
+    const currentNodeIsReverse = isReverse(rulerTrack.sequence[i]) !== rulerTrack.isCompletelyReverse;
     
     // For some displayus we want to mark each node only once.
     let alreadyMarkedNode = false;
@@ -3457,19 +3459,32 @@ export function vgExtractTracks(vg) {
   const result = [];
   vg.path.forEach((path, index) => {
     const sequence = [];
+    let isCompletelyReverse = true;
     path.mapping.forEach(pos => {
       if (
         pos.position.hasOwnProperty('is_reverse') &&
         pos.position.is_reverse === true
       ) {
+        // Visit this node in reverse
         sequence.push(reverse(`${pos.position.node_id}`));
       } else {
+        // Visit this node forward
         sequence.push(`${pos.position.node_id}`);
+        // Remember that we visit at least one node in its local forward orientation
+        isCompletelyReverse = false;
       }
     });
+    if (isCompletelyReverse) {
+      // Give the sequence in a reverse order for layout
+      sequence.reverse();
+      sequence.forEach((node, index2) => {
+        sequence[index2] = forward(node);
+      });
+    }
     const track = {};
     track.id = index;
     track.sequence = sequence;
+    track.isCompletelyReverse = isCompletelyReverse;
     if (path.hasOwnProperty('freq')) track.freq = path.freq;
     if (path.hasOwnProperty('name')) track.name = path.name;
     if (path.hasOwnProperty('indexOfFirstBase')) {

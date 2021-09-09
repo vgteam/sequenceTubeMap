@@ -114,7 +114,10 @@ class TubeMapContainer extends Component {
 
   getExampleData = async () => {
     this.setState({ isLoading: true, error: null });
-    let nodes, tracks, reads;
+    // Nodes, tracks, and reads are all required, so start with defaults.
+    let nodes = [];
+    let tracks = [];
+    let reads = [];
     const data = await import('../util/demo-data');
     nodes = data.inputNodes;
     switch (this.props.dataOrigin) {
