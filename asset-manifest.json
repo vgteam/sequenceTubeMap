@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "/sequenceTubeMap/static/css/main.978db5da.chunk.css",
-    "main.js": "/sequenceTubeMap/static/js/main.b589dce8.chunk.js",
-    "main.js.map": "/sequenceTubeMap/static/js/main.b589dce8.chunk.js.map",
-    "runtime-main.js": "/sequenceTubeMap/static/js/runtime-main.f2378aa8.js",
-    "runtime-main.js.map": "/sequenceTubeMap/static/js/runtime-main.f2378aa8.js.map",
+    "main.css": "/sequenceTubeMap/static/css/main.f4a2c7ee.chunk.css",
+    "main.js": "/sequenceTubeMap/static/js/main.da7be5f2.chunk.js",
+    "main.js.map": "/sequenceTubeMap/static/js/main.da7be5f2.chunk.js.map",
+    "runtime-main.js": "/sequenceTubeMap/static/js/runtime-main.e15bd162.js",
+    "runtime-main.js.map": "/sequenceTubeMap/static/js/runtime-main.e15bd162.js.map",
     "static/css/2.36d2c7de.chunk.css": "/sequenceTubeMap/static/css/2.36d2c7de.chunk.css",
-    "static/js/2.09a331a7.chunk.js": "/sequenceTubeMap/static/js/2.09a331a7.chunk.js",
-    "static/js/2.09a331a7.chunk.js.map": "/sequenceTubeMap/static/js/2.09a331a7.chunk.js.map",
-    "static/js/3.5f6a8791.chunk.js": "/sequenceTubeMap/static/js/3.5f6a8791.chunk.js",
-    "static/js/3.5f6a8791.chunk.js.map": "/sequenceTubeMap/static/js/3.5f6a8791.chunk.js.map",
+    "static/js/2.93bc7ecf.chunk.js": "/sequenceTubeMap/static/js/2.93bc7ecf.chunk.js",
+    "static/js/2.93bc7ecf.chunk.js.map": "/sequenceTubeMap/static/js/2.93bc7ecf.chunk.js.map",
+    "static/js/3.8b20db9a.chunk.js": "/sequenceTubeMap/static/js/3.8b20db9a.chunk.js",
+    "static/js/3.8b20db9a.chunk.js.map": "/sequenceTubeMap/static/js/3.8b20db9a.chunk.js.map",
     "index.html": "/sequenceTubeMap/index.html",
     "static/css/2.36d2c7de.chunk.css.map": "/sequenceTubeMap/static/css/2.36d2c7de.chunk.css.map",
-    "static/css/main.978db5da.chunk.css.map": "/sequenceTubeMap/static/css/main.978db5da.chunk.css.map",
-    "static/js/2.09a331a7.chunk.js.LICENSE.txt": "/sequenceTubeMap/static/js/2.09a331a7.chunk.js.LICENSE.txt"
+    "static/css/main.f4a2c7ee.chunk.css.map": "/sequenceTubeMap/static/css/main.f4a2c7ee.chunk.css.map",
+    "static/js/2.93bc7ecf.chunk.js.LICENSE.txt": "/sequenceTubeMap/static/js/2.93bc7ecf.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.f2378aa8.js",
+    "static/js/runtime-main.e15bd162.js",
     "static/css/2.36d2c7de.chunk.css",
-    "static/js/2.09a331a7.chunk.js",
-    "static/css/main.978db5da.chunk.css",
-    "static/js/main.b589dce8.chunk.js"
+    "static/js/2.93bc7ecf.chunk.js",
+    "static/css/main.f4a2c7ee.chunk.css",
+    "static/js/main.da7be5f2.chunk.js"
   ]
 }
