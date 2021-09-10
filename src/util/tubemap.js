@@ -2399,6 +2399,7 @@ function generateSVGShapesFromPath() {
             yEnd: yStart + track.width - 1,
             color: trackColor,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2418,6 +2419,7 @@ function generateSVGShapesFromPath() {
             color: trackColor,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
+	    name: track.name,
             type: track.type
           });
           xStart = xEnd;
@@ -2437,6 +2439,7 @@ function generateSVGShapesFromPath() {
             color: trackColor,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
+	    name: track.name,
             type: track.type
           });
           xStart = xEnd;
@@ -2453,7 +2456,8 @@ function generateSVGShapesFromPath() {
               trackColor,
               track.id,
               track.path[i].order,
-              track.type
+              track.type,
+	      track.name
             );
             xStart = orderEndX[track.path[i].order];
             yStart = track.path[i].y;
@@ -2467,7 +2471,8 @@ function generateSVGShapesFromPath() {
               trackColor,
               track.id,
               track.path[i].order,
-              track.type
+              track.type,
+	      track.name
             );
             xStart = orderStartX[track.path[i].order];
             yStart = track.path[i].y;
@@ -2512,6 +2517,7 @@ function generateSVGShapesFromPath() {
       yEnd: yStart + track.width - 1,
       color: trackColor,
       id: track.id,
+      name: track.name,
       type: track.type
     });
   });
@@ -2569,6 +2575,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: co,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2581,6 +2588,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: c,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2605,6 +2613,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: co,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2617,6 +2626,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: c,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2641,6 +2651,7 @@ function createFeatureRectangle(
           yEnd: yStart + track.width - 1,
           color: c,
           id: track.id,
+	  name: track.name,
           type: track.type
         });
       } else {
@@ -2657,6 +2668,7 @@ function createFeatureRectangle(
           yEnd: yStart + track.width - 1,
           color: c,
           id: track.id,
+	  name: track.name,
           type: track.type
         });
       }
@@ -2675,7 +2687,8 @@ function generateForwardToReverse(
   trackColor,
   trackID,
   order,
-  type
+  type,
+  trackName
 ) {
   x += 10 * extraRight[order];
   const yTop = Math.min(yStart, yEnd);
@@ -2690,6 +2703,7 @@ function generateForwardToReverse(
     yEnd: yStart + trackWidth - 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   });
   trackVerticalRectangles.push({
@@ -2700,6 +2714,7 @@ function generateForwardToReverse(
     yEnd: yBottom - radius + 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   });
   trackVerticalRectangles.push({
@@ -2709,6 +2724,7 @@ function generateForwardToReverse(
     yEnd: yEnd + trackWidth - 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   }); // elongate outgoing rectangle a bit to the right
 
@@ -2741,7 +2757,8 @@ function generateReverseToForward(
   trackColor,
   trackID,
   order,
-  type
+  type,
+  trackName
 ) {
   const yTop = Math.min(yStart, yEnd);
   const yBottom = Math.max(yStart, yEnd);
@@ -2755,6 +2772,7 @@ function generateReverseToForward(
     yEnd: yStart + trackWidth - 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   }); // elongate incoming rectangle a bit to the left
   trackVerticalRectangles.push({
@@ -2764,6 +2782,7 @@ function generateReverseToForward(
     yEnd: yBottom - radius + 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   }); // vertical rectangle
   trackVerticalRectangles.push({
@@ -2773,6 +2792,7 @@ function generateReverseToForward(
     yEnd: yEnd + trackWidth - 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   }); // elongate outgoing rectangle a bit to the left
 
@@ -3053,7 +3073,9 @@ function drawTrackRectangles(rectangles, type) {
     .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick);
+    .on('dblclick', trackDoubleClick)
+    .append('svg:title')
+    .text(d => getPopUpTrackText(d.name));
 }
 
 function compareCurvesByLineChanges(a, b) {
@@ -3283,7 +3305,9 @@ function drawTrackCurves(type) {
     .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick);
+    .on('dblclick', trackDoubleClick)
+    .append('svg:title')
+    .text(d => getPopUpTrackText(d.name));
 }
 
 function drawTrackCorners(corners, type) {
@@ -3302,7 +3326,9 @@ function drawTrackCorners(corners, type) {
     .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick);
+    .on('dblclick', trackDoubleClick)
+    .append('svg:title')
+    .text(d => getPopUpTrackText(d.name));
 }
 
 function drawLegend() {
@@ -3378,6 +3404,11 @@ function trackDoubleClick() {
   if (DEBUG) console.log(`moving index: ${index}`);
   moveTrackToFirstPosition(index);
   createTubeMap();
+}
+
+// show track name when hovering mouse
+function getPopUpTrackText(trackid) {
+  return (trackid);
 }
 
 // Redraw with current node moved to beginning
@@ -3670,7 +3701,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
       track.sequenceNew = sequenceNew;
       track.type = 'read';
       if (read.path.hasOwnProperty('freq')) track.freq = read.path.freq;
-      if (read.path.hasOwnProperty('name')) track.name = read.path.name;
+      if (read.hasOwnProperty('name')) track.name = read.name;
 
       // where within node does read start
       track.firstNodeOffset = 0;
