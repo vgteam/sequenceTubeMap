@@ -125,9 +125,7 @@ describe('When we wait for it to load', () => {
   
     await act(async () => {
       let dropdown = document.getElementById('dataSourceSelect');
-      let start = document.getElementById('nodeID');
-      let distance = document.getElementById('distance');
-      let units = document.getElementById('byNode');
+      let region = document.getElementById('region');
       
       await userEvent.selectOptions(screen.getByLabelText(/Data/i), 'vg "small" example');
       await userEvent.clear(screen.getByLabelText(/Start/i));
@@ -138,10 +136,7 @@ describe('When we wait for it to load', () => {
       
       console.log(dropdown.value); 
       console.log(dropdown.outerHTML); 
-      console.log(start.outerHTML);
-      console.log(distance.outerHTML);
-      console.log(units.value);
-      console.log(units.outerHTML);
+      console.log(region.outerHTML);
     
       let go = document.getElementById('goButton');
       console.log('Clicking button for small');

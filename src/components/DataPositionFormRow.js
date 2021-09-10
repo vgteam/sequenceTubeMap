@@ -40,44 +40,17 @@ class DataPositionFormRow extends Component {
   render() {
     return (
       <Form inline>
-        <Label className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="nodeID">
-          Start:
+        <Label className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="region">
+          Region:
         </Label>
         <Input
           type="text"
           className="custom-input form-control mb-2 mr-sm-4 mb-sm-0"
-          id="nodeID"
+          id="region"
           size="12"
-          value={this.props.nodeID}
+          value={this.props.region}
           onChange={this.props.handleInputChange}
         />
-        <Label className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="distance">
-          Length:
-        </Label>
-        <Input
-          type="text"
-          className="custom-input form-control mb-2 mr-sm-2 mb-sm-0"
-          id="distance"
-          size="4"
-          value={this.props.distance}
-          onChange={this.props.handleInputChange}
-        />
-        <Label
-          className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
-          for="byNode"
-        >
-          Unit:
-        </Label>
-        <Input
-          type="select"
-          className="custom-select mb-2 mr-sm-2 mb-sm-0"
-          id="byNode"
-          value={this.props.byNode}
-          onChange={this.props.handleInputChange}
-        >
-          <option value="false">Nucleotides</option>
-          <option value="true">Nodes</option>
-        </Input>
         &nbsp;
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
@@ -123,13 +96,11 @@ class DataPositionFormRow extends Component {
 }
 
 DataPositionFormRow.propTypes = {
-  byNode: PropTypes.oneOf(['true', 'false']).isRequired,
-  distance: PropTypes.string.isRequired, 
   handleGoButton: PropTypes.func.isRequired,
   handleGoLeft: PropTypes.func.isRequired,
   handleGoRight: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  nodeID: PropTypes.string.isRequired,
+  region: PropTypes.string.isRequired,
   uploadInProgress: PropTypes.bool.isRequired,
 };
 

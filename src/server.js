@@ -120,9 +120,7 @@ api.post('/getChunkedData', (req, res) => {
   let sentErrorResponse = false;
   console.time('request-duration');
   console.log('http POST getChunkedData received');
-  console.log(`start = ${req.body.nodeID}`);
-  console.log(`distance = ${req.body.distance}`);
-  console.log(`byNode = ${req.body.byNode}`);
+  console.log(`region = ${req.body.region}`);
 
   // Assign each request a UUID. v1 UUIDs can be very similar for similar
   // timestamps on the same node, but are still guaranteed to be unique within
@@ -152,9 +150,6 @@ api.post('/getChunkedData', (req, res) => {
     console.log('no gbwt file provided.');
   }
 
-  // What path should be our anchoring path?
-  const anchorTrackName = req.body.anchorTrackName;
-
   // Decide where to pull the data from
   // (builtin examples, mounted user data folder or uploaded data)
   let dataPath;
@@ -171,6 +166,7 @@ api.post('/getChunkedData', (req, res) => {
   console.log(`dataPath = ${dataPath}`);
 
   // call 'vg chunk' to generate graph
+  const region = req.body.region;
   let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];
   if (req.withGam) {
     // Use a GAM index
@@ -180,21 +176,12 @@ api.post('/getChunkedData', (req, res) => {
     // Use a GBWT haplotype database
     vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`);
   }
-  const position = Number(req.body.nodeID);
-  const distance = Number(req.body.distance);
-  if (
-    Object.prototype.hasOwnProperty.call(req.body, 'byNode') &&
-    req.body.byNode === 'true'
-  ) {
-    vgChunkParams.push('-r', position, '-c', distance);
-  } else {
-    vgChunkParams.push(
-      '-c',
-      '20',
-      '-p',
-      `${anchorTrackName}:${position}-${position + distance}`
-    );
-  }
+  vgChunkParams.push(
+    '-c',
+    '20',
+    '-p',
+    `${region}`
+  );
   vgChunkParams.push(
     '-T',
     '-b',
@@ -203,7 +190,7 @@ api.post('/getChunkedData', (req, res) => {
     `${req.tempDir}/regions.tsv`
   );
 
-  console.log(`vg chunk ${vgChunkParams.join(' ')}`);
+  console.log(`vg ${vgChunkParams.join(' ')}`);
 
   console.time('vg chunk');
   const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
@@ -419,38 +406,38 @@ api.get('/getFilenames', (req, res) => {
   res.json(result);
 });
 
-api.post('/getPathNames', (req, res) => {
-  console.log('received request for pathNames');
-  const result = {
-    pathNames: []
-  };
+// api.post('/getPathNames', (req, res) => {
+//   console.log('received request for pathNames');
+//   const result = {
+//     pathNames: []
+//   };
 
-  // call 'vg paths' to get path name information
-  const xgFile =
-    req.body.isUploadedFile === 'true'
-      ? `./${req.body.xgFile}`
-      : `${MOUNTED_DATA_PATH}${req.body.xgFile}`;
+//   // call 'vg paths' to get path name information
+//   const xgFile =
+//     req.body.isUploadedFile === 'true'
+//       ? `./${req.body.xgFile}`
+//       : `${MOUNTED_DATA_PATH}${req.body.xgFile}`;
 
-  const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-L', '-x', xgFile]);
+//   const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-L', '-x', xgFile]);
 
-  vgViewChild.stderr.on('data', data => {
-    console.log(`err data: ${data}`);
-  });
+//   vgViewChild.stderr.on('data', data => {
+//     console.log(`err data: ${data}`);
+//   });
 
-  let pathNames = '';
-  vgViewChild.stdout.on('data', function(data) {
-    pathNames += data.toString();
-  });
+//   let pathNames = '';
+//   vgViewChild.stdout.on('data', function(data) {
+//     pathNames += data.toString();
+//   });
 
-  vgViewChild.on('close', () => {
-    result.pathNames = pathNames.split('\n').filter(function(a) {
-      // Eliminate empty names or underscore-prefixed internal names (like _alt paths) 
-      return a != '' && !a.startsWith('_');
-    }).sort();
-    console.log(result);
-    res.json(result);
-  });
-});
+//   vgViewChild.on('close', () => {
+//     result.pathNames = pathNames.split('\n').filter(function(a) {
+//       // Eliminate empty names or underscore-prefixed internal names (like _alt paths) 
+//       return a != '' && !a.startsWith('_');
+//     }).sort();
+//     console.log(result);
+//     res.json(result);
+//   });
+// });
 
 // Return the string URL for the host and port at which the given Express app
 // server is listening, with HTTP scheme.

@@ -29,18 +29,12 @@ class HeaderForm extends Component {
     gamSelectOptions: ['none'],
     gamSelect: 'none',
 
-    pathSelectOptions: ['none'],
-    pathSelect: 'none',
-
     xgFile: 'snp1kg-BRCA1.vg.xg',
     gbwtFile: '',
     gamFile: 'NA12878-BRCA1.sorted.gam',
-    anchorTrackName: '17',
     dataPath: 'default',
 
-    nodeID: '1',
-    distance: '100',
-    byNode: 'false',
+    region: '17:1-100',
 
     dataType: dataTypes.BUILT_IN,
     fileSizeAlert: false,
@@ -89,38 +83,6 @@ class HeaderForm extends Component {
     }
   };
 
-  getPathNames = async (xgFile, isUploadedFile) => {
-    try {
-      const response = await fetch(`${this.props.apiUrl}/getPathNames`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ xgFile, isUploadedFile })
-      });
-      const json = await response.json();
-      this.setState(state => {
-        const pathSelect = json.pathNames.includes(state.pathSelect)
-          ? state.pathSelect
-          : json.pathNames[0];
-        return {
-          pathSelectOptions: json.pathNames,
-          pathSelect,
-          anchorTrackName: pathSelect
-        };
-      });
-    } catch (error) {
-      console.log(`POST to ${this.props.apiUrl}/getPathNames failed:`, error);
-    }
-  };
-
-  resetPathNames = () => {
-    this.setState({
-      pathSelectOptions: ['none'],
-      pathSelect: 'none'
-    });
-  };
-
   handleDataSourceChange = event => {
     const value = event.target.value;
     DATA_SOURCES.forEach(ds => {
@@ -129,9 +91,8 @@ class HeaderForm extends Component {
           xgFile: ds.xgFile,
           gbwtFile: ds.gbwtFile,
           gamFile: ds.gamFile,
-          anchorTrackName: ds.anchorTrackName,
           dataPath: ds.useMountedPath ? 'mounted' : 'default',
-          nodeID: ds.defaultPosition,
+          region: ds.defaultPosition,
           dataType: dataTypes.BUILT_IN
         });
         return;
@@ -143,7 +104,6 @@ class HeaderForm extends Component {
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
-          anchorTrackName: state.pathSelect,
           dataPath: 'upload',
           dataType: dataTypes.FILE_UPLOAD
         };
@@ -154,7 +114,6 @@ class HeaderForm extends Component {
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
-          anchorTrackName: state.pathSelect,
           dataPath: 'mounted',
           dataType: dataTypes.MOUNTED_FILES
         };
@@ -170,9 +129,7 @@ class HeaderForm extends Component {
       this.props.setColorSetting('forwardReadColors', 'reds');
     }
     const fetchParams = {
-      nodeID: this.state.nodeID,
-      distance: this.state.distance,
-      byNode: this.state.byNode,
+      region: this.state.region,
       xgFile: this.state.xgFile,
       gbwtFile: this.state.gbwtFile,
       gamFile: this.state.gamFile,
@@ -187,33 +144,41 @@ class HeaderForm extends Component {
     const value = event.target.value;
     this.setState({ [id]: value });
     if (id === 'xgSelect') {
-      this.getPathNames(value, false);
       this.setState({ xgFile: value });
     } else if (id === 'gbwtSelect') {
       this.setState({ gbwtFile: value });
     } else if (id === 'gamSelect') {
       this.setState({ gamFile: value });
-    } else if (id === 'pathSelect') {
-      this.setState({ anchorTrackName: value });
     }
   };
 
   handleGoRight = () => {
+    let region_col = this.state.region.split(":");
+    let start_end = region_col[1].split("-");
+    let r_start = Number(start_end[0]);
+    let r_end = Number(start_end[1]);
+    let shift = (r_end - r_start) / 2;
+    r_start = Math.round(r_start + shift);
+    r_end = Math.round(r_end + shift);
     this.setState(
       state => ({
-        nodeID: Number(this.state.nodeID) + Number(this.state.distance)
+        region: region_col[0].concat(":", r_start, "-", r_end)
       }),
       () => this.handleGoButton()
     );
   };
 
   handleGoLeft = () => {
+    let region_col = this.state.region.split(":");
+    let start_end = region_col[1].split("-");
+    let r_start = Number(start_end[0]);
+    let r_end = Number(start_end[1]);
+    let shift = (r_end - r_start) / 2;
+    r_start = Math.max(0, Math.round(r_start - shift));
+    r_end = Math.max(0, Math.round(r_end - shift));
     this.setState(
       state => ({
-        nodeID: Math.max(
-          0,
-          Number(this.state.nodeID) - Number(this.state.distance)
-        )
+        region: region_col[0].concat(":", r_start, "-", r_end)
       }),
       () => this.handleGoButton()
     );
@@ -299,19 +264,13 @@ class HeaderForm extends Component {
                     gbwtSelectOptions={this.state.gbwtSelectOptions}
                     gamSelect={this.state.gamSelect}
                     gamSelectOptions={this.state.gamSelectOptions}
-                    pathSelect={this.state.pathSelect}
-                    pathSelectOptions={this.state.pathSelectOptions}
                     handleInputChange={this.handleInputChange}
                   />
                 )}
                 {uploadFilesFlag && (
                   <FileUploadFormRow
                     apiUrl={this.props.apiUrl}
-                    pathSelect={this.state.pathSelect}
-                    pathSelectOptions={this.state.pathSelectOptions}
                     handleInputChange={this.handleInputChange}
-                    getPathNames={this.getPathNames}
-                    resetPathNames={this.resetPathNames}
                     handleFileUpload={this.handleFileUpload}
                     showFileSizeAlert={this.showFileSizeAlert}
                     setUploadInProgress={this.setUploadInProgress}
@@ -337,9 +296,7 @@ class HeaderForm extends Component {
                 />
               ) : (
                 <DataPositionFormRow
-                  nodeID={this.state.nodeID}
-                  distance={this.state.distance}
-                  byNode={this.state.byNode}
+                  region={this.state.region}
                   handleInputChange={this.handleInputChange}
                   handleGoLeft={this.handleGoLeft}
                   handleGoRight={this.handleGoRight}

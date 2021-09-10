@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Label, Input } from 'reactstrap';
-import SelectionDropdown from "./SelectionDropdown";
+// import SelectionDropdown from "./SelectionDropdown";
 
 const MAX_UPLOAD_SIZE = 5242880;
 
@@ -16,7 +16,6 @@ class FileUploadFormRow extends Component {
   onXgFileChange = () => {
     const file = this.xgFileInput.current.files[0];
     if (file === undefined) {
-      this.props.resetPathNames();
       this.props.handleFileUpload('xgFile', 'none');
     } else {
       if (file.size > MAX_UPLOAD_SIZE) {
@@ -34,7 +33,6 @@ class FileUploadFormRow extends Component {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
           this.props.handleFileUpload('xgFile', xhr.response.path);
-          this.props.getPathNames(xhr.response.path, 'true');
         }
       };
       xhr.open('POST', `${this.props.apiUrl}/xgFileSubmission`, true);
@@ -138,19 +136,6 @@ class FileUploadFormRow extends Component {
           innerRef={this.gamFileInput}
           onChange={this.onGamFileChange}
         />
-        <Label
-          for="pathName"
-          className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
-        >
-          Path name:
-        </Label>
-        <SelectionDropdown
-          className="customData dropdown mb-2 mr-sm-4 mb-sm-0"
-          id="pathSelect"
-          value={this.props.pathSelect}
-          onChange={this.props.handleInputChange}
-          options={this.props.pathSelectOptions}
-        />
 
       </React.Fragment>
     );
@@ -159,12 +144,8 @@ class FileUploadFormRow extends Component {
 
 FileUploadFormRow.propTypes = {
   apiUrl: PropTypes.string.isRequired,
-  getPathNames: PropTypes.func.isRequired,
   handleFileUpload: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  pathSelect: PropTypes.string.isRequired,
-  pathSelectOptions: PropTypes.array.isRequired,
-  resetPathNames: PropTypes.func.isRequired,
   setUploadInProgress: PropTypes.func.isRequired,
   showFileSizeAlert: PropTypes.func.isRequired
 };

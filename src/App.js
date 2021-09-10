@@ -13,13 +13,10 @@ class App extends Component {
     super(props);
     this.state = {
       fetchParams: {
-        nodeID: '1',
-        distance: '100',
-        byNode: 'false',
+        region: '17:1-100',
         xgFile: 'snp1kg-BRCA1.vg.xg',
         gbwtFile: '',
         gamFile: 'NA12878-BRCA1.sorted.gam',
-        anchorTrackName: '17',
         dataPath: 'default'
       },
       dataOrigin: dataOriginTypes.API,
