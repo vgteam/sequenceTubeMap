@@ -13,6 +13,11 @@ import * as tubeMap from '../util/tubemap';
 const ZOOM_FACTOR = 2.0;
 
 class DataPositionFormRow extends Component {
+  constructor() {
+    super();
+    this.onKeyUp = this.onKeyUp.bind(this);
+  }
+
   handleZoomIn = () => {
     tubeMap.zoomBy(ZOOM_FACTOR);
   };
@@ -36,6 +41,14 @@ class DataPositionFormRow extends Component {
     downloadLink.click();
     document.body.removeChild(downloadLink);
   };
+  
+  onKeyUp(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      this.props.handleInputChange(event);
+      this.props.handleGoButton();
+    }
+  }
 
   render() {
     return (
@@ -50,6 +63,7 @@ class DataPositionFormRow extends Component {
           size="12"
           value={this.props.region}
           onChange={this.props.handleInputChange}
+	  onKeyPress={this.onKeyUp}
         />
         &nbsp;
         {this.props.uploadInProgress && (
