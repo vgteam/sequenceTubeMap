@@ -258,6 +258,18 @@ export function changeTrackVisibility(trackID) {
   createTubeMap();
 }
 
+// to select/deselect all
+export function changeAllTracksVisibility(value) {
+  let i = 0;
+  while (i < inputTracks.length){
+    inputTracks[i].hidden = !value;
+    var checkbox = document.getElementById(`showTrack${i}`);
+    checkbox.checked = value;
+    i += 1;
+  }
+  createTubeMap();
+}
+
 export function changeExonVisibility() {
   config.showExonsFlag = !config.showExonsFlag;
   createTubeMap();
@@ -3332,7 +3344,9 @@ function drawTrackCorners(corners, type) {
 }
 
 function drawLegend() {
-  let content =
+  let content = '<button id="selectall">Select all</button>';
+  content += '<button id="deselectall">Deselect all</button>';
+  content +=
     '<table class="table-sm table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
   const listeners = [];
   for (let i = 0; i < tracks.length; i += 1) {
@@ -3358,6 +3372,12 @@ function drawLegend() {
       .getElementById(`showTrack${i}`)
       .addEventListener('click', () => changeTrackVisibility(i), false);
   });
+  document
+    .getElementById('selectall')
+    .addEventListener('click', () =>  changeAllTracksVisibility(true), false);
+  document
+    .getElementById('deselectall')
+    .addEventListener('click', () =>  changeAllTracksVisibility(false), false);
 }
 
 // Highlight track on mouseover
