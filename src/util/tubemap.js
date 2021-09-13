@@ -88,6 +88,7 @@ export let zoom; // eslint-disable-line import/no-mutable-exports
 let inputNodes = [];
 let inputTracks = [];
 let inputReads = [];
+let inputRegion = [];
 let nodes;
 let tracks;
 let reads;
@@ -146,6 +147,7 @@ export function create(params) {
   inputNodes = JSON.parse(JSON.stringify(params.nodes)); // deep copy
   inputTracks = JSON.parse(JSON.stringify(params.tracks)); // deep copy
   inputReads = params.reads || null;
+  inputRegion = params.region;
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
   config.hideLegendFlag = params.hideLegend || false;
@@ -2952,16 +2954,6 @@ function drawRuler() {
   while (tracks[rulerTrackIndex].name !== trackForRuler) rulerTrackIndex += 1;
   const rulerTrack = tracks[rulerTrackIndex];
 
-  // draw horizontal line
-  svg
-    .append('line')
-    .attr('x1', 0)
-    .attr('y1', minYCoordinate - 10)
-    .attr('x2', maxXCoordinate)
-    .attr('y2', minYCoordinate - 10)
-    .attr('stroke-width', 1)
-    .attr('stroke', 'black');
-
   // How often should we have a tick in bp?
   let markingInterval = 100;
   if (config.nodeWidthOption === 0) markingInterval = 20;
@@ -2978,13 +2970,38 @@ function drawRuler() {
   // too close together.
   
   // This will hold pairs of base position, x coordinate.
-  let ticks = []
+  let ticks = [];
+  let ticks_region = [];
   
   // We keep a cursor to the start of the current node traversal along the path
   let indexOfFirstBaseInNode = rulerTrack.indexOfFirstBase;
   // And the next index along the path that doesn't have a mark but could.
   let nextUnmarkedIndex = indexOfFirstBaseInNode;
+
+  function getCorrectXCoordinateOfBaseWithinNode(position, currentNode, currentNodeIsReverse, is_region=false){
+    // What base along our traversal of this node should we be marking?
+    let indexIntoVisitToMark = position - indexOfFirstBaseInNode;
+    
+    // What offset into the node should we mark at, relative to its forward-strand start?
+    let offsetIntoNodeForward = currentNodeIsReverse ?
+        // If going in reverse, take off bases of the node we use from the right side
+        currentNode.sequenceLength - 1 - indexIntoVisitToMark :
+        // Otherwise, add them to the left side
+        indexIntoVisitToMark;
+    
+    if (config.nodeWidthOption !== 0 && !is_region) {
+      // Actually always mark at an edge of the node, if we are scaling the node nonlinearly
+      // and if we are not highlighting the input region
+      offsetIntoNodeForward = currentNodeIsReverse ? currentNode.sequenceLength - 1 : 0;
+    }
+    
+    // Where should we mark in the visualization?
+    let xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, offsetIntoNodeForward);
+    return(xCoordOfMarking)
+  }
   
+  let start_region = Number(inputRegion[0]);
+  let end_region = Number(inputRegion[1]);
   for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
     // Walk along the ruler track in ascending coordinate order.
     const nodeIndex = rulerTrack.indexSequence[rulerTrack.isCompletelyReverse ? (rulerTrack.indexSequence.length - 1 - i) : i];
@@ -2996,32 +3013,28 @@ function drawRuler() {
     
     // For some displayus we want to mark each node only once.
     let alreadyMarkedNode = false;
+
+    if(start_region >= indexOfFirstBaseInNode && start_region < indexOfFirstBaseInNode + currentNode.sequenceLength){
+      // add start "region" tick
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(start_region, currentNode, currentNodeIsReverse, true)
+      ticks_region.push([start_region, xCoordOfMarking]);
+    }
+    if(end_region >= indexOfFirstBaseInNode && end_region < indexOfFirstBaseInNode + currentNode.sequenceLength){
+      // add end "region" tick
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(end_region, currentNode, currentNodeIsReverse, true)
+      ticks_region.push([end_region, xCoordOfMarking]);
+    }
     
     while (nextUnmarkedIndex < indexOfFirstBaseInNode + currentNode.sequenceLength) {
       // We are thinking of marking a position on this node.
-    
-      // What base along our traversal of this node should we be marking?
-      let indexIntoVisitToMark = nextUnmarkedIndex - indexOfFirstBaseInNode;
-      
-      // What offset into the node should we mark at, relative to its forward-strand start?
-      let offsetIntoNodeForward = currentNodeIsReverse ?
-        // If going in reverse, take off bases of the node we use from the right side
-        currentNode.sequenceLength - 1 - indexIntoVisitToMark :
-        // Otherwise, add them to the left side
-        indexIntoVisitToMark;
-      
-      if (config.nodeWidthOption !== 0) {
-        // Actually always mark at an edge of the node, if we are scaling the node nonlinearly
-        offsetIntoNodeForward = currentNodeIsReverse ? currentNode.sequenceLength - 1 : 0;
-      }
-      
+     
       // Where should we mark in the visualization?
-      let xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, offsetIntoNodeForward);
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(nextUnmarkedIndex, currentNode, currentNodeIsReverse)
       
       if (config.nodeWidthOption === 0 || !alreadyMarkedNode) {
         // This is a mark we are not filtering due to node compression.
         // Make the mark
-        ticks.push([indexOfFirstBaseInNode + indexIntoVisitToMark, xCoordOfMarking]);
+        ticks.push([nextUnmarkedIndex, xCoordOfMarking]);
         alreadyMarkedNode = true;
       }
       
@@ -3044,10 +3057,23 @@ function drawRuler() {
     }
   })
   ticks = separatedTicks;
+
+  // plot ticks highlighting the region
+  ticks_region.forEach(tick => drawRulerMarkingRegion(tick[0], tick[1]));
+
+  // draw horizontal line
+  svg
+    .append('line')
+    .attr('x1', 0)
+    .attr('y1', minYCoordinate - 10)
+    .attr('x2', maxXCoordinate)
+    .attr('y2', minYCoordinate - 10)
+    .attr('stroke-width', 1)
+    .attr('stroke', 'black');
   
   // Plot all the ticks
-  ticks.forEach(tick => drawRulerMarking(tick[0], tick[1]))
-  
+  ticks.forEach(tick => drawRulerMarking(tick[0], tick[1]));
+
 }
 
 function drawRulerMarking(sequencePosition, xCoordinate) {
@@ -3059,6 +3085,17 @@ function drawRulerMarking(sequencePosition, xCoordinate) {
     .attr('font-family', fonts)
     .attr('font-size', '12px')
     .attr('fill', 'black')
+    .style('pointer-events', 'none');
+}
+
+function drawRulerMarkingRegion(sequencePosition, xCoordinate) {
+  svg
+    .append('circle')
+    .attr('cx', xCoordinate + 3)
+    .attr('cy', minYCoordinate - 13)
+    .attr('r', 10)
+    .attr('opacity', 0.5)
+    .attr('fill', 'yellow')
     .style('pointer-events', 'none');
 }
 

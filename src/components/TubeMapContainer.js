@@ -75,6 +75,7 @@ class TubeMapContainer extends Component {
             nodes={this.state.nodes}
             tracks={this.state.tracks}
             reads={this.state.reads}
+            region={this.state.region}
           />
         </div>
       </div>
@@ -100,11 +101,13 @@ class TubeMapContainer extends Component {
         const nodes = tubeMap.vgExtractNodes(json.graph);
         const tracks = tubeMap.vgExtractTracks(json.graph);
         const reads = tubeMap.vgExtractReads(nodes, tracks, json.gam);
+        const region = json.region; 
         this.setState({
           isLoading: false,
           nodes,
           tracks,
-          reads
+          reads,
+	  region
         });
       }
     } catch (error) {
@@ -118,6 +121,7 @@ class TubeMapContainer extends Component {
     let nodes = [];
     let tracks = [];
     let reads = [];
+    let region = [];
     const data = await import('../util/demo-data');
     nodes = data.inputNodes;
     switch (this.props.dataOrigin) {
@@ -150,7 +154,7 @@ class TubeMapContainer extends Component {
         console.log('invalid data origin type');
     }
 
-    this.setState({ isLoading: false, nodes, tracks, reads });
+    this.setState({ isLoading: false, nodes, tracks, reads, region});
   };
 
   readsFromStringToArray = readsString => {

@@ -165,8 +165,14 @@ api.post('/getChunkedData', (req, res) => {
   }
   console.log(`dataPath = ${dataPath}`);
 
-  // call 'vg chunk' to generate graph
+  // region
   const region = req.body.region;
+  let region_col = region.split(":");
+  let start_end = region_col[1].split("-");
+  let r_start = Number(start_end[0]);
+  let r_end = Number(start_end[1]);
+
+  // call 'vg chunk' to generate graph
   let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];
   if (req.withGam) {
     // Use a GAM index
@@ -252,6 +258,7 @@ api.post('/getChunkedData', (req, res) => {
       return;
     }
     req.graph = JSON.parse(graphAsString);
+    req.region = [r_start, r_end];
     processAnnotationFile(req, res);
   });
 });
@@ -378,6 +385,7 @@ function cleanUpAndSendResult(req, res) {
   result.error = req.error.toString('utf-8');
   result.graph = req.graph;
   result.gam = req.withGam === true ? req.gamArr : [];
+  result.region = req.region;
   res.json(result);
   console.timeEnd('request-duration');
 }
