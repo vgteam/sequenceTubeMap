@@ -29,9 +29,17 @@ class HeaderForm extends Component {
     gamSelectOptions: ['none'],
     gamSelect: 'none',
 
+    bedSelectOptions: ['none'],
+    bedSelect: 'none',
+
+    regionSelectOptions: ['none'],
+    regionInfo: {},
+    regionSelect: 'none',
+
     xgFile: 'snp1kg-BRCA1.vg.xg',
     gbwtFile: '',
     gamFile: 'NA12878-BRCA1.sorted.gam',
+    bedFile: '',
     dataPath: 'default',
 
     region: '17:1-100',
@@ -58,6 +66,7 @@ class HeaderForm extends Component {
       json.xgFiles.unshift('none');
       json.gbwtFiles.unshift('none');
       json.gamIndices.unshift('none');
+      json.bedFiles.unshift('none');
 
       this.setState(state => {
         const xgSelect = json.xgFiles.includes(state.xgSelect)
@@ -69,13 +78,18 @@ class HeaderForm extends Component {
         const gamSelect = json.gamIndices.includes(state.gamSelect)
           ? state.gamSelect
           : 'none';
+        const bedSelect = json.bedFiles.includes(state.bedSelect)
+          ? state.bedSelect
+          : 'none';
         return {
           xgSelectOptions: json.xgFiles,
           gbwtSelectOptions: json.gbwtFiles,
           gamSelectOptions: json.gamIndices,
+          bedSelectOptions: json.bedFiles,
           xgSelect,
           gbwtSelect,
-          gamSelect
+          gamSelect,
+	  bedSelect
         };
       });
     } catch (error) {
@@ -83,6 +97,40 @@ class HeaderForm extends Component {
     }
   };
 
+  getBedRegions = async (bedFile, isUploadedFile) => {
+    try {
+      const response = await fetch(`${this.props.apiUrl}/getBedRegions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ bedFile, isUploadedFile })
+      });
+      const json = await response.json();
+      this.setState(state => {
+        const regionSelect = json.bedRegions['desc'].includes(state.regionSelect)
+          ? state.regionSelect
+          : json.bedRegions['desc'][0];
+        return {
+	  regionInfo: json.bedRegions,
+          regionSelectOptions: json.bedRegions['desc'],
+          regionSelect,
+          regionSelect: regionSelect
+        };
+      });
+    } catch (error) {
+      console.log(`POST to ${this.props.apiUrl}/getBedRegions failed:`, error);
+    }
+  };
+
+  resetBedRegions = () => {
+    this.setState({
+      regionSelect: 'none',
+      regionInfo: {},
+      regionSelectOptions: ['none']
+    });
+  };
+  
   handleDataSourceChange = event => {
     const value = event.target.value;
     DATA_SOURCES.forEach(ds => {
@@ -91,6 +139,7 @@ class HeaderForm extends Component {
           xgFile: ds.xgFile,
           gbwtFile: ds.gbwtFile,
           gamFile: ds.gamFile,
+	  bedFile: ds.bedFile,
           dataPath: ds.useMountedPath ? 'mounted' : 'default',
           region: ds.defaultPosition,
           dataType: dataTypes.BUILT_IN
@@ -104,6 +153,7 @@ class HeaderForm extends Component {
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
+          bedFile: state.bedSelect,
           dataPath: 'upload',
           dataType: dataTypes.FILE_UPLOAD
         };
@@ -114,6 +164,7 @@ class HeaderForm extends Component {
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
+          bedFile: state.bedSelect,
           dataPath: 'mounted',
           dataType: dataTypes.MOUNTED_FILES
         };
@@ -133,6 +184,7 @@ class HeaderForm extends Component {
       xgFile: this.state.xgFile,
       gbwtFile: this.state.gbwtFile,
       gamFile: this.state.gamFile,
+      bedFile: this.state.bedFile,
       anchorTrackName: this.state.anchorTrackName,
       dataPath: this.state.dataPath
     };
@@ -149,6 +201,20 @@ class HeaderForm extends Component {
       this.setState({ gbwtFile: value });
     } else if (id === 'gamSelect') {
       this.setState({ gamFile: value });
+    } else if (id === 'bedSelect') {
+      this.getBedRegions(value, false);
+      this.setState({ bedFile: value });
+    } else if (id === 'regionSelect') {
+      // find which region corresponds to this region label/desc
+      const region = '';
+      let i = 0;
+      while (i < this.state.regionInfo['desc'].length && this.state.regionInfo['desc'][i] !== value) i += 1;
+      if (i < this.state.regionInfo['desc'].length){
+	let region_chr = this.state.regionInfo['chr'][i];
+	let region_start = this.state.regionInfo['start'][i];
+	let region_end = this.state.regionInfo['end'][i];
+	this.setState({ region: region_chr.concat(':', region_start, '-', region_end) });
+      }
     }
   };
 
@@ -264,6 +330,10 @@ class HeaderForm extends Component {
                     gbwtSelectOptions={this.state.gbwtSelectOptions}
                     gamSelect={this.state.gamSelect}
                     gamSelectOptions={this.state.gamSelectOptions}
+                    bedSelect={this.state.bedSelect}
+                    bedSelectOptions={this.state.bedSelectOptions}
+                    regionSelect={this.state.regionSelect}
+                    regionSelectOptions={this.state.regionSelectOptions}
                     handleInputChange={this.handleInputChange}
                   />
                 )}

@@ -150,6 +150,14 @@ api.post('/getChunkedData', (req, res) => {
     console.log('no gbwt file provided.');
   }
 
+  // We sometimes have a BED file with regions to look at
+  const bedFile = req.body.bedFile;
+  req.withBed = true;
+  if (!bedFile || bedFile === 'none') {
+    req.withBed = false;
+    console.log('no BED file provided.');
+  }
+
   // Decide where to pull the data from
   // (builtin examples, mounted user data folder or uploaded data)
   let dataPath;
@@ -395,7 +403,8 @@ api.get('/getFilenames', (req, res) => {
   const result = {
     xgFiles: [],
     gbwtFiles: [],
-    gamIndices: []
+    gamIndices: [],
+    bedFiles: []
   };
 
   fs.readdirSync(MOUNTED_DATA_PATH).forEach(file => {
@@ -407,6 +416,9 @@ api.get('/getFilenames', (req, res) => {
     }
     if (file.endsWith('.sorted.gam')) {
       result.gamIndices.push(file);
+    }
+    if (file.endsWith('.bed')) {
+      result.bedFiles.push(file);
     }
   });
 
@@ -446,6 +458,41 @@ api.get('/getFilenames', (req, res) => {
 //     res.json(result);
 //   });
 // });
+
+api.post('/getBedRegions', (req, res) => {
+  console.log('received request for bedRegions');
+  const result = {
+    bedRegions: []
+  };
+
+  let bed_info = {chr:[], start:[], end:[], desc:[]};
+
+  if(req.body.bedFile != 'none'){
+    const bedFile =
+	  req.body.isUploadedFile === 'true'
+	  ? `./${req.body.bedFile}`
+	  : `${MOUNTED_DATA_PATH}${req.body.bedFile}`;
+    
+    let bed_data = fs.readFileSync(bedFile).toString();
+    console.log(bed_data)
+    let lines = bed_data.split('\n');
+    lines.map(function(line){
+      let records = line.split("\t");
+      bed_info['chr'].push(records[0]);
+      bed_info['start'].push(records[1]);
+      bed_info['end'].push(records[2]);
+      let desc = records.join('_');
+      if (records.length > 3){
+	desc = records[3];
+      }
+      bed_info['desc'].push(desc);
+    });
+  }
+  
+  result.bedRegions = bed_info;
+  console.log(result);
+  res.json(result);
+});
 
 // Return the string URL for the host and port at which the given Express app
 // server is listening, with HTTP scheme.
