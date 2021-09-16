@@ -130,6 +130,7 @@ api.post('/getChunkedData', (req, res) => {
   // Make a temp directory for vg output files for this request
   req.tempDir = `./tmp-${req.uuid}`;
   fs.mkdirSync(req.tempDir);
+  req.rmChunk = true;
 
   // We always have an XG file
   const xgFile = req.body.xgFile;
@@ -180,95 +181,152 @@ api.post('/getChunkedData', (req, res) => {
   let r_start = Number(start_end[0]);
   let r_end = Number(start_end[1]);
 
-  // call 'vg chunk' to generate graph
-  let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];
-  if (req.withGam) {
-    // Use a GAM index
-    vgChunkParams.push('-a', `${dataPath}${gamFile}`, '-g');
+  // check the bed file if this region has been pre-fetched
+  let chunkPath = '';
+  if(req.withBed){
+    let i = 0;
+    console.log(req.body.regionInfo);
+    while (i < req.body.regionInfo['desc'].length && chunkPath === ''){
+      let region_chr = req.body.regionInfo['chr'][i];
+      let region_start = req.body.regionInfo['start'][i];
+      let region_end = req.body.regionInfo['end'][i];
+      if(region_chr.concat(':', region_start, '-', region_end) === region){
+	if(req.body.regionInfo['chunk'][i] !== ''){
+	  chunkPath = req.body.regionInfo['chunk'][i]
+	}
+      }
+      i += 1;
+    }
   }
-  if (req.withGbwt) {
-    // Use a GBWT haplotype database
-    vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`);
-  }
-  vgChunkParams.push(
-    '-c',
-    '20',
-    '-p',
-    `${region}`
-  );
-  vgChunkParams.push(
-    '-T',
-    '-b',
-    `${req.tempDir}/chunk`,
-    '-E',
-    `${req.tempDir}/regions.tsv`
-  );
 
-  console.log(`vg ${vgChunkParams.join(' ')}`);
-
-  console.time('vg chunk');
-  const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
-  const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', '-']);
-  let graphAsString = '';
-  req.error = new Buffer(0);
-
-  vgChunkCall.on('error', function(err) {
-    console.log('Error executing ' + VG_PATH + 'vg ' + vgChunkParams.join(' ') + ': ' + err);
-    if (!sentErrorResponse) {
-      sentErrorResponse = true;
-      returnError(req, res);
+  if(chunkPath === ''){
+    // call 'vg chunk' to generate graph
+    let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];
+    if (req.withGam) {
+      // Use a GAM index
+      vgChunkParams.push('-a', `${dataPath}${gamFile}`, '-g');
     }
-    return;
-  });
-
-  vgChunkCall.stderr.on('data', data => {
-    console.log(`vg chunk err data: ${data}`);
-    req.error += data;
-  });
-
-  vgChunkCall.stdout.on('data', function(data) {
-    vgViewCall.stdin.write(data);
-  });
-
-  vgChunkCall.on('close', code => {
-    console.log(`vg chunk exited with code ${code}`);
-    if (code != 0) {
-        console.log('Error from ' + VG_PATH + 'vg ' + vgChunkParams.join(' '));
+    if (req.withGbwt) {
+      // Use a GBWT haplotype database
+      vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`);
     }
-    vgViewCall.stdin.end();
-  });
+    vgChunkParams.push(
+      '-c',
+      '20',
+      '-p',
+      `${region}`
+    );
+    vgChunkParams.push(
+      '-T',
+      '-b',
+      `${req.tempDir}/chunk`,
+      '-E',
+      `${req.tempDir}/regions.tsv`
+    );
 
-  vgViewCall.on('error', function(err) {
-    console.log('Error executing "vg view": ' + err);
-    if (!sentErrorResponse) {
-      sentErrorResponse = true;
-      returnError(req, res);
-    }
-    return;
-  });
+    console.log(`vg ${vgChunkParams.join(' ')}`);
 
-  vgViewCall.stderr.on('data', data => {
-    console.log(`vg view err data: ${data}`);
-  });
+    console.time('vg chunk');
+    const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
+    const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', '-']);
+    let graphAsString = '';
+    req.error = new Buffer(0);
 
-  vgViewCall.stdout.on('data', function(data) {
-    graphAsString += data.toString();
-  });
-
-  vgViewCall.on('close', code => {
-    console.log(`vg view exited with code ${code}`);
-    console.timeEnd('vg chunk');
-    if (graphAsString === '') {
+    vgChunkCall.on('error', function(err) {
+      console.log('Error executing ' + VG_PATH + 'vg ' + vgChunkParams.join(' ') + ': ' + err);
       if (!sentErrorResponse) {
-        sentErrorResponse = true;
-        returnError(req, res);
+	sentErrorResponse = true;
+	returnError(req, res);
       }
       return;
-    }
-    req.graph = JSON.parse(graphAsString);
-    req.region = [r_start, r_end];
-    processAnnotationFile(req, res);
-  });
+    });
+
+    vgChunkCall.stderr.on('data', data => {
+      console.log(`vg chunk err data: ${data}`);
+      req.error += data;
+    });
+
+    vgChunkCall.stdout.on('data', function(data) {
+      vgViewCall.stdin.write(data);
+    });
+
+    vgChunkCall.on('close', code => {
+      console.log(`vg chunk exited with code ${code}`);
+      if (code != 0) {
+        console.log('Error from ' + VG_PATH + 'vg ' + vgChunkParams.join(' '));
+      }
+      vgViewCall.stdin.end();
+    });
+
+    vgViewCall.on('error', function(err) {
+      console.log('Error executing "vg view": ' + err);
+      if (!sentErrorResponse) {
+	sentErrorResponse = true;
+	returnError(req, res);
+      }
+      return;
+    });
+
+    vgViewCall.stderr.on('data', data => {
+      console.log(`vg view err data: ${data}`);
+    });
+
+    vgViewCall.stdout.on('data', function(data) {
+      graphAsString += data.toString();
+    });
+
+    vgViewCall.on('close', code => {
+      console.log(`vg view exited with code ${code}`);
+      console.timeEnd('vg chunk');
+      if (graphAsString === '') {
+	if (!sentErrorResponse) {
+          sentErrorResponse = true;
+          returnError(req, res);
+	}
+	return;
+      }
+      req.graph = JSON.parse(graphAsString);
+      req.region = [r_start, r_end];
+      processAnnotationFile(req, res);
+    });
+  } else {
+    // chunk has already been pre-fecthed and is saved in chunkPath
+    req.tempDir = `${dataPath}${chunkPath}`;
+    req.rmChunk = false;
+    const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', `${dataPath}${chunkPath}/chunk.vg`]);
+    let graphAsString = '';
+    req.error = new Buffer(0);
+    vgViewCall.on('error', function(err) {
+      console.log('Error executing "vg view": ' + err);
+      if (!sentErrorResponse) {
+	sentErrorResponse = true;
+	returnError(req, res);
+      }
+      return;
+    });
+
+    vgViewCall.stderr.on('data', data => {
+      console.log(`vg view err data: ${data}`);
+    });
+
+    vgViewCall.stdout.on('data', function(data) {
+      graphAsString += data.toString();
+    });
+
+    vgViewCall.on('close', code => {
+      console.log(`vg view exited with code ${code}`);
+      if (graphAsString === '') {
+	if (!sentErrorResponse) {
+          sentErrorResponse = true;
+          returnError(req, res);
+	}
+	return;
+      }
+      req.graph = JSON.parse(graphAsString);
+      req.region = [r_start, r_end];
+      processAnnotationFile(req, res);
+    });
+  }
 });
 
 function returnError(req, res) {
@@ -382,12 +440,14 @@ function processRegionFile(req, res) {
 }
 
 function cleanUpAndSendResult(req, res) {
-  fs.unlink(req.annotationFile);
-  if (req.withGam === true) {
-    fs.unlink(req.gamFile);
+  if(req.rmChunk){
+    fs.unlink(req.annotationFile);
+    if (req.withGam === true) {
+      fs.unlink(req.gamFile);
+    }
+    // Clean up the temp directory for the request recursively (even though it should be empty)
+    fs.remove(req.tempDir);
   }
-  // Clean up the temp directory for the request recursively (even though it should be empty)
-  fs.remove(req.tempDir);
 
   const result = {};
   result.error = req.error.toString('utf-8');
@@ -465,7 +525,7 @@ api.post('/getBedRegions', (req, res) => {
     bedRegions: []
   };
 
-  let bed_info = {chr:[], start:[], end:[], desc:[]};
+  let bed_info = {chr:[], start:[], end:[], desc:[], chunk:[]};
 
   if(req.body.bedFile != 'none'){
     const bedFile =
@@ -486,6 +546,12 @@ api.post('/getBedRegions', (req, res) => {
 	desc = records[3];
       }
       bed_info['desc'].push(desc);
+      let chunk = '';
+      if (records.length > 4){
+	chunk = records[4];
+      }
+      bed_info['chunk'].push(chunk);
+      
     });
   }
   

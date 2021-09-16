@@ -70,17 +70,20 @@ class HeaderForm extends Component {
 
       this.setState(state => {
         const xgSelect = json.xgFiles.includes(state.xgSelect)
-          ? state.xgSelect
-          : 'none';
+              ? state.xgSelect
+              : 'none';
         const gbwtSelect = json.gbwtFiles.includes(state.gbwtSelect)
-          ? state.gbwtSelect
-          : 'none';
+              ? state.gbwtSelect
+              : 'none';
         const gamSelect = json.gamIndices.includes(state.gamSelect)
-          ? state.gamSelect
-          : 'none';
+              ? state.gamSelect
+              : 'none';
         const bedSelect = json.bedFiles.includes(state.bedSelect)
-          ? state.bedSelect
-          : 'none';
+              ? state.bedSelect
+	      : 'none';
+	if (bedSelect !== 'none'){
+	  this.getBedRegions(bedSelect, false);
+	}
         return {
           xgSelectOptions: json.xgFiles,
           gbwtSelectOptions: json.gbwtFiles,
@@ -185,6 +188,7 @@ class HeaderForm extends Component {
       gbwtFile: this.state.gbwtFile,
       gamFile: this.state.gamFile,
       bedFile: this.state.bedFile,
+      regionInfo: this.state.regionInfo,
       anchorTrackName: this.state.anchorTrackName,
       dataPath: this.state.dataPath
     };
