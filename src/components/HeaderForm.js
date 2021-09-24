@@ -6,6 +6,7 @@ import { dataOriginTypes } from '../enums';
 import config from '../config.json';
 import DataPositionFormRow from './DataPositionFormRow';
 import MountedDataFormRow from './MountedDataFormRow';
+import BedRegionsFormRow from './BedRegionsFormRow';
 import FileUploadFormRow from './FileUploadFormRow';
 import ExampleSelectButtons from './ExampleSelectButtons';
 
@@ -36,13 +37,12 @@ class HeaderForm extends Component {
     regionInfo: {},
     regionSelect: 'none',
 
-    xgFile: 'snp1kg-BRCA1.vg.xg',
+    xgFile: '',
     gbwtFile: '',
-    gamFile: 'NA12878-BRCA1.sorted.gam',
+    gamFile: '',
     bedFile: '',
     dataPath: 'default',
-
-    region: '17:1-100',
+    region: '',
 
     dataType: dataTypes.BUILT_IN,
     fileSizeAlert: false,
@@ -50,8 +50,30 @@ class HeaderForm extends Component {
   };
 
   componentDidMount() {
+    this.initState();
     this.getMountedFilenames();
     this.setUpWebsocket();
+  }
+
+  // init with the first data source
+  initState = () => {
+    let ds = DATA_SOURCES[0];
+    let bedSelect = 'none';
+    if(ds.bedFile){
+      this.getBedRegions(ds.bedFile, false);
+      bedSelect = ds.bedFile;
+    }
+    this.setState({
+      xgFile: ds.xgFile,
+      gbwtFile: ds.gbwtFile,
+      gamFile: ds.gamFile,
+      bedFile: ds.bedFile,
+      bedSelect: bedSelect,
+      dataPath: ds.useMountedPath ? 'mounted' : 'default',
+      region: ds.defaultPosition,
+      dataType: dataTypes.BUILT_IN
+    });
+    return;
   }
 
   getMountedFilenames = async () => {
@@ -138,11 +160,17 @@ class HeaderForm extends Component {
     const value = event.target.value;
     DATA_SOURCES.forEach(ds => {
       if (ds.name === value) {
+	let bedSelect = 'none';
+	if(ds.bedFile){
+	  this.getBedRegions(ds.bedFile, false);
+	  bedSelect = ds.bedFile;
+	}
         this.setState({
           xgFile: ds.xgFile,
           gbwtFile: ds.gbwtFile,
           gamFile: ds.gamFile,
 	  bedFile: ds.bedFile,
+	  bedSelect: bedSelect,
           dataPath: ds.useMountedPath ? 'mounted' : 'default',
           region: ds.defaultPosition,
           dataType: dataTypes.BUILT_IN
@@ -210,7 +238,6 @@ class HeaderForm extends Component {
       this.setState({ bedFile: value });
     } else if (id === 'regionSelect') {
       // find which region corresponds to this region label/desc
-      const region = '';
       let i = 0;
       while (i < this.state.regionInfo['desc'].length && this.state.regionInfo['desc'][i] !== value) i += 1;
       if (i < this.state.regionInfo['desc'].length){
@@ -302,7 +329,8 @@ class HeaderForm extends Component {
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
-
+    const bedRegionsFlag = this.state.bedSelect !== 'none';
+    
     return (
       <div>
         <Container fluid={true}>
@@ -336,6 +364,13 @@ class HeaderForm extends Component {
                     gamSelectOptions={this.state.gamSelectOptions}
                     bedSelect={this.state.bedSelect}
                     bedSelectOptions={this.state.bedSelectOptions}
+                    regionSelect={this.state.regionSelect}
+                    regionSelectOptions={this.state.regionSelectOptions}
+                    handleInputChange={this.handleInputChange}
+                  />
+                )}
+                {bedRegionsFlag && (
+                  <BedRegionsFormRow
                     regionSelect={this.state.regionSelect}
                     regionSelectOptions={this.state.regionSelectOptions}
                     handleInputChange={this.handleInputChange}

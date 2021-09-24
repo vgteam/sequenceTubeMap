@@ -11,12 +11,28 @@ import config from './config.json';
 class App extends Component {
   constructor(props) {
     super(props);
+    const ds = config.DATA_SOURCES[0];
+    let xgFile = ds.xgFile;
+    let region = ds.defaultPosition;
+    let gamFile = '';
+    if(ds.gamFile){
+      gamFile = ds.gamFile;
+    }
+    let gbwtFile = '';
+    if(ds.gbwtFile){
+      gbwtFile = ds.gbwtFile;
+    }
+    let bedFile = '';
+    if(ds.bedFile){
+      bedFile = ds.bedFile;
+    }
     this.state = {
       fetchParams: {
-        region: '17:1-100',
-        xgFile: 'snp1kg-BRCA1.vg.xg',
-        gbwtFile: '',
-        gamFile: 'NA12878-BRCA1.sorted.gam',
+        region: region,
+        xgFile: xgFile,
+        gbwtFile: gbwtFile,
+        gamFile: gamFile,
+	bedFile: bedFile,
         dataPath: 'default'
       },
       dataOrigin: dataOriginTypes.API,

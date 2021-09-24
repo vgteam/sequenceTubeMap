@@ -121,7 +121,7 @@ api.post('/getChunkedData', (req, res) => {
   console.time('request-duration');
   console.log('http POST getChunkedData received');
   console.log(`region = ${req.body.region}`);
-
+  
   // Assign each request a UUID. v1 UUIDs can be very similar for similar
   // timestamps on the same node, but are still guaranteed to be unique within
   // a given nodejs process.
@@ -185,8 +185,11 @@ api.post('/getChunkedData', (req, res) => {
   let chunkPath = '';
   if(req.withBed){
     let i = 0;
-    console.log(req.body.regionInfo);
-    while (i < req.body.regionInfo['desc'].length && chunkPath === ''){
+    let nb_regions_in_bed = 0;
+    if(req.body.regionInfo && Object.keys(req.body.regionInfo).length > 0){
+      nb_regions_in_bed = req.body.regionInfo['desc'].length;
+    }
+    while (i < nb_regions_in_bed && chunkPath === ''){
       let region_chr = req.body.regionInfo['chr'][i];
       let region_start = req.body.regionInfo['start'][i];
       let region_end = req.body.regionInfo['end'][i];
