@@ -200,8 +200,16 @@ api.post('/getChunkedData', (req, res) => {
       }
       i += 1;
     }
+    // check that the 'chunk.vg' file exists in the chunk folder
+    let chunk_file = `${dataPath}${chunkPath}/chunk.vg`;
+    if(fs.existsSync(chunk_file)){
+      console.log(`found pre-fetched chunk at ${chunk_file}`);
+    } else {
+      console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
+      chunkPath = '';
+    }
   }
-
+  
   if(chunkPath === ''){
     // call 'vg chunk' to generate graph
     let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];

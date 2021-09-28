@@ -26,6 +26,10 @@ class App extends Component {
     if(ds.bedFile){
       bedFile = ds.bedFile;
     }
+    let dataPath = 'default';
+    if(ds.useMountedPath){
+      dataPath = 'mounted';
+    }
     this.state = {
       fetchParams: {
         region: region,
@@ -33,7 +37,7 @@ class App extends Component {
         gbwtFile: gbwtFile,
         gamFile: gamFile,
 	bedFile: bedFile,
-        dataPath: 'default'
+        dataPath: dataPath
       },
       dataOrigin: dataOriginTypes.API,
       visOptions: {

@@ -41,7 +41,7 @@ class HeaderForm extends Component {
     gbwtFile: '',
     gamFile: '',
     bedFile: '',
-    dataPath: 'default',
+    dataPath: '',
     region: '',
 
     dataType: dataTypes.BUILT_IN,
@@ -60,7 +60,6 @@ class HeaderForm extends Component {
     let ds = DATA_SOURCES[0];
     let bedSelect = 'none';
     if(ds.bedFile){
-      this.getBedRegions(ds.bedFile, false);
       bedSelect = ds.bedFile;
     }
     this.setState({
