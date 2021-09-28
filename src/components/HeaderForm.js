@@ -138,7 +138,6 @@ class HeaderForm extends Component {
         return {
 	  regionInfo: json.bedRegions,
           regionSelectOptions: json.bedRegions['desc'],
-          regionSelect,
           regionSelect: regionSelect
         };
       });
