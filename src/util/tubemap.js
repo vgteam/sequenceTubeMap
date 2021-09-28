@@ -423,9 +423,9 @@ function createTubeMap() {
 
   // can cause problems when there is a reversed single track node
   // OTOH, can solve problems with complex inversion patterns
-  // switchNodeOrientation();
-  // generateNodeOrder(nodes, tracks);
-  // maxOrder = getMaxOrder();
+  switchNodeOrientation();
+  generateNodeOrder(nodes, tracks);
+  maxOrder = getMaxOrder();
 
   calculateTrackWidth(tracks);
   generateLaneAssignment();
@@ -1000,6 +1000,11 @@ function generateTrackIndexSequences(tracksOrReads) {
   tracksOrReads.forEach(track => {
     track.indexSequence = [];
     track.sequence.forEach(nodeName => {
+      // if node was switched, reverse it here
+      // Q? Is flipping the index enough? It looks like yes. Or should we also flip the node name in 'sequence'?
+      if(nodes[nodeMap.get(forward(nodeName))].switched){
+	nodeName = flip(nodeName);
+      }
       if (isReverse(nodeName)) {
         track.indexSequence.push(-nodeMap.get(forward(nodeName)));
       } else {
@@ -1570,11 +1575,12 @@ function switchNodeOrientation() {
       nodeName = forward(node);
       if (toSwitch.has(nodeName) && toSwitch.get(nodeName) > 0) {
         tracks[trackIndex].sequence[nodeIndex] = flip(node);
+        tracks[trackIndex].indexSequence[nodeIndex] = -tracks[trackIndex].indexSequence[nodeIndex];
       }
     });
   });
 
-  // invert the sequence within the nodes
+  // invert the sequence within the nodes and mark them as "switched"
   toSwitch.forEach((value, key) => {
     if (value > 0) {
       currentNode = nodeMap.get(key);
@@ -1582,6 +1588,7 @@ function switchNodeOrientation() {
         .split('')
         .reverse()
         .join('');
+      nodes[currentNode].switched = true;
     }
   });
 }
