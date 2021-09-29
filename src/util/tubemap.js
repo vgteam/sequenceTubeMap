@@ -23,6 +23,17 @@ const greys = [
   '#000000'
 ];
 
+const ygreys = [
+  '#9467bd',
+  '#d9d9d9',
+  '#bdbdbd',
+  '#969696',
+  '#737373',
+  '#525252',
+  '#252525',
+  '#000000'
+];
+
 const blues = [
   '#c6dbef',
   '#9ecae1',
@@ -114,7 +125,7 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  haplotypeColors: 'greys',
+  haplotypeColors: 'ygreys',
   forwardReadColors: 'reds',
   reverseReadColors: 'blues',
   exonColors: 'lightColors',
@@ -2266,6 +2277,8 @@ function getColorSet(colorSetName) {
       return blues;
     case 'greys':
       return greys;
+    case 'ygreys':
+      return ygreys;
     case 'lightColors':
       return lightColors;
     default:

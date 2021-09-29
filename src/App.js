@@ -46,7 +46,7 @@ class App extends Component {
         transparentNodes: false,
         showReads: true,
         showSoftClips: true,
-        haplotypeColors: 'greys',
+        haplotypeColors: 'ygreys',
         forwardReadColors: 'reds',
         reverseReadColors: 'blues',
         colorReadsByMappingQuality: false,
