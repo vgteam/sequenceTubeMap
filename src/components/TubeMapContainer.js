@@ -12,7 +12,7 @@ class TubeMapContainer extends Component {
   };
 
   componentDidMount() {
-    this.getRemoteTubeMapData();
+    this.getRemoteTubeMapData(3000);
   }
 
   componentDidUpdate(prevProps) {
@@ -82,7 +82,13 @@ class TubeMapContainer extends Component {
     );
   }
 
-  getRemoteTubeMapData = async () => {
+  getRemoteTubeMapData = async (sleep_ms=0) => {
+    // hack to help give time for the other init functions (get filenames, get bed regions) to finish
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    await sleep(sleep_ms);
+    // end of hack
     this.setState({ isLoading: true, error: null });
     try {
       const response = await fetch(`${this.props.apiUrl}/getChunkedData`, {
