@@ -545,6 +545,7 @@ api.post('/getBedRegions', (req, res) => {
 	  : `${MOUNTED_DATA_PATH}${req.body.bedFile}`;
     
     let bed_data = fs.readFileSync(bedFile).toString();
+    console.log(bed_data)
     let lines = bed_data.split('\n');
     lines.map(function(line){
       let records = line.split("\t");
@@ -561,10 +562,12 @@ api.post('/getBedRegions', (req, res) => {
 	chunk = records[4];
       }
       bed_info['chunk'].push(chunk);
+      
     });
   }
   
   result.bedRegions = bed_info;
+  console.log(result);
   res.json(result);
 });
 
