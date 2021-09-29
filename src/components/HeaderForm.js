@@ -216,7 +216,8 @@ class HeaderForm extends Component {
       bedFile: this.state.bedFile,
       regionInfo: this.state.regionInfo,
       anchorTrackName: this.state.anchorTrackName,
-      dataPath: this.state.dataPath
+      dataPath: this.state.dataPath,
+      headerFetched: true
     };
     this.props.setFetchParams(fetchParams);
   };
