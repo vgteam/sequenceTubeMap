@@ -5,6 +5,7 @@ import { Col, Label, Input, FormGroup } from 'reactstrap';
 const colorMap = new Map([
   ['colorful', 'plainColors'],
   ['greyscale', 'greys'],
+  ['Ygreyscale', 'ygreys'],
   ['reds', 'reds'],
   ['blues', 'blues'],
   ['pale colors', 'lightColors']

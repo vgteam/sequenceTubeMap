@@ -60,7 +60,7 @@ class DataPositionFormRow extends Component {
           type="text"
           className="custom-input form-control mb-2 mr-sm-4 mb-sm-0"
           id="region"
-          size="24"
+          size="36"
           value={this.props.region}
           onChange={this.props.handleInputChange}
 	  onKeyPress={this.onKeyUp}

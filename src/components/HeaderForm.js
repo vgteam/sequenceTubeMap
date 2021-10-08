@@ -243,7 +243,7 @@ class HeaderForm extends Component {
 
   handleGoButton = () => {
     if (this.props.dataOrigin !== dataOriginTypes.API) {
-      this.props.setColorSetting('haplotypeColors', 'greys');
+      this.props.setColorSetting('haplotypeColors', 'ygreys');
       this.props.setColorSetting('forwardReadColors', 'reds');
     }
     const fetchParams = {
@@ -254,7 +254,8 @@ class HeaderForm extends Component {
       bedFile: this.state.bedFile,
       regionInfo: this.state.regionInfo,
       anchorTrackName: this.state.anchorTrackName,
-      dataPath: this.state.dataPath
+      dataPath: this.state.dataPath,
+      headerFetched: true
     };
     this.props.setFetchParams(fetchParams);
   };
