@@ -7,6 +7,7 @@ import config from '../config.json';
 import DataPositionFormRow from './DataPositionFormRow';
 import MountedDataFormRow from './MountedDataFormRow';
 import BedRegionsFormRow from './BedRegionsFormRow';
+import PathNamesFormRow from './PathNamesFormRow';
 import FileUploadFormRow from './FileUploadFormRow';
 import ExampleSelectButtons from './ExampleSelectButtons';
 
@@ -37,6 +38,9 @@ class HeaderForm extends Component {
     regionInfo: {},
     regionSelect: 'none',
 
+    pathSelectOptions: ['none'],
+    pathSelect: 'none',
+
     xgFile: '',
     gbwtFile: '',
     gamFile: '',
@@ -58,16 +62,13 @@ class HeaderForm extends Component {
   // init with the first data source
   initState = () => {
     let ds = DATA_SOURCES[0];
-    let bedSelect = 'none';
-    if(ds.bedFile){
-      bedSelect = ds.bedFile;
-    }
     this.setState({
       xgFile: ds.xgFile,
+      xgSelect: ds.xgFile ? ds.xgFile : 'none',
       gbwtFile: ds.gbwtFile,
       gamFile: ds.gamFile,
       bedFile: ds.bedFile,
-      bedSelect: bedSelect,
+      bedSelect: ds.bedFile ? ds.bedFile : 'none',
       dataPath: ds.useMountedPath ? 'mounted' : 'default',
       region: ds.defaultPosition,
       dataType: dataTypes.BUILT_IN
@@ -104,6 +105,9 @@ class HeaderForm extends Component {
 	      : 'none';
 	if (bedSelect !== 'none'){
 	  this.getBedRegions(bedSelect, false);
+	}
+	if (xgSelect !== 'none'){
+	  this.getPathNames(xgSelect, false);
 	}
         return {
           xgSelectOptions: json.xgFiles,
@@ -153,7 +157,39 @@ class HeaderForm extends Component {
       regionSelectOptions: ['none']
     });
   };
-  
+
+  getPathNames = async (xgFile, isUploadedFile) => {
+    try {
+      const response = await fetch(`${this.props.apiUrl}/getPathNames`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ xgFile, isUploadedFile })
+      });
+      const json = await response.json();
+      this.setState(state => {
+        const pathSelect = json.pathNames.includes(state.pathSelect)
+          ? state.pathSelect
+          : json.pathNames[0];
+        return {
+          pathSelectOptions: json.pathNames,
+          pathSelect,
+          anchorTrackName: pathSelect
+        };
+      });
+    } catch (error) {
+      console.log(`POST to ${this.props.apiUrl}/getPathNames failed:`, error);
+    }
+  };
+
+  resetPathNames = () => {
+    this.setState({
+      pathSelectOptions: ['none'],
+      pathSelect: 'none'
+    });
+  };
+
   handleDataSourceChange = event => {
     const value = event.target.value;
     DATA_SOURCES.forEach(ds => {
@@ -163,8 +199,10 @@ class HeaderForm extends Component {
 	  this.getBedRegions(ds.bedFile, false);
 	  bedSelect = ds.bedFile;
 	}
-        this.setState({
+	this.getPathNames(ds.xgFile, false);
+	this.setState({
           xgFile: ds.xgFile,
+	  xgSelect: ds.xgFile,
           gbwtFile: ds.gbwtFile,
           gamFile: ds.gamFile,
 	  bedFile: ds.bedFile,
@@ -226,6 +264,7 @@ class HeaderForm extends Component {
     const value = event.target.value;
     this.setState({ [id]: value });
     if (id === 'xgSelect') {
+      this.getPathNames(value, false);
       this.setState({ xgFile: value });
     } else if (id === 'gbwtSelect') {
       this.setState({ gbwtFile: value });
@@ -234,6 +273,8 @@ class HeaderForm extends Component {
     } else if (id === 'bedSelect') {
       this.getBedRegions(value, false);
       this.setState({ bedFile: value });
+    } else if (id === 'pathSelect') {
+      this.setState({ region: value.concat(':') });
     } else if (id === 'regionSelect') {
       // find which region corresponds to this region label/desc
       let i = 0;
@@ -328,6 +369,7 @@ class HeaderForm extends Component {
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
     const bedRegionsFlag = this.state.bedSelect !== 'none';
+    const pathNamesFlag = this.state.xgSelect !== 'none';
     
     return (
       <div>
@@ -364,6 +406,15 @@ class HeaderForm extends Component {
                     bedSelectOptions={this.state.bedSelectOptions}
                     regionSelect={this.state.regionSelect}
                     regionSelectOptions={this.state.regionSelectOptions}
+                    pathSelect={this.state.pathSelect}
+                    pathSelectOptions={this.state.pathSelectOptions}
+                    handleInputChange={this.handleInputChange}
+                  />
+                )}
+                {pathNamesFlag && (
+                  <PathNamesFormRow
+                    pathSelect={this.state.pathSelect}
+                    pathSelectOptions={this.state.pathSelectOptions}
                     handleInputChange={this.handleInputChange}
                   />
                 )}
@@ -377,6 +428,10 @@ class HeaderForm extends Component {
                 {uploadFilesFlag && (
                   <FileUploadFormRow
                     apiUrl={this.props.apiUrl}
+                    pathSelect={this.state.pathSelect}
+                    pathSelectOptions={this.state.pathSelectOptions}
+                    getPathNames={this.getPathNames}
+                    resetPathNames={this.resetPathNames}
                     handleInputChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                     showFileSizeAlert={this.showFileSizeAlert}

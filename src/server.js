@@ -497,38 +497,38 @@ api.get('/getFilenames', (req, res) => {
   res.json(result);
 });
 
-// api.post('/getPathNames', (req, res) => {
-//   console.log('received request for pathNames');
-//   const result = {
-//     pathNames: []
-//   };
+api.post('/getPathNames', (req, res) => {
+  console.log('received request for pathNames');
+  const result = {
+    pathNames: []
+  };
 
-//   // call 'vg paths' to get path name information
-//   const xgFile =
-//     req.body.isUploadedFile === 'true'
-//       ? `./${req.body.xgFile}`
-//       : `${MOUNTED_DATA_PATH}${req.body.xgFile}`;
+  // call 'vg paths' to get path name information
+  const xgFile =
+    req.body.isUploadedFile === 'true'
+      ? `./${req.body.xgFile}`
+      : `${MOUNTED_DATA_PATH}${req.body.xgFile}`;
 
-//   const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-L', '-x', xgFile]);
+  const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-L', '-x', xgFile]);
 
-//   vgViewChild.stderr.on('data', data => {
-//     console.log(`err data: ${data}`);
-//   });
+  vgViewChild.stderr.on('data', data => {
+    console.log(`err data: ${data}`);
+  });
 
-//   let pathNames = '';
-//   vgViewChild.stdout.on('data', function(data) {
-//     pathNames += data.toString();
-//   });
+  let pathNames = '';
+  vgViewChild.stdout.on('data', function(data) {
+    pathNames += data.toString();
+  });
 
-//   vgViewChild.on('close', () => {
-//     result.pathNames = pathNames.split('\n').filter(function(a) {
-//       // Eliminate empty names or underscore-prefixed internal names (like _alt paths) 
-//       return a != '' && !a.startsWith('_');
-//     }).sort();
-//     console.log(result);
-//     res.json(result);
-//   });
-// });
+  vgViewChild.on('close', () => {
+    result.pathNames = pathNames.split('\n').filter(function(a) {
+      // Eliminate empty names or underscore-prefixed internal names (like _alt paths) 
+      return a != '' && !a.startsWith('_');
+    }).sort();
+    console.log(result);
+    res.json(result);
+  });
+});
 
 api.post('/getBedRegions', (req, res) => {
   console.log('received request for bedRegions');
