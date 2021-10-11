@@ -174,12 +174,23 @@ api.post('/getChunkedData', (req, res) => {
   }
   console.log(`dataPath = ${dataPath}`);
 
-  // region
-  const region = req.body.region;
+  // parse region
+  // either a range -> seq:start-end
+  // or a position and distance -> seq:post+distance
+  let region = req.body.region;
   let region_col = region.split(":");
   let start_end = region_col[1].split("-");
-  let r_start = Number(start_end[0]);
-  let r_end = Number(start_end[1]);
+  let pos_dist = region_col[1].split("+");
+  let r_start = -1;
+  let r_end = -1;
+  let distance = -1;
+  if(start_end.length == 2){
+    r_start = Number(start_end[0]);
+    r_end = Number(start_end[1]);
+  } else if(pos_dist.length == 2){
+    r_start = Number(pos_dist[0]);
+    distance = Number(pos_dist[1]);
+  }
 
   // check the bed file if this region has been pre-fetched
   let chunkPath = '';
@@ -221,12 +232,26 @@ api.post('/getChunkedData', (req, res) => {
       // Use a GBWT haplotype database
       vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`);
     }
-    vgChunkParams.push(
-      '-c',
-      '20',
-      '-p',
-      `${region}`
-    );
+    // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
+    if (region_col[0] === "node"){
+      if(distance > -1){
+	vgChunkParams.push('-r', r_start, '-c', distance);
+      } else {
+	vgChunkParams.push('-r', ''.concat(r_start, ":", r_end), '-c', 20);
+      }
+    } else {
+      // reformat pos+dist into start-end range
+      if(distance > -1){
+	r_end = r_start + distance;
+	region = region_col[0].concat(':', r_start, '-', r_end);
+      }
+      vgChunkParams.push(
+	'-c',
+	'20',
+	'-p',
+	`${region}`
+      );
+    }
     vgChunkParams.push(
       '-T',
       '-b',
