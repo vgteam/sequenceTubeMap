@@ -125,3 +125,56 @@ input[type='file'] {
 .custom-input {
   height: calc(2.25rem - 2px);
 }
+
+/* for the help popup */
+.popup {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.popup .popuptext {
+  visibility: hidden;
+  width: 300px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 0;
+  position: absolute;
+  z-index: 1;
+  top: 125%;
+  left: 50%;
+  margin-left: -80px;
+}
+
+/* .popup .popuptext::after { */
+/*   content: ""; */
+/*   position: absolute; */
+/*   bottom: 100%; */
+/*   left: 50%; */
+/*   margin-left: -5px; */
+/*   border-width: 5px; */
+/*   border-style: solid; */
+/*   border-color: #555 transparent transparent transparent; */
+/* } */
+
+.popup .show {
+  visibility: visible;
+  -webkit-animation: fadeIn 1s;
+  animation: fadeIn 1s;
+}
+
+@-webkit-keyframes fadeIn {
+  from {opacity: 0;} 
+  to {opacity: 1;}
+}
+
+@keyframes fadeIn {
+  from {opacity: 0;}
+  to {opacity:1 ;}
+}

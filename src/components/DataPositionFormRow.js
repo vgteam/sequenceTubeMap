@@ -6,7 +6,8 @@ import {
   faStepBackward,
   faStepForward,
   faSearchPlus,
-  faSearchMinus
+  faSearchMinus,
+  faQuestionCircle
 } from '@fortawesome/free-solid-svg-icons';
 import * as tubeMap from '../util/tubemap';
 
@@ -50,6 +51,13 @@ class DataPositionFormRow extends Component {
     }
   }
 
+  // When the user clicks on the help icon, open the popup
+  helpPopupFunction = () => {
+    var popup = document.getElementById("helpPopup");
+    console.log('HELP');
+    popup.classList.toggle("show");
+  }
+
   render() {
     return (
       <Form inline>
@@ -69,6 +77,12 @@ class DataPositionFormRow extends Component {
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
+	<div class="popup" onClick={this.helpPopupFunction}>
+	  <FontAwesomeIcon icon={faQuestionCircle} size="lg" />
+	  <span class="popuptext" id="helpPopup">
+	    Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges (e.g. "node:100-110"), a start position and a distance (e.g. "chr1:1+100"), or a node ID anchor and a distance (e.g. "node:100+10").
+	  </span>
+	</div>
         <Button
           color="primary"
           id="goButton"
