@@ -77,9 +77,9 @@ class DataPositionFormRow extends Component {
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
-	<div class="popup" onClick={this.helpPopupFunction}>
+	<div className="popup" onClick={this.helpPopupFunction}>
 	  <FontAwesomeIcon icon={faQuestionCircle} size="lg" />
-	  <span class="popuptext" id="helpPopup">
+	  <span className="popuptext" id="helpPopup">
 	    Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges (e.g. "node:100-110"), a start position and a distance (e.g. "chr1:1+100"), or a node ID anchor and a distance (e.g. "node:100+10").
 	  </span>
 	</div>

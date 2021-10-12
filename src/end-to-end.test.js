@@ -4,6 +4,7 @@ import server from './server'
 import React from 'react';
 // testing-library provides a render() that auto-cleans-up from the global DOM.
 import { render, screen, act } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
@@ -71,9 +72,9 @@ afterEach(async () => {
   await tearDown();
 })
 
-it('initially renders as loading', () => {
+it("initially doesn't renders as loading", () => {
   let loader = document.getElementById('loader');
-  expect(loader).toBeTruthy();
+  expect(loader).toBeFalsy();
 });
 
 it('populates the available example dropdown', () => {
@@ -102,22 +103,9 @@ describe('When we wait for it to load', () => {
     await waitForLoadEnd();
   });
   
-  it('eventually stops rendering as loading', () => {
-    let loader = document.getElementById('loader');
-    expect(loader).toBeFalsy();
-  });
-  
-  it('does not reload if we click the go button without changing settings', () => {
-    let loader = document.getElementById('loader');
-    expect(loader).toBeFalsy();
-  
-    act(() => {
-      let go = document.getElementById('goButton');
-      userEvent.click(go);
-    });
-      
-    loader = document.getElementById('loader');
-    expect(loader).toBeFalsy();
+  it('the regions from the BED files are loaded', () => {
+    let regionlist = document.getElementById('regionSelect');
+    expect(regionlist).toBeInTheDocument();
   });
 
   
@@ -128,11 +116,8 @@ describe('When we wait for it to load', () => {
       let region = document.getElementById('region');
       
       await userEvent.selectOptions(screen.getByLabelText(/Data/i), 'vg "small" example');
-      await userEvent.clear(screen.getByLabelText(/Start/i));
-      await userEvent.type(screen.getByLabelText(/Start/i), '1');
-      await userEvent.clear(screen.getByLabelText(/Length/i));
-      await userEvent.type(screen.getByLabelText(/Length/i), '10');
-      await userEvent.selectOptions(screen.getByLabelText(/Unit/i), screen.getByText('Nodes'))
+      await userEvent.clear(screen.getByLabelText(/Region/i));
+      await userEvent.type(screen.getByLabelText(/Region/i), 'x:1+10');
       
       console.log(dropdown.value); 
       console.log(dropdown.outerHTML); 
@@ -150,6 +135,6 @@ describe('When we wait for it to load', () => {
   
     let svg = document.getElementById('svg');
     expect(svg).toBeTruthy();
-    expect(svg.getElementsByTagName('title').length).toEqual(17);
+    expect(svg.getElementsByTagName('title').length).toEqual(128);
   });
 });
