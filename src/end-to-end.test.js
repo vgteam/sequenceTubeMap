@@ -117,7 +117,7 @@ describe('When we wait for it to load', () => {
       
       await userEvent.selectOptions(screen.getByLabelText(/Data/i), 'vg "small" example');
       await userEvent.clear(screen.getByLabelText(/Region/i));
-      await userEvent.type(screen.getByLabelText(/Region/i), 'x:1+10');
+      await userEvent.type(screen.getByLabelText(/Region/i), 'node:1+10');
       
       console.log(dropdown.value); 
       console.log(dropdown.outerHTML); 
@@ -135,6 +135,6 @@ describe('When we wait for it to load', () => {
   
     let svg = document.getElementById('svg');
     expect(svg).toBeTruthy();
-    expect(svg.getElementsByTagName('title').length).toEqual(128);
+    expect(svg.getElementsByTagName('title').length).toEqual(65);
   });
 });
