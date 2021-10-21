@@ -36,9 +36,9 @@ class App extends Component {
         xgFile: xgFile,
         gbwtFile: gbwtFile,
         gamFile: gamFile,
-	bedFile: bedFile,
+	      bedFile: bedFile,
         dataPath: dataPath,
-	headerFetched: false
+	      headerFetched: false
       },
       dataOrigin: dataOriginTypes.API,
       visOptions: {
@@ -122,13 +122,13 @@ class App extends Component {
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
         />
-	{this.state.fetchParams.headerFetched && (
+	      {this.state.fetchParams.headerFetched && (
           <TubeMapContainer
             fetchParams={this.state.fetchParams}
             dataOrigin={this.state.dataOrigin}
             apiUrl={this.props.apiUrl}
           />
-	)}
+	      )}
         <CustomizationAccordion
           visOptions={this.state.visOptions}
           toggleFlag={this.toggleVisOptionFlag}
