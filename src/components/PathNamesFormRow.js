@@ -7,10 +7,10 @@ class PathNamesFormRow extends Component {
   render() {
     return (
       <React.Fragment>
-	<Label
-          for="pathName"
-          className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
-        >
+        <Label
+                for="pathName"
+                className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
+              >
           Path name:
         </Label>
         <SelectionDropdown
