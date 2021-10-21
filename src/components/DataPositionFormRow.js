@@ -52,6 +52,7 @@ class DataPositionFormRow extends Component {
   }
 
   // When the user clicks on the help icon, open the popup
+  // TODO: React-ify
   helpPopupFunction = () => {
     var popup = document.getElementById("helpPopup");
     console.log('HELP');
@@ -77,12 +78,12 @@ class DataPositionFormRow extends Component {
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
-	<div className="popup" onClick={this.helpPopupFunction}>
-	  <FontAwesomeIcon icon={faQuestionCircle} size="lg" />
-	  <span className="popuptext" id="helpPopup">
-	    Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges (e.g. "node:100-110"), a start position and a distance (e.g. "chr1:1+100"), or a node ID anchor and a distance (e.g. "node:100+10").
-	  </span>
-	</div>
+        <div className="popup" onClick={this.helpPopupFunction}>
+          <FontAwesomeIcon icon={faQuestionCircle} size="lg" />
+          <span className="popuptext" id="helpPopup">
+            Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges (e.g. "node:100-110"), a start position and a distance (e.g. "chr1:1+100"), or a node ID anchor and a distance (e.g. "node:100+10").
+          </span>
+        </div>
         <Button
           color="primary"
           id="goButton"
