@@ -159,25 +159,25 @@ api.post('/getChunkedData', (req, res) => {
     console.log('no BED file provided.');
   }
 
-  // Decide where to pull the data from
-  // (builtin examples, mounted user data folder or uploaded data)
-  let dataPath;
-  switch (req.body.dataPath) {
-    case 'mounted':
-      dataPath = MOUNTED_DATA_PATH;
-      break;
-    case 'upload':
-      dataPath = './';
-      break;
-    default:
-      dataPath = INTERNAL_DATA_PATH;
-  }
+  let dataPath = pickDataPath(req.body.dataPath);
   console.log(`dataPath = ${dataPath}`);
 
+  // check that the path to the data is absolute and not pointing at something it shouldn't
+  if (!isAllowedPath(dataPath)){
+    req.error = "Data path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + dataPath;
+    returnError(req, res);
+    return;
+  }
+  
   // parse region
   // either a range -> seq:start-end
   // or a position and distance -> seq:post+distance
   let region = req.body.region;
+  if (!(region.includes(':'))){
+    req.error = "Wrong query: region doesn't contain a ':'. See ? button above.";
+    returnError(req, res);
+    return;
+  }
   let region_col = region.split(":");
   let start_end = region_col[1].split("-");
   let pos_dist = region_col[1].split("+");
@@ -190,6 +190,10 @@ api.post('/getChunkedData', (req, res) => {
   } else if(pos_dist.length == 2){
     r_start = Number(pos_dist[0]);
     distance = Number(pos_dist[1]);
+  } else {
+    req.error = "Wrong query: coordinates must be in the form 'X:Y-Z' or 'X:Y+Y'. See ? button above.";
+    returnError(req, res);
+    return;
   }
 
   // check the bed file if this region has been pre-fetched
@@ -212,9 +216,18 @@ api.post('/getChunkedData', (req, res) => {
       i += 1;
     }
     // check that the 'chunk.vg' file exists in the chunk folder
-    let chunk_file = `${dataPath}${chunkPath}/chunk.vg`;
+    chunkPath = `${dataPath}${chunkPath}`;
+    if(chunkPath.endsWith('/')){
+      chunkPath = chunkPath.substring(0, chunkPath.length-1);
+    }
+    let chunk_file = `${chunkPath}/chunk.vg`;
     if(fs.existsSync(chunk_file)){
       console.log(`found pre-fetched chunk at ${chunk_file}`);
+      if(!isAllowedPath(chunk_file)){
+	req.error = "Path to chunk not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + chunk_file;
+	returnError(req, res);
+	return;
+      }
     } else {
       console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
       chunkPath = '';
@@ -224,13 +237,46 @@ api.post('/getChunkedData', (req, res) => {
   if(chunkPath === ''){
     // call 'vg chunk' to generate graph
     let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];
+    // double-check that the file is a .xg and allowed
+    if (!xgFile.endsWith('.xg')){
+      req.error = "XG file doesn't end in .xg: " + xgFile;
+      returnError(req, res);
+      return;
+    }
+    if(!isAllowedPath(`${dataPath}${xgFile}`)){
+      req.error = "File path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + `${dataPath}${xgFile}`;
+      returnError(req, res);
+      return;
+    }
     if (req.withGam) {
       // Use a GAM index
       vgChunkParams.push('-a', `${dataPath}${gamFile}`, '-g');
+      // double-check that the file is a .gam and allowed
+      if (!gamFile.endsWith('.gam')){
+	req.error = "GAM file doesn't end in .gam: " + gamFile;
+	returnError(req, res);
+	return;
+      }
+      if(!isAllowedPath(`${dataPath}${gamFile}`)){
+	req.error = "File path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + `${dataPath}${gamFile}`;
+	returnError(req, res);
+	return;
+      }
     }
     if (req.withGbwt) {
       // Use a GBWT haplotype database
       vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`);
+      // double-check that the file is a .gbwt and allowed
+      if (!gbwtFile.endsWith('.gbwt')){
+	req.error = "GBWT file doesn't end in .gbwt: " + gbwtFile;
+	returnError(req, res);
+	return;
+      }
+      if(!isAllowedPath(`${dataPath}${gbwtFile}`)){
+	req.error = "File path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + `${dataPath}${gbwtFile}`;
+	returnError(req, res);
+	return;
+      }
     }
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
     if (region_col[0] === "node"){
@@ -267,7 +313,7 @@ api.post('/getChunkedData', (req, res) => {
     const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', '-']);
     let graphAsString = '';
     req.error = new Buffer(0);
-
+    
     vgChunkCall.on('error', function(err) {
       console.log('Error executing ' + VG_PATH + 'vg ' + vgChunkParams.join(' ') + ': ' + err);
       if (!sentErrorResponse) {
@@ -327,9 +373,9 @@ api.post('/getChunkedData', (req, res) => {
     });
   } else {
     // chunk has already been pre-fecthed and is saved in chunkPath
-    req.tempDir = `${dataPath}${chunkPath}`;
+    req.tempDir = chunkPath;
     req.rmChunk = false;
-    const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', `${dataPath}${chunkPath}/chunk.vg`]);
+    const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', `${req.tempDir}/chunk.vg`]);
     let graphAsString = '';
     req.error = new Buffer(0);
     vgViewCall.on('error', function(err) {
@@ -366,12 +412,14 @@ api.post('/getChunkedData', (req, res) => {
 });
 
 function returnError(req, res) {
-  console.log('returning error');
+  console.log('returning error: ' + req.error);
   const result = {};
   result.error = req.error.toString('utf-8');
   res.json(result);
   // Clean up the temp directory for the request recursively
-  fs.remove(req.tempDir);
+  if(req.tempDir){
+    fs.remove(req.tempDir);
+  }
 }
 
 function processAnnotationFile(req, res) {
@@ -380,7 +428,7 @@ function processAnnotationFile(req, res) {
   // We need to make vg chunk take an argument from us for where to put the file.
   console.time('processing annotation file');
   fs.readdirSync(req.tempDir).forEach(file => {
-    if (file.substr(file.length - 12) === 'annotate.txt') {
+    if (file.endsWith('annotate.txt')) {
       req.annotationFile = req.tempDir + '/' + file;
     }
   });
@@ -424,11 +472,17 @@ function processGamFile(req, res) {
   console.time('processing gam file');
   // Find gam file
   fs.readdirSync(req.tempDir).forEach(file => {
-    if (file.substr(file.length - 3) === 'gam') {
+    if (file.endsWith('.gam')) {
       req.gamFile = req.tempDir + '/' + file;
     }
   });
 
+  if(!isAllowedPath(req.gamFile)){
+    req.error = "Path to GAM file not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + req.gamFile;
+    returnError(req, res);
+    return;
+  }
+  
   // call 'vg view' to transform gam to json
   const vgViewChild = spawn(`${VG_PATH}vg`, ['view', '-j', '-a', req.gamFile]);
 
@@ -457,8 +511,15 @@ function processGamFile(req, res) {
 
 function processRegionFile(req, res) {
   console.time('processing region file');
+  const regionFile = `${req.tempDir}/regions.tsv`;
+  if(!isAllowedPath(regionFile)){
+    req.error = "Path to region file not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + regionFile;
+    returnError(req, res);
+    return;
+  }
+
   const lineReader = rl.createInterface({
-    input: fs.createReadStream(`${req.tempDir}/regions.tsv`)
+    input: fs.createReadStream(regionFile)
   });
 
   lineReader.on('line', line => {
@@ -494,6 +555,41 @@ function cleanUpAndSendResult(req, res) {
   console.timeEnd('request-duration');
 }
 
+// check that the path is absolute and not pointing at something it shouldn't
+function isAllowedPath(inputPath) {
+  let allowed_path = true;
+  let forbidden_root = ['/etc', '/usr', '/sys'];
+  for (var i = 0; i < forbidden_root.length; i++){
+    if(inputPath.startsWith(forbidden_root[i])){
+      allowed_path = false;
+    }
+  }
+  if(inputPath.includes('..') || inputPath.includes('//')){
+    allowed_path = false;
+  }
+  return(allowed_path);
+}
+
+// Decide where to pull the data from
+// (builtin examples, mounted user data folder or uploaded data)
+function pickDataPath(reqDataPath){
+  let dataPath;
+  switch (reqDataPath) {
+    case 'mounted':
+      dataPath = MOUNTED_DATA_PATH;
+      break;
+    case 'upload':
+      dataPath = './';
+      break;
+    default:
+      dataPath = INTERNAL_DATA_PATH;
+  }
+  if(!dataPath.endsWith('/')){
+    dataPath = dataPath + '/';
+  }
+  return(dataPath);
+}
+
 api.get('/getFilenames', (req, res) => {
   console.log('received request for filenames');
   const result = {
@@ -503,20 +599,27 @@ api.get('/getFilenames', (req, res) => {
     bedFiles: []
   };
 
-  fs.readdirSync(MOUNTED_DATA_PATH).forEach(file => {
-    if (file.endsWith('.xg')) {
-      result.xgFiles.push(file);
-    }
-    if (file.endsWith('.gbwt')) {
-      result.gbwtFiles.push(file);
-    }
-    if (file.endsWith('.sorted.gam')) {
-      result.gamIndices.push(file);
-    }
-    if (file.endsWith('.bed')) {
-      result.bedFiles.push(file);
-    }
-  });
+  if(isAllowedPath(MOUNTED_DATA_PATH)){    
+    // list files in folder
+    fs.readdirSync(MOUNTED_DATA_PATH).forEach(file => {
+      if (file.endsWith('.xg')) {
+	result.xgFiles.push(file);
+      }
+      if (file.endsWith('.gbwt')) {
+	result.gbwtFiles.push(file);
+      }
+      if (file.endsWith('.sorted.gam')) {
+	result.gamIndices.push(file);
+      }
+      if (file.endsWith('.bed')) {
+	result.bedFiles.push(file);
+      }
+    });
+  } else {
+    req.error = "Mounted data path not allowed (should be absolute and not pointing to /etc, /usr, etc...)" + MOUNTED_DATA_PATH;
+    returnError(req, res);
+    return;
+  }
 
   console.log(result);
   res.json(result);
@@ -528,11 +631,21 @@ api.post('/getPathNames', (req, res) => {
     pathNames: []
   };
 
+  let dataPath = pickDataPath(req.body.dataPath);
+
+  // check that the path to the data is absolute and not pointing at something it shouldn't
+  if (!result.error && !isAllowedPath(dataPath)){
+    result.error = "Data path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + dataPath;
+  }
+  
   // call 'vg paths' to get path name information
-  const xgFile =
-    req.body.isUploadedFile === 'true'
-      ? `./${req.body.xgFile}`
-      : `${MOUNTED_DATA_PATH}${req.body.xgFile}`;
+  const xgFile = `${dataPath}${req.body.xgFile}`;
+
+  if(!isAllowedPath(xgFile) && xgFile.endsWith(".xg")){
+    req.error = "Path to XG file not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + xgFile;
+    returnError(req, res);
+    return;
+  }
 
   const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-L', '-x', xgFile]);
 
@@ -558,41 +671,53 @@ api.post('/getPathNames', (req, res) => {
 api.post('/getBedRegions', (req, res) => {
   console.log('received request for bedRegions');
   const result = {
-    bedRegions: []
+    bedRegions: [],
+    error: null
   };
-
+  
   let bed_info = {chr:[], start:[], end:[], desc:[], chunk:[]};
 
   if(req.body.bedFile != 'none'){
-    const bedFile =
-	  req.body.isUploadedFile === 'true'
-	  ? `./${req.body.bedFile}`
-	  : `${MOUNTED_DATA_PATH}${req.body.bedFile}`;
+    if(!isAllowedPath(req.body.bedFile) || !(req.body.bedFile.endsWith('.bed'))){
+      result.error = "BED file path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + req.body.bedFile;
+    }
     
-    let bed_data = fs.readFileSync(bedFile).toString();
-    console.log(bed_data)
-    let lines = bed_data.split('\n');
-    lines.map(function(line){
-      let records = line.split("\t");
-      bed_info['chr'].push(records[0]);
-      bed_info['start'].push(records[1]);
-      bed_info['end'].push(records[2]);
-      let desc = records.join('_');
-      if (records.length > 3){
-	desc = records[3];
-      }
-      bed_info['desc'].push(desc);
-      let chunk = '';
-      if (records.length > 4){
-	chunk = records[4];
-      }
-      bed_info['chunk'].push(chunk);
-      
-    });
+    let dataPath = pickDataPath(req.body.dataPath);
+    // check that the path to the data is absolute and not pointing at something it shouldn't
+    if (!result.error && !isAllowedPath(dataPath)){
+      result.error = "Data path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + dataPath;
+    }
+    
+    const bedFile = `${dataPath}${req.body.bedFile}`;
+
+    if(!fs.existsSync(bedFile)){
+      result.error = "BED file not found: " + bedFile;
+    }
+    if(!result.error) {
+      let bed_data = fs.readFileSync(bedFile).toString();
+      let lines = bed_data.split('\n');
+      lines.map(function(line){
+	let records = line.split("\t");
+	bed_info['chr'].push(records[0]);
+	bed_info['start'].push(records[1]);
+	bed_info['end'].push(records[2]);
+	let desc = records.join('_');
+	if (records.length > 3){
+	  desc = records[3];
+	}
+	bed_info['desc'].push(desc);
+	let chunk = '';
+	if (records.length > 4){
+	  chunk = records[4];
+	}
+	bed_info['chunk'].push(chunk); 
+      });
+    }
   }
-  
+
+  console.log('bed reading done');
+
   result.bedRegions = bed_info;
-  console.log(result);
   res.json(result);
 });
 

@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Label, Input } from 'reactstrap';
-import SelectionDropdown from "./SelectionDropdown";
 
 const MAX_UPLOAD_SIZE = 5242880;
 
@@ -33,7 +32,7 @@ class FileUploadFormRow extends Component {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
           this.props.handleFileUpload('xgFile', xhr.response.path);
-          this.props.getPathNames(xhr.response.path, 'true');
+          this.props.getPathNames(xhr.response.path, 'upload');
         }
       };
       xhr.open('POST', `${this.props.apiUrl}/xgFileSubmission`, true);

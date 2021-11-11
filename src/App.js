@@ -36,9 +36,9 @@ class App extends Component {
         xgFile: xgFile,
         gbwtFile: gbwtFile,
         gamFile: gamFile,
-	      bedFile: bedFile,
+	bedFile: bedFile,
         dataPath: dataPath,
-	      headerFetched: false
+	headerFetched: false
       },
       dataOrigin: dataOriginTypes.API,
       visOptions: {

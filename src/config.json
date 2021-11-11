@@ -7,13 +7,13 @@
       "gamFile": "NA12878-BRCA1.sorted.gam",
       "useMountedPath": false,
       "defaultPosition": "17:1-100",
-      "bedFile": "snp1kg-brca1.bed"
+      "bedFile": "snp1kg-BRCA1.bed"
     },
     {
       "name": "vg \"small\" example",
       "xgFile": "x.vg.xg",
       "gbwtFile": "x.vg.gbwt",
-      "useMountedPath": false,
+      "useMountedPath": true,
       "defaultPosition": "x:1-100"
     },
     {
@@ -26,6 +26,6 @@
     }
   ],
   "vgPath": "",
-  "dataPath": "./exampleData/",
-  "internalDataPath": "./exampleData/"
+  "dataPath": "./exampleData",
+  "internalDataPath": "./exampleData/internal/"
 }

@@ -2304,7 +2304,7 @@ function generateTrackColor(track, highlight) {
   } else {
     if (config.showExonsFlag === false || highlight !== 'plain') {
       // don't repeat the color of the first track (reference) to highilight is better
-      if(track.id == 0){
+      if(track.id === 0){
 	trackColor = haplotypeColors[0];
       } else {
 	trackColor = haplotypeColors[((track.id - 1) % (haplotypeColors.length - 1)) + 1];

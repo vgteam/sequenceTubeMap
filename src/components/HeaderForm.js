@@ -50,7 +50,8 @@ class HeaderForm extends Component {
 
     dataType: dataTypes.BUILT_IN,
     fileSizeAlert: false,
-    uploadInProgress: false
+    uploadInProgress: false,
+    error: null
   };
 
   componentDidMount() {
@@ -62,21 +63,33 @@ class HeaderForm extends Component {
   // init with the first data source
   initState = () => {
     let ds = DATA_SOURCES[0];
-    this.setState({
-      xgFile: ds.xgFile,
-      xgSelect: ds.xgFile ? ds.xgFile : 'none',
-      gbwtFile: ds.gbwtFile,
-      gamFile: ds.gamFile,
-      bedFile: ds.bedFile,
-      bedSelect: ds.bedFile ? ds.bedFile : 'none',
-      dataPath: ds.useMountedPath ? 'mounted' : 'default',
-      region: ds.defaultPosition,
-      dataType: dataTypes.BUILT_IN
+    const xgSelect = ds.xgFile ? ds.xgFile : 'none';
+    const bedSelect = ds.bedFile ? ds.bedFile : 'none';
+    const dataPath = ds.useMountedPath ? 'mounted' : 'default';
+
+    this.setState(state => {
+      if (bedSelect !== 'none'){
+	this.getBedRegions(bedSelect, dataPath);
+      }
+      if (xgSelect !== 'none'){
+	this.getPathNames(xgSelect, dataPath);
+      }
+      return {
+	xgFile: ds.xgFile,
+	xgSelect: xgSelect,
+	gbwtFile: ds.gbwtFile,
+	gamFile: ds.gamFile,
+	bedFile: ds.bedFile,
+	bedSelect: bedSelect,
+	dataPath: dataPath,
+	region: ds.defaultPosition,
+	dataType: dataTypes.BUILT_IN
+      };
     });
-    return;
   }
 
   getMountedFilenames = async () => {
+    this.setState({ error: null });
     try {
       const response = await fetch(`${this.props.apiUrl}/getFilenames`, {
         method: 'GET',
@@ -85,56 +98,78 @@ class HeaderForm extends Component {
         }
       });
       const json = await response.json();
-      json.xgFiles.unshift('none');
-      json.gbwtFiles.unshift('none');
-      json.gamIndices.unshift('none');
-      json.bedFiles.unshift('none');
+      if (json.xgFiles === undefined) {
+        // We did not get back a graph, only (possibly) an error.
+        const error = json.error || 'Listing file names';
+        this.setState({ error: error });
+      } else {
+	json.xgFiles.unshift('none');
+	json.gbwtFiles.unshift('none');
+	json.gamIndices.unshift('none');
+	json.bedFiles.unshift('none');
 
-      this.setState(state => {
-        const xgSelect = json.xgFiles.includes(state.xgSelect)
-              ? state.xgSelect
-              : 'none';
-        const gbwtSelect = json.gbwtFiles.includes(state.gbwtSelect)
-              ? state.gbwtSelect
-              : 'none';
-        const gamSelect = json.gamIndices.includes(state.gamSelect)
-              ? state.gamSelect
-              : 'none';
-        const bedSelect = json.bedFiles.includes(state.bedSelect)
-              ? state.bedSelect
-	      : 'none';
-	if (bedSelect !== 'none'){
-	  this.getBedRegions(bedSelect, false);
+	if(this.state.dataPath === 'mounted'){
+	  this.setState(state => {
+            const xgSelect = json.xgFiles.includes(state.xgSelect)
+		  ? state.xgSelect
+		  : 'none';
+            const gbwtSelect = json.gbwtFiles.includes(state.gbwtSelect)
+		  ? state.gbwtSelect
+		  : 'none';
+            const gamSelect = json.gamIndices.includes(state.gamSelect)
+		  ? state.gamSelect
+		  : 'none';
+            const bedSelect = json.bedFiles.includes(state.bedSelect)
+		  ? state.bedSelect
+		  : 'none';
+	    if (bedSelect !== 'none'){
+	      this.getBedRegions(bedSelect, 'mounted');
+	    }
+	    if (xgSelect !== 'none'){
+	      this.getPathNames(xgSelect, 'mounted');
+	    }
+            return {
+              xgSelectOptions: json.xgFiles,
+              gbwtSelectOptions: json.gbwtFiles,
+              gamSelectOptions: json.gamIndices,
+              bedSelectOptions: json.bedFiles,
+              xgSelect,
+              gbwtSelect,
+              gamSelect,
+	      bedSelect
+            };
+	  });
+	} else {
+	  this.setState(state => {
+            return {
+              xgSelectOptions: json.xgFiles,
+              gbwtSelectOptions: json.gbwtFiles,
+              gamSelectOptions: json.gamIndices,
+              bedSelectOptions: json.bedFiles
+            };
+	  });	  
 	}
-	if (xgSelect !== 'none'){
-	  this.getPathNames(xgSelect, false);
-	}
-        return {
-          xgSelectOptions: json.xgFiles,
-          gbwtSelectOptions: json.gbwtFiles,
-          gamSelectOptions: json.gamIndices,
-          bedSelectOptions: json.bedFiles,
-          xgSelect,
-          gbwtSelect,
-          gamSelect,
-	  bedSelect
-        };
-      });
+      }
     } catch (error) {
+      this.setState({ error: error });
       console.log(`GET to ${this.props.apiUrl}/getFilenames failed:`, error);
     }
   };
 
-  getBedRegions = async (bedFile, isUploadedFile) => {
+  getBedRegions = async (bedFile, dataPath) => {
+    this.setState({ error: null });
     try {
       const response = await fetch(`${this.props.apiUrl}/getBedRegions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ bedFile, isUploadedFile })
+        body: JSON.stringify({ bedFile, dataPath })
       });
       const json = await response.json();
+      if(json.error){
+	this.setState({ error: json.error });
+      }
       this.setState(state => {
         const regionSelect = json.bedRegions['desc'].includes(state.regionSelect)
           ? state.regionSelect
@@ -147,6 +182,7 @@ class HeaderForm extends Component {
       });
     } catch (error) {
       console.log(`POST to ${this.props.apiUrl}/getBedRegions failed:`, error);
+      this.setState({ error: error });
     }
   };
 
@@ -158,14 +194,15 @@ class HeaderForm extends Component {
     });
   };
 
-  getPathNames = async (xgFile, isUploadedFile) => {
+  getPathNames = async (xgFile, dataPath) => {
+    this.setState({ error: null });
     try {
       const response = await fetch(`${this.props.apiUrl}/getPathNames`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ xgFile, isUploadedFile })
+        body: JSON.stringify({ xgFile, dataPath })
       });
       const json = await response.json();
       this.setState(state => {
@@ -180,6 +217,7 @@ class HeaderForm extends Component {
       });
     } catch (error) {
       console.log(`POST to ${this.props.apiUrl}/getPathNames failed:`, error);
+      this.setState({ error: error });
     }
   };
 
@@ -194,12 +232,13 @@ class HeaderForm extends Component {
     const value = event.target.value;
     DATA_SOURCES.forEach(ds => {
       if (ds.name === value) {
+	let dataPath = ds.useMountedPath ? 'mounted' : 'default';
 	let bedSelect = 'none';
 	if(ds.bedFile){
-	  this.getBedRegions(ds.bedFile, false);
+	  this.getBedRegions(ds.bedFile, dataPath);
 	  bedSelect = ds.bedFile;
 	}
-	this.getPathNames(ds.xgFile, false);
+	this.getPathNames(ds.xgFile, dataPath);
 	this.setState({
           xgFile: ds.xgFile,
 	  xgSelect: ds.xgFile,
@@ -207,7 +246,7 @@ class HeaderForm extends Component {
           gamFile: ds.gamFile,
 	  bedFile: ds.bedFile,
 	  bedSelect: bedSelect,
-          dataPath: ds.useMountedPath ? 'mounted' : 'default',
+          dataPath: dataPath,
           region: ds.defaultPosition,
           dataType: dataTypes.BUILT_IN
         });
@@ -265,14 +304,14 @@ class HeaderForm extends Component {
     const value = event.target.value;
     this.setState({ [id]: value });
     if (id === 'xgSelect') {
-      this.getPathNames(value, false);
+      this.getPathNames(value, this.state.dataPathfalse);
       this.setState({ xgFile: value });
     } else if (id === 'gbwtSelect') {
       this.setState({ gbwtFile: value });
     } else if (id === 'gamSelect') {
       this.setState({ gamFile: value });
     } else if (id === 'bedSelect') {
-      this.getBedRegions(value, false);
+      this.getBedRegions(value, this.state.dataPath);
       this.setState({ bedFile: value });
     } else if (id === 'pathSelect') {
       this.setState({ region: value.concat(':') });
@@ -347,6 +386,20 @@ class HeaderForm extends Component {
   };
 
   render() {
+    if (this.state.error) {
+      console.log("Header error: " + this.state.error);
+      const message = this.state.error.message ? this.state.error.message : this.state.error;
+      return (
+	<div>
+          <Container fluid={true}>
+            <Row>
+              <Alert color="danger">{message}</Alert>
+            </Row>
+          </Container>
+        </div>
+      );
+    }
+
     let dataSourceDropdownOptions = DATA_SOURCES.map(ds => {
       return (
         <option value={ds.name} key={ds.name}>
