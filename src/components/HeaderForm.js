@@ -309,7 +309,7 @@ class HeaderForm extends Component {
     const value = event.target.value;
     this.setState({ [id]: value });
     if (id === 'xgSelect') {
-      this.getPathNames(value, this.state.dataPathfalse);
+      this.getPathNames(value, this.state.dataPath);
       this.setState({ xgFile: value });
     } else if (id === 'gbwtSelect') {
       this.setState({ gbwtFile: value });
