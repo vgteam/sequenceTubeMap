@@ -31,16 +31,25 @@ class App extends Component {
       dataPath = 'mounted';
     }
     this.state = {
+      // These describe the files on the server side that we are working on.
       fetchParams: {
+        // This is the query (like path:start-end) we are displaying.
         region: region,
         xgFile: xgFile,
         gbwtFile: gbwtFile,
         gamFile: gamFile,
-	bedFile: bedFile,
+        bedFile: bedFile,
+        // This is the type of data paths we are working with, such as "mounted".
+        // All the paths are scoped to a type on the server side.
         dataPath: dataPath,
-	headerFetched: false
+        // This flag is set to true when "Go" is clicked, and means that we
+        // should actually render a tube map.
+        headerFetched: false
       },
+      // This is a little like dataPath, but lets us toggle between data from
+      // the server and local test data. TODO: Unify?
       dataOrigin: dataOriginTypes.API,
+      // These are the current rendering settings.
       visOptions: {
         removeRedundantNodes: true,
         compressedView: false,
@@ -109,6 +118,7 @@ class App extends Component {
   };
 
   setDataOrigin = dataOrigin => {
+    console.log('Setting data origin to ' + dataOrigin);
     this.setState({ dataOrigin });
   };
 
@@ -122,13 +132,13 @@ class App extends Component {
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
         />
-	      {this.state.fetchParams.headerFetched && (
+        {this.state.fetchParams.headerFetched && (
           <TubeMapContainer
             fetchParams={this.state.fetchParams}
             dataOrigin={this.state.dataOrigin}
             apiUrl={this.props.apiUrl}
           />
-	      )}
+        )}
         <CustomizationAccordion
           visOptions={this.state.visOptions}
           toggleFlag={this.toggleVisOptionFlag}

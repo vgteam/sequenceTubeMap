@@ -72,7 +72,7 @@ afterEach(async () => {
   await tearDown();
 })
 
-it("initially doesn't renders as loading", () => {
+it("initially doesn't render as loading", () => {
   let loader = document.getElementById('loader');
   expect(loader).toBeFalsy();
 });
@@ -106,6 +106,27 @@ describe('When we wait for it to load', () => {
   it('the regions from the BED files are loaded', () => {
     let regionlist = document.getElementById('regionSelect');
     expect(regionlist).toBeInTheDocument();
+  });
+  
+  it('draws an SVG for synthetic data example 1', async () => {
+    await act(async () => {
+      let dropdown = document.getElementById('dataSourceSelect');
+      await userEvent.selectOptions(screen.getByLabelText(/Data/i), 'synthetic data examples');
+    });
+    
+    await act(async () => {
+      let example1 = document.getElementById('example1');
+      console.log('Clicking button for example 1');
+      await userEvent.click(example1);
+    });
+    
+    let loader = document.getElementById('loader');
+    expect(loader).toBeTruthy();
+    
+    await waitForLoadEnd();
+    
+    let svg = document.getElementById('svg');
+    expect(svg).toBeTruthy();
   });
 
   
