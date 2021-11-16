@@ -299,7 +299,6 @@ class HeaderForm extends Component {
       regionInfo: this.state.regionInfo,
       anchorTrackName: this.state.anchorTrackName,
       dataPath: this.state.dataPath,
-      headerFetched: true
     };
     this.props.setFetchParams(fetchParams);
   };

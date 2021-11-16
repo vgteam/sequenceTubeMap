@@ -41,10 +41,7 @@ class App extends Component {
         bedFile: bedFile,
         // This is the type of data paths we are working with, such as "mounted".
         // All the paths are scoped to a type on the server side.
-        dataPath: dataPath,
-        // This flag is set to true when "Go" is clicked, and means that we
-        // should actually render a tube map.
-        headerFetched: false
+        dataPath: dataPath
       },
       // This is a little like dataPath, but lets us toggle between data from
       // the server and local test data. TODO: Unify?
@@ -132,13 +129,11 @@ class App extends Component {
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
         />
-        {this.state.fetchParams.headerFetched && (
-          <TubeMapContainer
-            fetchParams={this.state.fetchParams}
-            dataOrigin={this.state.dataOrigin}
-            apiUrl={this.props.apiUrl}
-          />
-        )}
+        <TubeMapContainer
+          fetchParams={this.state.fetchParams}
+          dataOrigin={this.state.dataOrigin}
+          apiUrl={this.props.apiUrl}
+        />
         <CustomizationAccordion
           visOptions={this.state.visOptions}
           toggleFlag={this.toggleVisOptionFlag}
