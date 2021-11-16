@@ -4,6 +4,7 @@ import server from './server'
 import React from 'react';
 // testing-library provides a render() that auto-cleans-up from the global DOM.
 import { render, screen, act } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
@@ -71,7 +72,7 @@ afterEach(async () => {
   await tearDown();
 })
 
-it('initially renders as loading', () => {
+it("initially renders as loading", () => {
   let loader = document.getElementById('loader');
   expect(loader).toBeTruthy();
 });
@@ -106,18 +107,44 @@ describe('When we wait for it to load', () => {
     let loader = document.getElementById('loader');
     expect(loader).toBeFalsy();
   });
-  
+
   it('does not reload if we click the go button without changing settings', () => {
     let loader = document.getElementById('loader');
     expect(loader).toBeFalsy();
-  
+
     act(() => {
       let go = document.getElementById('goButton');
       userEvent.click(go);
     });
-      
+
     loader = document.getElementById('loader');
     expect(loader).toBeFalsy();
+  });
+  
+  it('the regions from the BED files are loaded', () => {
+    let regionlist = document.getElementById('regionSelect');
+    expect(regionlist).toBeInTheDocument();
+  });
+  
+  it('draws an SVG for synthetic data example 1', async () => {
+    await act(async () => {
+      let dropdown = document.getElementById('dataSourceSelect');
+      await userEvent.selectOptions(screen.getByLabelText(/Data/i), 'synthetic data examples');
+    });
+    
+    await act(async () => {
+      let example1 = document.getElementById('example1');
+      console.log('Clicking button for example 1');
+      await userEvent.click(example1);
+    });
+    
+    // We're agnostic as to whether we will see a loader when rendering the
+    // example data. 
+    
+    await waitForLoadEnd();
+    
+    let svg = document.getElementById('svg');
+    expect(svg).toBeTruthy();
   });
 
   
@@ -125,23 +152,15 @@ describe('When we wait for it to load', () => {
   
     await act(async () => {
       let dropdown = document.getElementById('dataSourceSelect');
-      let start = document.getElementById('nodeID');
-      let distance = document.getElementById('distance');
-      let units = document.getElementById('byNode');
+      let region = document.getElementById('region');
       
       await userEvent.selectOptions(screen.getByLabelText(/Data/i), 'vg "small" example');
-      await userEvent.clear(screen.getByLabelText(/Start/i));
-      await userEvent.type(screen.getByLabelText(/Start/i), '1');
-      await userEvent.clear(screen.getByLabelText(/Length/i));
-      await userEvent.type(screen.getByLabelText(/Length/i), '10');
-      await userEvent.selectOptions(screen.getByLabelText(/Unit/i), screen.getByText('Nodes'))
+      await userEvent.clear(screen.getByLabelText(/Region/i));
+      await userEvent.type(screen.getByLabelText(/Region/i), 'node:1+10');
       
       console.log(dropdown.value); 
       console.log(dropdown.outerHTML); 
-      console.log(start.outerHTML);
-      console.log(distance.outerHTML);
-      console.log(units.value);
-      console.log(units.outerHTML);
+      console.log(region.outerHTML);
     
       let go = document.getElementById('goButton');
       console.log('Clicking button for small');
@@ -155,6 +174,6 @@ describe('When we wait for it to load', () => {
   
     let svg = document.getElementById('svg');
     expect(svg).toBeTruthy();
-    expect(svg.getElementsByTagName('title').length).toEqual(17);
+    expect(svg.getElementsByTagName('title').length).toEqual(65);
   });
 });

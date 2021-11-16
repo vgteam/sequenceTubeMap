@@ -47,18 +47,19 @@ class MountedDataFormRow extends Component {
         />
 
         <Label
-          for="pathName"
+          for="bedFileSelect"
           className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
         >
-          Path name:
+          BED file:
         </Label>
         <SelectionDropdown
-          className="customData dropdown mb-2 mr-sm-4 mb-sm-0"
-          id="pathSelect"
-          value={this.props.pathSelect}
+          className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
+          id="bedSelect"
+          value={this.props.bedSelect}
           onChange={this.props.handleInputChange}
-          options={this.props.pathSelectOptions}
+          options={this.props.bedSelectOptions}
         />
+
       </React.Fragment>
     );
   }
@@ -67,6 +68,8 @@ class MountedDataFormRow extends Component {
 MountedDataFormRow.propTypes = {
   gamSelect: PropTypes.string.isRequired,
   gamSelectOptions: PropTypes.array.isRequired,
+  bedSelect: PropTypes.string.isRequired,
+  bedSelectOptions: PropTypes.array.isRequired,
   gbwtSelect: PropTypes.string.isRequired,
   gbwtSelectOptions: PropTypes.array.isRequired,
   handleInputChange: PropTypes.func.isRequired,

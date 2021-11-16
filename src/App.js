@@ -11,25 +11,49 @@ import config from './config.json';
 class App extends Component {
   constructor(props) {
     super(props);
+    const ds = config.DATA_SOURCES[0];
+    let xgFile = ds.xgFile;
+    let region = ds.defaultPosition;
+    let gamFile = undefined;
+    if(ds.gamFile){
+      gamFile = ds.gamFile;
+    }
+    let gbwtFile = undefined;
+    if(ds.gbwtFile){
+      gbwtFile = ds.gbwtFile;
+    }
+    let bedFile = undefined;
+    if(ds.bedFile){
+      bedFile = ds.bedFile;
+    }
+    let dataPath = 'default';
+    if(ds.useMountedPath){
+      dataPath = 'mounted';
+    }
     this.state = {
+      // These describe the files on the server side that we are working on.
       fetchParams: {
-        nodeID: '1',
-        distance: '100',
-        byNode: 'false',
-        xgFile: 'snp1kg-BRCA1.vg.xg',
-        gbwtFile: '',
-        gamFile: 'NA12878-BRCA1.sorted.gam',
-        anchorTrackName: '17',
-        dataPath: 'default'
+        // This is the query (like path:start-end) we are displaying.
+        region: region,
+        xgFile: xgFile,
+        gbwtFile: gbwtFile,
+        gamFile: gamFile,
+        bedFile: bedFile,
+        // This is the type of data paths we are working with, such as "mounted".
+        // All the paths are scoped to a type on the server side.
+        dataPath: dataPath
       },
+      // This is a little like dataPath, but lets us toggle between data from
+      // the server and local test data. TODO: Unify?
       dataOrigin: dataOriginTypes.API,
+      // These are the current rendering settings.
       visOptions: {
         removeRedundantNodes: true,
         compressedView: false,
         transparentNodes: false,
         showReads: true,
         showSoftClips: true,
-        haplotypeColors: 'greys',
+        haplotypeColors: 'ygreys',
         forwardReadColors: 'reds',
         reverseReadColors: 'blues',
         colorReadsByMappingQuality: false,

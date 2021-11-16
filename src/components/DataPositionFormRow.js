@@ -6,13 +6,19 @@ import {
   faStepBackward,
   faStepForward,
   faSearchPlus,
-  faSearchMinus
+  faSearchMinus,
+  faQuestionCircle
 } from '@fortawesome/free-solid-svg-icons';
 import * as tubeMap from '../util/tubemap';
 
 const ZOOM_FACTOR = 2.0;
 
 class DataPositionFormRow extends Component {
+  constructor() {
+    super();
+    this.onKeyUp = this.onKeyUp.bind(this);
+  }
+
   handleZoomIn = () => {
     tubeMap.zoomBy(ZOOM_FACTOR);
   };
@@ -36,52 +42,48 @@ class DataPositionFormRow extends Component {
     downloadLink.click();
     document.body.removeChild(downloadLink);
   };
+  
+  onKeyUp(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      this.props.handleInputChange(event);
+      this.props.handleGoButton();
+    }
+  }
+
+  // When the user clicks on the help icon, open the popup
+  // TODO: React-ify
+  helpPopupFunction = () => {
+    var popup = document.getElementById("helpPopup");
+    console.log('HELP');
+    popup.classList.toggle("show");
+  }
 
   render() {
     return (
       <Form inline>
-        <Label className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="nodeID">
-          Start:
+        <Label className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="region">
+          Region:
         </Label>
         <Input
           type="text"
           className="custom-input form-control mb-2 mr-sm-4 mb-sm-0"
-          id="nodeID"
-          size="12"
-          value={this.props.nodeID}
+          id="region"
+          size="36"
+          value={this.props.region}
           onChange={this.props.handleInputChange}
+	  onKeyPress={this.onKeyUp}
         />
-        <Label className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="distance">
-          Length:
-        </Label>
-        <Input
-          type="text"
-          className="custom-input form-control mb-2 mr-sm-2 mb-sm-0"
-          id="distance"
-          size="4"
-          value={this.props.distance}
-          onChange={this.props.handleInputChange}
-        />
-        <Label
-          className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
-          for="byNode"
-        >
-          Unit:
-        </Label>
-        <Input
-          type="select"
-          className="custom-select mb-2 mr-sm-2 mb-sm-0"
-          id="byNode"
-          value={this.props.byNode}
-          onChange={this.props.handleInputChange}
-        >
-          <option value="false">Nucleotides</option>
-          <option value="true">Nodes</option>
-        </Input>
         &nbsp;
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
+        <div className="popup" onClick={this.helpPopupFunction}>
+          <FontAwesomeIcon icon={faQuestionCircle} size="lg" />
+          <span className="popuptext" id="helpPopup">
+            Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges (e.g. "node:100-110"), a start position and a distance (e.g. "chr1:1+100"), or a node ID anchor and a distance (e.g. "node:100+10").
+          </span>
+        </div>
         <Button
           color="primary"
           id="goButton"
@@ -123,13 +125,11 @@ class DataPositionFormRow extends Component {
 }
 
 DataPositionFormRow.propTypes = {
-  byNode: PropTypes.oneOf(['true', 'false']).isRequired,
-  distance: PropTypes.string.isRequired, 
   handleGoButton: PropTypes.func.isRequired,
   handleGoLeft: PropTypes.func.isRequired,
   handleGoRight: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  nodeID: PropTypes.string.isRequired,
+  region: PropTypes.string.isRequired,
   uploadInProgress: PropTypes.bool.isRequired,
 };
 

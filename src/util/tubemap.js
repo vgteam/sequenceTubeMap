@@ -23,6 +23,17 @@ const greys = [
   '#000000'
 ];
 
+const ygreys = [
+  '#9467bd',
+  '#d9d9d9',
+  '#bdbdbd',
+  '#969696',
+  '#737373',
+  '#525252',
+  '#252525',
+  '#000000'
+];
+
 const blues = [
   '#c6dbef',
   '#9ecae1',
@@ -88,6 +99,7 @@ export let zoom; // eslint-disable-line import/no-mutable-exports
 let inputNodes = [];
 let inputTracks = [];
 let inputReads = [];
+let inputRegion = [];
 let nodes;
 let tracks;
 let reads;
@@ -113,7 +125,7 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  haplotypeColors: 'greys',
+  haplotypeColors: 'ygreys',
   forwardReadColors: 'reds',
   reverseReadColors: 'blues',
   exonColors: 'lightColors',
@@ -146,6 +158,7 @@ export function create(params) {
   inputNodes = JSON.parse(JSON.stringify(params.nodes)); // deep copy
   inputTracks = JSON.parse(JSON.stringify(params.tracks)); // deep copy
   inputReads = params.reads || null;
+  inputRegion = params.region;
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
   config.hideLegendFlag = params.hideLegend || false;
@@ -258,6 +271,18 @@ export function changeTrackVisibility(trackID) {
   createTubeMap();
 }
 
+// to select/deselect all
+export function changeAllTracksVisibility(value) {
+  let i = 0;
+  while (i < inputTracks.length){
+    inputTracks[i].hidden = !value;
+    var checkbox = document.getElementById(`showTrack${i}`);
+    checkbox.checked = value;
+    i += 1;
+  }
+  createTubeMap();
+}
+
 export function changeExonVisibility() {
   config.showExonsFlag = !config.showExonsFlag;
   createTubeMap();
@@ -303,7 +328,7 @@ export function setColorSet(trackType, colorSet) {
   if (config[trackType] !== colorSet) {
     config[trackType] = colorSet;
     const tr = createTubeMap();
-    if (!config.hideLegendFlag) drawLegend(tr);
+    if (!config.hideLegendFlag && tracks) drawLegend(tr);
   }
 }
 
@@ -409,9 +434,9 @@ function createTubeMap() {
 
   // can cause problems when there is a reversed single track node
   // OTOH, can solve problems with complex inversion patterns
-  // switchNodeOrientation();
-  // generateNodeOrder(nodes, tracks);
-  // maxOrder = getMaxOrder();
+  switchNodeOrientation();
+  generateNodeOrder(nodes, tracks);
+  maxOrder = getMaxOrder();
 
   calculateTrackWidth(tracks);
   generateLaneAssignment();
@@ -986,6 +1011,11 @@ function generateTrackIndexSequences(tracksOrReads) {
   tracksOrReads.forEach(track => {
     track.indexSequence = [];
     track.sequence.forEach(nodeName => {
+      // if node was switched, reverse it here
+      // Q? Is flipping the index enough? It looks like yes. Or should we also flip the node name in 'sequence'?
+      if(nodes[nodeMap.get(forward(nodeName))].switched){
+	nodeName = flip(nodeName);
+      }
       if (isReverse(nodeName)) {
         track.indexSequence.push(-nodeMap.get(forward(nodeName)));
       } else {
@@ -1556,11 +1586,12 @@ function switchNodeOrientation() {
       nodeName = forward(node);
       if (toSwitch.has(nodeName) && toSwitch.get(nodeName) > 0) {
         tracks[trackIndex].sequence[nodeIndex] = flip(node);
+        tracks[trackIndex].indexSequence[nodeIndex] = -tracks[trackIndex].indexSequence[nodeIndex];
       }
     });
   });
 
-  // invert the sequence within the nodes
+  // invert the sequence within the nodes and mark them as "switched"
   toSwitch.forEach((value, key) => {
     if (value > 0) {
       currentNode = nodeMap.get(key);
@@ -1568,6 +1599,7 @@ function switchNodeOrientation() {
         .split('')
         .reverse()
         .join('');
+      nodes[currentNode].switched = true;
     }
   });
 }
@@ -2225,7 +2257,7 @@ export function useColorScheme(x) {
   config.colorScheme = x;
   svg = d3.select(svgID);
   const tr = createTubeMap();
-  if (!config.hideLegendFlag) drawLegend(tr);
+  if (!config.hideLegendFlag && tracks) drawLegend(tr);
 }
 
 function assignColorSets() {
@@ -2245,6 +2277,8 @@ function getColorSet(colorSetName) {
       return blues;
     case 'greys':
       return greys;
+    case 'ygreys':
+      return ygreys;
     case 'lightColors':
       return lightColors;
     default:
@@ -2269,7 +2303,12 @@ function generateTrackColor(track, highlight) {
     }
   } else {
     if (config.showExonsFlag === false || highlight !== 'plain') {
-      trackColor = haplotypeColors[track.id % haplotypeColors.length];
+      // don't repeat the color of the first track (reference) to highilight is better
+      if(track.id === 0){
+	trackColor = haplotypeColors[0];
+      } else {
+	trackColor = haplotypeColors[((track.id - 1) % (haplotypeColors.length - 1)) + 1];
+      }
     } else {
       trackColor = exonColors[track.id % exonColors.length];
     }
@@ -2399,6 +2438,7 @@ function generateSVGShapesFromPath() {
             yEnd: yStart + track.width - 1,
             color: trackColor,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2418,6 +2458,7 @@ function generateSVGShapesFromPath() {
             color: trackColor,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
+	    name: track.name,
             type: track.type
           });
           xStart = xEnd;
@@ -2437,6 +2478,7 @@ function generateSVGShapesFromPath() {
             color: trackColor,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
+	    name: track.name,
             type: track.type
           });
           xStart = xEnd;
@@ -2453,7 +2495,8 @@ function generateSVGShapesFromPath() {
               trackColor,
               track.id,
               track.path[i].order,
-              track.type
+              track.type,
+	      track.name
             );
             xStart = orderEndX[track.path[i].order];
             yStart = track.path[i].y;
@@ -2467,7 +2510,8 @@ function generateSVGShapesFromPath() {
               trackColor,
               track.id,
               track.path[i].order,
-              track.type
+              track.type,
+	      track.name
             );
             xStart = orderStartX[track.path[i].order];
             yStart = track.path[i].y;
@@ -2512,6 +2556,7 @@ function generateSVGShapesFromPath() {
       yEnd: yStart + track.width - 1,
       color: trackColor,
       id: track.id,
+      name: track.name,
       type: track.type
     });
   });
@@ -2569,6 +2614,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: co,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2581,6 +2627,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: c,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2605,6 +2652,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: co,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2617,6 +2665,7 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: c,
             id: track.id,
+	    name: track.name,
             type: track.type
           });
         }
@@ -2641,6 +2690,7 @@ function createFeatureRectangle(
           yEnd: yStart + track.width - 1,
           color: c,
           id: track.id,
+	  name: track.name,
           type: track.type
         });
       } else {
@@ -2657,6 +2707,7 @@ function createFeatureRectangle(
           yEnd: yStart + track.width - 1,
           color: c,
           id: track.id,
+	  name: track.name,
           type: track.type
         });
       }
@@ -2675,7 +2726,8 @@ function generateForwardToReverse(
   trackColor,
   trackID,
   order,
-  type
+  type,
+  trackName
 ) {
   x += 10 * extraRight[order];
   const yTop = Math.min(yStart, yEnd);
@@ -2690,6 +2742,7 @@ function generateForwardToReverse(
     yEnd: yStart + trackWidth - 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   });
   trackVerticalRectangles.push({
@@ -2700,6 +2753,7 @@ function generateForwardToReverse(
     yEnd: yBottom - radius + 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   });
   trackVerticalRectangles.push({
@@ -2709,6 +2763,7 @@ function generateForwardToReverse(
     yEnd: yEnd + trackWidth - 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   }); // elongate outgoing rectangle a bit to the right
 
@@ -2741,7 +2796,8 @@ function generateReverseToForward(
   trackColor,
   trackID,
   order,
-  type
+  type,
+  trackName
 ) {
   const yTop = Math.min(yStart, yEnd);
   const yBottom = Math.max(yStart, yEnd);
@@ -2755,6 +2811,7 @@ function generateReverseToForward(
     yEnd: yStart + trackWidth - 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   }); // elongate incoming rectangle a bit to the left
   trackVerticalRectangles.push({
@@ -2764,6 +2821,7 @@ function generateReverseToForward(
     yEnd: yBottom - radius + 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   }); // vertical rectangle
   trackVerticalRectangles.push({
@@ -2773,6 +2831,7 @@ function generateReverseToForward(
     yEnd: yEnd + trackWidth - 1,
     color: trackColor,
     id: trackID,
+    name: trackName,
     type
   }); // elongate outgoing rectangle a bit to the left
 
@@ -2920,16 +2979,6 @@ function drawRuler() {
   while (tracks[rulerTrackIndex].name !== trackForRuler) rulerTrackIndex += 1;
   const rulerTrack = tracks[rulerTrackIndex];
 
-  // draw horizontal line
-  svg
-    .append('line')
-    .attr('x1', 0)
-    .attr('y1', minYCoordinate - 10)
-    .attr('x2', maxXCoordinate)
-    .attr('y2', minYCoordinate - 10)
-    .attr('stroke-width', 1)
-    .attr('stroke', 'black');
-
   // How often should we have a tick in bp?
   let markingInterval = 100;
   if (config.nodeWidthOption === 0) markingInterval = 20;
@@ -2946,13 +2995,38 @@ function drawRuler() {
   // too close together.
   
   // This will hold pairs of base position, x coordinate.
-  let ticks = []
+  let ticks = [];
+  let ticks_region = [];
   
   // We keep a cursor to the start of the current node traversal along the path
   let indexOfFirstBaseInNode = rulerTrack.indexOfFirstBase;
   // And the next index along the path that doesn't have a mark but could.
   let nextUnmarkedIndex = indexOfFirstBaseInNode;
+
+  function getCorrectXCoordinateOfBaseWithinNode(position, currentNode, currentNodeIsReverse, is_region=false){
+    // What base along our traversal of this node should we be marking?
+    let indexIntoVisitToMark = position - indexOfFirstBaseInNode;
+    
+    // What offset into the node should we mark at, relative to its forward-strand start?
+    let offsetIntoNodeForward = currentNodeIsReverse ?
+        // If going in reverse, take off bases of the node we use from the right side
+        currentNode.sequenceLength - 1 - indexIntoVisitToMark :
+        // Otherwise, add them to the left side
+        indexIntoVisitToMark;
+    
+    if (config.nodeWidthOption !== 0 && !is_region) {
+      // Actually always mark at an edge of the node, if we are scaling the node nonlinearly
+      // and if we are not highlighting the input region
+      offsetIntoNodeForward = currentNodeIsReverse ? currentNode.sequenceLength - 1 : 0;
+    }
+    
+    // Where should we mark in the visualization?
+    let xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, offsetIntoNodeForward);
+    return(xCoordOfMarking)
+  }
   
+  let start_region = Number(inputRegion[0]);
+  let end_region = Number(inputRegion[1]);
   for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
     // Walk along the ruler track in ascending coordinate order.
     const nodeIndex = rulerTrack.indexSequence[rulerTrack.isCompletelyReverse ? (rulerTrack.indexSequence.length - 1 - i) : i];
@@ -2964,32 +3038,28 @@ function drawRuler() {
     
     // For some displayus we want to mark each node only once.
     let alreadyMarkedNode = false;
+
+    if(start_region >= indexOfFirstBaseInNode && start_region < indexOfFirstBaseInNode + currentNode.sequenceLength){
+      // add start "region" tick
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(start_region, currentNode, currentNodeIsReverse, true)
+      ticks_region.push([start_region, xCoordOfMarking]);
+    }
+    if(end_region >= indexOfFirstBaseInNode && end_region < indexOfFirstBaseInNode + currentNode.sequenceLength){
+      // add end "region" tick
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(end_region, currentNode, currentNodeIsReverse, true)
+      ticks_region.push([end_region, xCoordOfMarking]);
+    }
     
     while (nextUnmarkedIndex < indexOfFirstBaseInNode + currentNode.sequenceLength) {
       // We are thinking of marking a position on this node.
-    
-      // What base along our traversal of this node should we be marking?
-      let indexIntoVisitToMark = nextUnmarkedIndex - indexOfFirstBaseInNode;
-      
-      // What offset into the node should we mark at, relative to its forward-strand start?
-      let offsetIntoNodeForward = currentNodeIsReverse ?
-        // If going in reverse, take off bases of the node we use from the right side
-        currentNode.sequenceLength - 1 - indexIntoVisitToMark :
-        // Otherwise, add them to the left side
-        indexIntoVisitToMark;
-      
-      if (config.nodeWidthOption !== 0) {
-        // Actually always mark at an edge of the node, if we are scaling the node nonlinearly
-        offsetIntoNodeForward = currentNodeIsReverse ? currentNode.sequenceLength - 1 : 0;
-      }
-      
+     
       // Where should we mark in the visualization?
-      let xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, offsetIntoNodeForward);
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(nextUnmarkedIndex, currentNode, currentNodeIsReverse)
       
       if (config.nodeWidthOption === 0 || !alreadyMarkedNode) {
         // This is a mark we are not filtering due to node compression.
         // Make the mark
-        ticks.push([indexOfFirstBaseInNode + indexIntoVisitToMark, xCoordOfMarking]);
+        ticks.push([nextUnmarkedIndex, xCoordOfMarking]);
         alreadyMarkedNode = true;
       }
       
@@ -3012,10 +3082,23 @@ function drawRuler() {
     }
   })
   ticks = separatedTicks;
+
+  // plot ticks highlighting the region
+  ticks_region.forEach(tick => drawRulerMarkingRegion(tick[0], tick[1]));
+
+  // draw horizontal line
+  svg
+    .append('line')
+    .attr('x1', 0)
+    .attr('y1', minYCoordinate - 10)
+    .attr('x2', maxXCoordinate)
+    .attr('y2', minYCoordinate - 10)
+    .attr('stroke-width', 1)
+    .attr('stroke', 'black');
   
   // Plot all the ticks
-  ticks.forEach(tick => drawRulerMarking(tick[0], tick[1]))
-  
+  ticks.forEach(tick => drawRulerMarking(tick[0], tick[1]));
+
 }
 
 function drawRulerMarking(sequencePosition, xCoordinate) {
@@ -3027,6 +3110,17 @@ function drawRulerMarking(sequencePosition, xCoordinate) {
     .attr('font-family', fonts)
     .attr('font-size', '12px')
     .attr('fill', 'black')
+    .style('pointer-events', 'none');
+}
+
+function drawRulerMarkingRegion(sequencePosition, xCoordinate) {
+  svg
+    .append('circle')
+    .attr('cx', xCoordinate + 3)
+    .attr('cy', minYCoordinate - 13)
+    .attr('r', 10)
+    .attr('opacity', 0.5)
+    .attr('fill', 'yellow')
     .style('pointer-events', 'none');
 }
 
@@ -3053,7 +3147,9 @@ function drawTrackRectangles(rectangles, type) {
     .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick);
+    .on('dblclick', trackDoubleClick)
+    .append('svg:title')
+    .text(d => getPopUpTrackText(d.name));
 }
 
 function compareCurvesByLineChanges(a, b) {
@@ -3283,7 +3379,9 @@ function drawTrackCurves(type) {
     .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick);
+    .on('dblclick', trackDoubleClick)
+    .append('svg:title')
+    .text(d => getPopUpTrackText(d.name));
 }
 
 function drawTrackCorners(corners, type) {
@@ -3302,11 +3400,15 @@ function drawTrackCorners(corners, type) {
     .attr('color', d => d.color)
     .on('mouseover', trackMouseOver)
     .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick);
+    .on('dblclick', trackDoubleClick)
+    .append('svg:title')
+    .text(d => getPopUpTrackText(d.name));
 }
 
 function drawLegend() {
-  let content =
+  let content = '<button id="selectall">Select all</button>';
+  content += '<button id="deselectall">Deselect all</button>';
+  content +=
     '<table class="table-sm table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
   const listeners = [];
   for (let i = 0; i < tracks.length; i += 1) {
@@ -3332,6 +3434,12 @@ function drawLegend() {
       .getElementById(`showTrack${i}`)
       .addEventListener('click', () => changeTrackVisibility(i), false);
   });
+  document
+    .getElementById('selectall')
+    .addEventListener('click', () =>  changeAllTracksVisibility(true), false);
+  document
+    .getElementById('deselectall')
+    .addEventListener('click', () =>  changeAllTracksVisibility(false), false);
 }
 
 // Highlight track on mouseover
@@ -3378,6 +3486,11 @@ function trackDoubleClick() {
   if (DEBUG) console.log(`moving index: ${index}`);
   moveTrackToFirstPosition(index);
   createTubeMap();
+}
+
+// show track name when hovering mouse
+function getPopUpTrackText(trackid) {
+  return (trackid);
 }
 
 // Redraw with current node moved to beginning
@@ -3444,6 +3557,7 @@ function generateNodeWidth() {
           .attr('font-size', '14px')
           .attr('fill', 'black')
           .style('pointer-events', 'none');
+        // TODO: This assumes that svg is in the document.
         let element = document.getElementById('dummytext');
         if (element.getComputedTextLength) {
           // We are on a platform where text length computation is possible (i.e. a real browser)
@@ -3670,7 +3784,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
       track.sequenceNew = sequenceNew;
       track.type = 'read';
       if (read.path.hasOwnProperty('freq')) track.freq = read.path.freq;
-      if (read.path.hasOwnProperty('name')) track.name = read.path.name;
+      if (read.hasOwnProperty('name')) track.name = read.name;
 
       // where within node does read start
       track.firstNodeOffset = 0;

@@ -20,33 +20,18 @@ it('allows the data source to be changed', () => {
 
 it('allows the start to be cleared', async () => {
   render(<App />);
-  expect(screen.getByLabelText(/Start/i).value).toEqual('1');
-  await userEvent.clear(screen.getByLabelText(/Start/i));
-  expect(screen.getByLabelText(/Start/i).value).toEqual('');
+  expect(screen.getByLabelText(/Region/i).value).toEqual('17:1-100');
+  await userEvent.clear(screen.getByLabelText(/Region/i));
+  expect(screen.getByLabelText(/Region/i).value).toEqual('');
 });
 
 it('allows the start to be changed', async () => {
   render(<App />);
-  expect(screen.getByLabelText(/Start/i).value).toEqual('1');
+  expect(screen.getByLabelText(/Region/i).value).toEqual('17:1-100');
   // TODO: {selectall} fake keystroke is glitchy and sometimes gets dropped or
   // eats the next keystroke. So we clear the field first.
-  await userEvent.clear(screen.getByLabelText(/Start/i));
-  await userEvent.type(screen.getByLabelText(/Start/i), '123');
-  expect(screen.getByLabelText(/Start/i).value).toEqual('123');
-});
-
-it('allows the length to be cleared', async () => {
-  render(<App />);
-  expect(screen.getByLabelText(/Length/i).value).toEqual('100');
-  await userEvent.clear(screen.getByLabelText(/Length/i));
-  expect(screen.getByLabelText(/Length/i).value).toEqual('');
-});
-
-it('allows the length to be changed', async () => {
-  render(<App />);
-  expect(screen.getByLabelText(/Length/i).value).toEqual('100');
-  await userEvent.clear(screen.getByLabelText(/Length/i));
-  await userEvent.type(screen.getByLabelText(/Length/i), '123');
-  expect(screen.getByLabelText(/Length/i).value).toEqual('123');
+  await userEvent.clear(screen.getByLabelText(/Region/i));
+  await userEvent.type(screen.getByLabelText(/Region/i), '17:200-300');
+  expect(screen.getByLabelText(/Region/i).value).toEqual('17:200-300');
 });
 

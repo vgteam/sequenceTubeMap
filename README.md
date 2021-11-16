@@ -122,6 +122,27 @@ ssh -N -L 3000:localhost:3000 <your username>@<your server>
   If you want to use a relative path, this path should be relative to the `sequenceTubeMaps/` folder.
 - restart the server and choose `custom (mounted files)` from the data dropdown in the UI to be able to pick from the files in your data folder.
 
+#### Preparing subgraphs in advance
+
+The sequenceTubeMap will fetch the necessary data when a region is queried. 
+That can sometimes up to 10-20 seconds.
+If you already know of regions/subgraphs that you will be looking at, you can pre-fetch the data in advance. 
+This will save some time during the interactive visualization, especially if there are a lot of regions to visualize.
+
+The subgraphs need to be pre-fetched using `vg chunk` like shown in [`prepare_chunks.sh`](scripts/prepare_chunks.sh). For example:
+
+```
+XG=mygraph.xg GAM=mygam.gam GBWT=mygraph.gbwt REGION=chr1:1-100 OUTDIR=chunk-chr1-1-100 ./prepare_chunks.sh
+```
+
+Then compile those regions in a BED file with two additional columns: 
+
+- a description of the region (column 4)
+- the path to the output directory of the chunk, `chunk-chr1-1-100` in the example above, (column 5). 
+
+See an example in [`cactus.bed`](exampleData/cactus.bed). 
+This BED file will be read if placed in the `dataPath` directory, like for other files to mount (see above).
+
 #### Development Mode
 
 The `build`/`serve` pipeline can only produce minified code, which can be difficult to debug. In development, you should instead use:

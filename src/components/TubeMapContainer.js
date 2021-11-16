@@ -4,6 +4,7 @@ import TubeMap from './TubeMap';
 import { Container, Row, Alert } from 'reactstrap';
 import * as tubeMap from '../util/tubemap';
 import { dataOriginTypes } from '../enums';
+import { fetchAndParse } from '../fetchAndParse';
 
 class TubeMapContainer extends Component {
   state = {
@@ -75,6 +76,7 @@ class TubeMapContainer extends Component {
             nodes={this.state.nodes}
             tracks={this.state.tracks}
             reads={this.state.reads}
+            region={this.state.region}
           />
         </div>
       </div>
@@ -84,27 +86,28 @@ class TubeMapContainer extends Component {
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${this.props.apiUrl}/getChunkedData`, {
+      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkedData`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(this.props.fetchParams)
       });
-      const json = await response.json();
       if (json.graph === undefined) {
-        // We did not get back a graph, only (possibly) an error.
-        const error = json.error || 'Fetching remote data returned error';
+        // We did not get back a graph, even if we didn't get an error either.
+        const error = 'Fetching remote data returned error';
         this.setState({ error: error, isLoading: false });
       } else {
         const nodes = tubeMap.vgExtractNodes(json.graph);
         const tracks = tubeMap.vgExtractTracks(json.graph);
         const reads = tubeMap.vgExtractReads(nodes, tracks, json.gam);
+        const region = json.region; 
         this.setState({
           isLoading: false,
           nodes,
           tracks,
-          reads
+          reads,
+	  region
         });
       }
     } catch (error) {
@@ -118,6 +121,7 @@ class TubeMapContainer extends Component {
     let nodes = [];
     let tracks = [];
     let reads = [];
+    let region = [];
     const data = await import('../util/demo-data');
     nodes = data.inputNodes;
     switch (this.props.dataOrigin) {
@@ -146,11 +150,14 @@ class TubeMapContainer extends Component {
           this.readsFromStringToArray(data.demoReads)
         );
         break;
+      case dataOriginTypes.NO_DATA:
+        // Leave the data empty.
+        break;
       default:
-        console.log('invalid data origin type');
+        console.log('invalid example data origin type:', this.props.dataOrigin);
     }
 
-    this.setState({ isLoading: false, nodes, tracks, reads });
+    this.setState({ isLoading: false, nodes, tracks, reads, region});
   };
 
   readsFromStringToArray = readsString => {
