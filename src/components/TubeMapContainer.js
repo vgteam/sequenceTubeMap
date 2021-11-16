@@ -151,8 +151,11 @@ class TubeMapContainer extends Component {
           this.readsFromStringToArray(data.demoReads)
         );
         break;
+      case dataOriginTypes.NO_DATA:
+        // Leave the data empty.
+        break;
       default:
-        console.log('invalid data origin type');
+        console.log('invalid example data origin type:', this.props.dataOrigin);
     }
     console.log('Using example tracks ', tracks);
 
