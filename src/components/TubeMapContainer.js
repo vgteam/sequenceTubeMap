@@ -17,7 +17,6 @@ class TubeMapContainer extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    console.log('Tube map container updated:', this.props);
     // TODO: this is the way the React docs say to make requests (do them when
     // the component updates), but when we make a request we pop ourselves into
     // a loading state and immediately do another update, which then means we
