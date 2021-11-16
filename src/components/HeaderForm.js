@@ -218,8 +218,7 @@ class HeaderForm extends Component {
           : pathNames[0];
         return {
           pathSelectOptions: pathNames,
-          pathSelect,
-          anchorTrackName: pathSelect
+          pathSelect
         };
       });
     } catch (error) {
@@ -298,7 +297,6 @@ class HeaderForm extends Component {
       gbwtFile: this.state.gbwtFile,
       gamFile: this.state.gamFile,
       bedFile: this.state.bedFile,
-      anchorTrackName: this.state.anchorTrackName,
       dataPath: this.state.dataPath,
     };
     this.props.setFetchParams(fetchParams);
