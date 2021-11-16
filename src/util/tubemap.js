@@ -328,7 +328,7 @@ export function setColorSet(trackType, colorSet) {
   if (config[trackType] !== colorSet) {
     config[trackType] = colorSet;
     const tr = createTubeMap();
-    if (!config.hideLegendFlag) drawLegend(tr);
+    if (!config.hideLegendFlag && tracks) drawLegend(tr);
   }
 }
 
@@ -2257,7 +2257,7 @@ export function useColorScheme(x) {
   config.colorScheme = x;
   svg = d3.select(svgID);
   const tr = createTubeMap();
-  if (!config.hideLegendFlag) drawLegend(tr);
+  if (!config.hideLegendFlag && tracks) drawLegend(tr);
 }
 
 function assignColorSets() {
@@ -3557,6 +3557,7 @@ function generateNodeWidth() {
           .attr('font-size', '14px')
           .attr('fill', 'black')
           .style('pointer-events', 'none');
+        // TODO: This assumes that svg is in the document.
         let element = document.getElementById('dummytext');
         if (element.getComputedTextLength) {
           // We are on a platform where text length computation is possible (i.e. a real browser)
