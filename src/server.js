@@ -4,6 +4,7 @@
 
 'use strict';
 
+const assert = require('assert');
 const spawn = require('child_process').spawn;
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -11,6 +12,7 @@ const multer = require('multer');
 const uuid = require('uuid/v1');
 const fs = require('fs-extra');
 const path = require('path');
+const pathIsInside = require('path-is-inside');
 const rl = require('readline');
 const compression = require('compression');
 const WebSocketServer = require('websocket').server;
@@ -19,15 +21,20 @@ const config = require('./config.json');
 const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
+// THis is where we will store uploaded files
 const UPLOAD_DATA_PATH = "uploads/";
+// This is where we will store per-request generated files
+const SCRATCH_DATA_PATH = "tmp/";
 const SERVER_PORT = config.serverPort || 3000;
 const SERVER_BIND_ADDRESS = config.serverBindAddress || undefined;
 
 // This holds a collection of all the absolute path root directories that the
 // server is allowed to access on behalf of users.
-// We need to include the current directory because that's where we write
-// per-session temporary directories.
-const ALLOWED_DATA_DIRECTORIES = []
+const ALLOWED_DATA_DIRECTORIES = [MOUNTED_DATA_PATH, INTERNAL_DATA_PATH, UPLOAD_DATA_PATH, SCRATCH_DATA_PATH].map((p) => path.resolve(p));
+
+// Make sure that the scratch directory exists at startup, so multiple requests
+// can't fight over its creation.
+fs.mkdirSync(SCRATCH_DATA_PATH, {recursive: true});
 
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -136,7 +143,8 @@ api.post('/getChunkedData', (req, res) => {
   req.uuid = uuid();
 
   // Make a temp directory for vg output files for this request
-  req.tempDir = `./tmp-${req.uuid}`;
+  // TODO: Refactor all our path manipulation to use path.join
+  req.tempDir = path.join(SCRATCH_DATA_PATH, `tmp-${req.uuid}`);
   fs.mkdirSync(req.tempDir);
   req.rmChunk = true;
 
@@ -170,13 +178,6 @@ api.post('/getChunkedData', (req, res) => {
   let dataPath = pickDataPath(req.body.dataPath);
   console.log(`dataPath = ${dataPath}`);
 
-  // check that the path to the data is absolute and not pointing at something it shouldn't
-  if (!isAllowedPath(dataPath)){
-    req.error = "Data path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + dataPath;
-    returnError(req, res);
-    return;
-  }
-  
   // parse region
   // either a range -> seq:start-end
   // or a position and distance -> seq:post+distance
@@ -217,9 +218,9 @@ api.post('/getChunkedData', (req, res) => {
       let region_start = req.body.regionInfo['start'][i];
       let region_end = req.body.regionInfo['end'][i];
       if(region_chr.concat(':', region_start, '-', region_end) === region){
-	if(req.body.regionInfo['chunk'][i] !== ''){
-	  chunkPath = req.body.regionInfo['chunk'][i]
-	}
+        if(req.body.regionInfo['chunk'][i] !== ''){
+          chunkPath = req.body.regionInfo['chunk'][i]
+        }
       }
       i += 1;
     }
@@ -229,13 +230,14 @@ api.post('/getChunkedData', (req, res) => {
       chunkPath = chunkPath.substring(0, chunkPath.length-1);
     }
     let chunk_file = `${chunkPath}/chunk.vg`;
+    if(!isAllowedPath(chunk_file)){
+      // We need to check allowed-ness before we check existence.
+      req.error = "Path to chunk not allowed: " + chunkPath;
+      returnError(req, res);
+      return;
+    }
     if(fs.existsSync(chunk_file)){
       console.log(`found pre-fetched chunk at ${chunk_file}`);
-      if(!isAllowedPath(chunk_file)){
-	req.error = "Path to chunk not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + chunk_file;
-	returnError(req, res);
-	return;
-      }
     } else {
       console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
       chunkPath = '';
@@ -244,7 +246,7 @@ api.post('/getChunkedData', (req, res) => {
   
   if(chunkPath === ''){
     // call 'vg chunk' to generate graph
-    let vgChunkParams = ['chunk', '-x', `${dataPath}${xgFile}`];
+    let vgChunkParams = ['chunk'];
     // double-check that the file is a .xg and allowed
     if (!xgFile.endsWith('.xg')){
       req.error = "XG file doesn't end in .xg: " + xgFile;
@@ -252,58 +254,61 @@ api.post('/getChunkedData', (req, res) => {
       return;
     }
     if(!isAllowedPath(`${dataPath}${xgFile}`)){
-      req.error = "File path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + `${dataPath}${xgFile}`;
+      req.error = "XG file path not allowed: " + xgFile;
       returnError(req, res);
       return;
     }
+    // TODO: Use same variable for check and command line?
+    vgChunkParams.push('-x', `${dataPath}${xgFile}`);
+    
     if (req.withGam) {
-      // Use a GAM index
-      vgChunkParams.push('-a', `${dataPath}${gamFile}`, '-g');
       // double-check that the file is a .gam and allowed
       if (!gamFile.endsWith('.gam')){
-	req.error = "GAM file doesn't end in .gam: " + gamFile;
-	returnError(req, res);
-	return;
+        req.error = "GAM file doesn't end in .gam: " + gamFile;
+        returnError(req, res);
+        return;
       }
       if(!isAllowedPath(`${dataPath}${gamFile}`)){
-	req.error = "File path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + `${dataPath}${gamFile}`;
-	returnError(req, res);
-	return;
+        req.error = "GAM file path not allowed: " + gamFile;
+        returnError(req, res);
+        return;
       }
+      // Use a GAM index
+      vgChunkParams.push('-a', `${dataPath}${gamFile}`, '-g');
     }
     if (req.withGbwt) {
-      // Use a GBWT haplotype database
-      vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`);
       // double-check that the file is a .gbwt and allowed
       if (!gbwtFile.endsWith('.gbwt')){
-	req.error = "GBWT file doesn't end in .gbwt: " + gbwtFile;
-	returnError(req, res);
-	return;
+        req.error = "GBWT file doesn't end in .gbwt: " + gbwtFile;
+        returnError(req, res);
+        return;
       }
       if(!isAllowedPath(`${dataPath}${gbwtFile}`)){
-	req.error = "File path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + `${dataPath}${gbwtFile}`;
-	returnError(req, res);
-	return;
+        req.error = "GBWT file path not allowed: " + gbwtFile;
+        returnError(req, res);
+        return;
       }
+      // Use a GBWT haplotype database
+      vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`);
     }
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
     if (region_col[0] === "node"){
       if(distance > -1){
-	vgChunkParams.push('-r', r_start, '-c', distance);
+        vgChunkParams.push('-r', r_start, '-c', distance);
       } else {
-	vgChunkParams.push('-r', ''.concat(r_start, ":", r_end), '-c', 20);
+        vgChunkParams.push('-r', ''.concat(r_start, ":", r_end), '-c', 20);
       }
     } else {
       // reformat pos+dist into start-end range
       if(distance > -1){
-	r_end = r_start + distance;
-	region = region_col[0].concat(':', r_start, '-', r_end);
+        r_end = r_start + distance;
+        region = region_col[0].concat(':', r_start, '-', r_end);
       }
       vgChunkParams.push(
-	'-c',
-	'20',
-	'-p',
-	`${region}`
+        '-c',
+        '20',
+        '-p',
+        `${region}`
       );
     }
     vgChunkParams.push(
@@ -325,8 +330,8 @@ api.post('/getChunkedData', (req, res) => {
     vgChunkCall.on('error', function(err) {
       console.log('Error executing ' + VG_PATH + 'vg ' + vgChunkParams.join(' ') + ': ' + err);
       if (!sentErrorResponse) {
-	sentErrorResponse = true;
-	returnError(req, res);
+        sentErrorResponse = true;
+        returnError(req, res);
       }
       return;
     });
@@ -351,8 +356,8 @@ api.post('/getChunkedData', (req, res) => {
     vgViewCall.on('error', function(err) {
       console.log('Error executing "vg view": ' + err);
       if (!sentErrorResponse) {
-	sentErrorResponse = true;
-	returnError(req, res);
+        sentErrorResponse = true;
+        returnError(req, res);
       }
       return;
     });
@@ -369,11 +374,11 @@ api.post('/getChunkedData', (req, res) => {
       console.log(`vg view exited with code ${code}`);
       console.timeEnd('vg chunk');
       if (graphAsString === '') {
-	if (!sentErrorResponse) {
+        if (!sentErrorResponse) {
           sentErrorResponse = true;
           returnError(req, res);
-	}
-	return;
+        }
+        return;
       }
       req.graph = JSON.parse(graphAsString);
       req.region = [r_start, r_end];
@@ -389,8 +394,8 @@ api.post('/getChunkedData', (req, res) => {
     vgViewCall.on('error', function(err) {
       console.log('Error executing "vg view": ' + err);
       if (!sentErrorResponse) {
-	sentErrorResponse = true;
-	returnError(req, res);
+        sentErrorResponse = true;
+        returnError(req, res);
       }
       return;
     });
@@ -406,11 +411,11 @@ api.post('/getChunkedData', (req, res) => {
     vgViewCall.on('close', code => {
       console.log(`vg view exited with code ${code}`);
       if (graphAsString === '') {
-	if (!sentErrorResponse) {
+        if (!sentErrorResponse) {
           sentErrorResponse = true;
           returnError(req, res);
-	}
-	return;
+        }
+        return;
       }
       req.graph = JSON.parse(graphAsString);
       req.region = [r_start, r_end];
@@ -489,7 +494,8 @@ function processGamFile(req, res) {
   });
 
   if(!isAllowedPath(req.gamFile)){
-    req.error = "Path to GAM file not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + req.gamFile;
+    // This is probably under SCRATCH_DATA_PATH
+    req.error = "Path to GAM file not allowed: " + req.gamFile;
     returnError(req, res);
     return;
   }
@@ -524,7 +530,7 @@ function processRegionFile(req, res) {
   console.time('processing region file');
   const regionFile = `${req.tempDir}/regions.tsv`;
   if(!isAllowedPath(regionFile)){
-    req.error = "Path to region file not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + regionFile;
+    req.error = "Path to region file not allowed: " + regionFile;
     returnError(req, res);
     return;
   }
@@ -566,23 +572,54 @@ function cleanUpAndSendResult(req, res) {
   console.timeEnd('request-duration');
 }
 
-// check that the path is absolute and not pointing at something it shouldn't
+// Return true if the given path points to one of the ALLOWED_DATA_DIRECTORIES,
+// or to something inside one of them, and false otherwise.
+// Additionally, disallows upwards directory traversal and doubled delimiters.
 function isAllowedPath(inputPath) {
-  let allowed_path = true;
-  let forbidden_root = ['/etc', '/usr', '/sys'];
-  for (var i = 0; i < forbidden_root.length; i++){
-    if(inputPath.startsWith(forbidden_root[i])){
-      allowed_path = false;
+  // Note that thing.param..xg is a perfectly good filename and contains ..; we
+  // need to check for it as a path component.
+  if (inputPath.includes('//') || inputPath.includes('\\\\') || inputPath.includes('/\\') || inputPath.includes('\\/')) {
+    // Prohibit double delimiters (probably mostly from internal errors)
+    return false;
+  }
+  // Split on delimeters
+  let parts = inputPath.split(/[\/\\]/);
+  for (let part of parts) {
+    if (part == '..') {
+      // One of the path components is a .., so disallow it.
+      return false;
     }
   }
-  if(inputPath.includes('..') || inputPath.includes('//')){
-    allowed_path = false;
+  
+  // Now that we know the path doesn't go up, we can safely resolve it to an
+  // absolute path.
+  let resolvedPath = path.resolve(inputPath);
+  
+  for (let allowed of ALLOWED_DATA_DIRECTORIES) {
+    // Go through all the allowed directories
+    
+    // See if it's in there. Note that .. is not processed by pathIsInside, and
+    // it doesn't do any relative/absolute conversion.
+    if (pathIsInside(resolvedPath, allowed)) {
+      // This path is inside this allowed directory
+      return true;
+    }
   }
-  return(allowed_path);
+  // Otherwise the path wasn't in any of the allowed directories
+  return false;
 }
 
+// Make sure that, at server startup, all the important directories are
+// allowed. We don't want the config file to list one of these as having .. or
+// something in it and break on every user request.
+assert(isAllowedPath(MOUNTED_DATA_PATH), "Configured dataPath is not acceptable; does it contain .. or //?");
+assert(isAllowedPath(INTERNAL_DATA_PATH), "Configured internalDataPath is not acceptable; does it contain .. or //?");
+assert(isAllowedPath(UPLOAD_DATA_PATH), "Upload data path is not acceptable; does it contain .. or //?");
+assert(isAllowedPath(SCRATCH_DATA_PATH), "Scratch path is not acceptable; does it contain .. or //?");
+
 // Decide where to pull the data from
-// (builtin examples, mounted user data folder or uploaded data)
+// (builtin examples, mounted user data folder or uploaded data).
+// Returned path is guaranteed to pass isAllowedPath().
 function pickDataPath(reqDataPath){
   let dataPath;
   switch (reqDataPath) {
@@ -598,6 +635,8 @@ function pickDataPath(reqDataPath){
   if(!dataPath.endsWith('/')){
     dataPath = dataPath + '/';
   }
+  // This path will always be allowed. Caller does not need to check.
+  assert(isAllowedPath(dataPath));
   return(dataPath);
 }
 
@@ -609,25 +648,27 @@ api.get('/getFilenames', (req, res) => {
     gamIndices: [],
     bedFiles: []
   };
-
+  
   if(isAllowedPath(MOUNTED_DATA_PATH)){    
     // list files in folder
     fs.readdirSync(MOUNTED_DATA_PATH).forEach(file => {
       if (file.endsWith('.xg')) {
-	result.xgFiles.push(file);
+        result.xgFiles.push(file);
       }
       if (file.endsWith('.gbwt')) {
-	result.gbwtFiles.push(file);
+        result.gbwtFiles.push(file);
       }
       if (file.endsWith('.sorted.gam')) {
-	result.gamIndices.push(file);
+        result.gamIndices.push(file);
       }
       if (file.endsWith('.bed')) {
-	result.bedFiles.push(file);
+        result.bedFiles.push(file);
       }
     });
   } else {
-    req.error = "Mounted data path not allowed (should be absolute and not pointing to /etc, /usr, etc...)" + MOUNTED_DATA_PATH;
+    // Somehow MOUNTED_DATA_PATH isn't one of our ALLOWED_DATA_DIRECTORIES (anymore?).
+    // Perhaps the server administrator has put a .. in it.
+    req.error = "MOUNTED_DATA_PATH not allowed. Server is misconfigured.";
     returnError(req, res);
     return;
   }
@@ -644,16 +685,18 @@ api.post('/getPathNames', (req, res) => {
 
   let dataPath = pickDataPath(req.body.dataPath);
 
-  // check that the path to the data is absolute and not pointing at something it shouldn't
-  if (!result.error && !isAllowedPath(dataPath)){
-    result.error = "Data path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + dataPath;
-  }
-  
   // call 'vg paths' to get path name information
   const xgFile = `${dataPath}${req.body.xgFile}`;
 
-  if(!isAllowedPath(xgFile) && xgFile.endsWith(".xg")){
-    req.error = "Path to XG file not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + xgFile;
+  if (!isAllowedPath(xgFile)){
+    // Spit back the provided user data in the error, not the generated and
+    // possibly absolute path full of cool facts about the server setup.
+    req.error = "Path to XG file not allowed: " + req.body.xgFile;
+    returnError(req, res);
+    return;
+  }
+  if (!xgFile.endsWith(".xg")) {
+    req.error = "Path to XG file does not end in .xg: " + req.body.xgFile;
     returnError(req, res);
     return;
   }
@@ -689,39 +732,35 @@ api.post('/getBedRegions', (req, res) => {
   let bed_info = {chr:[], start:[], end:[], desc:[], chunk:[]};
 
   if(req.body.bedFile != 'none'){
-    if(!isAllowedPath(req.body.bedFile) || !(req.body.bedFile.endsWith('.bed'))){
-      result.error = "BED file path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + req.body.bedFile;
-    }
-    
     let dataPath = pickDataPath(req.body.dataPath);
-    // check that the path to the data is absolute and not pointing at something it shouldn't
-    if (!result.error && !isAllowedPath(dataPath)){
-      result.error = "Data path not allowed (should be absolute and not pointing to /etc, /usr, etc...): " + dataPath;
-    }
-    
     const bedFile = `${dataPath}${req.body.bedFile}`;
-
-    if(!fs.existsSync(bedFile)){
+    if (!isAllowedPath(bedFile)){
+      result.error = "BED file path not allowed: " + req.body.bedFile;
+    }
+    if (!result.error && !bedFile.endsWith('.bed')) {
+      result.error = "BED file path does not end in .bed: " + req.body.bedFile;
+    }
+    if(!result.error && !fs.existsSync(bedFile)){
       result.error = "BED file not found: " + bedFile;
     }
     if(!result.error) {
       let bed_data = fs.readFileSync(bedFile).toString();
       let lines = bed_data.split('\n');
       lines.map(function(line){
-	let records = line.split("\t");
-	bed_info['chr'].push(records[0]);
-	bed_info['start'].push(records[1]);
-	bed_info['end'].push(records[2]);
-	let desc = records.join('_');
-	if (records.length > 3){
-	  desc = records[3];
-	}
-	bed_info['desc'].push(desc);
-	let chunk = '';
-	if (records.length > 4){
-	  chunk = records[4];
-	}
-	bed_info['chunk'].push(chunk); 
+        let records = line.split("\t");
+        bed_info['chr'].push(records[0]);
+        bed_info['start'].push(records[1]);
+        bed_info['end'].push(records[2]);
+        let desc = records.join('_');
+        if (records.length > 3){
+          desc = records[3];
+        }
+        bed_info['desc'].push(desc);
+        let chunk = '';
+        if (records.length > 4){
+          chunk = records[4];
+        }
+        bed_info['chunk'].push(chunk); 
       });
     }
   }
