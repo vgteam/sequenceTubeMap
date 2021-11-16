@@ -10,6 +10,7 @@ const bodyParser = require('body-parser');
 const multer = require('multer');
 const uuid = require('uuid/v1');
 const fs = require('fs-extra');
+const path = require('path');
 const rl = require('readline');
 const compression = require('compression');
 const WebSocketServer = require('websocket').server;
@@ -18,19 +19,26 @@ const config = require('./config.json');
 const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
+const UPLOAD_DATA_PATH = "uploads/";
 const SERVER_PORT = config.serverPort || 3000;
 const SERVER_BIND_ADDRESS = config.serverBindAddress || undefined;
 
+// This holds a collection of all the absolute path root directories that the
+// server is allowed to access on behalf of users.
+// We need to include the current directory because that's where we write
+// per-session temporary directories.
+const ALLOWED_DATA_DIRECTORIES = []
 
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, 'uploads/');
+    cb(null, UPLOAD_DATA_PATH);
   },
   filename: function(req, file, cb) {
     let ext = file.originalname.substring(
       file.originalname.lastIndexOf('.'),
       file.originalname.length
     );
+    // TODO: This can collide and can also be guessed by other users.
     cb(null, Date.now() + ext);
   }
 });
@@ -75,13 +83,13 @@ api.use((req, res, next) => {
 api.post('/xgFileSubmission', upload.single('xgFile'), (req, res) => {
   console.log('/xgFileSubmission');
   console.log(req.file);
-  res.json({ path: req.file.path });
+  res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
 });
 
 api.post('/gbwtFileSubmission', upload.single('gbwtFile'), (req, res) => {
   console.log('/gbwtFileSubmission');
   console.log(req.file);
-  res.json({ path: req.file.path });
+  res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
 });
 
 api.post('/gamFileSubmission', upload.single('gamFile'), (req, res) => {
@@ -112,7 +120,7 @@ function indexGamSorted(req, res) {
 
   vgIndexChild.on('close', () => {
     sortedGamFile.end();
-    res.json({ path: prefix + '.sorted.gam' });
+    res.json({ path: path.relative(UPLOAD_DATA_PATH, prefix + '.sorted.gam') });
   });
 }
 
@@ -411,6 +419,9 @@ api.post('/getChunkedData', (req, res) => {
   }
 });
 
+// Reply with an error response, the message for which the caller has already
+// stored in req.error. Can't itself abort further processing of the request,
+// so caller must do that too.
 function returnError(req, res) {
   console.log('returning error: ' + req.error);
   const result = {};
@@ -525,8 +536,8 @@ function processRegionFile(req, res) {
   lineReader.on('line', line => {
     console.log('Region: ' + line);
     const arr = line.replace(/\s+/g, ' ').split(' ');
-    req.graph.path.forEach(path => {
-      if (path.name === arr[0]) path.indexOfFirstBase = arr[1];
+    req.graph.path.forEach(p => {
+      if (p.name === arr[0]) p.indexOfFirstBase = arr[1];
     });
   });
 
@@ -579,7 +590,7 @@ function pickDataPath(reqDataPath){
       dataPath = MOUNTED_DATA_PATH;
       break;
     case 'upload':
-      dataPath = './';
+      dataPath = UPLOAD_DATA_PATH;
       break;
     default:
       dataPath = INTERNAL_DATA_PATH;
