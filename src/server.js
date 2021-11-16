@@ -131,8 +131,10 @@ function indexGamSorted(req, res) {
   });
 }
 
-api.post('/getChunkedData', (req, res) => {
-  let sentErrorResponse = false;
+api.post('/getChunkedData', (req, res, next) => {
+  // We only want to have one downstream callback chain out of here.
+  // TODO: Does Express let us next(err) multiple times if multiple errors happen concurrently???
+  let sentResponse = false;
   console.time('request-duration');
   console.log('http POST getChunkedData received');
   console.log(`region = ${req.body.region}`);
@@ -182,9 +184,7 @@ api.post('/getChunkedData', (req, res) => {
   // or a position and distance -> seq:post+distance
   let region = req.body.region;
   if (!(region.includes(':'))){
-    req.error = "Wrong query: region doesn't contain a ':'. See ? button above.";
-    returnError(req, res);
-    return;
+    throw new BadRequestError("Wrong query: region doesn't contain a ':'. See ? button above.");
   }
   let region_col = region.split(":");
   let start_end = region_col[1].split("-");
@@ -199,9 +199,7 @@ api.post('/getChunkedData', (req, res) => {
     r_start = Number(pos_dist[0]);
     distance = Number(pos_dist[1]);
   } else {
-    req.error = "Wrong query: coordinates must be in the form 'X:Y-Z' or 'X:Y+Y'. See ? button above.";
-    returnError(req, res);
-    return;
+     throw new BadRequestError("Wrong query: coordinates must be in the form 'X:Y-Z' or 'X:Y+Y'. See ? button above.");
   }
 
   // check the bed file if this region has been pre-fetched
@@ -231,9 +229,7 @@ api.post('/getChunkedData', (req, res) => {
     let chunk_file = `${chunkPath}/chunk.vg`;
     if(!isAllowedPath(chunk_file)){
       // We need to check allowed-ness before we check existence.
-      req.error = "Path to chunk not allowed: " + chunkPath;
-      returnError(req, res);
-      return;
+      throw new BadRequestError("Path to chunk not allowed: " + chunkPath);
     }
     if(fs.existsSync(chunk_file)){
       console.log(`found pre-fetched chunk at ${chunk_file}`);
@@ -248,14 +244,10 @@ api.post('/getChunkedData', (req, res) => {
     let vgChunkParams = ['chunk'];
     // double-check that the file is a .xg and allowed
     if (!xgFile.endsWith('.xg')){
-      req.error = "XG file doesn't end in .xg: " + xgFile;
-      returnError(req, res);
-      return;
+      throw new BadRequestError("XG file doesn't end in .xg: " + xgFile);
     }
     if(!isAllowedPath(`${dataPath}${xgFile}`)){
-      req.error = "XG file path not allowed: " + xgFile;
-      returnError(req, res);
-      return;
+      throw new BadRequestError("XG file path not allowed: " + xgFile);
     }
     // TODO: Use same variable for check and command line?
     vgChunkParams.push('-x', `${dataPath}${xgFile}`);
@@ -263,14 +255,10 @@ api.post('/getChunkedData', (req, res) => {
     if (req.withGam) {
       // double-check that the file is a .gam and allowed
       if (!gamFile.endsWith('.gam')){
-        req.error = "GAM file doesn't end in .gam: " + gamFile;
-        returnError(req, res);
-        return;
+        throw new BadRequestError("GAM file doesn't end in .gam: " + gamFile);
       }
       if(!isAllowedPath(`${dataPath}${gamFile}`)){
-        req.error = "GAM file path not allowed: " + gamFile;
-        returnError(req, res);
-        return;
+        throw new BadRequestError("GAM file path not allowed: " + gamFile);
       }
       // Use a GAM index
       vgChunkParams.push('-a', `${dataPath}${gamFile}`, '-g');
@@ -278,14 +266,10 @@ api.post('/getChunkedData', (req, res) => {
     if (req.withGbwt) {
       // double-check that the file is a .gbwt and allowed
       if (!gbwtFile.endsWith('.gbwt')){
-        req.error = "GBWT file doesn't end in .gbwt: " + gbwtFile;
-        returnError(req, res);
-        return;
+        throw new BadRequestError("GBWT file doesn't end in .gbwt: " + gbwtFile);
       }
       if(!isAllowedPath(`${dataPath}${gbwtFile}`)){
-        req.error = "GBWT file path not allowed: " + gbwtFile;
-        returnError(req, res);
-        return;
+        throw new BadRequestError("GBWT file path not allowed: " + gbwtFile);
       }
       // Use a GBWT haplotype database
       vgChunkParams.push('--gbwt-name', `${dataPath}${gbwtFile}`);
@@ -328,9 +312,9 @@ api.post('/getChunkedData', (req, res) => {
     
     vgChunkCall.on('error', function(err) {
       console.log('Error executing ' + VG_PATH + 'vg ' + vgChunkParams.join(' ') + ': ' + err);
-      if (!sentErrorResponse) {
-        sentErrorResponse = true;
-        returnError(req, res);
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new VgExecutionError('vg chunk failed'));
       }
       return;
     });
@@ -346,17 +330,22 @@ api.post('/getChunkedData', (req, res) => {
 
     vgChunkCall.on('close', code => {
       console.log(`vg chunk exited with code ${code}`);
+      vgViewCall.stdin.end();
       if (code != 0) {
         console.log('Error from ' + VG_PATH + 'vg ' + vgChunkParams.join(' '));
+        // Execution failed
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError('vg chunk failed'));
+        }
       }
-      vgViewCall.stdin.end();
     });
 
     vgViewCall.on('error', function(err) {
       console.log('Error executing "vg view": ' + err);
-      if (!sentErrorResponse) {
-        sentErrorResponse = true;
-        returnError(req, res);
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new VgExecutionError('vg view failed'));
       }
       return;
     });
@@ -372,16 +361,27 @@ api.post('/getChunkedData', (req, res) => {
     vgViewCall.on('close', code => {
       console.log(`vg view exited with code ${code}`);
       console.timeEnd('vg chunk');
+      if (code != 0) {
+        // Execution failed
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError('vg view failed'));
+        }
+        return;
+      }
       if (graphAsString === '') {
-        if (!sentErrorResponse) {
-          sentErrorResponse = true;
-          returnError(req, res);
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError('vg view produced empty graph'));
         }
         return;
       }
       req.graph = JSON.parse(graphAsString);
       req.region = [r_start, r_end];
-      processAnnotationFile(req, res);
+      if (!sentResponse) {
+        sentResponse = true;
+        processAnnotationFile(req, res, next);
+      }
     });
   } else {
     // chunk has already been pre-fecthed and is saved in chunkPath
@@ -392,9 +392,9 @@ api.post('/getChunkedData', (req, res) => {
     req.error = new Buffer(0);
     vgViewCall.on('error', function(err) {
       console.log('Error executing "vg view": ' + err);
-      if (!sentErrorResponse) {
-        sentErrorResponse = true;
-        returnError(req, res);
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new VgExecutionError('vg view failed'));
       }
       return;
     });
@@ -409,63 +409,106 @@ api.post('/getChunkedData', (req, res) => {
 
     vgViewCall.on('close', code => {
       console.log(`vg view exited with code ${code}`);
+      if (code !== 0) {
+        // Execution failed
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError('vg view failed'));
+        }
+        return;
+      }
       if (graphAsString === '') {
-        if (!sentErrorResponse) {
-          sentErrorResponse = true;
-          returnError(req, res);
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError('vg view produced empty graph failed'));
         }
         return;
       }
       req.graph = JSON.parse(graphAsString);
       req.region = [r_start, r_end];
-      processAnnotationFile(req, res);
+      if (!sentResponse) {
+        sentResponse = true;
+        processAnnotationFile(req, res, next);
+      }
     });
   }
 });
 
+// We can throw this error to trigger our error handling code instead of
+// Express's default. It covers input validation failures, and vaguely-expected
+// server-side errors we want to report in a controlled way (because they could
+// be caused by bad user input to vg).
+class TubeMapError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 // We can throw this error to make Express respond with a bad request error
 // message. We should throw it whenever we detect that user input is
 // unacceptable.
-class BadRequestError extends Error {
+class BadRequestError extends TubeMapError {
   constructor(message) {
     super(message);
     this.status = 400;
   }
 }
 
-// Reply with an error response, the message for which the caller has already
-// stored in req.error. Can't itself abort further processing of the request,
-// so caller must do that too.
-function returnError(req, res) {
-  console.log('returning error: ' + req.error);
-  const result = {};
-  result.error = req.error.toString('utf-8');
-  if (req.error.status) {
-    // Error comes with a status
-    res.status(req.error.status);
-  } else {
-    // We don't know what's wrong, so it's our fault.
-    res.status(500);
-  }
-  res.json(result);
-  // Clean up the temp directory for the request recursively
-  if(req.tempDir){
-    fs.remove(req.tempDir);
+// We can throw this error to make Express respond with an internal server
+// error message
+class InternalServerError extends TubeMapError {
+  constructor(message) {
+    super(message);
+    this.status = 500;
   }
 }
 
-// We can use this middleware to ensure that request validation errors we throw
+// We can throw this error to make Express respond with an internal server
+// error message about vg.
+class VgExecutionError extends InternalServerError {
+  constructor(message) {
+    super(message);
+  }
+}
+
+// We can use this middleware to ensure that errors we throw
 // or next(err) will be sent along to the user.
 function returnErrorMiddleware(err, req, res, next) {
+  // Clean up the temp directory for the request recursively, no matter the
+  // error. TODO: Make this a separate middleware?
+  if (req.tempDir) {
+    fs.remove(req.tempDir);
+  }
+  
   // Because we take err, Express makes sure err is always set.
   if (res.headersSent) {
     // We can't send a nice message. Try the next middleware, if any.
     return next(err);
   }
-  if (err instanceof BadRequestError) {
-    // The user made a mistake.
-    req.error = err;
-    returnError(req, res);
+  if (err instanceof TubeMapError) {
+    // We have an error we want to send back to the user.
+    const result = { error: ''};
+    if (err.message) {
+      // We have an error message to pass along.
+      result.error += err.message;
+    }
+    if (req.error) {
+      // We have an error data buffer from a vg call
+      if (result.error) {
+        // Separate from existing message
+        result.error += ':\n';
+      }
+      result.error += req.error.toString('utf-8');
+    }
+    console.log('returning error: ' + result.error);
+    if (err.status) {
+      // Error comes with a status
+      res.status(err.status);
+    } else {
+      // We don't know what's wrong, so it's our fault.
+      res.status(500);
+    }
+    res.json(result);
   } else {
     // This isn't one of our handled error types. Try the next middleware if any.
     return next(err);
@@ -475,138 +518,153 @@ function returnErrorMiddleware(err, req, res, next) {
 // Hook up the error handling middleware.
 app.use(returnErrorMiddleware);
 
-function processAnnotationFile(req, res) {
-  // find annotation file
-  // TODO: This is not going to work if multiple people hit the server at once!
-  // We need to make vg chunk take an argument from us for where to put the file.
-  console.time('processing annotation file');
-  fs.readdirSync(req.tempDir).forEach(file => {
-    if (file.endsWith('annotate.txt')) {
-      req.annotationFile = req.tempDir + '/' + file;
-    }
-  });
-
-  if (
-    !req.hasOwnProperty('annotationFile') ||
-    typeof req.annotationFile === 'undefined'
-  ) {
-    returnError(req, res);
-    return;
-  }
-  console.log(`annotationFile: ${req.annotationFile}`);
-
-  // read annotation file
-  const lineReader = rl.createInterface({
-    input: fs.createReadStream(req.annotationFile)
-  });
-
-  let i = 0;
-  lineReader.on('line', line => {
-    const arr = line.replace(/\s+/g, ' ').split(' ');
-    if (req.graph.path[i].name === arr[0]) {
-      req.graph.path[i].freq = arr[1];
-    } else {
-      console.log('Mismatch');
-    }
-    i += 1;
-  });
-
-  lineReader.on('close', () => {
-    console.timeEnd('processing annotation file');
-    if (req.withGam === true) {
-      processGamFile(req, res);
-    } else {
-      processRegionFile(req, res);
-    }
-  });
-}
-
-function processGamFile(req, res) {
-  console.time('processing gam file');
-  // Find gam file
-  fs.readdirSync(req.tempDir).forEach(file => {
-    if (file.endsWith('.gam')) {
-      req.gamFile = req.tempDir + '/' + file;
-    }
-  });
-
-  if(!isAllowedPath(req.gamFile)){
-    // This is probably under SCRATCH_DATA_PATH
-    req.error = "Path to GAM file not allowed: " + req.gamFile;
-    returnError(req, res);
-    return;
-  }
-  
-  // call 'vg view' to transform gam to json
-  const vgViewChild = spawn(`${VG_PATH}vg`, ['view', '-j', '-a', req.gamFile]);
-
-  vgViewChild.stderr.on('data', data => {
-    console.log(`err data: ${data}`);
-  });
-
-  let gamJSON = '';
-  vgViewChild.stdout.on('data', function(data) {
-    gamJSON += data.toString();
-  });
-
-  vgViewChild.on('close', () => {
-    req.gamArr = gamJSON
-      .split('\n')
-      .filter(function(a) {
-        return a != '';
-      })
-      .map(function(a) {
-        return JSON.parse(a);
-      });
-    console.timeEnd('processing gam file');
-    processRegionFile(req, res);
-  });
-}
-
-function processRegionFile(req, res) {
-  console.time('processing region file');
-  const regionFile = `${req.tempDir}/regions.tsv`;
-  if(!isAllowedPath(regionFile)){
-    req.error = "Path to region file not allowed: " + regionFile;
-    returnError(req, res);
-    return;
-  }
-
-  const lineReader = rl.createInterface({
-    input: fs.createReadStream(regionFile)
-  });
-
-  lineReader.on('line', line => {
-    console.log('Region: ' + line);
-    const arr = line.replace(/\s+/g, ' ').split(' ');
-    req.graph.path.forEach(p => {
-      if (p.name === arr[0]) p.indexOfFirstBase = arr[1];
+function processAnnotationFile(req, res, next) {
+  try {
+    // find annotation file
+    // TODO: This is not going to work if multiple people hit the server at once!
+    // We need to make vg chunk take an argument from us for where to put the file.
+    console.time('processing annotation file');
+    fs.readdirSync(req.tempDir).forEach(file => {
+      if (file.endsWith('annotate.txt')) {
+        req.annotationFile = req.tempDir + '/' + file;
+      }
     });
-  });
 
-  lineReader.on('close', () => {
-    console.timeEnd('processing region file');
-    cleanUpAndSendResult(req, res);
-  });
+    if (
+      !req.hasOwnProperty('annotationFile') ||
+      typeof req.annotationFile === 'undefined'
+    ) {
+      throw new VgExecutionError('annotation file not created');
+    }
+    console.log(`annotationFile: ${req.annotationFile}`);
+
+    // read annotation file
+    const lineReader = rl.createInterface({
+      input: fs.createReadStream(req.annotationFile)
+    });
+
+    let i = 0;
+    lineReader.on('line', line => {
+      const arr = line.replace(/\s+/g, ' ').split(' ');
+      if (req.graph.path[i].name === arr[0]) {
+        req.graph.path[i].freq = arr[1];
+      } else {
+        console.log('Mismatch');
+      }
+      i += 1;
+    });
+
+    lineReader.on('close', () => {
+      console.timeEnd('processing annotation file');
+      if (req.withGam === true) {
+        processGamFile(req, res, next);
+      } else {
+        processRegionFile(req, res, next);
+      }
+    });
+  } catch (error) {
+    // Send errors into Express's processing instead of off into Node's event
+    // machinery.
+    return next(error);
+  }
+}
+
+function processGamFile(req, res, next) {
+  try {
+    console.time('processing gam file');
+    // Find gam file
+    fs.readdirSync(req.tempDir).forEach(file => {
+      if (file.endsWith('.gam')) {
+        req.gamFile = req.tempDir + '/' + file;
+      }
+    });
+
+    if(!isAllowedPath(req.gamFile)){
+      // This is probably under SCRATCH_DATA_PATH
+      throw new BadRequestError("Path to GAM file not allowed: " + req.gamFile);
+    }
+    
+    // call 'vg view' to transform gam to json
+    const vgViewChild = spawn(`${VG_PATH}vg`, ['view', '-j', '-a', req.gamFile]);
+
+    vgViewChild.stderr.on('data', data => {
+      console.log(`err data: ${data}`);
+    });
+
+    let gamJSON = '';
+    vgViewChild.stdout.on('data', function(data) {
+      gamJSON += data.toString();
+    });
+
+    vgViewChild.on('close', () => {
+      req.gamArr = gamJSON
+        .split('\n')
+        .filter(function(a) {
+          return a != '';
+        })
+        .map(function(a) {
+          return JSON.parse(a);
+        });
+      console.timeEnd('processing gam file');
+      processRegionFile(req, res, next);
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+function processRegionFile(req, res, next) {
+  try {
+    console.time('processing region file');
+    const regionFile = `${req.tempDir}/regions.tsv`;
+    if(!isAllowedPath(regionFile)){
+      throw new BadRequestError("Path to region file not allowed: " + regionFile);
+    }
+
+    const lineReader = rl.createInterface({
+      input: fs.createReadStream(regionFile)
+    });
+
+    lineReader.on('line', line => {
+      console.log('Region: ' + line);
+      const arr = line.replace(/\s+/g, ' ').split(' ');
+      req.graph.path.forEach(p => {
+        if (p.name === arr[0]) p.indexOfFirstBase = arr[1];
+      });
+    });
+
+    lineReader.on('close', () => {
+      console.timeEnd('processing region file');
+      cleanUpAndSendResult(req, res, next);
+    });
+  } catch (error) {
+    return next(error);
+  }
 }
 
 function cleanUpAndSendResult(req, res) {
-  if(req.rmChunk){
-    fs.unlink(req.annotationFile);
-    if (req.withGam === true) {
-      fs.unlink(req.gamFile);
+  try {
+    if(req.rmChunk){
+      // TODO: Should this be a middleware that always runs, even if there's an error?
+      fs.unlink(req.annotationFile);
+      if (req.withGam === true) {
+        fs.unlink(req.gamFile);
+      }
+      // Clean up the temp directory for the request recursively (even though it should be empty)
+      fs.remove(req.tempDir);
     }
-    // Clean up the temp directory for the request recursively (even though it should be empty)
-    fs.remove(req.tempDir);
-  }
 
-  const result = {};
-  result.error = req.error.toString('utf-8');
-  result.graph = req.graph;
-  result.gam = req.withGam === true ? req.gamArr : [];
-  result.region = req.region;
-  res.json(result);
-  console.timeEnd('request-duration');
+    const result = {};
+    // TODO: Any standard error output will make an error response.
+    result.error = req.error.toString('utf-8');
+    result.graph = req.graph;
+    result.gam = req.withGam === true ? req.gamArr : [];
+    result.region = req.region;
+    res.json(result);
+    console.timeEnd('request-duration');
+  } catch (error) {
+    return next(error);
+  }
 }
 
 // Return true if the given path points to one of the ALLOWED_DATA_DIRECTORIES,
@@ -709,17 +767,16 @@ api.get('/getFilenames', (req, res) => {
   } else {
     // Somehow MOUNTED_DATA_PATH isn't one of our ALLOWED_DATA_DIRECTORIES (anymore?).
     // Perhaps the server administrator has put a .. in it.
-    req.error = "MOUNTED_DATA_PATH not allowed. Server is misconfigured.";
-    returnError(req, res);
-    return;
+    throw new InternalServerError("MOUNTED_DATA_PATH not allowed. Server is misconfigured.");
   }
 
   console.log(result);
   res.json(result);
 });
 
-api.post('/getPathNames', (req, res) => {
+api.post('/getPathNames', (req, res, next) => {
   console.log('received request for pathNames');
+  let sentResponse = false;
   const result = {
     pathNames: []
   };
@@ -732,14 +789,10 @@ api.post('/getPathNames', (req, res) => {
   if (!isAllowedPath(xgFile)){
     // Spit back the provided user data in the error, not the generated and
     // possibly absolute path full of cool facts about the server setup.
-    req.error = "Path to XG file not allowed: " + req.body.xgFile;
-    returnError(req, res);
-    return;
+    throw new BadRequestError("Path to XG file not allowed: " + req.body.xgFile);
   }
   if (!xgFile.endsWith(".xg")) {
-    req.error = "Path to XG file does not end in .xg: " + req.body.xgFile;
-    returnError(req, res);
-    return;
+    throw new BadRequestError("Path to XG file does not end in .xg: " + req.body.xgFile);
   }
 
   const vgViewChild = spawn(`${VG_PATH}vg`, ['paths', '-L', '-x', xgFile]);
@@ -752,14 +805,34 @@ api.post('/getPathNames', (req, res) => {
   vgViewChild.stdout.on('data', function(data) {
     pathNames += data.toString();
   });
+  
+  vgViewChild.on('error', function(err) {
+    console.log('Error executing "vg view": ' + err);
+    if (!sentResponse) {
+      sentResponse = true;
+      return next(new VgExecutionError('vg view failed'));
+    }
+    return;
+  });
 
-  vgViewChild.on('close', () => {
+  vgViewChild.on('close', code => {
+    if (code != 0) {
+      // Execution failed
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new VgExecutionError('vg view failed'));
+      }
+      return;
+    }
     result.pathNames = pathNames.split('\n').filter(function(a) {
       // Eliminate empty names or underscore-prefixed internal names (like _alt paths) 
       return a != '' && !a.startsWith('_');
     }).sort();
     console.log(result);
-    res.json(result);
+    if (!sentResponse) {
+      sentResponse = true;
+      res.json(result);
+    }
   });
 });
 
