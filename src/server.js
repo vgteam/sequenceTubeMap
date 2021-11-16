@@ -143,7 +143,6 @@ api.post('/getChunkedData', (req, res) => {
   req.uuid = uuid();
 
   // Make a temp directory for vg output files for this request
-  // TODO: Refactor all our path manipulation to use path.join
   req.tempDir = path.join(SCRATCH_DATA_PATH, `tmp-${req.uuid}`);
   fs.mkdirSync(req.tempDir);
   req.rmChunk = true;
@@ -424,6 +423,16 @@ api.post('/getChunkedData', (req, res) => {
   }
 });
 
+// We can throw this error to make Express respond with a bad request error
+// message. We should throw it whenever we detect that user input is
+// unacceptable.
+class BadRequestError extends Error {
+  constructor(message) {
+    super(message);
+    this.status = 400;
+  }
+}
+
 // Reply with an error response, the message for which the caller has already
 // stored in req.error. Can't itself abort further processing of the request,
 // so caller must do that too.
@@ -431,12 +440,40 @@ function returnError(req, res) {
   console.log('returning error: ' + req.error);
   const result = {};
   result.error = req.error.toString('utf-8');
+  if (req.error.status) {
+    // Error comes with a status
+    res.status(req.error.status);
+  } else {
+    // We don't know what's wrong, so it's our fault.
+    res.status(500);
+  }
   res.json(result);
   // Clean up the temp directory for the request recursively
   if(req.tempDir){
     fs.remove(req.tempDir);
   }
 }
+
+// We can use this middleware to ensure that request validation errors we throw
+// or next(err) will be sent along to the user.
+function returnErrorMiddleware(err, req, res, next) {
+  // Because we take err, Express makes sure err is always set.
+  if (res.headersSent) {
+    // We can't send a nice message. Try the next middleware, if any.
+    return next(err);
+  }
+  if (err instanceof BadRequestError) {
+    // The user made a mistake.
+    req.error = err;
+    returnError(req, res);
+  } else {
+    // This isn't one of our handled error types. Try the next middleware if any.
+    return next(err);
+  }
+}
+
+// Hook up the error handling middleware.
+app.use(returnErrorMiddleware);
 
 function processAnnotationFile(req, res) {
   // find annotation file
@@ -629,8 +666,12 @@ function pickDataPath(reqDataPath){
     case 'upload':
       dataPath = UPLOAD_DATA_PATH;
       break;
-    default:
+    case 'default':
       dataPath = INTERNAL_DATA_PATH;
+      break;
+    default:
+      // User supplied an impermissible option.
+      throw new BadRequestError("Unrecognized data path type: " + reqDataPath);
   }
   if(!dataPath.endsWith('/')){
     dataPath = dataPath + '/';

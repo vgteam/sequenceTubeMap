@@ -4,6 +4,7 @@ import TubeMap from './TubeMap';
 import { Container, Row, Alert } from 'reactstrap';
 import * as tubeMap from '../util/tubemap';
 import { dataOriginTypes } from '../enums';
+import { fetchAndParse } from '../fetchAndParse';
 
 class TubeMapContainer extends Component {
   state = {
@@ -85,17 +86,16 @@ class TubeMapContainer extends Component {
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${this.props.apiUrl}/getChunkedData`, {
+      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkedData`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(this.props.fetchParams)
       });
-      const json = await response.json();
       if (json.graph === undefined) {
-        // We did not get back a graph, only (possibly) an error.
-        const error = json.error || 'Fetching remote data returned error';
+        // We did not get back a graph, even if we didn't get an error either.
+        const error = 'Fetching remote data returned error';
         this.setState({ error: error, isLoading: false });
       } else {
         const nodes = tubeMap.vgExtractNodes(json.graph);

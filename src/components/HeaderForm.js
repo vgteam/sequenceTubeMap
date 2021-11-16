@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Container, Row, Col, Form, Label, Input, Alert } from 'reactstrap';
 import { dataOriginTypes } from '../enums';
+import { fetchAndParse } from '../fetchAndParse';
 // import defaultConfig from '../config.default.json';
 import config from '../config.json';
 import DataPositionFormRow from './DataPositionFormRow';
@@ -69,21 +70,21 @@ class HeaderForm extends Component {
 
     this.setState(state => {
       if (bedSelect !== 'none'){
-	this.getBedRegions(bedSelect, dataPath);
+        this.getBedRegions(bedSelect, dataPath);
       }
       if (xgSelect !== 'none'){
-	this.getPathNames(xgSelect, dataPath);
+        this.getPathNames(xgSelect, dataPath);
       }
       return {
-	xgFile: ds.xgFile,
-	xgSelect: xgSelect,
-	gbwtFile: ds.gbwtFile,
-	gamFile: ds.gamFile,
-	bedFile: ds.bedFile,
-	bedSelect: bedSelect,
-	dataPath: dataPath,
-	region: ds.defaultPosition,
-	dataType: dataTypes.BUILT_IN
+        xgFile: ds.xgFile,
+        xgSelect: xgSelect,
+        gbwtFile: ds.gbwtFile,
+        gamFile: ds.gamFile,
+        bedFile: ds.bedFile,
+        bedSelect: bedSelect,
+        dataPath: dataPath,
+        region: ds.defaultPosition,
+        dataType: dataTypes.BUILT_IN
       };
     });
   }
@@ -91,43 +92,42 @@ class HeaderForm extends Component {
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
-      const response = await fetch(`${this.props.apiUrl}/getFilenames`, {
+      const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       });
-      const json = await response.json();
       if (json.xgFiles === undefined) {
         // We did not get back a graph, only (possibly) an error.
         const error = json.error || 'Listing file names';
         this.setState({ error: error });
       } else {
-	json.xgFiles.unshift('none');
-	json.gbwtFiles.unshift('none');
-	json.gamIndices.unshift('none');
-	json.bedFiles.unshift('none');
+        json.xgFiles.unshift('none');
+        json.gbwtFiles.unshift('none');
+        json.gamIndices.unshift('none');
+        json.bedFiles.unshift('none');
 
-	if(this.state.dataPath === 'mounted'){
-	  this.setState(state => {
+        if(this.state.dataPath === 'mounted'){
+          this.setState(state => {
             const xgSelect = json.xgFiles.includes(state.xgSelect)
-		  ? state.xgSelect
-		  : 'none';
+                  ? state.xgSelect
+                  : 'none';
             const gbwtSelect = json.gbwtFiles.includes(state.gbwtSelect)
-		  ? state.gbwtSelect
-		  : 'none';
+                  ? state.gbwtSelect
+                  : 'none';
             const gamSelect = json.gamIndices.includes(state.gamSelect)
-		  ? state.gamSelect
-		  : 'none';
+                  ? state.gamSelect
+                  : 'none';
             const bedSelect = json.bedFiles.includes(state.bedSelect)
-		  ? state.bedSelect
-		  : 'none';
-	    if (bedSelect !== 'none'){
-	      this.getBedRegions(bedSelect, 'mounted');
-	    }
-	    if (xgSelect !== 'none'){
-	      this.getPathNames(xgSelect, 'mounted');
-	    }
+                  ? state.bedSelect
+                  : 'none';
+            if (bedSelect !== 'none'){
+              this.getBedRegions(bedSelect, 'mounted');
+            }
+            if (xgSelect !== 'none'){
+              this.getPathNames(xgSelect, 'mounted');
+            }
             return {
               xgSelectOptions: json.xgFiles,
               gbwtSelectOptions: json.gbwtFiles,
@@ -136,19 +136,19 @@ class HeaderForm extends Component {
               xgSelect,
               gbwtSelect,
               gamSelect,
-	      bedSelect
+              bedSelect
             };
-	  });
-	} else {
-	  this.setState(state => {
+          });
+        } else {
+          this.setState(state => {
             return {
               xgSelectOptions: json.xgFiles,
               gbwtSelectOptions: json.gbwtFiles,
               gamSelectOptions: json.gamIndices,
               bedSelectOptions: json.bedFiles
             };
-	  });	  
-	}
+          });          
+        }
       }
     } catch (error) {
       this.setState({ error: error });
@@ -159,24 +159,25 @@ class HeaderForm extends Component {
   getBedRegions = async (bedFile, dataPath) => {
     this.setState({ error: null });
     try {
-      const response = await fetch(`${this.props.apiUrl}/getBedRegions`, {
+      const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ bedFile, dataPath })
       });
-      const json = await response.json();
-      if(json.error){
-	this.setState({ error: json.error });
+      // We need to do all our parsing here, if we expect the catch to catch errors.
+      let bedRegionsDesc = json.bedRegions['desc'];
+      if (!(bedRegionsDesc instanceof Array)) {
+        throw new Error("Server did not send back an array of BED region descriptions");
       }
       this.setState(state => {
-        const regionSelect = json.bedRegions['desc'].includes(state.regionSelect)
+        const regionSelect = bedRegionsDesc.includes(state.regionSelect)
           ? state.regionSelect
-          : json.bedRegions['desc'][0];
+          : bedRegionsDesc[0];
         return {
-	  regionInfo: json.bedRegions,
-          regionSelectOptions: json.bedRegions['desc'],
+          regionInfo: json.bedRegions,
+          regionSelectOptions: bedRegionsDesc,
           regionSelect: regionSelect
         };
       });
@@ -197,20 +198,24 @@ class HeaderForm extends Component {
   getPathNames = async (xgFile, dataPath) => {
     this.setState({ error: null });
     try {
-      const response = await fetch(`${this.props.apiUrl}/getPathNames`, {
+      const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ xgFile, dataPath })
       });
-      const json = await response.json();
+      // We need to do all our parsing here, if we expect the catch to catch errors.
+      let pathNames = json.pathNames;
+      if (!(pathNames instanceof Array)) {
+        throw new Error("Server did not send back an array of path names");
+      }
       this.setState(state => {
-        const pathSelect = json.pathNames.includes(state.pathSelect)
+        const pathSelect = pathNames.includes(state.pathSelect)
           ? state.pathSelect
-          : json.pathNames[0];
+          : pathNames[0];
         return {
-          pathSelectOptions: json.pathNames,
+          pathSelectOptions: pathNames,
           pathSelect,
           anchorTrackName: pathSelect
         };
@@ -232,20 +237,20 @@ class HeaderForm extends Component {
     const value = event.target.value;
     DATA_SOURCES.forEach(ds => {
       if (ds.name === value) {
-	let dataPath = ds.useMountedPath ? 'mounted' : 'default';
-	let bedSelect = 'none';
-	if(ds.bedFile){
-	  this.getBedRegions(ds.bedFile, dataPath);
-	  bedSelect = ds.bedFile;
-	}
-	this.getPathNames(ds.xgFile, dataPath);
-	this.setState({
+        let dataPath = ds.useMountedPath ? 'mounted' : 'default';
+        let bedSelect = 'none';
+        if(ds.bedFile){
+          this.getBedRegions(ds.bedFile, dataPath);
+          bedSelect = ds.bedFile;
+        }
+        this.getPathNames(ds.xgFile, dataPath);
+        this.setState({
           xgFile: ds.xgFile,
-	  xgSelect: ds.xgFile,
+          xgSelect: ds.xgFile,
           gbwtFile: ds.gbwtFile,
           gamFile: ds.gamFile,
-	  bedFile: ds.bedFile,
-	  bedSelect: bedSelect,
+          bedFile: ds.bedFile,
+          bedSelect: bedSelect,
           dataPath: dataPath,
           region: ds.defaultPosition,
           dataType: dataTypes.BUILT_IN
@@ -320,10 +325,10 @@ class HeaderForm extends Component {
       let i = 0;
       while (i < this.state.regionInfo['desc'].length && this.state.regionInfo['desc'][i] !== value) i += 1;
       if (i < this.state.regionInfo['desc'].length){
-	let region_chr = this.state.regionInfo['chr'][i];
-	let region_start = this.state.regionInfo['start'][i];
-	let region_end = this.state.regionInfo['end'][i];
-	this.setState({ region: region_chr.concat(':', region_start, '-', region_end) });
+        let region_chr = this.state.regionInfo['chr'][i];
+        let region_start = this.state.regionInfo['start'][i];
+        let region_end = this.state.regionInfo['end'][i];
+        this.setState({ region: region_chr.concat(':', region_start, '-', region_end) });
       }
     }
   };
@@ -386,11 +391,14 @@ class HeaderForm extends Component {
   };
 
   render() {
+    let errorDiv = null;
     if (this.state.error) {
       console.log("Header error: " + this.state.error);
       const message = this.state.error.message ? this.state.error.message : this.state.error;
-      return (
-	<div>
+      // We drop the error message into a div and leave most of the UI so the
+      // user can potentially recover by picking something else.
+      errorDiv = (
+        <div>
           <Container fluid={true}>
             <Row>
               <Alert color="danger">{message}</Alert>
@@ -427,6 +435,7 @@ class HeaderForm extends Component {
     
     return (
       <div>
+        {errorDiv}
         <Container fluid={true}>
           <Row>
             <Col md="auto">
