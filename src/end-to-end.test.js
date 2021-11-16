@@ -72,9 +72,9 @@ afterEach(async () => {
   await tearDown();
 })
 
-it("initially doesn't render as loading", () => {
+it("initially renders as loading", () => {
   let loader = document.getElementById('loader');
-  expect(loader).toBeFalsy();
+  expect(loader).toBeTruthy();
 });
 
 it('populates the available example dropdown', () => {
@@ -101,6 +101,24 @@ describe('When we wait for it to load', () => {
     // See https://jasmine.github.io/2.0/upgrading.html#section-9
     // Note that Jest imposes a 5000 ms timeout for being done.
     await waitForLoadEnd();
+  });
+  
+  it('eventually stops rendering as loading', () => {
+    let loader = document.getElementById('loader');
+    expect(loader).toBeFalsy();
+  });
+
+  it('does not reload if we click the go button without changing settings', () => {
+    let loader = document.getElementById('loader');
+    expect(loader).toBeFalsy();
+
+    act(() => {
+      let go = document.getElementById('goButton');
+      userEvent.click(go);
+    });
+
+    loader = document.getElementById('loader');
+    expect(loader).toBeFalsy();
   });
   
   it('the regions from the BED files are loaded', () => {

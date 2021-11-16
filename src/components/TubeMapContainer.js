@@ -157,7 +157,6 @@ class TubeMapContainer extends Component {
       default:
         console.log('invalid example data origin type:', this.props.dataOrigin);
     }
-    console.log('Using example tracks ', tracks);
 
     this.setState({ isLoading: false, nodes, tracks, reads, region});
   };

@@ -36,18 +36,20 @@ class HeaderForm extends Component {
     bedSelect: 'none',
 
     regionSelectOptions: ['none'],
+    // This tracks several arrays of BED region data, stored by data type, with
+    // one entry in each array per region.
     regionInfo: {},
     regionSelect: 'none',
 
     pathSelectOptions: ['none'],
     pathSelect: 'none',
 
-    xgFile: '',
-    gbwtFile: '',
-    gamFile: '',
-    bedFile: '',
-    dataPath: '',
-    region: '',
+    xgFile: undefined,
+    gbwtFile: undefined,
+    gamFile: undefined,
+    bedFile: undefined,
+    dataPath: undefined,
+    region: undefined,
 
     dataType: dataTypes.BUILT_IN,
     fileSizeAlert: false,
@@ -296,7 +298,6 @@ class HeaderForm extends Component {
       gbwtFile: this.state.gbwtFile,
       gamFile: this.state.gamFile,
       bedFile: this.state.bedFile,
-      regionInfo: this.state.regionInfo,
       anchorTrackName: this.state.anchorTrackName,
       dataPath: this.state.dataPath,
     };

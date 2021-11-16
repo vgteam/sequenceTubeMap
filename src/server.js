@@ -145,8 +145,9 @@ api.post('/getChunkedData', (req, res, next) => {
   req.uuid = uuid();
 
   // Make a temp directory for vg output files for this request
-  req.tempDir = path.join(SCRATCH_DATA_PATH, `tmp-${req.uuid}`);
-  fs.mkdirSync(req.tempDir);
+  req.chunkDir = path.join(SCRATCH_DATA_PATH, `tmp-${req.uuid}`);
+  fs.mkdirSync(req.chunkDir);
+  // This request owns the directory, so clean it up when the request finishes.
   req.rmChunk = true;
 
   // We always have an XG file
@@ -205,21 +206,23 @@ api.post('/getChunkedData', (req, res, next) => {
   // check the bed file if this region has been pre-fetched
   let chunkPath = '';
   if(req.withBed){
-    let i = 0;
-    let nb_regions_in_bed = 0;
-    if(req.body.regionInfo && Object.keys(req.body.regionInfo).length > 0){
-      nb_regions_in_bed = req.body.regionInfo['desc'].length;
-    }
-    while (i < nb_regions_in_bed && chunkPath === ''){
-      let region_chr = req.body.regionInfo['chr'][i];
-      let region_start = req.body.regionInfo['start'][i];
-      let region_end = req.body.regionInfo['end'][i];
+    // We need to parse the BED file we have been referred to so we can look up
+    // the pre-parsed chunk. We don't want the client re-uploading the BED to
+    // us on every request.
+    let regionInfo = getBedRegions(bedFile, dataPath);
+    
+    for (let i = 0; i < regionInfo['desc'].length; i++){
+      let region_chr = regionInfo['chr'][i];
+      let region_start = regionInfo['start'][i];
+      let region_end = regionInfo['end'][i];
       if(region_chr.concat(':', region_start, '-', region_end) === region){
-        if(req.body.regionInfo['chunk'][i] !== ''){
-          chunkPath = req.body.regionInfo['chunk'][i]
+        // A BED entry is defined for this region exactly
+        if(regionInfo['chunk'][i] !== ''){
+          // And a chunk file is stored for it, so use that.
+          chunkPath = regionInfo['chunk'][i]
+          break;
         }
       }
-      i += 1;
     }
     // check that the 'chunk.vg' file exists in the chunk folder
     chunkPath = `${dataPath}${chunkPath}`;
@@ -297,9 +300,9 @@ api.post('/getChunkedData', (req, res, next) => {
     vgChunkParams.push(
       '-T',
       '-b',
-      `${req.tempDir}/chunk`,
+      `${req.chunkDir}/chunk`,
       '-E',
-      `${req.tempDir}/regions.tsv`
+      `${req.chunkDir}/regions.tsv`
     );
 
     console.log(`vg ${vgChunkParams.join(' ')}`);
@@ -385,9 +388,11 @@ api.post('/getChunkedData', (req, res, next) => {
     });
   } else {
     // chunk has already been pre-fecthed and is saved in chunkPath
-    req.tempDir = chunkPath;
+    req.chunkDir = chunkPath;
+    // We're using a shared directory for this request, so leave it in place
+    // when the request finishes.
     req.rmChunk = false;
-    const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', `${req.tempDir}/chunk.vg`]);
+    const vgViewCall = spawn(`${VG_PATH}vg`, ['view', '-j', `${req.chunkDir}/chunk.vg`]);
     let graphAsString = '';
     req.error = new Buffer(0);
     vgViewCall.on('error', function(err) {
@@ -474,11 +479,8 @@ class VgExecutionError extends InternalServerError {
 // We can use this middleware to ensure that errors we throw
 // or next(err) will be sent along to the user.
 function returnErrorMiddleware(err, req, res, next) {
-  // Clean up the temp directory for the request recursively, no matter the
-  // error. TODO: Make this a separate middleware?
-  if (req.tempDir) {
-    fs.remove(req.tempDir);
-  }
+  // Clean up the temp directory for the request, if any
+  cleanUpChunkIfOwned(req, res);
   
   // Because we take err, Express makes sure err is always set.
   if (res.headersSent) {
@@ -524,9 +526,9 @@ function processAnnotationFile(req, res, next) {
     // TODO: This is not going to work if multiple people hit the server at once!
     // We need to make vg chunk take an argument from us for where to put the file.
     console.time('processing annotation file');
-    fs.readdirSync(req.tempDir).forEach(file => {
+    fs.readdirSync(req.chunkDir).forEach(file => {
       if (file.endsWith('annotate.txt')) {
-        req.annotationFile = req.tempDir + '/' + file;
+        req.annotationFile = req.chunkDir + '/' + file;
       }
     });
 
@@ -573,9 +575,9 @@ function processGamFile(req, res, next) {
   try {
     console.time('processing gam file');
     // Find gam file
-    fs.readdirSync(req.tempDir).forEach(file => {
+    fs.readdirSync(req.chunkDir).forEach(file => {
       if (file.endsWith('.gam')) {
-        req.gamFile = req.tempDir + '/' + file;
+        req.gamFile = req.chunkDir + '/' + file;
       }
     });
 
@@ -616,7 +618,7 @@ function processGamFile(req, res, next) {
 function processRegionFile(req, res, next) {
   try {
     console.time('processing region file');
-    const regionFile = `${req.tempDir}/regions.tsv`;
+    const regionFile = `${req.chunkDir}/regions.tsv`;
     if(!isAllowedPath(regionFile)){
       throw new BadRequestError("Path to region file not allowed: " + regionFile);
     }
@@ -642,17 +644,23 @@ function processRegionFile(req, res, next) {
   }
 }
 
-function cleanUpAndSendResult(req, res) {
+// Cleanup functuion shared between success and error code paths.
+// May throw.
+// TODO: Use as a middleware?
+function cleanUpChunkIfOwned(req, res) {
+  if(req.rmChunk){
+    // Don't clean up individual files in the directory manually; it's too
+    // fiddly, and we could have gotten here because we generated those paths
+    // and they were outside our acceptable directory tree.
+    
+    // Clean up the temp directory for the request recursively 
+    fs.remove(req.chunkDir);
+  }
+}
+
+function cleanUpAndSendResult(req, res, next) {
   try {
-    if(req.rmChunk){
-      // TODO: Should this be a middleware that always runs, even if there's an error?
-      fs.unlink(req.annotationFile);
-      if (req.withGam === true) {
-        fs.unlink(req.gamFile);
-      }
-      // Clean up the temp directory for the request recursively (even though it should be empty)
-      fs.remove(req.tempDir);
-    }
+    cleanUpChunkIfOwned(req, res);
 
     const result = {};
     // TODO: Any standard error output will make an error response.
@@ -843,47 +851,58 @@ api.post('/getBedRegions', (req, res) => {
     error: null
   };
   
-  let bed_info = {chr:[], start:[], end:[], desc:[], chunk:[]};
-
   if(req.body.bedFile != 'none'){
     let dataPath = pickDataPath(req.body.dataPath);
-    const bedFile = `${dataPath}${req.body.bedFile}`;
-    if (!isAllowedPath(bedFile)){
-      result.error = "BED file path not allowed: " + req.body.bedFile;
-    }
-    if (!result.error && !bedFile.endsWith('.bed')) {
-      result.error = "BED file path does not end in .bed: " + req.body.bedFile;
-    }
-    if(!result.error && !fs.existsSync(bedFile)){
-      result.error = "BED file not found: " + bedFile;
-    }
-    if(!result.error) {
-      let bed_data = fs.readFileSync(bedFile).toString();
-      let lines = bed_data.split('\n');
-      lines.map(function(line){
-        let records = line.split("\t");
-        bed_info['chr'].push(records[0]);
-        bed_info['start'].push(records[1]);
-        bed_info['end'].push(records[2]);
-        let desc = records.join('_');
-        if (records.length > 3){
-          desc = records[3];
-        }
-        bed_info['desc'].push(desc);
-        let chunk = '';
-        if (records.length > 4){
-          chunk = records[4];
-        }
-        bed_info['chunk'].push(chunk); 
-      });
-    }
+    let bed_info = getBedRegions(bedFile, dataPath); 
+    console.log('bed reading done');
+    result.bedRegions = bed_info;
+    res.json(result);
+  } else {
+    throw new BadReqestError('No BED file specified');
   }
-
-  console.log('bed reading done');
-
-  result.bedRegions = bed_info;
-  res.json(result);
 });
+
+// Load up the given BED file, relative to the given pre-resolved dataPath, and
+// return a data structure decribing all the pre-cached regions it defines. May
+// throw.
+function getBedRegions(bedFile, dataPath) {
+  if (!bedFile.endsWith('.bed')) {
+    throw new BadRequestError("BED file path does not end in .bed: " + bedFile);
+  }
+  
+  // Work out what file we're talking about
+  let bed_path = path.join(dataPath, bedFile);
+  if (!isAllowedPath(bed_path)){
+    throw new BadRequestError("BED file path not allowed: " + bedFile);
+  }
+  if(!fs.existsSync(bed_path)){
+    result.error = "BED file not found: " + bedFile;
+  }
+    
+  let bed_info = {chr:[], start:[], end:[], desc:[], chunk:[]};
+  
+  // Load and parse the BED file
+  let bed_data = fs.readFileSync(bed_path).toString();
+  let lines = bed_data.split('\n');
+  lines.map(function(line){
+    let records = line.split("\t");
+    bed_info['chr'].push(records[0]);
+    bed_info['start'].push(records[1]);
+    bed_info['end'].push(records[2]);
+    let desc = records.join('_');
+    if (records.length > 3){
+      desc = records[3];
+    }
+    bed_info['desc'].push(desc);
+    let chunk = '';
+    if (records.length > 4){
+      chunk = records[4];
+    }
+    bed_info['chunk'].push(chunk); 
+  });
+  
+  return bed_info;
+}
 
 // Return the string URL for the host and port at which the given Express app
 // server is listening, with HTTP scheme.

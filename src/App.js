@@ -14,15 +14,15 @@ class App extends Component {
     const ds = config.DATA_SOURCES[0];
     let xgFile = ds.xgFile;
     let region = ds.defaultPosition;
-    let gamFile = '';
+    let gamFile = undefined;
     if(ds.gamFile){
       gamFile = ds.gamFile;
     }
-    let gbwtFile = '';
+    let gbwtFile = undefined;
     if(ds.gbwtFile){
       gbwtFile = ds.gbwtFile;
     }
-    let bedFile = '';
+    let bedFile = undefined;
     if(ds.bedFile){
       bedFile = ds.bedFile;
     }
@@ -115,7 +115,6 @@ class App extends Component {
   };
 
   setDataOrigin = dataOrigin => {
-    console.log('Setting data origin to ' + dataOrigin);
     this.setState({ dataOrigin });
   };
 
