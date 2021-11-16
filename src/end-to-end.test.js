@@ -138,8 +138,8 @@ describe('When we wait for it to load', () => {
       await userEvent.click(example1);
     });
     
-    let loader = document.getElementById('loader');
-    expect(loader).toBeTruthy();
+    // We're agnostic as to whether we will see a loader when rendering the
+    // example data. 
     
     await waitForLoadEnd();
     

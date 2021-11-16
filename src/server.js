@@ -853,7 +853,7 @@ api.post('/getBedRegions', (req, res) => {
   
   if(req.body.bedFile != 'none'){
     let dataPath = pickDataPath(req.body.dataPath);
-    let bed_info = getBedRegions(bedFile, dataPath); 
+    let bed_info = getBedRegions(req.body.bedFile, dataPath); 
     console.log('bed reading done');
     result.bedRegions = bed_info;
     res.json(result);
@@ -863,8 +863,8 @@ api.post('/getBedRegions', (req, res) => {
 });
 
 // Load up the given BED file, relative to the given pre-resolved dataPath, and
-// return a data structure decribing all the pre-cached regions it defines. May
-// throw.
+// return a data structure decribing all the pre-cached regions it defines.
+// Validates file paths for user-accessibility. May throw.
 function getBedRegions(bedFile, dataPath) {
   if (!bedFile.endsWith('.bed')) {
     throw new BadRequestError("BED file path does not end in .bed: " + bedFile);
