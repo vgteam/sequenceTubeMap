@@ -36,6 +36,23 @@ const ALLOWED_DATA_DIRECTORIES = [MOUNTED_DATA_PATH, INTERNAL_DATA_PATH, UPLOAD_
 // can't fight over its creation.
 fs.mkdirSync(SCRATCH_DATA_PATH, {recursive: true});
 
+if (typeof setImmediate === 'undefined') {
+    // On newer Jest/React tests, setImmediate is removed from the environment,
+    // because browsers don't have it. See
+    // <https://github.com/facebook/jest/pull/11222>.
+    // We still get to use stuff like the Node filesystem APIs, but weirdly not
+    // this builtin. To make Express work, we need to have the builtin. So we
+    // put it back.
+    // TODO: Work out a way to run end-to-end tests in the project, with the
+    // frontend and backend both running, but without loading the backend into
+    // a jsdom JS environment.
+    // TODO: Resesign the frontend components so that network access and server
+    // responses can be easily faked.
+    const timers = require('timers');
+    window.setImmediate = timers.setImmediate;
+    window.clearImmediate = timers.clearImmediate;
+}
+
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
     cb(null, UPLOAD_DATA_PATH);
