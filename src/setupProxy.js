@@ -19,7 +19,7 @@ function addressToHost(address) {
 
 module.exports = function(app) {
   try {
-    let serverBase = 'http://' + addressToHost(config.serverBindAddress) + ':' + (config.serverPort || '3000');
+    let serverBase = 'http://' + addressToHost(config.serverBindAddress) + ':' + (process.env.SERVER_PORT || '3000');
     app.use(createProxyMiddleware(serverBase + '/api'));
     // Websockets don't seem to get through unless we ask for them explicitly.
     // They can just go to the root because the server ignores websocket paths.

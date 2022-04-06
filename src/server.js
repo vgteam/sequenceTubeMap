@@ -17,6 +17,9 @@ const rl = require('readline');
 const compression = require('compression');
 const WebSocketServer = require('websocket').server;
 const config = require('./config.json');
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
@@ -25,7 +28,7 @@ const INTERNAL_DATA_PATH = config.internalDataPath;
 const UPLOAD_DATA_PATH = "uploads/";
 // This is where we will store per-request generated files
 const SCRATCH_DATA_PATH = "tmp/";
-const SERVER_PORT = config.serverPort || 3000;
+const SERVER_PORT = process.env.SERVER_PORT || 3000;
 const SERVER_BIND_ADDRESS = config.serverBindAddress || undefined;
 
 // This holds a collection of all the absolute path root directories that the

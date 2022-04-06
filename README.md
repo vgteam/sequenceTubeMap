@@ -153,7 +153,7 @@ The `build`/`serve` pipeline can only produce minified code, which can be diffic
   ```
   npm run start
   ```
-This will use React's development mode server to serve the frontend, and run the backend in a separate process, behind React's proxy. Local ports 3000 and 3001 must both be free.
+This will use React's development mode server to serve the frontend, and run the backend in a separate process, behind React's proxy. Local ports 3000 (or set a different SERVER_PORT in .env) and 3001 must both be free.
 
 Running in this mode allows the application to produce human-readable stack traces when something goes wrong in the browser.
 
