@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Container, Row, Col, Form, Label, Input, Alert } from 'reactstrap';
+import { Button, Container, Row, Col, Form, Label, Input, Alert } from 'reactstrap';
 import { dataOriginTypes } from '../enums';
 import { fetchAndParse } from '../fetchAndParse';
 // import defaultConfig from '../config.default.json';
