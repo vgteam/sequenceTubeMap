@@ -63,6 +63,8 @@ class HeaderForm extends Component {
     fileSizeAlert: false,
     uploadInProgress: false,
     error: null,
+
+    urlParams: undefined,
   };
 
   componentDidMount() {
@@ -71,9 +73,11 @@ class HeaderForm extends Component {
     this.setUpWebsocket();
   }
 
-  // init with the first data source
+  // init with the URL params, or first data source if none
   initState = () => {
-    let ds = DATA_SOURCES[0];
+    console.log(this.props.urlParams);
+    // Populate 
+    let ds = this.props.urlParams ?? DATA_SOURCES[0];
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
     const dataPath = ds.useMountedPath ? "mounted" : "default";
@@ -93,7 +97,7 @@ class HeaderForm extends Component {
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
         dataPath: dataPath,
-        region: ds.defaultPosition,
+        region: ds.region || ds.defaultPosition,
         dataType: dataTypes.BUILT_IN,
       };
     });
@@ -572,6 +576,7 @@ HeaderForm.propTypes = {
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
   setFetchParams: PropTypes.func.isRequired,
+  urlParams:PropTypes.any.isRequired, // Header Form State
 };
 
 export default HeaderForm;
