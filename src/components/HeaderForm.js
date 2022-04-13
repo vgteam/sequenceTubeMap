@@ -1,48 +1,56 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Button, Container, Row, Col, Form, Label, Input, Alert } from 'reactstrap';
-import { dataOriginTypes } from '../enums';
-import { fetchAndParse } from '../fetchAndParse';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import {
+  Container,
+  Row,
+  Col,
+  Form,
+  Label,
+  Input,
+  Alert,
+} from "reactstrap";
+import { dataOriginTypes } from "../enums";
+import { fetchAndParse } from "../fetchAndParse";
 // import defaultConfig from '../config.default.json';
-import config from '../config.json';
-import DataPositionFormRow from './DataPositionFormRow';
-import MountedDataFormRow from './MountedDataFormRow';
-import BedRegionsFormRow from './BedRegionsFormRow';
-import PathNamesFormRow from './PathNamesFormRow';
-import FileUploadFormRow from './FileUploadFormRow';
-import ExampleSelectButtons from './ExampleSelectButtons';
+import config from "../config.json";
+import DataPositionFormRow from "./DataPositionFormRow";
+import MountedDataFormRow from "./MountedDataFormRow";
+import BedRegionsFormRow from "./BedRegionsFormRow";
+import PathNamesFormRow from "./PathNamesFormRow";
+import FileUploadFormRow from "./FileUploadFormRow";
+import ExampleSelectButtons from "./ExampleSelectButtons";
 
 const DATA_SOURCES = config.DATA_SOURCES;
-const MAX_UPLOAD_SIZE_DESCRIPTION = '5 MB';
+const MAX_UPLOAD_SIZE_DESCRIPTION = "5 MB";
 const dataTypes = {
-  BUILT_IN: 'built-in',
-  FILE_UPLOAD: 'file-upload',
-  MOUNTED_FILES: 'mounted files',
-  EXAMPLES: 'examples'
+  BUILT_IN: "built-in",
+  FILE_UPLOAD: "file-upload",
+  MOUNTED_FILES: "mounted files",
+  EXAMPLES: "examples",
 };
 
 class HeaderForm extends Component {
   state = {
-    xgSelectOptions: ['none'],
-    xgSelect: 'none',
+    xgSelectOptions: ["none"],
+    xgSelect: "none",
 
-    gbwtSelectOptions: ['none'],
-    gbwtSelect: 'none',
+    gbwtSelectOptions: ["none"],
+    gbwtSelect: "none",
 
-    gamSelectOptions: ['none'],
-    gamSelect: 'none',
+    gamSelectOptions: ["none"],
+    gamSelect: "none",
 
-    bedSelectOptions: ['none'],
-    bedSelect: 'none',
+    bedSelectOptions: ["none"],
+    bedSelect: "none",
 
-    regionSelectOptions: ['none'],
+    regionSelectOptions: ["none"],
     // This tracks several arrays of BED region data, stored by data type, with
     // one entry in each array per region.
     regionInfo: {},
-    regionSelect: 'none',
+    regionSelect: "none",
 
-    pathSelectOptions: ['none'],
-    pathSelect: 'none',
+    pathSelectOptions: ["none"],
+    pathSelect: "none",
 
     xgFile: undefined,
     gbwtFile: undefined,
@@ -54,7 +62,7 @@ class HeaderForm extends Component {
     dataType: dataTypes.BUILT_IN,
     fileSizeAlert: false,
     uploadInProgress: false,
-    error: null
+    error: null,
   };
 
   componentDidMount() {
@@ -66,15 +74,15 @@ class HeaderForm extends Component {
   // init with the first data source
   initState = () => {
     let ds = DATA_SOURCES[0];
-    const xgSelect = ds.xgFile ? ds.xgFile : 'none';
-    const bedSelect = ds.bedFile ? ds.bedFile : 'none';
-    const dataPath = ds.useMountedPath ? 'mounted' : 'default';
+    const xgSelect = ds.xgFile ? ds.xgFile : "none";
+    const bedSelect = ds.bedFile ? ds.bedFile : "none";
+    const dataPath = ds.useMountedPath ? "mounted" : "default";
 
-    this.setState(state => {
-      if (bedSelect !== 'none'){
+    this.setState((state) => {
+      if (bedSelect !== "none") {
         this.getBedRegions(bedSelect, dataPath);
       }
-      if (xgSelect !== 'none'){
+      if (xgSelect !== "none") {
         this.getPathNames(xgSelect, dataPath);
       }
       return {
@@ -86,49 +94,49 @@ class HeaderForm extends Component {
         bedSelect: bedSelect,
         dataPath: dataPath,
         region: ds.defaultPosition,
-        dataType: dataTypes.BUILT_IN
+        dataType: dataTypes.BUILT_IN,
       };
     });
-  }
+  };
 
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
       if (json.xgFiles === undefined) {
         // We did not get back a graph, only (possibly) an error.
-        const error = json.error || 'Listing file names';
+        const error = json.error || "Listing file names";
         this.setState({ error: error });
       } else {
-        json.xgFiles.unshift('none');
-        json.gbwtFiles.unshift('none');
-        json.gamIndices.unshift('none');
-        json.bedFiles.unshift('none');
+        json.xgFiles.unshift("none");
+        json.gbwtFiles.unshift("none");
+        json.gamIndices.unshift("none");
+        json.bedFiles.unshift("none");
 
-        if(this.state.dataPath === 'mounted'){
-          this.setState(state => {
+        if (this.state.dataPath === "mounted") {
+          this.setState((state) => {
             const xgSelect = json.xgFiles.includes(state.xgSelect)
-                  ? state.xgSelect
-                  : 'none';
+              ? state.xgSelect
+              : "none";
             const gbwtSelect = json.gbwtFiles.includes(state.gbwtSelect)
-                  ? state.gbwtSelect
-                  : 'none';
+              ? state.gbwtSelect
+              : "none";
             const gamSelect = json.gamIndices.includes(state.gamSelect)
-                  ? state.gamSelect
-                  : 'none';
+              ? state.gamSelect
+              : "none";
             const bedSelect = json.bedFiles.includes(state.bedSelect)
-                  ? state.bedSelect
-                  : 'none';
-            if (bedSelect !== 'none'){
-              this.getBedRegions(bedSelect, 'mounted');
+              ? state.bedSelect
+              : "none";
+            if (bedSelect !== "none") {
+              this.getBedRegions(bedSelect, "mounted");
             }
-            if (xgSelect !== 'none'){
-              this.getPathNames(xgSelect, 'mounted');
+            if (xgSelect !== "none") {
+              this.getPathNames(xgSelect, "mounted");
             }
             return {
               xgSelectOptions: json.xgFiles,
@@ -138,18 +146,18 @@ class HeaderForm extends Component {
               xgSelect,
               gbwtSelect,
               gamSelect,
-              bedSelect
+              bedSelect,
             };
           });
         } else {
-          this.setState(state => {
+          this.setState((state) => {
             return {
               xgSelectOptions: json.xgFiles,
               gbwtSelectOptions: json.gbwtFiles,
               gamSelectOptions: json.gamIndices,
-              bedSelectOptions: json.bedFiles
+              bedSelectOptions: json.bedFiles,
             };
-          });          
+          });
         }
       }
     } catch (error) {
@@ -162,25 +170,27 @@ class HeaderForm extends Component {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bedFile, dataPath })
+        body: JSON.stringify({ bedFile, dataPath }),
       });
       // We need to do all our parsing here, if we expect the catch to catch errors.
-      let bedRegionsDesc = json.bedRegions['desc'];
+      let bedRegionsDesc = json.bedRegions["desc"];
       if (!(bedRegionsDesc instanceof Array)) {
-        throw new Error("Server did not send back an array of BED region descriptions");
+        throw new Error(
+          "Server did not send back an array of BED region descriptions"
+        );
       }
-      this.setState(state => {
+      this.setState((state) => {
         const regionSelect = bedRegionsDesc.includes(state.regionSelect)
           ? state.regionSelect
           : bedRegionsDesc[0];
         return {
           regionInfo: json.bedRegions,
           regionSelectOptions: bedRegionsDesc,
-          regionSelect: regionSelect
+          regionSelect: regionSelect,
         };
       });
     } catch (error) {
@@ -191,9 +201,9 @@ class HeaderForm extends Component {
 
   resetBedRegions = () => {
     this.setState({
-      regionSelect: 'none',
+      regionSelect: "none",
       regionInfo: {},
-      regionSelectOptions: ['none']
+      regionSelectOptions: ["none"],
     });
   };
 
@@ -201,24 +211,24 @@ class HeaderForm extends Component {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ xgFile, dataPath })
+        body: JSON.stringify({ xgFile, dataPath }),
       });
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
       if (!(pathNames instanceof Array)) {
         throw new Error("Server did not send back an array of path names");
       }
-      this.setState(state => {
+      this.setState((state) => {
         const pathSelect = pathNames.includes(state.pathSelect)
           ? state.pathSelect
           : pathNames[0];
         return {
           pathSelectOptions: pathNames,
-          pathSelect
+          pathSelect,
         };
       });
     } catch (error) {
@@ -229,18 +239,18 @@ class HeaderForm extends Component {
 
   resetPathNames = () => {
     this.setState({
-      pathSelectOptions: ['none'],
-      pathSelect: 'none'
+      pathSelectOptions: ["none"],
+      pathSelect: "none",
     });
   };
 
-  handleDataSourceChange = event => {
+  handleDataSourceChange = (event) => {
     const value = event.target.value;
-    DATA_SOURCES.forEach(ds => {
+    DATA_SOURCES.forEach((ds) => {
       if (ds.name === value) {
-        let dataPath = ds.useMountedPath ? 'mounted' : 'default';
-        let bedSelect = 'none';
-        if(ds.bedFile){
+        let dataPath = ds.useMountedPath ? "mounted" : "default";
+        let bedSelect = "none";
+        if (ds.bedFile) {
           this.getBedRegions(ds.bedFile, dataPath);
           bedSelect = ds.bedFile;
         }
@@ -254,42 +264,42 @@ class HeaderForm extends Component {
           bedSelect: bedSelect,
           dataPath: dataPath,
           region: ds.defaultPosition,
-          dataType: dataTypes.BUILT_IN
+          dataType: dataTypes.BUILT_IN,
         });
         return;
       }
     });
-    if (value === 'customFileUpload') {
-      this.setState(state => {
+    if (value === "customFileUpload") {
+      this.setState((state) => {
         return {
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
           bedFile: state.bedSelect,
-          dataPath: 'upload',
-          dataType: dataTypes.FILE_UPLOAD
+          dataPath: "upload",
+          dataType: dataTypes.FILE_UPLOAD,
         };
       });
-    } else if (value === 'customMounted') {
-      this.setState(state => {
+    } else if (value === "customMounted") {
+      this.setState((state) => {
         return {
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
           bedFile: state.bedSelect,
-          dataPath: 'mounted',
-          dataType: dataTypes.MOUNTED_FILES
+          dataPath: "mounted",
+          dataType: dataTypes.MOUNTED_FILES,
         };
       });
-    } else if (value === 'syntheticExamples') {
+    } else if (value === "syntheticExamples") {
       this.setState({ dataType: dataTypes.EXAMPLES });
     }
   };
 
   handleGoButton = () => {
     if (this.props.dataOrigin !== dataOriginTypes.API) {
-      this.props.setColorSetting('haplotypeColors', 'ygreys');
-      this.props.setColorSetting('forwardReadColors', 'reds');
+      this.props.setColorSetting("haplotypeColors", "ygreys");
+      this.props.setColorSetting("forwardReadColors", "reds");
     }
     const fetchParams = {
       region: this.state.region,
@@ -302,31 +312,37 @@ class HeaderForm extends Component {
     this.props.setFetchParams(fetchParams);
   };
 
-  handleInputChange = event => {
+  handleInputChange = (event) => {
     const id = event.target.id;
     const value = event.target.value;
     this.setState({ [id]: value });
-    if (id === 'xgSelect') {
+    if (id === "xgSelect") {
       this.getPathNames(value, this.state.dataPath);
       this.setState({ xgFile: value });
-    } else if (id === 'gbwtSelect') {
+    } else if (id === "gbwtSelect") {
       this.setState({ gbwtFile: value });
-    } else if (id === 'gamSelect') {
+    } else if (id === "gamSelect") {
       this.setState({ gamFile: value });
-    } else if (id === 'bedSelect') {
+    } else if (id === "bedSelect") {
       this.getBedRegions(value, this.state.dataPath);
       this.setState({ bedFile: value });
-    } else if (id === 'pathSelect') {
-      this.setState({ region: value.concat(':') });
-    } else if (id === 'regionSelect') {
+    } else if (id === "pathSelect") {
+      this.setState({ region: value.concat(":") });
+    } else if (id === "regionSelect") {
       // find which region corresponds to this region label/desc
       let i = 0;
-      while (i < this.state.regionInfo['desc'].length && this.state.regionInfo['desc'][i] !== value) i += 1;
-      if (i < this.state.regionInfo['desc'].length){
-        let region_chr = this.state.regionInfo['chr'][i];
-        let region_start = this.state.regionInfo['start'][i];
-        let region_end = this.state.regionInfo['end'][i];
-        this.setState({ region: region_chr.concat(':', region_start, '-', region_end) });
+      while (
+        i < this.state.regionInfo["desc"].length &&
+        this.state.regionInfo["desc"][i] !== value
+      )
+        i += 1;
+      if (i < this.state.regionInfo["desc"].length) {
+        let region_chr = this.state.regionInfo["chr"][i];
+        let region_start = this.state.regionInfo["start"][i];
+        let region_end = this.state.regionInfo["end"][i];
+        this.setState({
+          region: region_chr.concat(":", region_start, "-", region_end),
+        });
       }
     }
   };
@@ -340,8 +356,8 @@ class HeaderForm extends Component {
     r_start = Math.round(r_start + shift);
     r_end = Math.round(r_end + shift);
     this.setState(
-      state => ({
-        region: region_col[0].concat(":", r_start, "-", r_end)
+      (state) => ({
+        region: region_col[0].concat(":", r_start, "-", r_end),
       }),
       () => this.handleGoButton()
     );
@@ -356,8 +372,8 @@ class HeaderForm extends Component {
     r_start = Math.max(0, Math.round(r_start - shift));
     r_end = Math.max(0, Math.round(r_end - shift));
     this.setState(
-      state => ({
-        region: region_col[0].concat(":", r_start, "-", r_end)
+      (state) => ({
+        region: region_col[0].concat(":", r_start, "-", r_end),
       }),
       () => this.handleGoButton()
     );
@@ -367,23 +383,35 @@ class HeaderForm extends Component {
     this.setState({ [fileType]: fileName });
   };
 
+  handleCopyLink = () => {
+    console.log(this.state);
+    const params = new URLSearchParams(this.state).toString();
+    console.log(params);
+    const full = window.location.host + "?" + params;
+
+    navigator.clipboard.writeText(full);
+    console.log(this.state, params,full)
+    debugger;
+
+  };
+
   showFileSizeAlert = () => {
     this.setState({ fileSizeAlert: true });
   };
 
-  setUploadInProgress = val => {
+  setUploadInProgress = (val) => {
     this.setState({ uploadInProgress: val });
   };
 
   setUpWebsocket = () => {
-    this.ws = new WebSocket(this.props.apiUrl.replace(/^http/, 'ws'));
-    this.ws.onmessage = message => {
+    this.ws = new WebSocket(this.props.apiUrl.replace(/^http/, "ws"));
+    this.ws.onmessage = (message) => {
       this.getMountedFilenames();
     };
-    this.ws.onclose = event => {
+    this.ws.onclose = (event) => {
       setTimeout(this.setUpWebsocket, 1000);
     };
-    this.ws.onerror = event => {
+    this.ws.onerror = (event) => {
       this.ws.close();
     };
   };
@@ -392,7 +420,9 @@ class HeaderForm extends Component {
     let errorDiv = null;
     if (this.state.error) {
       console.log("Header error: " + this.state.error);
-      const message = this.state.error.message ? this.state.error.message : this.state.error;
+      const message = this.state.error.message
+        ? this.state.error.message
+        : this.state.error;
       // We drop the error message into a div and leave most of the UI so the
       // user can potentially recover by picking something else.
       errorDiv = (
@@ -406,7 +436,7 @@ class HeaderForm extends Component {
       );
     }
 
-    let dataSourceDropdownOptions = DATA_SOURCES.map(ds => {
+    let dataSourceDropdownOptions = DATA_SOURCES.map((ds) => {
       return (
         <option value={ds.name} key={ds.name}>
           {ds.name}
@@ -428,9 +458,9 @@ class HeaderForm extends Component {
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
-    const bedRegionsFlag = this.state.bedSelect !== 'none';
-    const pathNamesFlag = this.state.xgSelect !== 'none';
-    
+    const bedRegionsFlag = this.state.bedSelect !== "none";
+    const pathNamesFlag = this.state.xgSelect !== "none";
+
     return (
       <div>
         {errorDiv}
@@ -509,7 +539,7 @@ class HeaderForm extends Component {
                 className="mt-3"
               >
                 <strong>File size too big! </strong>
-                You may only upload files with a maximum size of{' '}
+                You may only upload files with a maximum size of{" "}
                 {MAX_UPLOAD_SIZE_DESCRIPTION}.
               </Alert>
               {examplesFlag ? (
@@ -525,6 +555,7 @@ class HeaderForm extends Component {
                   handleGoRight={this.handleGoRight}
                   handleGoButton={this.handleGoButton}
                   uploadInProgress={this.state.uploadInProgress}
+                  handleCopyLink={this.handleCopyLink}
                 />
               )}
             </Col>
@@ -540,7 +571,7 @@ HeaderForm.propTypes = {
   dataOrigin: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
-  setFetchParams: PropTypes.func.isRequired
+  setFetchParams: PropTypes.func.isRequired,
 };
 
 export default HeaderForm;

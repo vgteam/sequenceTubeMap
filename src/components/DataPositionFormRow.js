@@ -123,7 +123,7 @@ class DataPositionFormRow extends Component {
         >
           Download Image
         </Button>
-        <Button id="shareLinkButton" color="primary">
+        <Button id="shareLinkButton" color="primary" onClick={this.props.handleCopyLink}>
           <FontAwesomeIcon icon={faLink} size="lg" />
            Copy link to region
         </Button>
@@ -137,6 +137,7 @@ DataPositionFormRow.propTypes = {
   handleGoLeft: PropTypes.func.isRequired,
   handleGoRight: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
+  handleCopyLink: PropTypes.func.isRequired,
   region: PropTypes.string.isRequired,
   uploadInProgress: PropTypes.bool.isRequired,
 };
