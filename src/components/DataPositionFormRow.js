@@ -125,7 +125,7 @@ class DataPositionFormRow extends Component {
         </Button>
         <Button id="shareLinkButton" color="primary" onClick={this.props.handleCopyLink}>
           <FontAwesomeIcon icon={faLink} size="lg" />
-           Copy link to region
+            Copy link to data
         </Button>
       </Form>
     );

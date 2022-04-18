@@ -11,9 +11,11 @@ import config from "./config.json";
 class App extends Component {
   constructor(props) {
     super(props);
-    const ds = config.DATA_SOURCES[0];
+
+    const ds = this.urlParamsToObject() ?? config.DATA_SOURCES[0];
+    console.log("source", ds);
     let xgFile = ds.xgFile;
-    let region = ds.defaultPosition;
+    let region = ds.region ?? ds.defaultPosition;
     let gamFile = undefined;
     if (ds.gamFile) {
       gamFile = ds.gamFile;
@@ -45,7 +47,7 @@ class App extends Component {
       },
       // This is a little like dataPath, but lets us toggle between data from
       // the server and local test data. TODO: Unify?
-      dataOrigin: dataOriginTypes.API,
+      dataOrigin: dataOriginTypes.API, // EXAMPLE[N] etc.
       // These are the current rendering settings.
       visOptions: {
         removeRedundantNodes: true,
@@ -60,6 +62,8 @@ class App extends Component {
         mappingQualityCutoff: 0,
       },
     };
+    console.log("state", this.state);
+    debugger
   }
 
   componentDidUpdate() {
@@ -117,6 +121,17 @@ class App extends Component {
   setDataOrigin = (dataOrigin) => {
     this.setState({ dataOrigin });
   };
+
+  handleCopyLink = () => {
+    const params = new URLSearchParams(this.state.fetchParams).toString();
+    const full = window.location.host + "?" + params;
+
+    navigator.clipboard.writeText(full);
+    console.log(this.state, params,full)
+    debugger;
+
+  };
+
   urlParamsToObject = () => {
     // Take any saved parameters in the query part of the URL
     // and turn to object to populate in HeaderForm state and fetchParams
@@ -131,7 +146,7 @@ class App extends Component {
     const result = {};
     for (const [key, value] of entries) {
       // each 'entry' is a [key, value] tuple
-      result[key] = value;
+      result[key] = (value === "undefined") ? undefined : value;
     }
     console.log(params, result);
     debugger;
@@ -147,7 +162,8 @@ class App extends Component {
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
-          urlParams={this.urlParamsToObject()}
+          urlParams={this.urlParamsToObject()} // componentdidmount or w/e
+          handleCopyLink={this.handleCopyLink}
         />
         <TubeMapContainer
           fetchParams={this.state.fetchParams}

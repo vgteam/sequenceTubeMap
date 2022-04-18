@@ -43,6 +43,8 @@ class TubeMapContainer extends Component {
 
     if (error) {
       console.log(error);
+      debugger
+      console.log(this.state);
       const message = error.message ? error.message : error;
       return (
         <div id="tubeMapContainer">

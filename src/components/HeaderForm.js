@@ -72,10 +72,10 @@ class HeaderForm extends Component {
     this.getMountedFilenames();
     this.setUpWebsocket();
   }
+  DATA_NAMES = DATA_SOURCES.map(source => source.name)
 
   // init with the URL params, or first data source if none
   initState = () => {
-    console.log(this.props.urlParams);
     // Populate 
     let ds = this.props.urlParams ?? DATA_SOURCES[0];
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
@@ -89,17 +89,19 @@ class HeaderForm extends Component {
       if (xgSelect !== "none") {
         this.getPathNames(xgSelect, dataPath);
       }
-      return {
+      const stateVals =  {
         xgFile: ds.xgFile,
         xgSelect: xgSelect,
-        gbwtFile: ds.gbwtFile,
+        gbwtFile: ds.gbwtFile == "undefined" ? undefined : ds.gwbtFile,
         gamFile: ds.gamFile,
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
         dataPath: dataPath,
         region: ds.region || ds.defaultPosition,
-        dataType: dataTypes.BUILT_IN,
+        dataType: dataTypes.BUILT_IN, // TODO: look into thisdataTypes.MOUNTED_FILES,
       };
+      console.log("state vals", stateVals);
+      return stateVals
     });
   };
 
@@ -387,18 +389,6 @@ class HeaderForm extends Component {
     this.setState({ [fileType]: fileName });
   };
 
-  handleCopyLink = () => {
-    console.log(this.state);
-    const params = new URLSearchParams(this.state).toString();
-    console.log(params);
-    const full = window.location.host + "?" + params;
-
-    navigator.clipboard.writeText(full);
-    console.log(this.state, params,full)
-    debugger;
-
-  };
-
   showFileSizeAlert = () => {
     this.setState({ fileSizeAlert: true });
   };
@@ -559,7 +549,7 @@ class HeaderForm extends Component {
                   handleGoRight={this.handleGoRight}
                   handleGoButton={this.handleGoButton}
                   uploadInProgress={this.state.uploadInProgress}
-                  handleCopyLink={this.handleCopyLink}
+                  handleCopyLink={this.props.handleCopyLink}
                 />
               )}
             </Col>
