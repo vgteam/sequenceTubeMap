@@ -1,5 +1,16 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
+
+import { Form, Label, Input, Button } from "reactstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faStepBackward,
+  faStepForward,
+  faSearchPlus,
+  faSearchMinus,
+  faQuestionCircle,
+  faLink
+} from "@fortawesome/free-solid-svg-icons";
 import "./App.css";
 import HeaderForm from "./components/HeaderForm";
 import TubeMapContainer from "./components/TubeMapContainer";
@@ -127,8 +138,8 @@ class App extends Component {
     const full = window.location.host + "?" + params;
 
     navigator.clipboard.writeText(full);
-    console.log(this.state, params,full)
-    debugger;
+    console.log("Copied", params);
+
 
   };
 
@@ -165,6 +176,10 @@ class App extends Component {
           urlParams={this.urlParamsToObject()} // componentdidmount or w/e
           handleCopyLink={this.handleCopyLink}
         />
+        <Button id="shareLinkButton" color="primary" onClick={this.handleCopyLink}>
+          <FontAwesomeIcon icon={faLink} size="lg" />
+            Copy link to data
+        </Button>
         <TubeMapContainer
           fetchParams={this.state.fetchParams}
           dataOrigin={this.state.dataOrigin}

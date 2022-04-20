@@ -92,7 +92,7 @@ class HeaderForm extends Component {
       const stateVals =  {
         xgFile: ds.xgFile,
         xgSelect: xgSelect,
-        gbwtFile: ds.gbwtFile == "undefined" ? undefined : ds.gwbtFile,
+        gbwtFile: ds.gbwtFile,
         gamFile: ds.gamFile,
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
@@ -100,7 +100,6 @@ class HeaderForm extends Component {
         region: ds.region || ds.defaultPosition,
         dataType: dataTypes.BUILT_IN, // TODO: look into thisdataTypes.MOUNTED_FILES,
       };
-      console.log("state vals", stateVals);
       return stateVals
     });
   };
@@ -549,7 +548,6 @@ class HeaderForm extends Component {
                   handleGoRight={this.handleGoRight}
                   handleGoButton={this.handleGoButton}
                   uploadInProgress={this.state.uploadInProgress}
-                  handleCopyLink={this.props.handleCopyLink}
                 />
               )}
             </Col>

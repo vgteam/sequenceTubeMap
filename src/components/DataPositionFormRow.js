@@ -8,7 +8,6 @@ import {
   faSearchPlus,
   faSearchMinus,
   faQuestionCircle,
-  faLink
 } from "@fortawesome/free-solid-svg-icons";
 import * as tubeMap from "../util/tubemap";
 
@@ -123,10 +122,6 @@ class DataPositionFormRow extends Component {
         >
           Download Image
         </Button>
-        <Button id="shareLinkButton" color="primary" onClick={this.props.handleCopyLink}>
-          <FontAwesomeIcon icon={faLink} size="lg" />
-            Copy link to data
-        </Button>
       </Form>
     );
   }
@@ -137,7 +132,6 @@ DataPositionFormRow.propTypes = {
   handleGoLeft: PropTypes.func.isRequired,
   handleGoRight: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  handleCopyLink: PropTypes.func.isRequired,
   region: PropTypes.string.isRequired,
   uploadInProgress: PropTypes.bool.isRequired,
 };
