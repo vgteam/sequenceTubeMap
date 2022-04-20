@@ -1,19 +1,10 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 
-import { Form, Label, Input, Button } from "reactstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faStepBackward,
-  faStepForward,
-  faSearchPlus,
-  faSearchMinus,
-  faQuestionCircle,
-  faLink
-} from "@fortawesome/free-solid-svg-icons";
 import "./App.css";
 import HeaderForm from "./components/HeaderForm";
 import TubeMapContainer from "./components/TubeMapContainer";
+import { CopyLink, urlParamsToObject} from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
 import { dataOriginTypes } from "./enums";
 import * as tubeMap from "./util/tubemap";
@@ -23,8 +14,7 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    const ds = this.urlParamsToObject() ?? config.DATA_SOURCES[0];
-    console.log("source", ds);
+    const ds = urlParamsToObject() ?? config.DATA_SOURCES[0];
     let xgFile = ds.xgFile;
     let region = ds.region ?? ds.defaultPosition;
     let gamFile = undefined;
@@ -73,8 +63,6 @@ class App extends Component {
         mappingQualityCutoff: 0,
       },
     };
-    console.log("state", this.state);
-    debugger
   }
 
   componentDidUpdate() {
@@ -133,36 +121,7 @@ class App extends Component {
     this.setState({ dataOrigin });
   };
 
-  handleCopyLink = () => {
-    const params = new URLSearchParams(this.state.fetchParams).toString();
-    const full = window.location.host + "?" + params;
 
-    navigator.clipboard.writeText(full);
-    console.log("Copied", params);
-
-
-  };
-
-  urlParamsToObject = () => {
-    // Take any saved parameters in the query part of the URL
-    // and turn to object to populate in HeaderForm state and fetchParams
-    // Returns: Object (HeaderForm state)
-    // See https://stackoverflow.com/questions/8648892/how-to-convert-url-parameters-to-a-javascript-object
-    // TODO: check empty
-    // also make sure to not run at every render
-    const params = new URL(document.location).searchParams;
-    if (params.toString() === "") return null;
-    const urlParams = new URLSearchParams(params);
-    const entries = urlParams.entries();
-    const result = {};
-    for (const [key, value] of entries) {
-      // each 'entry' is a [key, value] tuple
-      result[key] = (value === "undefined") ? undefined : value;
-    }
-    console.log(params, result);
-    debugger;
-    return result;
-  };
 
   render() {
     return (
@@ -173,13 +132,9 @@ class App extends Component {
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
-          urlParams={this.urlParamsToObject()} // componentdidmount or w/e
-          handleCopyLink={this.handleCopyLink}
+          urlParams={urlParamsToObject()} // componentdidmount or w/e
         />
-        <Button id="shareLinkButton" color="primary" onClick={this.handleCopyLink}>
-          <FontAwesomeIcon icon={faLink} size="lg" />
-            Copy link to data
-        </Button>
+        <CopyLink fetchParams={this.state.fetchParams} />
         <TubeMapContainer
           fetchParams={this.state.fetchParams}
           dataOrigin={this.state.dataOrigin}
