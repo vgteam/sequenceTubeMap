@@ -77,6 +77,7 @@ class HeaderForm extends Component {
   // init with the URL params, or first data source if none
   initState = () => {
     // Populate 
+    // TODO: same issue with different types as in App
     let ds = this.props.urlParams ?? DATA_SOURCES[0];
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";

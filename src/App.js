@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import "./App.css";
 import HeaderForm from "./components/HeaderForm";
 import TubeMapContainer from "./components/TubeMapContainer";
-import { CopyLink, urlParamsToObject} from "./components/CopyLink";
+import { CopyLink, urlParamsToObject } from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
 import { dataOriginTypes } from "./enums";
 import * as tubeMap from "./util/tubemap";
@@ -14,6 +14,8 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+    // TODO: add touchParamsToDataSource()
+    // Fix typing inconsistency
     const ds = urlParamsToObject() ?? config.DATA_SOURCES[0];
     let xgFile = ds.xgFile;
     let region = ds.region ?? ds.defaultPosition;
@@ -29,25 +31,25 @@ class App extends Component {
     if (ds.bedFile) {
       bedFile = ds.bedFile;
     }
-    let dataPath = "default";
-    if (ds.useMountedPath) {
-      dataPath = "mounted";
-    }
+    let dataPath = ds.dataPath ?? (ds.useMountedPath ? "mounted" : "default");
+
+    // TODO: check and only set after making reauest
+    let fetchParams = {
+      // This is the query (like path:start-end) we are displaying.
+      region: region,
+      xgFile: xgFile,
+      gbwtFile: gbwtFile,
+      gamFile: gamFile,
+      bedFile: bedFile,
+      // This is the type of data paths we are working with, such as "mounted".
+      // All the paths are scoped to a type on the server side.
+      dataPath: dataPath,
+    };
     this.state = {
       // These describe the files on the server side that we are working on.
-      fetchParams: {
-        // This is the query (like path:start-end) we are displaying.
-        region: region,
-        xgFile: xgFile,
-        gbwtFile: gbwtFile,
-        gamFile: gamFile,
-        bedFile: bedFile,
-        // This is the type of data paths we are working with, such as "mounted".
-        // All the paths are scoped to a type on the server side.
-        dataPath: dataPath,
-      },
       // This is a little like dataPath, but lets us toggle between data from
       // the server and local test data. TODO: Unify?
+      fetchParams: fetchParams,
       dataOrigin: dataOriginTypes.API, // EXAMPLE[N] etc.
       // These are the current rendering settings.
       visOptions: {
@@ -120,8 +122,6 @@ class App extends Component {
   setDataOrigin = (dataOrigin) => {
     this.setState({ dataOrigin });
   };
-
-
 
   render() {
     return (
