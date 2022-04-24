@@ -5,24 +5,24 @@
       "name": "snp1kg-BRCA1",
       "xgFile": "snp1kg-BRCA1.vg.xg",
       "gamFile": "NA12878-BRCA1.sorted.gam",
-      "useMountedPath": false,
-      "defaultPosition": "17:1-100",
+      "dataPath": "default",
+      "region": "17:1-100",
       "bedFile": "snp1kg-BRCA1.bed"
     },
     {
       "name": "vg \"small\" example",
       "xgFile": "x.vg.xg",
       "gbwtFile": "x.vg.gbwt",
-      "useMountedPath": true,
-      "defaultPosition": "x:1-100"
+      "dataPath": "mounted",
+      "region": "x:1-100"
     },
     {
       "name": "cactus",
       "xgFile": "cactus.vg.xg",
       "gamFile": "cactus-NA12879.sorted.gam",
-      "useMountedPath": true,
+      "dataPath": "mounted",
       "bedFile": "cactus.bed",
-      "defaultPosition": "ref:1-100"
+      "region": "ref:1-100"
     }
   ],
   "vgPath": "",

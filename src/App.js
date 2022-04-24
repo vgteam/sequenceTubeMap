@@ -9,6 +9,12 @@ import CustomizationAccordion from "./components/CustomizationAccordion";
 import { dataOriginTypes } from "./enums";
 import * as tubeMap from "./util/tubemap";
 import config from "./config.json";
+// Data path  - see server.js and config.json
+const dataPaths = {
+  MOUNTED: "mounted",
+  DEFAULT: "default", 
+  UPLOAD: "upload"
+}
 
 class App extends Component {
   constructor(props) {
@@ -18,7 +24,7 @@ class App extends Component {
     // Fix typing inconsistency
     const ds = urlParamsToObject() ?? config.DATA_SOURCES[0];
     let xgFile = ds.xgFile;
-    let region = ds.region ?? ds.defaultPosition;
+    let region = ds.region;
     let gamFile = undefined;
     if (ds.gamFile) {
       gamFile = ds.gamFile;
@@ -31,7 +37,7 @@ class App extends Component {
     if (ds.bedFile) {
       bedFile = ds.bedFile;
     }
-    let dataPath = ds.dataPath ?? (ds.useMountedPath ? "mounted" : "default");
+    let dataPath = ds.dataPath;
 
     // TODO: check and only set after making reauest
     let fetchParams = {
@@ -41,9 +47,11 @@ class App extends Component {
       gbwtFile: gbwtFile,
       gamFile: gamFile,
       bedFile: bedFile,
-      // This is the type of data paths we are working with, such as "mounted".
+      // This is the type of data paths we are working with, such as "mounted", "upload", or "default" - see server.js.
       // All the paths are scoped to a type on the server side.
       dataPath: dataPath,
+      // Non-essential to server/optional
+      name: ds.name ?? "name",
     };
     this.state = {
       // These describe the files on the server side that we are working on.

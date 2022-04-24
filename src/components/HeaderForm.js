@@ -81,7 +81,7 @@ class HeaderForm extends Component {
     let ds = this.props.urlParams ?? DATA_SOURCES[0];
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
-    const dataPath = ds.useMountedPath ? "mounted" : "default";
+    const dataPath = ds.dataPath;
 
     this.setState((state) => {
       if (bedSelect !== "none") {
@@ -98,7 +98,7 @@ class HeaderForm extends Component {
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
         dataPath: dataPath,
-        region: ds.region || ds.defaultPosition,
+        region: ds.region,
         dataType: dataTypes.BUILT_IN, // TODO: look into thisdataTypes.MOUNTED_FILES,
       };
       return stateVals
@@ -254,7 +254,7 @@ class HeaderForm extends Component {
     const value = event.target.value;
     DATA_SOURCES.forEach((ds) => {
       if (ds.name === value) {
-        let dataPath = ds.useMountedPath ? "mounted" : "default";
+        let dataPath = ds.dataPath;
         let bedSelect = "none";
         if (ds.bedFile) {
           this.getBedRegions(ds.bedFile, dataPath);
@@ -269,7 +269,7 @@ class HeaderForm extends Component {
           bedFile: ds.bedFile,
           bedSelect: bedSelect,
           dataPath: dataPath,
-          region: ds.defaultPosition,
+          region: ds.region,
           dataType: dataTypes.BUILT_IN,
         });
         return;
