@@ -28,7 +28,7 @@ class TubeMapContainer extends Component {
         ? this.getRemoteTubeMapData()
         : this.getExampleData();
     } else {
-      if (JSON.stringify(this.props.fetchParams) !== JSON.stringify(prevProps.fetchParams)) {
+      if (JSON.stringify(this.props.viewTarget) !== JSON.stringify(prevProps.viewTarget)) {
         // We need to compare the fetch parameters with stringification because
         // they will get swapped out for a different object all the time, and we
         // don't want to compare object identity. TODO: stringify isn't
@@ -93,7 +93,7 @@ class TubeMapContainer extends Component {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(this.props.fetchParams)
+        body: JSON.stringify(this.props.viewTarget)
       });
       if (json.graph === undefined) {
         // We did not get back a graph, even if we didn't get an error either.
@@ -177,7 +177,7 @@ class TubeMapContainer extends Component {
 TubeMapContainer.propTypes = {
   apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.oneOf(Object.values(dataOriginTypes)).isRequired,
-  fetchParams: PropTypes.object.isRequired 
+  viewTarget: PropTypes.object.isRequired 
 };
 
 export default TubeMapContainer;

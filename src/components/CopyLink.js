@@ -7,13 +7,13 @@ const UNCLICKED_TEXT = " Copy link to data";
 const CLICKED_TEXT = " Copied link!";
 
 export function CopyLink(props) {
-  // Button to copy a link with fetchParams to the data selected
+  // Button to copy a link with viewTarget to the data selected
 
   const [text, setText] = useState(UNCLICKED_TEXT);
 
   const handleCopyLink = () => {
-    // Turn fetchParams into a URL query string 
-    const params = new URLSearchParams(props.fetchParams).toString();
+    // Turn viewTarget into a URL query string 
+    const params = new URLSearchParams(props.viewTarget).toString();
     const full = window.location.host + "?" + params;
 
     // Write link to clipboard
@@ -29,10 +29,10 @@ export function CopyLink(props) {
   );
 }
 
-export const urlParamsToObject = () => {
+export const urlParamsToViewTarget = () => {
   // Take any saved parameters in the query part of the URL
-  // and turn to object to populate in HeaderForm state and fetchParams
-  // Returns: Object (fetchParams) - see App.js
+  // and turn to object to populate in HeaderForm state and viewTarget
+  // Returns: Object (viewTarget) - see App.js
   // Source for parsing: https://stackoverflow.com/questions/8648892/how-to-convert-url-parameters-to-a-javascript-object
 
   // Get portion of URL after '?' 

@@ -19,6 +19,7 @@ import BedRegionsFormRow from "./BedRegionsFormRow";
 import PathNamesFormRow from "./PathNamesFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
+// See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
 const MAX_UPLOAD_SIZE_DESCRIPTION = "5 MB";
@@ -298,6 +299,7 @@ class HeaderForm extends Component {
         };
       });
     } else if (value === "syntheticExamples") {
+      // Synthetic data examples in dropdown
       this.setState({ dataType: dataTypes.EXAMPLES });
     }
   };
@@ -307,7 +309,8 @@ class HeaderForm extends Component {
       this.props.setColorSetting("haplotypeColors", "ygreys");
       this.props.setColorSetting("forwardReadColors", "reds");
     }
-    const fetchParams = {
+    // 
+    const viewTarget = {
       region: this.state.region,
       xgFile: this.state.xgFile,
       gbwtFile: this.state.gbwtFile,
@@ -315,7 +318,7 @@ class HeaderForm extends Component {
       bedFile: this.state.bedFile,
       dataPath: this.state.dataPath,
     };
-    this.props.setFetchParams(fetchParams);
+    this.props.setViewTarget(viewTarget);
   };
 
   handleInputChange = (event) => {
@@ -564,7 +567,7 @@ HeaderForm.propTypes = {
   dataOrigin: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
-  setFetchParams: PropTypes.func.isRequired,
+  setViewTarget: PropTypes.func.isRequired,
   urlParams:PropTypes.any.isRequired, // Header Form State
 };
 

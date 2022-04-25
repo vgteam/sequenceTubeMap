@@ -4,17 +4,12 @@ import PropTypes from "prop-types";
 import "./App.css";
 import HeaderForm from "./components/HeaderForm";
 import TubeMapContainer from "./components/TubeMapContainer";
-import { CopyLink, urlParamsToObject } from "./components/CopyLink";
+import { CopyLink, urlParamsToViewTarget } from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
 import { dataOriginTypes } from "./enums";
 import * as tubeMap from "./util/tubemap";
 import config from "./config.json";
 // Data path  - see server.js and config.json
-const dataPaths = {
-  MOUNTED: "mounted",
-  DEFAULT: "default", 
-  UPLOAD: "upload"
-}
 
 class App extends Component {
   constructor(props) {
@@ -22,42 +17,12 @@ class App extends Component {
 
     // TODO: add touchParamsToDataSource()
     // Fix typing inconsistency
-    const ds = urlParamsToObject() ?? config.DATA_SOURCES[0];
-    let xgFile = ds.xgFile;
-    let region = ds.region;
-    let gamFile = undefined;
-    if (ds.gamFile) {
-      gamFile = ds.gamFile;
-    }
-    let gbwtFile = undefined;
-    if (ds.gbwtFile) {
-      gbwtFile = ds.gbwtFile;
-    }
-    let bedFile = undefined;
-    if (ds.bedFile) {
-      bedFile = ds.bedFile;
-    }
-    let dataPath = ds.dataPath;
-
-    // TODO: check and only set after making reauest
-    let fetchParams = {
-      // This is the query (like path:start-end) we are displaying.
-      region: region,
-      xgFile: xgFile,
-      gbwtFile: gbwtFile,
-      gamFile: gamFile,
-      bedFile: bedFile,
-      // This is the type of data paths we are working with, such as "mounted", "upload", or "default" - see server.js.
-      // All the paths are scoped to a type on the server side.
-      dataPath: dataPath,
-      // Non-essential to server/optional
-      name: ds.name ?? "name",
-    };
+    const ds = urlParamsToViewTarget() ?? config.DATA_SOURCES[0];
     this.state = {
       // These describe the files on the server side that we are working on.
       // This is a little like dataPath, but lets us toggle between data from
       // the server and local test data. TODO: Unify?
-      fetchParams: fetchParams,
+      viewTarget: ds,
       dataOrigin: dataOriginTypes.API, // EXAMPLE[N] etc.
       // These are the current rendering settings.
       visOptions: {
@@ -93,9 +58,12 @@ class App extends Component {
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }
 
-  setFetchParams = (fetchParams) => {
+  /**
+   * @param {ViewTarget} viewTarget - The default or selected data to view 
+   */
+  setViewTarget = (viewTarget) => {
     this.setState({
-      fetchParams: fetchParams,
+      viewTarget: viewTarget,
       dataOrigin: dataOriginTypes.API,
     });
   };
@@ -135,16 +103,16 @@ class App extends Component {
     return (
       <div>
         <HeaderForm
-          setFetchParams={this.setFetchParams}
+          setViewTarget={this.setViewTarget}
           setDataOrigin={this.setDataOrigin}
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
-          urlParams={urlParamsToObject()} // componentdidmount or w/e
+          urlParams={urlParamsToViewTarget()} 
         />
-        <CopyLink fetchParams={this.state.fetchParams} />
+        <CopyLink viewTarget={this.state.viewTarget} />
         <TubeMapContainer
-          fetchParams={this.state.fetchParams}
+          viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
         />
