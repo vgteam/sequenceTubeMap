@@ -7,13 +7,15 @@
       "gamFile": "NA12878-BRCA1.sorted.gam",
       "dataPath": "default",
       "region": "17:1-100",
-      "bedFile": "snp1kg-BRCA1.bed"
+      "bedFile": "snp1kg-BRCA1.bed",
+      "dataType": "built-in"
     },
     {
       "name": "vg \"small\" example",
       "xgFile": "x.vg.xg",
       "gbwtFile": "x.vg.gbwt",
       "dataPath": "mounted",
+      "dataType": "built-in",
       "region": "x:1-100"
     },
     {
@@ -22,7 +24,8 @@
       "gamFile": "cactus-NA12879.sorted.gam",
       "dataPath": "mounted",
       "bedFile": "cactus.bed",
-      "region": "ref:1-100"
+      "region": "ref:1-100",
+      "dataType": "built-in"
     }
   ],
   "vgPath": "",

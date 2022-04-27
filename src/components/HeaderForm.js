@@ -1,14 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  Label,
-  Input,
-  Alert,
-} from "reactstrap";
+import { Container, Row, Col, Form, Label, Input, Alert } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
 // import defaultConfig from '../config.default.json';
@@ -59,6 +51,7 @@ class HeaderForm extends Component {
     bedFile: undefined,
     dataPath: undefined,
     region: undefined,
+    name: undefined,
 
     dataType: dataTypes.BUILT_IN,
     fileSizeAlert: false,
@@ -73,16 +66,17 @@ class HeaderForm extends Component {
     this.getMountedFilenames();
     this.setUpWebsocket();
   }
-  DATA_NAMES = DATA_SOURCES.map(source => source.name)
+  DATA_NAMES = DATA_SOURCES.map((source) => source.name);
 
   // init with the URL params, or first data source if none
   initState = () => {
-    // Populate 
+    // Populate
     // TODO: same issue with different types as in App
     let ds = this.props.urlParams ?? DATA_SOURCES[0];
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
     const dataPath = ds.dataPath;
+    console.log(ds.name, "name", ds);
 
     this.setState((state) => {
       if (bedSelect !== "none") {
@@ -91,7 +85,7 @@ class HeaderForm extends Component {
       if (xgSelect !== "none") {
         this.getPathNames(xgSelect, dataPath);
       }
-      const stateVals =  {
+      const stateVals = {
         xgFile: ds.xgFile,
         xgSelect: xgSelect,
         gbwtFile: ds.gbwtFile,
@@ -100,9 +94,10 @@ class HeaderForm extends Component {
         bedSelect: bedSelect,
         dataPath: dataPath,
         region: ds.region,
-        dataType: dataTypes.BUILT_IN, // TODO: look into thisdataTypes.MOUNTED_FILES,
+        dataType: ds.dataType,
+        name: ds.name,
       };
-      return stateVals
+      return stateVals;
     });
   };
 
@@ -272,11 +267,12 @@ class HeaderForm extends Component {
           dataPath: dataPath,
           region: ds.region,
           dataType: dataTypes.BUILT_IN,
+          name: ds.name,
         });
         return;
       }
     });
-    if (value === "customFileUpload") {
+    if (value === dataTypes.FILE_UPLOAD) {
       this.setState((state) => {
         return {
           xgFile: state.xgSelect,
@@ -301,6 +297,9 @@ class HeaderForm extends Component {
     } else if (value === "syntheticExamples") {
       // Synthetic data examples in dropdown
       this.setState({ dataType: dataTypes.EXAMPLES });
+    } else {
+      // TODO: name and others
+      this.setState({ dataType: dataTypes.BUILT_IN });
     }
   };
 
@@ -309,14 +308,16 @@ class HeaderForm extends Component {
       this.props.setColorSetting("haplotypeColors", "ygreys");
       this.props.setColorSetting("forwardReadColors", "reds");
     }
-    // 
+    //
     const viewTarget = {
+      name: this.state.name,
       region: this.state.region,
       xgFile: this.state.xgFile,
       gbwtFile: this.state.gbwtFile,
       gamFile: this.state.gamFile,
       bedFile: this.state.bedFile,
       dataPath: this.state.dataPath,
+      dataType: this.state.dataType,
     };
     this.props.setViewTarget(viewTarget);
   };
@@ -434,20 +435,37 @@ class HeaderForm extends Component {
     }
 
     let dataSourceDropdownOptions = DATA_SOURCES.map((ds) => {
+      console.log(ds.name === this.state.name, this.state.name);
       return (
-        <option value={ds.name} key={ds.name}>
+        <option
+          value={ds.name}
+          selected={ds.name === this.state.name}
+          key={ds.name}
+        >
           {ds.name}
         </option>
       );
     });
     dataSourceDropdownOptions.push(
-      <option value="syntheticExamples" key="syntheticExamples">
+      <option
+        value={dataTypes.EXAMPLES}
+        selected={this.state.dataType === dataTypes.EXAMPLES}
+        key="syntheticExamples"
+      >
         synthetic data examples
       </option>,
-      <option value="customFileUpload" key="customFileUpload">
+      <option
+        value={dataTypes.FILE_UPLOAD}
+        key="customFileUpload"
+        selected={this.state.dataType === dataTypes.FILE_UPLOAD}
+      >
         custom (file upload)
       </option>,
-      <option value="customMounted" key="customMounted">
+      <option
+        value={dataTypes.MOUNTED_FILES}
+        key="customMounted"
+        selected={this.state.dataType === dataTypes.MOUNTED_FILES}
+      >
         custom (mounted files)
       </option>
     );
@@ -568,7 +586,7 @@ HeaderForm.propTypes = {
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
   setViewTarget: PropTypes.func.isRequired,
-  urlParams:PropTypes.any.isRequired, // Header Form State
+  urlParams: PropTypes.any.isRequired, // Header Form State
 };
 
 export default HeaderForm;
