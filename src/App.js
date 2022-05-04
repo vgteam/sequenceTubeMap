@@ -108,7 +108,7 @@ class App extends Component {
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
-          urlParams={urlParamsToViewTarget()} 
+          viewTarget={urlParamsToViewTarget()} 
         />
         <TubeMapContainer
           viewTarget={this.state.viewTarget}

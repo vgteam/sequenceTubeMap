@@ -59,7 +59,7 @@ class HeaderForm extends Component {
     uploadInProgress: false,
     error: null,
 
-    urlParams: undefined,
+    viewTarget: undefined,
   };
 
   componentDidMount() {
@@ -73,7 +73,7 @@ class HeaderForm extends Component {
   initState = () => {
     // Populate
     // TODO: same issue with different types as in App
-    let ds = this.props.urlParams ?? DATA_SOURCES[0];
+    let ds = this.props.viewTarget ?? DATA_SOURCES[0];
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
     const dataPath = ds.dataPath;
@@ -303,23 +303,23 @@ class HeaderForm extends Component {
       this.setState({ dataType: dataTypes.BUILT_IN });
     }
   };
+  getViewTarget = () => ({
+    name: this.state.name,
+    region: this.state.region,
+    xgFile: this.state.xgFile,
+    gbwtFile: this.state.gbwtFile,
+    gamFile: this.state.gamFile,
+    bedFile: this.state.bedFile,
+    dataPath: this.state.dataPath,
+    dataType: this.state.dataType,
+  });
 
   handleGoButton = () => {
     if (this.props.dataOrigin !== dataOriginTypes.API) {
       this.props.setColorSetting("haplotypeColors", "ygreys");
       this.props.setColorSetting("forwardReadColors", "reds");
     }
-    //
-    const viewTarget = {
-      name: this.state.name,
-      region: this.state.region,
-      xgFile: this.state.xgFile,
-      gbwtFile: this.state.gbwtFile,
-      gamFile: this.state.gamFile,
-      bedFile: this.state.bedFile,
-      dataPath: this.state.dataPath,
-      dataType: this.state.dataType,
-    };
+    const viewTarget = this.getViewTarget();
     this.props.setViewTarget(viewTarget);
   };
 
@@ -389,7 +389,7 @@ class HeaderForm extends Component {
       () => this.handleGoButton()
     );
   };
-  handleCopyLink = () => <CopyLink viewTarget={this.state.viewTarget} />;
+  handleCopyLink = () => <CopyLink viewTarget={this.getViewTarget()} />;
 
   handleFileUpload = (fileType, fileName) => {
     this.setState({ [fileType]: fileName });
@@ -437,37 +437,20 @@ class HeaderForm extends Component {
     }
 
     let dataSourceDropdownOptions = DATA_SOURCES.map((ds) => {
-      console.log(ds.name === this.state.name, this.state.name);
       return (
-        <option
-          value={ds.name}
-          selected={ds.name === this.state.name}
-          key={ds.name}
-        >
+        <option value={ds.name} key={ds.name}>
           {ds.name}
         </option>
       );
     });
     dataSourceDropdownOptions.push(
-      <option
-        value={dataTypes.EXAMPLES}
-        selected={this.state.dataType === dataTypes.EXAMPLES}
-        key="syntheticExamples"
-      >
+      <option value={dataTypes.EXAMPLES} key="syntheticExamples">
         synthetic data examples
       </option>,
-      <option
-        value={dataTypes.FILE_UPLOAD}
-        key="customFileUpload"
-        selected={this.state.dataType === dataTypes.FILE_UPLOAD}
-      >
+      <option value={dataTypes.FILE_UPLOAD} key="customFileUpload">
         custom (file upload)
       </option>,
-      <option
-        value={dataTypes.MOUNTED_FILES}
-        key="customMounted"
-        selected={this.state.dataType === dataTypes.MOUNTED_FILES}
-      >
+      <option value={dataTypes.MOUNTED_FILES} key="customMounted">
         custom (mounted files)
       </option>
     );
@@ -494,14 +477,16 @@ class HeaderForm extends Component {
                 >
                   Data:
                 </Label>
-                <Input
+                <select
                   type="select"
+                  value={this.state.name}
                   id="dataSourceSelect"
-                  className="custom-select mb-2 mr-sm-4 mb-sm-0"
+                  className="form-select
+                  mb-2 mr-sm-4 mb-sm-0"
                   onChange={this.handleDataSourceChange}
                 >
                   {dataSourceDropdownOptions}
-                </Input>
+                </select>
                 {mountedFilesFlag && (
                   <MountedDataFormRow
                     xgSelect={this.state.xgSelect}
@@ -589,7 +574,7 @@ HeaderForm.propTypes = {
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
   setViewTarget: PropTypes.func.isRequired,
-  urlParams: PropTypes.any.isRequired, // Header Form State
+  viewTarget: PropTypes.any, // Header Form State, may be null if no params in URL. see Types.ts
 };
 
 export default HeaderForm;

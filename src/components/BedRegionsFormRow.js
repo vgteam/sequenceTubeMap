@@ -13,13 +13,12 @@ class BedRegionsFormRow extends Component {
         >
           Region:
         </Label>
-        <SelectionDropdown
-          className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
+        <datalist>
           id="regionSelect"
           value={this.props.regionSelect}
           onChange={this.props.handleInputChange}
           options={this.props.regionSelectOptions}
-        />
+        </datalist>
 
       </React.Fragment>
     );

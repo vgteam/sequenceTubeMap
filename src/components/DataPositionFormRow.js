@@ -55,7 +55,6 @@ class DataPositionFormRow extends Component {
   // TODO: React-ify
   helpPopupFunction = () => {
     var popup = document.getElementById("helpPopup");
-    console.log("HELP");
     popup.classList.toggle("show");
   };
 
@@ -79,7 +78,8 @@ class DataPositionFormRow extends Component {
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
         <div className="popup" onClick={this.helpPopupFunction}>
-          <FontAwesomeIcon icon={faQuestionCircle} size="lg" />
+          <FontAwesomeIcon icon={faQuestionCircle} size="2x" />
+              <i class="fa-solid fa-camera fa-1x"></i>
           <span className="popuptext" id="helpPopup">
             Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges
             (e.g. "node:100-110"), a start position and a distance (e.g.
@@ -133,7 +133,7 @@ DataPositionFormRow.propTypes = {
   handleGoLeft: PropTypes.func.isRequired,
   handleGoRight: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  region: PropTypes.string.isRequired,
+  region: PropTypes.string,
   uploadInProgress: PropTypes.bool.isRequired,
 };
 

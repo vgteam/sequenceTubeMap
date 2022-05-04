@@ -13,6 +13,7 @@ export function CopyLink(props) {
 
   const handleCopyLink = () => {
     // Turn viewTarget into a URL query string 
+
     const params = new URLSearchParams(props.viewTarget).toString();
     const full = window.location.host + "?" + params;
 
