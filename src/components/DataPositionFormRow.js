@@ -122,6 +122,7 @@ class DataPositionFormRow extends Component {
         >
           Download Image
         </Button>
+        {this.props.handleCopyLink()}
       </Form>
     );
   }

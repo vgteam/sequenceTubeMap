@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import "./App.css";
 import HeaderForm from "./components/HeaderForm";
 import TubeMapContainer from "./components/TubeMapContainer";
-import { CopyLink, urlParamsToViewTarget } from "./components/CopyLink";
+import {  urlParamsToViewTarget } from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
 import { dataOriginTypes } from "./enums";
 import * as tubeMap from "./util/tubemap";
@@ -110,7 +110,6 @@ class App extends Component {
           apiUrl={this.props.apiUrl}
           urlParams={urlParamsToViewTarget()} 
         />
-        <CopyLink viewTarget={this.state.viewTarget} />
         <TubeMapContainer
           viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}

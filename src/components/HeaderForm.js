@@ -11,6 +11,7 @@ import BedRegionsFormRow from "./BedRegionsFormRow";
 import PathNamesFormRow from "./PathNamesFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
+import { CopyLink, urlParamsToViewTarget } from "./CopyLink";
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
@@ -388,6 +389,7 @@ class HeaderForm extends Component {
       () => this.handleGoButton()
     );
   };
+  handleCopyLink = () => <CopyLink viewTarget={this.state.viewTarget} />;
 
   handleFileUpload = (fileType, fileName) => {
     this.setState({ [fileType]: fileName });
@@ -570,6 +572,7 @@ class HeaderForm extends Component {
                   handleGoRight={this.handleGoRight}
                   handleGoButton={this.handleGoButton}
                   uploadInProgress={this.state.uploadInProgress}
+                  handleCopyLink={this.handleCopyLink}
                 />
               )}
             </Col>
