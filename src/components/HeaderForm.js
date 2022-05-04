@@ -284,7 +284,7 @@ class HeaderForm extends Component {
           dataType: dataTypes.FILE_UPLOAD,
         };
       });
-    } else if (value === "customMounted") {
+    } else if (value === dataTypes.MOUNTED) {
       this.setState((state) => {
         return {
           xgFile: state.xgSelect,
@@ -295,7 +295,7 @@ class HeaderForm extends Component {
           dataType: dataTypes.MOUNTED_FILES,
         };
       });
-    } else if (value === "syntheticExamples") {
+    } else if (value === dataTypes.EXAMPLES) {
       // Synthetic data examples in dropdown
       this.setState({ dataType: dataTypes.EXAMPLES });
     } else {
@@ -450,9 +450,7 @@ class HeaderForm extends Component {
       <option value={dataTypes.FILE_UPLOAD} key="customFileUpload">
         custom (file upload)
       </option>,
-      <option value={dataTypes.MOUNTED_FILES} key="customMounted">
-        custom (mounted files)
-      </option>
+      <option value={dataTypes.MOUNTED_FILES}> custom (mounted files)</option>
     );
 
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
@@ -479,7 +477,11 @@ class HeaderForm extends Component {
                 </Label>
                 <select
                   type="select"
-                  value={this.state.name}
+                  value={
+                    this.state.dataType === dataTypes.BUILT_IN
+                      ? this.state.name
+                      : this.state.dataType
+                  }
                   id="dataSourceSelect"
                   className="form-select
                   mb-2 mr-sm-4 mb-sm-0"

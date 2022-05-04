@@ -4,6 +4,7 @@ import { Label } from 'reactstrap';
 import SelectionDropdown from "./SelectionDropdown";
 
 class BedRegionsFormRow extends Component {
+  // TODO: Possibly blend this with the form dropdown in a datalist 
   render() {
     return (
       <React.Fragment>
@@ -13,12 +14,14 @@ class BedRegionsFormRow extends Component {
         >
           Region:
         </Label>
-        <datalist>
+        
+        <SelectionDropdown
+          className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
           id="regionSelect"
           value={this.props.regionSelect}
           onChange={this.props.handleInputChange}
           options={this.props.regionSelectOptions}
-        </datalist>
+        />
 
       </React.Fragment>
     );
