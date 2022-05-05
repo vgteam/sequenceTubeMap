@@ -77,7 +77,6 @@ class HeaderForm extends Component {
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
     const dataPath = ds.dataPath;
-    console.log(ds.name, "name", ds);
 
     this.setState((state) => {
       if (bedSelect !== "none") {
@@ -450,7 +449,7 @@ class HeaderForm extends Component {
       <option value={dataTypes.FILE_UPLOAD} key="customFileUpload">
         custom (file upload)
       </option>,
-      <option value={dataTypes.MOUNTED_FILES}> custom (mounted files)</option>
+      <option value={dataTypes.MOUNTED_FILES} key={dataTypes.MOUNTED_FILES}> custom (mounted files)</option>
     );
 
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
