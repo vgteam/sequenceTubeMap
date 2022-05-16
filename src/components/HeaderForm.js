@@ -11,7 +11,6 @@ import BedRegionsFormRow from "./BedRegionsFormRow";
 import PathNamesFormRow from "./PathNamesFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
-import { CopyLink, urlParamsToViewTarget } from "./CopyLink";
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
@@ -302,7 +301,7 @@ class HeaderForm extends Component {
       this.setState({ dataType: dataTypes.BUILT_IN });
     }
   };
-  getViewTarget = () => ({
+  getNextViewTarget = () => ({
     name: this.state.name,
     region: this.state.region,
     xgFile: this.state.xgFile,
@@ -318,8 +317,8 @@ class HeaderForm extends Component {
       this.props.setColorSetting("haplotypeColors", "ygreys");
       this.props.setColorSetting("forwardReadColors", "reds");
     }
-    const viewTarget = this.getViewTarget();
-    this.props.setViewTarget(viewTarget);
+    const viewTarget = this.getNextViewTarget();
+    this.props.setCurrentViewTarget(viewTarget);
   };
 
   handleInputChange = (event) => {
@@ -388,7 +387,6 @@ class HeaderForm extends Component {
       () => this.handleGoButton()
     );
   };
-  handleCopyLink = () => <CopyLink viewTarget={this.getViewTarget()} />;
 
   handleFileUpload = (fileType, fileName) => {
     this.setState({ [fileType]: fileName });
@@ -449,7 +447,10 @@ class HeaderForm extends Component {
       <option value={dataTypes.FILE_UPLOAD} key="customFileUpload">
         custom (file upload)
       </option>,
-      <option value={dataTypes.MOUNTED_FILES} key={dataTypes.MOUNTED_FILES}> custom (mounted files)</option>
+      <option value={dataTypes.MOUNTED_FILES} key={dataTypes.MOUNTED_FILES}>
+        {" "}
+        custom (mounted files)
+      </option>
     );
 
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
@@ -558,7 +559,7 @@ class HeaderForm extends Component {
                   handleGoRight={this.handleGoRight}
                   handleGoButton={this.handleGoButton}
                   uploadInProgress={this.state.uploadInProgress}
-                  handleCopyLink={this.handleCopyLink}
+                  getCurrentViewTarget={this.props.getCurrentViewTarget}
                 />
               )}
             </Col>
@@ -574,7 +575,7 @@ HeaderForm.propTypes = {
   dataOrigin: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
-  setViewTarget: PropTypes.func.isRequired,
+  setCurrentViewTarget: PropTypes.func.isRequired,
   viewTarget: PropTypes.any, // Header Form State, may be null if no params in URL. see Types.ts
 };
 

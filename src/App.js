@@ -18,7 +18,8 @@ class App extends Component {
 
     // TODO: add touchParamsToDataSource()
     // Fix typing inconsistency
-    const ds = urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
+    const ds =
+      urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
     this.state = {
       // These describe the files on the server side that we are working on.
       // This is a little like dataPath, but lets us toggle between data from
@@ -71,8 +72,7 @@ class App extends Component {
   /**
    * @param {ViewTarget} viewTarget - The default or selected data to view
    */
-  setViewTarget = (viewTarget) => {
-    console.log("before viewTarget: ", this.state.viewTarget);
+  setCurrentViewTarget = (viewTarget) => {
     const newViewTarget = this.removeUndefined(viewTarget);
 
     if (
@@ -84,7 +84,9 @@ class App extends Component {
         dataOrigin: dataOriginTypes.API,
       });
     }
-    console.log("after: ", this.state.viewTarget);
+  };
+  getCurrentViewTarget = () => {
+    return this.state.viewTarget;
   };
 
   toggleVisOptionFlag = (flagName) => {
@@ -122,12 +124,13 @@ class App extends Component {
     return (
       <div>
         <HeaderForm
-          setViewTarget={this.setViewTarget}
+          setCurrentViewTarget={this.setCurrentViewTarget}
           setDataOrigin={this.setDataOrigin}
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
           viewTarget={urlParamsToViewTarget(document.location)}
+          getCurrentViewTarget={this.getCurrentViewTarget}
         />
         <TubeMapContainer
           viewTarget={this.state.viewTarget}

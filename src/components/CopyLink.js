@@ -20,8 +20,9 @@ export function CopyLink(props) {
 
   const handleCopyLink = () => {
     // Turn viewTarget into a URL query string
+    const viewTarget = props.getCurrentViewTarget();
 
-    const params = new URLSearchParams(props.viewTarget).toString();
+    const params = new URLSearchParams(viewTarget).toString();
     const full = window.location.host + "?" + params;
     copyCallback(full);
 
@@ -58,5 +59,6 @@ export const urlParamsToViewTarget = (url) => {
     // TODO: see if none better
     result[key] = value === "undefined" ? undefined : value;
   }
+  console.log(result);
   return result;
 };

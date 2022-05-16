@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
+import { CopyLink } from "./CopyLink";
 import { Form, Label, Input, Button } from "reactstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -121,7 +122,7 @@ class DataPositionFormRow extends Component {
         >
           Download Image
         </Button>
-        {this.props.handleCopyLink()}
+        <CopyLink getCurrentViewTarget={this.props.getCurrentViewTarget} />
       </Form>
     );
   }
@@ -134,6 +135,7 @@ DataPositionFormRow.propTypes = {
   handleInputChange: PropTypes.func.isRequired,
   region: PropTypes.string,
   uploadInProgress: PropTypes.bool.isRequired,
+  getCurrentViewTarget: PropTypes.func.isRequired,
 };
 
 export default DataPositionFormRow;
