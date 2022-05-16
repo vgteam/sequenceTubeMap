@@ -55,9 +55,9 @@ export const urlParamsToViewTarget = (url) => {
   const result = {};
   for (const [key, value] of entries) {
     // each 'entry' is a [key, value] tuple
-    // Convert 'undefined' string to undefined
-    // TODO: see if none better
-    result[key] = value === "undefined" ? undefined : value;
+    if (value !== undefined) {
+      result[key] = value;
+    }
   }
   console.log(result);
   return result;

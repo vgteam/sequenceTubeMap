@@ -73,6 +73,7 @@ class App extends Component {
    * @param {ViewTarget} viewTarget - The default or selected data to view
    */
   setCurrentViewTarget = (viewTarget) => {
+    // Remove undefined for equality check
     const newViewTarget = this.removeUndefined(viewTarget);
 
     if (
@@ -86,7 +87,7 @@ class App extends Component {
     }
   };
   getCurrentViewTarget = () => {
-    return this.state.viewTarget;
+    return this.removeUndefined(this.state.viewTarget);
   };
 
   toggleVisOptionFlag = (flagName) => {

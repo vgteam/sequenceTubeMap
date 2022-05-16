@@ -208,7 +208,7 @@ describe("When we wait for it to load", () => {
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
   const expectedLinkBRCA1 =
-    "localhost?name=snp1kg-BRCA1&region=17%3A1-100&xgFile=snp1kg-BRCA1.vg.xg&gbwtFile=undefined&gamFile=NA12878-BRCA1.sorted.gam&bedFile=snp1kg-BRCA1.bed&dataPath=default&dataType=built-in";
+    "localhost?name=snp1kg-BRCA1&xgFile=snp1kg-BRCA1.vg.xg&gamFile=NA12878-BRCA1.sorted.gam&dataPath=default&region=17%3A1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in"
   // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -217,7 +217,7 @@ it("produces correct link for view before & after go is pressed", async () => {
       "snp1kg-BRCA1"
     );
   });
-  // Wait for options to load / hopefully don't get log error
+  // Wait for server to load / avoid console yelling 
   await waitForLoadEnd();
 
   clickGoButton();
@@ -231,16 +231,18 @@ it("produces correct link for view before & after go is pressed", async () => {
     let dropdown = document.getElementById("dataSourceSelect");
     await userEvent.selectOptions(screen.getByLabelText(/Data/i), "cactus");
   });
-  // Wait for options to load
+  // Wait for server to load
   await waitForLoadEnd();
 
   await clickCopyLink();
   // Make sure clipboard has not changed
   expect(fakeClipboard).toEqual(expectedLinkBRCA1);
   clickGoButton();
+  await waitForLoadEnd();
+  await clickCopyLink();
 
   const expectedLinkCactus =
-    "localhost?name=cactus&region=ref%3A1-100&xgFile=cactus.vg.xg&gbwtFile=undefined&gamFile=cactus-NA12879.sorted.gam&bedFile=cactus.bed&dataPath=mounted&dataType=built-in";
+    "localhost?name=cactus&region=ref%3A1-100&xgFile=cactus.vg.xg&gamFile=cactus-NA12879.sorted.gam&bedFile=cactus.bed&dataPath=mounted&dataType=built-in";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
 });
