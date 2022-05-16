@@ -1,10 +1,11 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
+import isEqual from "react-fast-compare";
 
 import "./App.css";
 import HeaderForm from "./components/HeaderForm";
 import TubeMapContainer from "./components/TubeMapContainer";
-import {  urlParamsToViewTarget } from "./components/CopyLink";
+import { urlParamsToViewTarget } from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
 import { dataOriginTypes } from "./enums";
 import * as tubeMap from "./util/tubemap";
@@ -57,15 +58,33 @@ class App extends Component {
     );
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }
+  /*
+   * Drop undefined values
+   * See https://stackoverflow.com/questions/286141/remove-blank-attributes-from-an-object-in-javascript/38340730#38340730
+   */
+  removeUndefined = (obj) => {
+    return Object.fromEntries(
+      Object.entries(obj).filter(([_, v]) => v != null)
+    );
+  };
 
   /**
-   * @param {ViewTarget} viewTarget - The default or selected data to view 
+   * @param {ViewTarget} viewTarget - The default or selected data to view
    */
   setViewTarget = (viewTarget) => {
-    this.setState({
-      viewTarget: viewTarget,
-      dataOrigin: dataOriginTypes.API,
-    });
+    console.log("before viewTarget: ", this.state.viewTarget);
+    const newViewTarget = this.removeUndefined(viewTarget);
+
+    if (
+      !isEqual(this.state.viewTarget, newViewTarget) ||
+      this.state.dataOrigin != dataOriginTypes.API
+    ) {
+      this.setState({
+        viewTarget: newViewTarget,
+        dataOrigin: dataOriginTypes.API,
+      });
+    }
+    console.log("after: ", this.state.viewTarget);
   };
 
   toggleVisOptionFlag = (flagName) => {
@@ -108,7 +127,7 @@ class App extends Component {
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
-          viewTarget={urlParamsToViewTarget()} 
+          viewTarget={urlParamsToViewTarget()}
         />
         <TubeMapContainer
           viewTarget={this.state.viewTarget}

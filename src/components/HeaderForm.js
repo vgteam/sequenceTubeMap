@@ -283,7 +283,7 @@ class HeaderForm extends Component {
           dataType: dataTypes.FILE_UPLOAD,
         };
       });
-    } else if (value === dataTypes.MOUNTED) {
+    } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
         return {
           xgFile: state.xgSelect,
