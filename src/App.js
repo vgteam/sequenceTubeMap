@@ -18,7 +18,7 @@ class App extends Component {
 
     // TODO: add touchParamsToDataSource()
     // Fix typing inconsistency
-    const ds = urlParamsToViewTarget() ?? config.DATA_SOURCES[0];
+    const ds = urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
     this.state = {
       // These describe the files on the server side that we are working on.
       // This is a little like dataPath, but lets us toggle between data from
@@ -127,7 +127,7 @@ class App extends Component {
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
-          viewTarget={urlParamsToViewTarget()}
+          viewTarget={urlParamsToViewTarget(document.location)}
         />
         <TubeMapContainer
           viewTarget={this.state.viewTarget}

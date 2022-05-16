@@ -37,14 +37,16 @@ export function CopyLink(props) {
   );
 }
 
-export const urlParamsToViewTarget = () => {
+export const urlParamsToViewTarget = (url) => {
+  // @param {string} url - url containing search params
+  //  normally should be document.location
   // Take any saved parameters in the query part of the URL
   // and turn to object to populate in HeaderForm state and viewTarget
   // Returns: Object (viewTarget) - see App.js
   // Source for parsing: https://stackoverflow.com/questions/8648892/how-to-convert-url-parameters-to-a-javascript-object
 
   // Get portion of URL after '?'
-  const params = new URL(document.location).searchParams;
+  const params = new URL(url).searchParams;
   if (params.toString() === "") return null;
   // Parse the parameters from the URL
   const urlParams = new URLSearchParams(params);

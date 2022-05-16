@@ -71,6 +71,22 @@ async function waitForLoadEnd() {
   });
 }
 
+async function clickCopyLink() {
+  // Click copy link button to test clipboard
+  await act(async () => {
+    let copyButton = document.getElementById("copyLinkButton");
+    console.log("Clicking button for copy link");
+    await userEvent.click(copyButton);
+  });
+}
+function clickGoButton() {
+  // Press go
+  act(() => {
+    let go = document.getElementById("goButton");
+    userEvent.click(go);
+  });
+}
+
 beforeEach(async () => {
   await setUp();
 });
@@ -188,28 +204,43 @@ describe("When we wait for it to load", () => {
     expect(svg.getElementsByTagName("title").length).toEqual(65);
   });
 });
-it("produces correct link for view before go is pressed", async () => {
-  // Set up dropdown 
+
+it("produces correct link for view before & after go is pressed", async () => {
+  // First test that after pressing go, the link reflects the dat form
+  const expectedLinkBRCA1 =
+    "localhost?name=snp1kg-BRCA1&region=17%3A1-100&xgFile=snp1kg-BRCA1.vg.xg&gbwtFile=undefined&gamFile=NA12878-BRCA1.sorted.gam&bedFile=snp1kg-BRCA1.bed&dataPath=default&dataType=built-in";
+  // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
     await userEvent.selectOptions(
       screen.getByLabelText(/Data/i),
-      "mounted files"
+      "snp1kg-BRCA1"
     );
   });
   // Wait for options to load / hopefully don't get log error
-  let loader = document.getElementById("loader");
-  expect(loader).toBeTruthy();
-
   await waitForLoadEnd();
 
-  await act(async () => {
-    let copyButton = document.getElementById("copyLinkButton");
-    console.log("Clicking button for copy link");
-    await userEvent.click(copyButton);
-  });
+  clickGoButton();
 
-  const expectedLink =
-    "localhost?name=snp1kg-BRCA1&region=17%3A1-100&xgFile=snp1kg-BRCA1.vg.xg&gbwtFile=none&gamFile=none&bedFile=snp1kg-BRCA1.bed&dataPath=mounted&dataType=mounted+files";
-  expect(fakeClipboard).toEqual(expectedLink);
+  await clickCopyLink();
+  // Ensure link reflects our selected data
+  expect(fakeClipboard).toEqual(expectedLinkBRCA1);
+
+  // Set up dropdown
+  await act(async () => {
+    let dropdown = document.getElementById("dataSourceSelect");
+    await userEvent.selectOptions(screen.getByLabelText(/Data/i), "cactus");
+  });
+  // Wait for options to load
+  await waitForLoadEnd();
+
+  await clickCopyLink();
+  // Make sure clipboard has not changed
+  expect(fakeClipboard).toEqual(expectedLinkBRCA1);
+  clickGoButton();
+
+  const expectedLinkCactus =
+    "localhost?name=cactus&region=ref%3A1-100&xgFile=cactus.vg.xg&gbwtFile=undefined&gamFile=cactus-NA12879.sorted.gam&bedFile=cactus.bed&dataPath=mounted&dataType=built-in";
+  // Make sure link has changed after pressing go
+  expect(fakeClipboard).toEqual(expectedLinkCactus);
 });
