@@ -75,7 +75,6 @@ async function clickCopyLink() {
   // Click copy link button to test clipboard
   await act(async () => {
     let copyButton = document.getElementById("copyLinkButton");
-    console.log("Clicking button for copy link");
     await userEvent.click(copyButton);
   });
 }

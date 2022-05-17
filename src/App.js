@@ -16,8 +16,6 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    // TODO: add touchParamsToDataSource()
-    // Fix typing inconsistency
     const ds =
       urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
     this.state = {

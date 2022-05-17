@@ -59,6 +59,5 @@ export const urlParamsToViewTarget = (url) => {
       result[key] = value;
     }
   }
-  console.log(result);
   return result;
 };
