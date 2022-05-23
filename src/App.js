@@ -10,20 +10,21 @@ import CustomizationAccordion from "./components/CustomizationAccordion";
 import { dataOriginTypes } from "./enums";
 import * as tubeMap from "./util/tubemap";
 import config from "./config.json";
-// Data path  - see server.js and config.json
 
 class App extends Component {
   constructor(props) {
     super(props);
 
+    // Set ds to either URL params (if present) or the first example
     const ds =
       urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
     this.state = {
       // These describe the files on the server side that we are working on.
-      // This is a little like dataPath, but lets us toggle between data from
-      // the server and local test data. TODO: Unify?
+      // This is a little like dataPath (inside viewTarget, which specifies if we're using mounted/built-in data),
+      // but lets us toggle between data from
+      // the server and local test data
+      dataOrigin: dataOriginTypes.API,
       viewTarget: ds,
-      dataOrigin: dataOriginTypes.API, // EXAMPLE[N] etc.
       // These are the current rendering settings.
       visOptions: {
         removeRedundantNodes: true,
@@ -68,9 +69,13 @@ class App extends Component {
   };
 
   /**
-   * @param {ViewTarget} viewTarget - The default or selected data to view
+   * @param {ViewTarget} viewTarget - The new data that is selected to view
+   *    setCurrentViewTarget updates the current viewTarget to the new viewTarget that's passed in
+   *    before calling setCurrentViewTarget, viewTarget refers to what is currently being displayed
+   *    See types.ts for more info on viewTarget typ
    */
   setCurrentViewTarget = (viewTarget) => {
+    // Update the viewTarge
     // Remove undefined for equality check
     const newViewTarget = this.removeUndefined(viewTarget);
 

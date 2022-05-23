@@ -68,10 +68,8 @@ class HeaderForm extends Component {
   }
   DATA_NAMES = DATA_SOURCES.map((source) => source.name);
 
-  // init with the URL params, or first data source if none
   initState = () => {
-    // Populate
-    // TODO: same issue with different types as in App
+    // Populate state with either viewTarget or the first example
     let ds = this.props.viewTarget ?? DATA_SOURCES[0];
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
