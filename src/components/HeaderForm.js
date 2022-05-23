@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Container, Row, Col, Form, Label, Input, Alert } from "reactstrap";
+import { Container, Row, Col, Form, Label,  Alert } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
 // import defaultConfig from '../config.default.json';
@@ -70,7 +70,7 @@ class HeaderForm extends Component {
 
   initState = () => {
     // Populate state with either viewTarget or the first example
-    let ds = this.props.viewTarget ?? DATA_SOURCES[0];
+    let ds = this.props.defaultViewTarget ?? DATA_SOURCES[0];
     const xgSelect = ds.xgFile ? ds.xgFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
     const dataPath = ds.dataPath;
@@ -574,7 +574,7 @@ HeaderForm.propTypes = {
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
   setCurrentViewTarget: PropTypes.func.isRequired,
-  viewTarget: PropTypes.any, // Header Form State, may be null if no params in URL. see Types.ts
+  defaultViewTarget: PropTypes.any, // Header Form State, may be null if no params in URL. see Types.ts
 };
 
 export default HeaderForm;

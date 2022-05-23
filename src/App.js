@@ -81,7 +81,7 @@ class App extends Component {
 
     if (
       !isEqual(this.state.viewTarget, newViewTarget) ||
-      this.state.dataOrigin != dataOriginTypes.API
+      this.state.dataOrigin !== dataOriginTypes.API
     ) {
       this.setState({
         viewTarget: newViewTarget,
@@ -133,7 +133,7 @@ class App extends Component {
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
-          viewTarget={urlParamsToViewTarget(document.location)}
+          defaultViewTarget={urlParamsToViewTarget(document.location)}
           getCurrentViewTarget={this.getCurrentViewTarget}
         />
         <TubeMapContainer

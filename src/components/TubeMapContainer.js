@@ -1,15 +1,17 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import TubeMap from './TubeMap';
-import { Container, Row, Alert } from 'reactstrap';
-import * as tubeMap from '../util/tubemap';
-import { dataOriginTypes } from '../enums';
-import { fetchAndParse } from '../fetchAndParse';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { Container, Row, Alert } from "reactstrap";
+import isEqual from "react-fast-compare";
+
+import TubeMap from "./TubeMap";
+import * as tubeMap from "../util/tubemap";
+import { dataOriginTypes } from "../enums";
+import { fetchAndParse } from "../fetchAndParse";
 
 class TubeMapContainer extends Component {
   state = {
     isLoading: true,
-    error: null
+    error: null,
   };
 
   componentDidMount() {
@@ -22,19 +24,19 @@ class TubeMapContainer extends Component {
     // a loading state and immediately do another update, which then means we
     // have to mess around with deep comparison to see we don't need yet a
     // third update. Is there a way to let React keep track of the fact that we
-    // aren't up to date with the requested state yet? 
+    // aren't up to date with the requested state yet?
     if (this.props.dataOrigin !== prevProps.dataOrigin) {
       this.props.dataOrigin === dataOriginTypes.API
         ? this.getRemoteTubeMapData()
         : this.getExampleData();
     } else {
-      if (JSON.stringify(this.props.viewTarget) !== JSON.stringify(prevProps.viewTarget)) {
+      if (!isEqual(this.props.viewTarget, prevProps.viewTarget)) {
         // We need to compare the fetch parameters with stringification because
         // they will get swapped out for a different object all the time, and we
         // don't want to compare object identity. TODO: stringify isn't
         // guaranteed to be stable so we can still make extra requests.
         this.getRemoteTubeMapData();
-      } 
+      }
     }
   }
 
@@ -87,27 +89,27 @@ class TubeMapContainer extends Component {
     this.setState({ isLoading: true, error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getChunkedData`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(this.props.viewTarget)
+        body: JSON.stringify(this.props.viewTarget),
       });
       if (json.graph === undefined) {
         // We did not get back a graph, even if we didn't get an error either.
-        const error = 'Fetching remote data returned error';
+        const error = "Fetching remote data returned error";
         this.setState({ error: error, isLoading: false });
       } else {
         const nodes = tubeMap.vgExtractNodes(json.graph);
         const tracks = tubeMap.vgExtractTracks(json.graph);
         const reads = tubeMap.vgExtractReads(nodes, tracks, json.gam);
-        const region = json.region; 
+        const region = json.region;
         this.setState({
           isLoading: false,
           nodes,
           tracks,
           reads,
-	  region
+          region,
         });
       }
     } catch (error) {
@@ -122,7 +124,7 @@ class TubeMapContainer extends Component {
     let tracks = [];
     let reads = [];
     let region = [];
-    const data = await import('../util/demo-data');
+    const data = await import("../util/demo-data");
     nodes = data.inputNodes;
     switch (this.props.dataOrigin) {
       case dataOriginTypes.EXAMPLE_1:
@@ -154,16 +156,16 @@ class TubeMapContainer extends Component {
         // Leave the data empty.
         break;
       default:
-        console.log('invalid example data origin type:', this.props.dataOrigin);
+        console.log("invalid example data origin type:", this.props.dataOrigin);
     }
 
-    this.setState({ isLoading: false, nodes, tracks, reads, region});
+    this.setState({ isLoading: false, nodes, tracks, reads, region });
   };
 
-  readsFromStringToArray = readsString => {
-    const lines = readsString.split('\n');
+  readsFromStringToArray = (readsString) => {
+    const lines = readsString.split("\n");
     const result = [];
-    lines.forEach(line => {
+    lines.forEach((line) => {
       if (line.length > 0) {
         result.push(JSON.parse(line));
       }
@@ -175,7 +177,7 @@ class TubeMapContainer extends Component {
 TubeMapContainer.propTypes = {
   apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.oneOf(Object.values(dataOriginTypes)).isRequired,
-  viewTarget: PropTypes.object.isRequired 
+  viewTarget: PropTypes.object.isRequired,
 };
 
 export default TubeMapContainer;
