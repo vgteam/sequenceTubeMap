@@ -446,7 +446,6 @@ class HeaderForm extends Component {
         custom (file upload)
       </option>,
       <option value={dataTypes.MOUNTED_FILES} key={dataTypes.MOUNTED_FILES}>
-        {" "}
         custom (mounted files)
       </option>
     );
@@ -455,7 +454,7 @@ class HeaderForm extends Component {
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
     const bedRegionsFlag = this.state.bedSelect !== "none";
-    const pathNamesFlag = this.state.xgSelect !== "none";
+    const pathNamesFlag = this.state.xgSelect !== "none" && this.state.dataType != dataTypes.FILE_UPLOAD;
 
     return (
       <div>
