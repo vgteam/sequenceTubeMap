@@ -3,6 +3,7 @@ import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import userEvent from '@testing-library/user-event';
 import App from './App';
+// Tests functionality without server
 
 it('renders without crashing', () => {
   render(<App />);

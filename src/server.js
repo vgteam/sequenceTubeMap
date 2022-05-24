@@ -896,7 +896,7 @@ function getBedRegions(bedFile, dataPath) {
     throw new BadRequestError("BED file path not allowed: " + bedFile);
   }
   if(!fs.existsSync(bed_path)){
-    result.error = "BED file not found: " + bedFile;
+    throw new BadRequestError("BED file not found: " + bedFile);
   }
     
   let bed_info = {chr:[], start:[], end:[], desc:[], chunk:[]};

@@ -1,51 +1,30 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import './App.css';
-import HeaderForm from './components/HeaderForm';
-import TubeMapContainer from './components/TubeMapContainer';
-import CustomizationAccordion from './components/CustomizationAccordion';
-import { dataOriginTypes } from './enums';
-import * as tubeMap from './util/tubemap';
-import config from './config.json';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import isEqual from "react-fast-compare";
+
+import "./App.css";
+import HeaderForm from "./components/HeaderForm";
+import TubeMapContainer from "./components/TubeMapContainer";
+import { urlParamsToViewTarget } from "./components/CopyLink";
+import CustomizationAccordion from "./components/CustomizationAccordion";
+import { dataOriginTypes } from "./enums";
+import * as tubeMap from "./util/tubemap";
+import config from "./config.json";
 
 class App extends Component {
   constructor(props) {
     super(props);
-    const ds = config.DATA_SOURCES[0];
-    let xgFile = ds.xgFile;
-    let region = ds.defaultPosition;
-    let gamFile = undefined;
-    if(ds.gamFile){
-      gamFile = ds.gamFile;
-    }
-    let gbwtFile = undefined;
-    if(ds.gbwtFile){
-      gbwtFile = ds.gbwtFile;
-    }
-    let bedFile = undefined;
-    if(ds.bedFile){
-      bedFile = ds.bedFile;
-    }
-    let dataPath = 'default';
-    if(ds.useMountedPath){
-      dataPath = 'mounted';
-    }
+
+    // Set ds to either URL params (if present) or the first example
+    const ds =
+      urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
     this.state = {
       // These describe the files on the server side that we are working on.
-      fetchParams: {
-        // This is the query (like path:start-end) we are displaying.
-        region: region,
-        xgFile: xgFile,
-        gbwtFile: gbwtFile,
-        gamFile: gamFile,
-        bedFile: bedFile,
-        // This is the type of data paths we are working with, such as "mounted".
-        // All the paths are scoped to a type on the server side.
-        dataPath: dataPath
-      },
-      // This is a little like dataPath, but lets us toggle between data from
-      // the server and local test data. TODO: Unify?
+      // This is a little like dataPath (inside viewTarget, which specifies if we're using mounted/built-in data),
+      // but lets us toggle between data from
+      // the server and local test data
       dataOrigin: dataOriginTypes.API,
+      viewTarget: ds,
       // These are the current rendering settings.
       visOptions: {
         removeRedundantNodes: true,
@@ -53,12 +32,12 @@ class App extends Component {
         transparentNodes: false,
         showReads: true,
         showSoftClips: true,
-        haplotypeColors: 'ygreys',
-        forwardReadColors: 'reds',
-        reverseReadColors: 'blues',
+        haplotypeColors: "ygreys",
+        forwardReadColors: "reds",
+        reverseReadColors: "blues",
         colorReadsByMappingQuality: false,
-        mappingQualityCutoff: 0
-      }
+        mappingQualityCutoff: 0,
+      },
     };
   }
 
@@ -71,50 +50,77 @@ class App extends Component {
     tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
     tubeMap.setShowReadsFlag(visOptions.showReads);
     tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
-    tubeMap.setColorSet('haplotypeColors', visOptions.haplotypeColors);
-    tubeMap.setColorSet('forwardReadColors', visOptions.forwardReadColors);
-    tubeMap.setColorSet('reverseReadColors', visOptions.reverseReadColors);
+    tubeMap.setColorSet("haplotypeColors", visOptions.haplotypeColors);
+    tubeMap.setColorSet("forwardReadColors", visOptions.forwardReadColors);
+    tubeMap.setColorSet("reverseReadColors", visOptions.reverseReadColors);
     tubeMap.setColorReadsByMappingQualityFlag(
       visOptions.colorReadsByMappingQuality
     );
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }
-
-  setFetchParams = fetchParams => {
-    this.setState({
-      fetchParams: fetchParams,
-      dataOrigin: dataOriginTypes.API
-    });
+  /*
+   * Drop undefined values
+   * See https://stackoverflow.com/questions/286141/remove-blank-attributes-from-an-object-in-javascript/38340730#38340730
+   */
+  removeUndefined = (obj) => {
+    return Object.fromEntries(
+      Object.entries(obj).filter(([_, v]) => v != null)
+    );
   };
 
-  toggleVisOptionFlag = flagName => {
-    this.setState(state => ({
+  /**
+   * @param {ViewTarget} viewTarget - The new data that is selected to view
+   *    setCurrentViewTarget updates the current viewTarget to the new viewTarget that's passed in
+   *    before calling setCurrentViewTarget, viewTarget refers to what is currently being displayed
+   *    See types.ts for more info on viewTarget typ
+   */
+  setCurrentViewTarget = (viewTarget) => {
+    // Update the viewTarge
+    // Remove undefined for equality check
+    const newViewTarget = this.removeUndefined(viewTarget);
+
+    if (
+      !isEqual(this.state.viewTarget, newViewTarget) ||
+      this.state.dataOrigin !== dataOriginTypes.API
+    ) {
+      this.setState({
+        viewTarget: newViewTarget,
+        dataOrigin: dataOriginTypes.API,
+      });
+    }
+  };
+  getCurrentViewTarget = () => {
+    return this.removeUndefined(this.state.viewTarget);
+  };
+
+  toggleVisOptionFlag = (flagName) => {
+    this.setState((state) => ({
       visOptions: {
         ...state.visOptions,
-        [flagName]: !state.visOptions[flagName]
-      }
+        [flagName]: !state.visOptions[flagName],
+      },
     }));
   };
 
-  handleMappingQualityCutoffChange = value => {
-    this.setState(state => ({
+  handleMappingQualityCutoffChange = (value) => {
+    this.setState((state) => ({
       visOptions: {
         ...state.visOptions,
-        mappingQualityCutoff: value
-      }
+        mappingQualityCutoff: value,
+      },
     }));
   };
 
   setColorSetting = (key, value) => {
-    this.setState(state => ({
+    this.setState((state) => ({
       visOptions: {
         ...state.visOptions,
-        [key]: value
-      }
+        [key]: value,
+      },
     }));
   };
 
-  setDataOrigin = dataOrigin => {
+  setDataOrigin = (dataOrigin) => {
     this.setState({ dataOrigin });
   };
 
@@ -122,14 +128,16 @@ class App extends Component {
     return (
       <div>
         <HeaderForm
-          setFetchParams={this.setFetchParams}
+          setCurrentViewTarget={this.setCurrentViewTarget}
           setDataOrigin={this.setDataOrigin}
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
+          defaultViewTarget={urlParamsToViewTarget(document.location)}
+          getCurrentViewTarget={this.getCurrentViewTarget}
         />
         <TubeMapContainer
-          fetchParams={this.state.fetchParams}
+          viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
         />
@@ -147,15 +155,15 @@ class App extends Component {
 }
 
 App.propTypes = {
-  apiUrl: PropTypes.string
-}
+  apiUrl: PropTypes.string,
+};
 
 App.defaultProps = {
   // Backend the whole app will hit against. Usually should be picked up from
   // the config or the browser, but needs to be swapped out in the fake
   // browser testing environment to point to a real testing backend.
   // Note that host includes the port.
-  apiUrl: (config.BACKEND_URL || `http://${window.location.host}`) + '/api/v0'
+  apiUrl: (config.BACKEND_URL || `http://${window.location.host}`) + "/api/v0",
 };
 
 export default App;

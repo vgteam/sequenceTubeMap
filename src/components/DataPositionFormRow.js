@@ -1,15 +1,16 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Form, Label, Input, Button } from 'reactstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { CopyLink } from "./CopyLink";
+import { Form, Label, Input, Button } from "reactstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faStepBackward,
   faStepForward,
   faSearchPlus,
   faSearchMinus,
-  faQuestionCircle
-} from '@fortawesome/free-solid-svg-icons';
-import * as tubeMap from '../util/tubemap';
+  faQuestionCircle,
+} from "@fortawesome/free-solid-svg-icons";
+import * as tubeMap from "../util/tubemap";
 
 const ZOOM_FACTOR = 2.0;
 
@@ -28,21 +29,21 @@ class DataPositionFormRow extends Component {
   };
 
   handleDownloadButton = () => {
-    const svgN = document.getElementById('svg');
+    const svgN = document.getElementById("svg");
     const svgData = new XMLSerializer().serializeToString(svgN);
     const svgBlob = new Blob([svgData], {
-      type: 'image/svg+xml;charset=utf-8'
+      type: "image/svg+xml;charset=utf-8",
     });
     const svgUrl = URL.createObjectURL(svgBlob);
 
-    const downloadLink = document.createElement('a');
+    const downloadLink = document.createElement("a");
     downloadLink.href = svgUrl;
-    downloadLink.download = 'graph.svg';
+    downloadLink.download = "graph.svg";
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
   };
-  
+
   onKeyUp(event) {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -55,9 +56,8 @@ class DataPositionFormRow extends Component {
   // TODO: React-ify
   helpPopupFunction = () => {
     var popup = document.getElementById("helpPopup");
-    console.log('HELP');
     popup.classList.toggle("show");
-  }
+  };
 
   render() {
     return (
@@ -72,16 +72,19 @@ class DataPositionFormRow extends Component {
           size="36"
           value={this.props.region}
           onChange={this.props.handleInputChange}
-	  onKeyPress={this.onKeyUp}
+          onKeyPress={this.onKeyUp}
         />
         &nbsp;
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
         <div className="popup" onClick={this.helpPopupFunction}>
-          <FontAwesomeIcon icon={faQuestionCircle} size="lg" />
+          <FontAwesomeIcon icon={faQuestionCircle} size="xl" />
           <span className="popuptext" id="helpPopup">
-            Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges (e.g. "node:100-110"), a start position and a distance (e.g. "chr1:1+100"), or a node ID anchor and a distance (e.g. "node:100+10").
+            Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges
+            (e.g. "node:100-110"), a start position and a distance (e.g.
+            "chr1:1+100"), or a node ID anchor and a distance (e.g.
+            "node:100+10").
           </span>
         </div>
         <Button
@@ -119,6 +122,7 @@ class DataPositionFormRow extends Component {
         >
           Download Image
         </Button>
+        <CopyLink getCurrentViewTarget={this.props.getCurrentViewTarget} />
       </Form>
     );
   }
@@ -129,8 +133,9 @@ DataPositionFormRow.propTypes = {
   handleGoLeft: PropTypes.func.isRequired,
   handleGoRight: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  region: PropTypes.string.isRequired,
+  region: PropTypes.string,
   uploadInProgress: PropTypes.bool.isRequired,
+  getCurrentViewTarget: PropTypes.func.isRequired,
 };
 
 export default DataPositionFormRow;
