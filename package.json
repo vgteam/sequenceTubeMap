@@ -23,6 +23,7 @@
     "gh-pages": "^3.2.3",
     "multer": "^1.4.4",
     "path-is-inside": "^1.0.2",
+    "polyfill-object.fromentries": "^1.0.1",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -52,5 +53,8 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "engines": {
+    "node": ">=10.0.0"
+  }
 }
