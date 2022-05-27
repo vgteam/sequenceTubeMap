@@ -1,6 +1,9 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import isEqual from "react-fast-compare";
+// Needed for Node <12
+// TODO: remove import and dependency when we upgrade.
+import {} from "polyfill-object.fromentries";
 
 import "./App.css";
 import HeaderForm from "./components/HeaderForm";

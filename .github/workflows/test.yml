@@ -17,6 +17,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: Use Ubuntu 20.04's nodejs
+        uses: actions/setup-node@v2
+        with:
+          node-version: 10.x
       - name: Install node modules
         run: npm install
       - name: Install latest vg release
