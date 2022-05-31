@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Container, Row, Col, Form, Label,  Alert } from "reactstrap";
+import { Container, Row, Col, Form, Label, Alert } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
 // import defaultConfig from '../config.default.json';
@@ -21,46 +21,50 @@ const dataTypes = {
   MOUNTED_FILES: "mounted files",
   EXAMPLES: "examples",
 };
+const EMPTY_STATE = {
+  // SelectOptions: The options available in the dropdown displayed
+  // Select: The file name (or string "none") that is displayed in the form
+  // File: The file name (or undefined)
+  // TODO: Refactor select & file
+  xgSelectOptions: ["none"],
+  xgSelect: "none",
+
+  gbwtSelectOptions: ["none"],
+  gbwtSelect: "none",
+
+  gamSelectOptions: ["none"],
+  gamSelect: "none",
+
+  bedSelectOptions: ["none"],
+  bedSelect: "none",
+
+  regionSelectOptions: ["none"],
+  // This tracks several arrays of BED region data, stored by data type, with
+  // one entry in each array per region.
+  regionInfo: {},
+  regionSelect: "none",
+
+  pathSelectOptions: ["none"],
+  pathSelect: "none",
+
+  xgFile: undefined,
+  gbwtFile: undefined,
+  gamFile: undefined,
+  bedFile: undefined,
+  dataPath: undefined,
+  region: undefined,
+  name: undefined,
+
+  dataType: dataTypes.BUILT_IN,
+  fileSizeAlert: false,
+  uploadInProgress: false,
+  error: null,
+
+  viewTarget: undefined,
+};
 
 class HeaderForm extends Component {
-  state = {
-    xgSelectOptions: ["none"],
-    xgSelect: "none",
-
-    gbwtSelectOptions: ["none"],
-    gbwtSelect: "none",
-
-    gamSelectOptions: ["none"],
-    gamSelect: "none",
-
-    bedSelectOptions: ["none"],
-    bedSelect: "none",
-
-    regionSelectOptions: ["none"],
-    // This tracks several arrays of BED region data, stored by data type, with
-    // one entry in each array per region.
-    regionInfo: {},
-    regionSelect: "none",
-
-    pathSelectOptions: ["none"],
-    pathSelect: "none",
-
-    xgFile: undefined,
-    gbwtFile: undefined,
-    gamFile: undefined,
-    bedFile: undefined,
-    dataPath: undefined,
-    region: undefined,
-    name: undefined,
-
-    dataType: dataTypes.BUILT_IN,
-    fileSizeAlert: false,
-    uploadInProgress: false,
-    error: null,
-
-    viewTarget: undefined,
-  };
-
+  state = EMPTY_STATE;
   componentDidMount() {
     this.initState();
     this.getMountedFilenames();
@@ -270,15 +274,11 @@ class HeaderForm extends Component {
       }
     });
     if (value === dataTypes.FILE_UPLOAD) {
-      this.setState((state) => {
-        return {
-          xgFile: state.xgSelect,
-          gbwtFile: state.gbwtSelect,
-          gamFile: state.gamSelect,
-          bedFile: state.bedSelect,
-          dataPath: "upload",
-          dataType: dataTypes.FILE_UPLOAD,
-        };
+      this.setState({
+        ...EMPTY_STATE,
+        dataPath: "upload",
+        dataType: dataTypes.FILE_UPLOAD,
+        error: this.state.error,
       });
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
@@ -414,7 +414,6 @@ class HeaderForm extends Component {
   render() {
     let errorDiv = null;
     if (this.state.error) {
-      console.log("Header error: " + this.state.error);
       const message = this.state.error.message
         ? this.state.error.message
         : this.state.error;
@@ -446,7 +445,6 @@ class HeaderForm extends Component {
         custom (file upload)
       </option>,
       <option value={dataTypes.MOUNTED_FILES} key={dataTypes.MOUNTED_FILES}>
-        {" "}
         custom (mounted files)
       </option>
     );
@@ -455,7 +453,9 @@ class HeaderForm extends Component {
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
     const bedRegionsFlag = this.state.bedSelect !== "none";
-    const pathNamesFlag = this.state.xgSelect !== "none";
+    const pathNamesFlag =
+      this.state.xgSelect !== "none" &&
+      this.state.dataType != dataTypes.FILE_UPLOAD;
 
     return (
       <div>
