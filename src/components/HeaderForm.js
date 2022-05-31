@@ -22,6 +22,10 @@ const dataTypes = {
   EXAMPLES: "examples",
 };
 const EMPTY_STATE = {
+  // SelectOptions: The options available in the dropdown displayed
+  // Select: The file name (or string "none") that is displayed in the form
+  // File: The file name (or undefined)
+  // TODO: Refactor select & file
   xgSelectOptions: ["none"],
   xgSelect: "none",
 
@@ -274,6 +278,7 @@ class HeaderForm extends Component {
         ...EMPTY_STATE,
         dataPath: "upload",
         dataType: dataTypes.FILE_UPLOAD,
+        error: this.state.error,
       });
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
