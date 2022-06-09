@@ -52,7 +52,7 @@ const EMPTY_STATE = {
   gamFile: undefined,
   bedFile: undefined,
   dataPath: undefined,
-  region: undefined,
+  region: "none",
   name: undefined,
 
   dataType: dataTypes.BUILT_IN,
@@ -264,6 +264,7 @@ class HeaderForm extends Component {
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
         return {
+          ...EMPTY_STATE,
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
