@@ -249,7 +249,6 @@ class HeaderForm extends Component {
 
   handleDataSourceChange = (event) => {
     const value = event.target.value;
-    console.log(value, "initial state ", this.state);
 
     if (value === dataTypes.FILE_UPLOAD) {
       const newState = {
@@ -259,7 +258,6 @@ class HeaderForm extends Component {
         error: this.state.error,
       };
       this.setState(newState, () => {
-        console.log(this.state, "new state");
       });
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
