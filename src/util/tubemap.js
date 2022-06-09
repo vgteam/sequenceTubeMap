@@ -8,78 +8,78 @@
 /* eslint no-loop-func: "off" */
 /* eslint no-unused-vars: "off" */
 /* eslint no-return-assign: "off" */
-import * as d3 from 'd3';
-import 'd3-selection-multi';
+import * as d3 from "d3";
+import "d3-selection-multi";
 
 const DEBUG = false;
 
 const greys = [
-  '#d9d9d9',
-  '#bdbdbd',
-  '#969696',
-  '#737373',
-  '#525252',
-  '#252525',
-  '#000000'
+  "#d9d9d9",
+  "#bdbdbd",
+  "#969696",
+  "#737373",
+  "#525252",
+  "#252525",
+  "#000000",
 ];
 
 const ygreys = [
-  '#9467bd',
-  '#d9d9d9',
-  '#bdbdbd',
-  '#969696',
-  '#737373',
-  '#525252',
-  '#252525',
-  '#000000'
+  "#9467bd",
+  "#d9d9d9",
+  "#bdbdbd",
+  "#969696",
+  "#737373",
+  "#525252",
+  "#252525",
+  "#000000",
 ];
 
 const blues = [
-  '#c6dbef',
-  '#9ecae1',
-  '#6baed6',
-  '#4292c6',
-  '#2171b5',
-  '#08519c',
-  '#08306b'
+  "#c6dbef",
+  "#9ecae1",
+  "#6baed6",
+  "#4292c6",
+  "#2171b5",
+  "#08519c",
+  "#08306b",
 ];
 
 const reds = [
-  '#fcbba1',
-  '#fc9272',
-  '#fb6a4a',
-  '#ef3b2c',
-  '#cb181d',
-  '#a50f15',
-  '#67000d'
+  "#fcbba1",
+  "#fc9272",
+  "#fb6a4a",
+  "#ef3b2c",
+  "#cb181d",
+  "#a50f15",
+  "#67000d",
 ];
 
 // d3 category10
 const plainColors = [
-  '#1f77b4',
-  '#ff7f0e',
-  '#2ca02c',
-  '#d62728',
-  '#9467bd',
-  '#8c564b',
-  '#e377c2',
-  '#7f7f7f',
-  '#bcbd22',
-  '#17becf'
+  "#1f77b4",
+  "#ff7f0e",
+  "#2ca02c",
+  "#d62728",
+  "#9467bd",
+  "#8c564b",
+  "#e377c2",
+  "#7f7f7f",
+  "#bcbd22",
+  "#17becf",
 ];
 
 // d3 category10
 const lightColors = [
-  '#ABCCE3',
-  '#FFCFA5',
-  '#B0DBB0',
-  '#F0AEAE',
-  '#D7C6E6',
-  '#C6ABA5',
-  '#F4CCE8',
-  '#CFCFCF',
-  '#E6E6AC',
-  '#A8E7ED'
+  "#ABCCE3",
+  "#FFCFA5",
+  "#B0DBB0",
+  "#F0AEAE",
+  "#D7C6E6",
+  "#C6ABA5",
+  "#F4CCE8",
+  "#CFCFCF",
+  "#E6E6AC",
+  "#A8E7ED",
 ];
 
 // Font stack we will use in the SVG
@@ -125,13 +125,13 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  haplotypeColors: 'ygreys',
-  forwardReadColors: 'reds',
-  reverseReadColors: 'blues',
-  exonColors: 'lightColors',
+  haplotypeColors: "ygreys",
+  forwardReadColors: "reds",
+  reverseReadColors: "blues",
+  exonColors: "lightColors",
   hideLegendFlag: false,
   colorReadsByMappingQuality: false,
-  mappingQualityCutoff: 0
+  mappingQualityCutoff: 0,
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -169,7 +169,7 @@ export function create(params) {
 // Return true if the given name names a reverse strand node, and false otherwise.
 function isReverse(nodeName) {
   const s = String(nodeName);
-  return (s.length >= 1 && s.charAt(0) === '-');
+  return s.length >= 1 && s.charAt(0) === "-";
 }
 
 // Get the forward version of a node name, which may be either forward or backward (negative)
@@ -248,12 +248,9 @@ function straightenTrack(index) {
   }
 
   // invert the sequence within the nodes
-  inputNodes.forEach(node => {
+  inputNodes.forEach((node) => {
     if (nodesToInvert.indexOf(node.name) !== -1) {
-      node.seq = node.seq
-        .split('')
-        .reverse()
-        .join('');
+      node.seq = node.seq.split("").reverse().join("");
     }
   });
 }
@@ -262,7 +259,7 @@ export function changeTrackVisibility(trackID) {
   let i = 0;
   while (i < inputTracks.length && inputTracks[i].id !== trackID) i += 1;
   if (i < inputTracks.length) {
-    if (inputTracks[i].hasOwnProperty('hidden')) {
+    if (inputTracks[i].hasOwnProperty("hidden")) {
       inputTracks[i].hidden = !inputTracks[i].hidden;
     } else {
       inputTracks[i].hidden = true;
@@ -274,7 +271,7 @@ export function changeTrackVisibility(trackID) {
 // to select/deselect all
 export function changeAllTracksVisibility(value) {
   let i = 0;
-  while (i < inputTracks.length){
+  while (i < inputTracks.length) {
     inputTracks[i].hidden = !value;
     var checkbox = document.getElementById(`showTrack${i}`);
     checkbox.checked = value;
@@ -378,7 +375,7 @@ function createTubeMap() {
   maxXCoordinate = 0;
   trackForRuler = undefined;
   svg = d3.select(svgID);
-  svg.selectAll('*').remove(); // clear svg for (re-)drawing
+  svg.selectAll("*").remove(); // clear svg for (re-)drawing
 
   // early exit is necessary when visualization options such as colors are
   // changed before any graph has been rendered
@@ -393,16 +390,16 @@ function createTubeMap() {
   reads = filterReads(reads);
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
-    if (!tracks[i].hasOwnProperty('type')) {
+    if (!tracks[i].hasOwnProperty("type")) {
       // TODO: maybe remove "haplo"-property?
-      tracks[i].type = 'haplo';
+      tracks[i].type = "haplo";
     }
-    if (tracks[i].hasOwnProperty('hidden')) {
+    if (tracks[i].hasOwnProperty("hidden")) {
       if (tracks[i].hidden === true) {
         tracks.splice(i, 1);
       }
     }
-    if (tracks[i] && tracks[i].hasOwnProperty('indexOfFirstBase')) {
+    if (tracks[i] && tracks[i].hasOwnProperty("indexOfFirstBase")) {
       trackForRuler = tracks[i].name;
     }
   }
@@ -452,7 +449,7 @@ function createTubeMap() {
     tracks = tracks.concat(reads);
     // we do not have any reads to display
   } else {
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       node.incomingReads = [];
       node.outgoingReads = [];
       node.internalReads = [];
@@ -461,11 +458,11 @@ function createTubeMap() {
 
   generateSVGShapesFromPath(nodes, tracks);
   if (DEBUG) {
-    console.log('Tracks:');
+    console.log("Tracks:");
     console.log(tracks);
-    console.log('Nodes:');
+    console.log("Nodes:");
     console.log(nodes);
-    console.log('Lane assignment:');
+    console.log("Lane assignment:");
     console.log(assignments);
   }
   getImageDimensions();
@@ -476,12 +473,12 @@ function createTubeMap() {
   drawTrackCurves();
   drawReversalsByColor(trackCorners, trackVerticalRectangles);
   drawTrackRectangles(trackRectanglesStep3);
-  drawTrackRectangles(trackRectangles, 'read');
-  drawTrackCurves('read');
+  drawTrackRectangles(trackRectangles, "read");
+  drawTrackCurves("read");
 
   // draw only those nodes which have coords assigned to them
   const dNodes = removeUnusedNodes(nodes);
-  drawReversalsByColor(trackCorners, trackVerticalRectangles, 'read');
+  drawReversalsByColor(trackCorners, trackVerticalRectangles, "read");
   drawNodes(dNodes);
   if (config.nodeWidthOption === 0) drawLabels(dNodes);
   if (trackForRuler !== undefined) drawRuler();
@@ -501,23 +498,23 @@ function generateReadOnlyNodeAttributes() {
   }
 
   const orderY = new Map();
-  nodes.forEach(node => {
-    if (node.hasOwnProperty('order') && node.hasOwnProperty('y')) {
+  nodes.forEach((node) => {
+    if (node.hasOwnProperty("order") && node.hasOwnProperty("y")) {
       setMapToMax(orderY, node.order, node.y + node.contentHeight);
     }
   });
 
   // for order values where there is no node with haplotypes, orderY is calculated via tracks
-  tracks.forEach(track => {
-    if (track.type === 'haplo') {
-      track.path.forEach(step => {
+  tracks.forEach((track) => {
+    if (track.type === "haplo") {
+      track.path.forEach((step) => {
         setMapToMax(orderY, step.order, step.y + track.width);
       });
     }
   });
 
   nodes.forEach((node, i) => {
-    if (node.hasOwnProperty('order') && !node.hasOwnProperty('y')) {
+    if (node.hasOwnProperty("order") && !node.hasOwnProperty("y")) {
       node.y = orderY.get(node.order) + 25;
       node.contentHeight = 0;
       nodesPerOrder[node.order].push(i);
@@ -535,7 +532,7 @@ function setMapToMax(map, key, value) {
 
 // add info about reads to nodes (incoming, outgoing and internal reads)
 function assignReadsToNodes() {
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     node.incomingReads = [];
     node.outgoingReads = [];
     node.internalReads = [];
@@ -557,7 +554,7 @@ function assignReadsToNodes() {
 }
 
 function removeNonPathNodesFromReads() {
-  reads.forEach(read => {
+  reads.forEach((read) => {
     for (let i = read.sequence.length - 1; i >= 0; i -= 1) {
       let nodeName = forward(read.sequence[i]);
       if (!nodeMap.has(nodeName) || nodes[nodeMap.get(nodeName)].degree === 0) {
@@ -577,14 +574,14 @@ function placeReads() {
   sortedNodes.sort(compareNodesByOrder);
 
   // iterate over all nodes
-  sortedNodes.forEach(node => {
+  sortedNodes.forEach((node) => {
     // sort incoming reads
     node.incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
 
     // place incoming reads
     let currentY = node.y + node.contentHeight;
     const occupiedUntil = new Map();
-    node.incomingReads.forEach(readElement => {
+    node.incomingReads.forEach((readElement) => {
       reads[readElement[0]].path[readElement[1]].y = currentY;
       setOccupiedUntil(
         occupiedUntil,
@@ -603,7 +600,7 @@ function placeReads() {
     // place outgoing reads
     const occupiedFrom = new Map();
     currentY = node.y + node.contentHeight;
-    node.outgoingReads.forEach(readElement => {
+    node.outgoingReads.forEach((readElement) => {
       // place in next lane
       reads[readElement[0]].path[readElement[1]].y = currentY;
       occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
@@ -617,7 +614,7 @@ function placeReads() {
       } else {
         // otherwise push down incoming reads to make place for outgoing Read
         occupiedUntil.set(currentY, 0);
-        node.incomingReads.forEach(incReadElementIndices => {
+        node.incomingReads.forEach((incReadElementIndices) => {
           const incRead = reads[incReadElementIndices[0]];
           const incReadPathElement = incRead.path[incReadElementIndices[1]];
           if (incReadPathElement.y >= currentY) {
@@ -640,7 +637,7 @@ function placeReads() {
     node.internalReads.sort(compareInternalReads);
 
     // place internal reads
-    node.internalReads.forEach(readIdx => {
+    node.internalReads.forEach((readIdx) => {
       const currentRead = reads[readIdx];
       currentY = node.y + node.contentHeight;
       while (
@@ -665,24 +662,24 @@ function placeReads() {
   const elementsWithoutNode = [];
   reads.forEach((read, idx) => {
     read.path.forEach((element, pathIdx) => {
-      if (!element.hasOwnProperty('y')) {
+      if (!element.hasOwnProperty("y")) {
         elementsWithoutNode.push({
           readIndex: idx,
           pathIndex: pathIdx,
-          previousY: reads[idx].path[pathIdx - 1].y
+          previousY: reads[idx].path[pathIdx - 1].y,
         });
       }
     });
   });
   elementsWithoutNode.sort(compareNoNodeReadsByPreviousY);
-  elementsWithoutNode.forEach(element => {
+  elementsWithoutNode.forEach((element) => {
     const segment = reads[element.readIndex].path[element.pathIndex];
     segment.y = bottomY[segment.order];
     bottomY[segment.order] += reads[element.readIndex].width;
   });
 
   if (DEBUG) {
-    console.log('Reads:');
+    console.log("Reads:");
     console.log(reads);
   }
 }
@@ -754,13 +751,13 @@ function compareReadIncomingSegmentsByComingFrom(a, b) {
 
   const pathA = reads[a[0]].path[a[1] - 1];
   const pathB = reads[b[0]].path[b[1] - 1];
-  if (pathA.hasOwnProperty('y')) {
-    if (pathB.hasOwnProperty('y')) {
+  if (pathA.hasOwnProperty("y")) {
+    if (pathB.hasOwnProperty("y")) {
       return pathA.y - pathB.y; // a and b have y-property
     }
     return -1; // only a has y-property
   }
-  if (pathB.hasOwnProperty('y')) {
+  if (pathB.hasOwnProperty("y")) {
     return 1; // only b has y-property
   }
   return compareReadIncomingSegmentsByComingFrom(
@@ -791,15 +788,15 @@ function calculateBottomY() {
     bottomY.push(0);
   }
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     bottomY[node.order] = Math.max(
       bottomY[node.order],
       node.y + node.contentHeight + 20
     );
   });
 
-  tracks.forEach(track => {
-    track.path.forEach(element => {
+  tracks.forEach((track) => {
+    track.path.forEach((element) => {
       bottomY[element.order] = Math.max(
         bottomY[element.order],
         element.y + track.width
@@ -817,9 +814,9 @@ function generateBasicPathsForReads() {
   let currentNode;
   let previousNode;
   let previousNodeIsForward;
-  const isPositive = n => ((n = +n) || 1 / n) >= 0;
+  const isPositive = (n) => ((n = +n) || 1 / n) >= 0;
 
-  reads.forEach(read => {
+  reads.forEach((read) => {
     // add info for start of track
     currentNodeIndex = Math.abs(read.indexSequence[0]);
     currentNodeIsForward = isPositive(read.indexSequence[0]);
@@ -829,7 +826,7 @@ function generateBasicPathsForReads() {
     read.path.push({
       order: currentNode.order,
       isForward: currentNodeIsForward,
-      node: currentNodeIndex
+      node: currentNodeIndex,
     });
 
     for (let i = 1; i < read.sequence.length; i += 1) {
@@ -846,7 +843,7 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: previousNode.order,
             isForward: true,
-            node: null
+            node: null,
           });
         }
         for (let j = previousNode.order + 1; j < currentNode.order; j += 1) {
@@ -858,19 +855,19 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: currentNode.order,
             isForward: true,
-            node: null
+            node: null,
           });
           read.path.push({
             order: currentNode.order,
             isForward: false,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
         } else {
           // current Node forward
           read.path.push({
             order: currentNode.order,
             isForward: true,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
         }
       } else if (currentNode.order < previousNode.order) {
@@ -879,7 +876,7 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: previousNode.order,
             isForward: false,
-            node: null
+            node: null,
           });
         }
         for (let j = previousNode.order - 1; j > currentNode.order; j -= 1) {
@@ -891,19 +888,19 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: currentNode.order,
             isForward: false,
-            node: null
+            node: null,
           });
           read.path.push({
             order: currentNode.order,
             isForward: true,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
         } else {
           // backward at current node
           read.path.push({
             order: currentNode.order,
             isForward: false,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
         }
       } else {
@@ -911,18 +908,18 @@ function generateBasicPathsForReads() {
           read.path.push({
             order: currentNode.order,
             isForward: currentNodeIsForward,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
         } else {
           read.path.push({
             order: currentNode.order,
             isForward: !currentNodeIsForward,
-            node: null
+            node: null,
           });
           read.path.push({
             order: currentNode.order,
             isForward: currentNodeIsForward,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
         }
       }
@@ -932,9 +929,9 @@ function generateBasicPathsForReads() {
 
 // reverse reads which are reversed
 function reverseReversedReads() {
-  reads.forEach(read => {
+  reads.forEach((read) => {
     let pos = 0;
-    while (pos < read.sequence.length && read.sequence[pos].charAt(0) === '-') {
+    while (pos < read.sequence.length && read.sequence[pos].charAt(0) === "-") {
       pos += 1;
     }
     if (pos === read.sequence.length) {
@@ -952,21 +949,18 @@ function reverseReversedReads() {
         read.sequenceNew[i].nodeName = forward(read.sequenceNew[i].nodeName); // visit nodes forward
         const nodeWidth =
           nodes[nodeMap.get(read.sequenceNew[i].nodeName)].width;
-        read.sequenceNew[i].mismatches.forEach(mm => {
-          if (mm.type === 'insertion') {
+        read.sequenceNew[i].mismatches.forEach((mm) => {
+          if (mm.type === "insertion") {
             mm.pos = nodeWidth - mm.pos;
             mm.seq = getReverseComplement(mm.seq);
-          } else if (mm.type === 'deletion') {
+          } else if (mm.type === "deletion") {
             mm.pos = nodeWidth - mm.pos - mm.length;
-          } else if (mm.type === 'substitution') {
+          } else if (mm.type === "substitution") {
             mm.pos = nodeWidth - mm.pos - mm.seq.length;
             mm.seq = getReverseComplement(mm.seq);
           }
-          if (mm.hasOwnProperty('seq')) {
-            mm.seq = mm.seq
-              .split('')
-              .reverse()
-              .join('');
+          if (mm.hasOwnProperty("seq")) {
+            mm.seq = mm.seq.split("").reverse().join("");
           }
         });
       }
@@ -984,23 +978,23 @@ function reverseReversedReads() {
 }
 
 function getReverseComplement(s) {
-  let result = '';
+  let result = "";
   for (let i = s.length - 1; i >= 0; i -= 1) {
     switch (s.charAt(i)) {
-      case 'A':
-        result += 'T';
+      case "A":
+        result += "T";
         break;
-      case 'T':
-        result += 'A';
+      case "T":
+        result += "A";
         break;
-      case 'C':
-        result += 'G';
+      case "C":
+        result += "G";
         break;
-      case 'G':
-        result += 'C';
+      case "G":
+        result += "C";
         break;
       default:
-        result += 'N';
+        result += "N";
     }
   }
   return result;
@@ -1008,13 +1002,13 @@ function getReverseComplement(s) {
 
 // for each track: generate sequence of node indices from seq. of node names
 function generateTrackIndexSequences(tracksOrReads) {
-  tracksOrReads.forEach(track => {
+  tracksOrReads.forEach((track) => {
     track.indexSequence = [];
-    track.sequence.forEach(nodeName => {
+    track.sequence.forEach((nodeName) => {
       // if node was switched, reverse it here
       // Q? Is flipping the index enough? It looks like yes. Or should we also flip the node name in 'sequence'?
-      if(nodes[nodeMap.get(forward(nodeName))].switched){
-	nodeName = flip(nodeName);
+      if (nodes[nodeMap.get(forward(nodeName))].switched) {
+        nodeName = flip(nodeName);
       }
       if (isReverse(nodeName)) {
         track.indexSequence.push(-nodeMap.get(forward(nodeName)));
@@ -1030,7 +1024,7 @@ function removeUnusedNodes(allNodes) {
   const dNodes = allNodes.slice(0);
   let i;
   for (i = dNodes.length - 1; i >= 0; i -= 1) {
-    if (!dNodes[i].hasOwnProperty('x')) {
+    if (!dNodes[i].hasOwnProperty("x")) {
       dNodes.splice(i, 1);
     }
   }
@@ -1043,11 +1037,11 @@ function getImageDimensions() {
   minYCoordinate = 99;
   maxYCoordinate = -99;
 
-  nodes.forEach(node => {
-    if (node.hasOwnProperty('x')) {
+  nodes.forEach((node) => {
+    if (node.hasOwnProperty("x")) {
       maxXCoordinate = Math.max(maxXCoordinate, node.x + 20 + node.pixelWidth);
     }
-    if (node.hasOwnProperty('y')) {
+    if (node.hasOwnProperty("y")) {
       minYCoordinate = Math.min(minYCoordinate, node.y - 10);
       maxYCoordinate = Math.max(
         maxYCoordinate,
@@ -1056,8 +1050,8 @@ function getImageDimensions() {
     }
   });
 
-  tracks.forEach(track => {
-    track.path.forEach(segment => {
+  tracks.forEach((track) => {
+    track.path.forEach((segment) => {
       maxYCoordinate = Math.max(maxYCoordinate, segment.y + track.width);
       minYCoordinate = Math.min(minYCoordinate, segment.y);
     });
@@ -1073,26 +1067,23 @@ function alignSVG() {
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
 
-  svg.attr('height', maxYCoordinate - minYCoordinate + 50);
-  svg.attr(
-    'width',
-    parentElement.offsetWidth
-  );
+  svg.attr("height", maxYCoordinate - minYCoordinate + 50);
+  svg.attr("width", parentElement.offsetWidth);
 
   function zoomed() {
     const transform = d3.event.transform;
     // vertical adjustment so that top of graph is at top of svg
     // otherwise would violate translateExtent, which leads to graph "jumping" on next pan
     transform.y = (25 - minYCoordinate) * transform.k;
-    svg.attr('transform', transform);
+    svg.attr("transform", transform);
     const svg2 = d3.select(svgID);
     // adjust height, so that vertical scroll bar is shown when necessary
     svg2.attr(
-      'height',
+      "height",
       (maxYCoordinate - minYCoordinate + 50) * d3.event.transform.k
     );
     // adjust width to compensate for verical scroll bar appearing
-    svg2.attr('width', document.getElementById('tubeMapSVG').clientWidth);
+    svg2.attr("width", document.getElementById("tubeMapSVG").clientWidth);
   }
 
   const minZoom = Math.min(
@@ -1103,18 +1094,18 @@ function alignSVG() {
     .zoom()
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
-    .extent([[0, 0], [svg.attr('width'), svg.attr('height')]]) 
+    .extent([
+      [0, 0],
+      [svg.attr("width"), svg.attr("height")],
+    ])
     .scaleExtent([minZoom, 8])
     .translateExtent([
       [-1, minYCoordinate - 25],
-      [maxXCoordinate + 2, maxYCoordinate + 25]
+      [maxXCoordinate + 2, maxYCoordinate + 25],
     ])
-    .on('zoom', zoomed);
+    .on("zoom", zoomed);
 
-  svg = svg
-    .call(zoom)
-    .on('dblclick.zoom', null)
-    .append('g');
+  svg = svg.call(zoom).on("dblclick.zoom", null).append("g");
 
   // translate to correct position on initial draw
   const containerWidth = parentElement.offsetWidth;
@@ -1122,10 +1113,12 @@ function alignSVG() {
     maxXCoordinate + 10 < containerWidth
       ? (containerWidth - maxXCoordinate - 10) / 2
       : 0;
-  d3.select(document).select(svgID).call(
-    zoom.transform,
-    d3.zoomIdentity.translate(xOffset, 25 - minYCoordinate)
-  );
+  d3.select(document)
+    .select(svgID)
+    .call(
+      zoom.transform,
+      d3.zoomIdentity.translate(xOffset, 25 - minYCoordinate)
+    );
 }
 
 export function zoomBy(zoomFactor) {
@@ -1134,7 +1127,7 @@ export function zoomBy(zoomFactor) {
   let svgElement = document.getElementById(svgID.substring(1));
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
-  
+
   const minZoom = Math.min(
     1,
     parentElement.offsetWidth / (maxXCoordinate + 10)
@@ -1175,12 +1168,12 @@ function generateNodeSuccessors() {
   let current;
   let follower;
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     node.successors = [];
     node.predecessors = [];
   });
 
-  tracks.forEach(track => {
+  tracks.forEach((track) => {
     for (let i = 0; i < track.indexSequence.length - 1; i += 1) {
       current = Math.abs(track.indexSequence[i]);
       follower = Math.abs(track.indexSequence[i + 1]);
@@ -1194,7 +1187,7 @@ function generateNodeSuccessors() {
   });
 
   if (reads && config.showReads) {
-    reads.forEach(track => {
+    reads.forEach((track) => {
       for (let i = 0; i < track.indexSequence.length - 1; i += 1) {
         current = Math.abs(track.indexSequence[i]);
         follower = Math.abs(track.indexSequence[i + 1]);
@@ -1215,10 +1208,10 @@ function generateNodeOrderOfSingleTrack(sequence) {
   let currentNode;
   let minOrder = 0;
 
-  sequence.forEach(nodeIndex => {
+  sequence.forEach((nodeIndex) => {
     if (nodeIndex < 0) {
       currentNode = nodes[Math.abs(nodeIndex)];
-      if (!currentNode.hasOwnProperty('order')) {
+      if (!currentNode.hasOwnProperty("order")) {
         currentNode.order = backwardOrder;
       }
       if (currentNode.order < minOrder) minOrder = currentNode.order;
@@ -1226,7 +1219,7 @@ function generateNodeOrderOfSingleTrack(sequence) {
       backwardOrder = currentNode.order - 1;
     } else {
       currentNode = nodes[nodeIndex];
-      if (!currentNode.hasOwnProperty('order')) {
+      if (!currentNode.hasOwnProperty("order")) {
         currentNode.order = forwardOrder;
       }
       forwardOrder = currentNode.order + 1;
@@ -1248,7 +1241,7 @@ function generateNodeOrderTrackBeginning(sequence) {
 
   while (
     anchorIndex < sequence.length &&
-    !nodes[Math.abs(sequence[anchorIndex])].hasOwnProperty('order')
+    !nodes[Math.abs(sequence[anchorIndex])].hasOwnProperty("order")
   ) {
     anchorIndex += 1; // anchor = first node in common with existing graph
   }
@@ -1269,7 +1262,7 @@ function generateNodeOrderTrackBeginning(sequence) {
   for (let j = anchorIndex - 1; j >= 0; j -= 1) {
     // assign order to nodes which are left of anchor node
     currentNode = nodes[Math.abs(sequence[j])];
-    if (!currentNode.hasOwnProperty('order')) {
+    if (!currentNode.hasOwnProperty("order")) {
       currentNode.order = currentOrder;
       minOrder = Math.min(minOrder, currentOrder);
       currentOrder += increment;
@@ -1294,7 +1287,7 @@ function generateNodeOrder() {
   if (reads && config.showReads) tracksAndReads = tracks.concat(reads);
   else tracksAndReads = tracks;
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     delete node.order;
   });
 
@@ -1306,7 +1299,7 @@ function generateNodeOrder() {
       tracksAndReads[i].indexSequence
     ); // calculate order values for all nodes until the first anchor
     if (rightIndex === null) {
-      if (tracksAndReads[i].type === 'haplo') {
+      if (tracksAndReads[i].type === "haplo") {
         generateNodeOrderOfSingleTrack(tracksAndReads[i].indexSequence);
       } else {
         tracksAndReads.splice(i, 1);
@@ -1326,7 +1319,7 @@ function generateNodeOrder() {
       rightIndex += 1;
       while (
         rightIndex < modifiedSequence.length &&
-        !nodes[modifiedSequence[rightIndex]].hasOwnProperty('order')
+        !nodes[modifiedSequence[rightIndex]].hasOwnProperty("order")
       ) {
         rightIndex += 1;
       }
@@ -1390,7 +1383,7 @@ function generateNodeOrder() {
           currentOrder = nodes[modifiedSequence[leftIndex]].order + 1;
           for (let j = leftIndex + 1; j < modifiedSequence.length; j += 1) {
             currentNode = nodes[modifiedSequence[j]];
-            if (!currentNode.hasOwnProperty('order')) {
+            if (!currentNode.hasOwnProperty("order")) {
               currentNode.order = currentOrder;
               currentOrder += 1;
             }
@@ -1400,7 +1393,7 @@ function generateNodeOrder() {
           currentOrder = nodes[modifiedSequence[leftIndex]].order - 1;
           for (let j = leftIndex + 1; j < modifiedSequence.length; j += 1) {
             currentNode = nodes[modifiedSequence[j]];
-            if (!currentNode.hasOwnProperty('order')) {
+            if (!currentNode.hasOwnProperty("order")) {
               currentNode.order = currentOrder;
               minOrder = Math.min(minOrder, currentOrder);
               currentOrder -= 1;
@@ -1437,8 +1430,8 @@ function isSuccessor(first, second) {
 // get order number of the rightmost node
 function getMaxOrder() {
   let max = -1;
-  nodes.forEach(node => {
-    if (node.hasOwnProperty('order') && node.order > max) max = node.order;
+  nodes.forEach((node) => {
+    if (node.hasOwnProperty("order") && node.order > max) max = node.order;
   });
   return max;
 }
@@ -1458,8 +1451,8 @@ function uninvert(sequence) {
 
 // increases the order-value of all nodes by amount
 function increaseOrderForAllNodes(amount) {
-  nodes.forEach(node => {
-    if (node.hasOwnProperty('order')) node.order += amount;
+  nodes.forEach((node) => {
+    if (node.hasOwnProperty("order")) node.order += amount;
   });
 }
 
@@ -1475,7 +1468,7 @@ function increaseOrderForSuccessors(startingNode, tabuNode, newOrder) {
     const currentOrder = current[1];
 
     if (
-      nodes[currentNode].hasOwnProperty('order') &&
+      nodes[currentNode].hasOwnProperty("order") &&
       nodes[currentNode].order < currentOrder
     ) {
       if (
@@ -1483,7 +1476,7 @@ function increaseOrderForSuccessors(startingNode, tabuNode, newOrder) {
         increasedOrders.get(currentNode) < currentOrder
       ) {
         increasedOrders.set(currentNode, currentOrder);
-        nodes[currentNode].successors.forEach(successor => {
+        nodes[currentNode].successors.forEach((successor) => {
           if (
             nodes[successor].order > nodes[currentNode].order &&
             successor !== tabuNode
@@ -1493,7 +1486,7 @@ function increaseOrderForSuccessors(startingNode, tabuNode, newOrder) {
           }
         });
         if (currentNode !== startingNode) {
-          nodes[currentNode].predecessors.forEach(predecessor => {
+          nodes[currentNode].predecessors.forEach((predecessor) => {
             if (
               nodes[predecessor].order > currentNode.order &&
               predecessor !== tabuNode
@@ -1514,18 +1507,18 @@ function increaseOrderForSuccessors(startingNode, tabuNode, newOrder) {
 
 // calculates the node degree: the number of tracks passing through the node / the node height
 function generateNodeDegree() {
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     node.tracks = [];
   });
 
-  tracks.forEach(track => {
-    track.indexSequence.forEach(nodeIndex => {
+  tracks.forEach((track) => {
+    track.indexSequence.forEach((nodeIndex) => {
       nodes[Math.abs(nodeIndex)].tracks.push(track.id);
     });
   });
 
-  nodes.forEach(node => {
-    if (node.hasOwnProperty('tracks')) node.degree = node.tracks.length;
+  nodes.forEach((node) => {
+    if (node.hasOwnProperty("tracks")) node.degree = node.tracks.length;
   });
 }
 
@@ -1548,10 +1541,10 @@ function switchNodeOrientation() {
       if (tracks[0].sequence.indexOf(nodeName) === -1) {
         // do not change orientation for nodes which are part of the pivot track
         if (j > 0) {
-          prevNode = nodes[nodeMap.get(forward(tracks[i].sequence[j - 1]))]
+          prevNode = nodes[nodeMap.get(forward(tracks[i].sequence[j - 1]))];
         }
         if (j < tracks[i].sequence.length - 1) {
-            nextNode = nodes[nodeMap.get(forward(tracks[i].sequence[j + 1]))];
+          nextNode = nodes[nodeMap.get(forward(tracks[i].sequence[j + 1]))];
         }
         if (
           (j === 0 || prevNode.order < currentNode.order) &&
@@ -1586,7 +1579,8 @@ function switchNodeOrientation() {
       nodeName = forward(node);
       if (toSwitch.has(nodeName) && toSwitch.get(nodeName) > 0) {
         tracks[trackIndex].sequence[nodeIndex] = flip(node);
-        tracks[trackIndex].indexSequence[nodeIndex] = -tracks[trackIndex].indexSequence[nodeIndex];
+        tracks[trackIndex].indexSequence[nodeIndex] =
+          -tracks[trackIndex].indexSequence[nodeIndex];
       }
     });
   });
@@ -1596,9 +1590,9 @@ function switchNodeOrientation() {
     if (value > 0) {
       currentNode = nodeMap.get(key);
       nodes[currentNode].seq = nodes[currentNode].seq
-        .split('')
+        .split("")
         .reverse()
-        .join('');
+        .join("");
       nodes[currentNode].switched = true;
     }
   });
@@ -1613,8 +1607,8 @@ function generateNodeXCoords() {
   sortedNodes.sort(compareNodesByOrder);
   const extra = calculateExtraSpace();
 
-  sortedNodes.forEach(node => {
-    if (node.hasOwnProperty('order')) {
+  sortedNodes.forEach((node) => {
+    if (node.hasOwnProperty("order")) {
       if (node.order > currentOrder) {
         currentOrder = node.order;
         currentX = nextX + 10 * extra[node.order];
@@ -1638,7 +1632,7 @@ function calculateExtraSpace() {
     rightSideEdges.push(0);
   }
 
-  tracks.forEach(track => {
+  tracks.forEach((track) => {
     for (let i = 1; i < track.path.length; i += 1) {
       if (track.path[i].order === track.path[i - 1].order) {
         // repeat or translocation
@@ -1669,7 +1663,7 @@ function generateLaneAssignment() {
   let previousNode;
   let previousNodeIsForward;
   const prevSegmentPerOrderPerTrack = [];
-  const isPositive = n => ((n = +n) || 1 / n) >= 0;
+  const isPositive = (n) => ((n = +n) || 1 / n) >= 0;
 
   // create empty variables
   for (let i = 0; i <= maxOrder; i += 1) {
@@ -1691,7 +1685,7 @@ function generateLaneAssignment() {
       order: currentNode.order,
       lane: null,
       isForward: currentNodeIsForward,
-      node: currentNodeIndex
+      node: currentNodeIndex,
     });
     addToAssignment(
       currentNode.order,
@@ -1717,7 +1711,7 @@ function generateLaneAssignment() {
             order: previousNode.order,
             lane: null,
             isForward: true,
-            node: null
+            node: null,
           });
           addToAssignment(
             previousNode.order,
@@ -1734,7 +1728,7 @@ function generateLaneAssignment() {
             order: j,
             lane: null,
             isForward: true,
-            node: null
+            node: null,
           });
           addToAssignment(
             j,
@@ -1751,7 +1745,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: true,
-            node: null
+            node: null,
           });
           addToAssignment(
             currentNode.order,
@@ -1765,7 +1759,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: false,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
           addToAssignment(
             currentNode.order,
@@ -1781,7 +1775,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: true,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
           addToAssignment(
             currentNode.order,
@@ -1799,7 +1793,7 @@ function generateLaneAssignment() {
             order: previousNode.order,
             lane: null,
             isForward: false,
-            node: null
+            node: null,
           });
           addToAssignment(
             previousNode.order,
@@ -1816,7 +1810,7 @@ function generateLaneAssignment() {
             order: j,
             lane: null,
             isForward: false,
-            node: null
+            node: null,
           });
           addToAssignment(
             j,
@@ -1833,7 +1827,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: false,
-            node: null
+            node: null,
           });
           addToAssignment(
             currentNode.order,
@@ -1847,7 +1841,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: true,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
           addToAssignment(
             currentNode.order,
@@ -1863,7 +1857,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: false,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
           addToAssignment(
             currentNode.order,
@@ -1880,7 +1874,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: currentNodeIsForward,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
           addToAssignment(
             currentNode.order,
@@ -1895,7 +1889,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: !currentNodeIsForward,
-            node: null
+            node: null,
           });
           addToAssignment(
             currentNode.order,
@@ -1909,7 +1903,7 @@ function generateLaneAssignment() {
             order: currentNode.order,
             lane: null,
             isForward: currentNodeIsForward,
-            node: currentNodeIndex
+            node: currentNodeIndex,
           });
           addToAssignment(
             currentNode.order,
@@ -1940,9 +1934,9 @@ function addToAssignment(
 
   if (nodeIndex === null) {
     assignments[order].push({
-      type: 'single',
+      type: "single",
       node: null,
-      tracks: [{ trackID: trackNo, segmentID, compareToFromSame }]
+      tracks: [{ trackID: trackNo, segmentID, compareToFromSame }],
     });
     prevSegmentPerOrderPerTrack[order][trackNo] =
       assignments[order][assignments[order].length - 1].tracks[0];
@@ -1950,11 +1944,11 @@ function addToAssignment(
     for (let i = 0; i < assignments[order].length; i += 1) {
       if (assignments[order][i].node === nodeIndex) {
         // add to existing node in assignment
-        assignments[order][i].type = 'multiple';
+        assignments[order][i].type = "multiple";
         assignments[order][i].tracks.push({
           trackID: trackNo,
           segmentID,
-          compareToFromSame
+          compareToFromSame,
         });
         prevSegmentPerOrderPerTrack[order][trackNo] =
           assignments[order][i].tracks[assignments[order][i].tracks.length - 1];
@@ -1963,9 +1957,9 @@ function addToAssignment(
     }
     // create new node in assignment
     assignments[order].push({
-      type: 'single',
+      type: "single",
       node: nodeIndex,
-      tracks: [{ trackID: trackNo, segmentID, compareToFromSame }]
+      tracks: [{ trackID: trackNo, segmentID, compareToFromSame }],
     });
     prevSegmentPerOrderPerTrack[order][trackNo] =
       assignments[order][assignments[order].length - 1].tracks[0];
@@ -1976,9 +1970,9 @@ function addToAssignment(
 function getIdealLanesAndCoords(assignment, order) {
   let index;
 
-  assignment.forEach(node => {
+  assignment.forEach((node) => {
     node.idealLane = 0;
-    node.tracks.forEach(track => {
+    node.tracks.forEach((track) => {
       if (track.segmentID === 0) {
         track.idealLane = track.trackID;
         track.idealY = null;
@@ -2034,7 +2028,7 @@ function generateSingleLaneAssignment(assignment, order) {
   getIdealLanesAndCoords(assignment, order);
   assignment.sort(compareByIdealLane);
 
-  assignment.forEach(node => {
+  assignment.forEach((node) => {
     if (node.node !== null) {
       nodes[node.node].topLane = currentLane;
       if (prevNameIsNull) currentY -= 10;
@@ -2048,7 +2042,7 @@ function generateSingleLaneAssignment(assignment, order) {
     }
 
     node.tracks.sort(compareByIdealLane);
-    node.tracks.forEach(track => {
+    node.tracks.forEach((track) => {
       track.lane = currentLane;
       if (track.trackID === prevTrack && node.node === null && prevNameIsNull) {
         currentY += 10;
@@ -2076,37 +2070,37 @@ function adjustVertically(assignment, potentialAdjustmentValues) {
   let verticalAdjustment = 0;
   let minAdjustmentCost = Number.MAX_SAFE_INTEGER;
 
-  potentialAdjustmentValues.forEach(moveBy => {
+  potentialAdjustmentValues.forEach((moveBy) => {
     if (getVerticalAdjustmentCost(assignment, moveBy) < minAdjustmentCost) {
       minAdjustmentCost = getVerticalAdjustmentCost(assignment, moveBy);
       verticalAdjustment = moveBy;
     }
   });
 
-  assignment.forEach(node => {
+  assignment.forEach((node) => {
     if (node.node !== null) {
       nodes[node.node].y += verticalAdjustment;
     }
-    node.tracks.forEach(track => {
+    node.tracks.forEach((track) => {
       tracks[track.trackID].path[track.segmentID].y += verticalAdjustment;
     });
   });
 }
 
 function adjustVertically3(node, adjustBy) {
-  if (node.hasOwnProperty('order')) {
-    assignments[node.order].forEach(assignmentNode => {
+  if (node.hasOwnProperty("order")) {
+    assignments[node.order].forEach((assignmentNode) => {
       if (assignmentNode.node !== null) {
         const aNode = nodes[assignmentNode.node];
         if (aNode !== node && aNode.y > node.y) {
           aNode.y += adjustBy;
-          assignmentNode.tracks.forEach(track => {
+          assignmentNode.tracks.forEach((track) => {
             tracks[track.trackID].path[track.segmentID].y += adjustBy;
           });
         }
       } else {
         // track-segment not within a node
-        assignmentNode.tracks.forEach(track => {
+        assignmentNode.tracks.forEach((track) => {
           if (tracks[track.trackID].path[track.segmentID].y >= node.y) {
             tracks[track.trackID].path[track.segmentID].y += adjustBy;
           }
@@ -2114,7 +2108,7 @@ function adjustVertically3(node, adjustBy) {
       }
     });
     if (nodesPerOrder[node.order].length > 0) {
-      nodesPerOrder[node.order].forEach(nodeIndex => {
+      nodesPerOrder[node.order].forEach((nodeIndex) => {
         if (nodes[nodeIndex] !== node && nodes[nodeIndex].y > node.y) {
           nodes[nodeIndex].y += adjustBy;
         }
@@ -2126,9 +2120,9 @@ function adjustVertically3(node, adjustBy) {
 // calculates cost of vertical adjustment as vertical distance * width of track
 function getVerticalAdjustmentCost(assignment, moveBy) {
   let result = 0;
-  assignment.forEach(node => {
-    node.tracks.forEach(track => {
-      if (track.idealY !== null && tracks[track.trackID].type !== 'read') {
+  assignment.forEach((node) => {
+    node.tracks.forEach((track) => {
+      if (track.idealY !== null && tracks[track.trackID].type !== "read") {
         result +=
           Math.abs(
             track.idealY -
@@ -2142,15 +2136,15 @@ function getVerticalAdjustmentCost(assignment, moveBy) {
 }
 
 function compareByIdealLane(a, b) {
-  if (a.hasOwnProperty('idealLane')) {
-    if (b.hasOwnProperty('idealLane')) {
+  if (a.hasOwnProperty("idealLane")) {
+    if (b.hasOwnProperty("idealLane")) {
       if (a.idealLane < b.idealLane) return -1;
       else if (a.idealLane > b.idealLane) return 1;
       return 0;
     }
     return -1;
   }
-  if (b.hasOwnProperty('idealLane')) {
+  if (b.hasOwnProperty("idealLane")) {
     return 1;
   }
   return 0;
@@ -2163,11 +2157,11 @@ function compareNodesByOrder(a, b) {
   }
   if (b === null) return 1;
 
-  if (a.hasOwnProperty('order')) {
-    if (b.hasOwnProperty('order')) {
+  if (a.hasOwnProperty("order")) {
+    if (b.hasOwnProperty("order")) {
       if (a.order < b.order) return -1;
       else if (a.order > b.order) return 1;
-      if (a.hasOwnProperty('y') && b.hasOwnProperty('y')) {
+      if (a.hasOwnProperty("y") && b.hasOwnProperty("y")) {
         if (a.y < b.y) return -1;
         else if (a.y > b.y) return 1;
       }
@@ -2175,7 +2169,7 @@ function compareNodesByOrder(a, b) {
     }
     return -1;
   }
-  if (b.hasOwnProperty('order')) return 1;
+  if (b.hasOwnProperty("order")) return 1;
   return 0;
 }
 
@@ -2184,15 +2178,15 @@ function addTrackFeatures() {
   let nodeEnd;
   let feature = {};
 
-  bed.forEach(line => {
+  bed.forEach((line) => {
     let i = 0;
     while (i < numberOfTracks && tracks[i].name !== line.track) i += 1;
     if (i < numberOfTracks) {
       nodeStart = 0;
-      tracks[i].path.forEach(node => {
+      tracks[i].path.forEach((node) => {
         if (node.node !== null) {
           feature = {};
-          if (nodes[node.node].hasOwnProperty('sequenceLength')) {
+          if (nodes[node.node].hasOwnProperty("sequenceLength")) {
             nodeEnd = nodeStart + nodes[node.node].sequenceLength - 1;
           } else {
             nodeEnd = nodeStart + nodes[node.node].width - 1;
@@ -2211,10 +2205,10 @@ function addTrackFeatures() {
           if (nodeEnd > line.end && nodeStart <= line.end) {
             feature.end = line.end - nodeStart;
           }
-          if (feature.hasOwnProperty('start')) {
+          if (feature.hasOwnProperty("start")) {
             feature.type = line.type;
             feature.name = line.name;
-            if (!node.hasOwnProperty('features')) node.features = [];
+            if (!node.hasOwnProperty("features")) node.features = [];
             node.features.push(feature);
           }
           nodeStart = nodeEnd + 1;
@@ -2228,14 +2222,14 @@ function calculateTrackWidth() {
   // flag: if vg returns freq of 0 for all tracks, we will increase width manually
   let allAreFour = true;
 
-  tracks.forEach(track => {
-    if (track.hasOwnProperty('freq')) {
+  tracks.forEach((track) => {
+    if (track.hasOwnProperty("freq")) {
       // custom track width
       track.width = Math.round((Math.log(track.freq) + 1) * 4);
     } else {
       // default track width
       track.width = 15;
-      if (track.hasOwnProperty('type') && track.type === 'read') {
+      if (track.hasOwnProperty("type") && track.type === "read") {
         track.width = 4;
       }
     }
@@ -2245,8 +2239,8 @@ function calculateTrackWidth() {
   });
 
   if (allAreFour) {
-    tracks.forEach(track => {
-      if (track.hasOwnProperty('freq')) {
+    tracks.forEach((track) => {
+      if (track.hasOwnProperty("freq")) {
         track.width = 15;
       }
     });
@@ -2269,17 +2263,17 @@ function assignColorSets() {
 
 function getColorSet(colorSetName) {
   switch (colorSetName) {
-    case 'plainColors':
+    case "plainColors":
       return plainColors;
-    case 'reds':
+    case "reds":
       return reds;
-    case 'blues':
+    case "blues":
       return blues;
-    case 'greys':
+    case "greys":
       return greys;
-    case 'ygreys':
+    case "ygreys":
       return ygreys;
-    case 'lightColors':
+    case "lightColors":
       return lightColors;
     default:
       return greys;
@@ -2287,27 +2281,28 @@ function getColorSet(colorSetName) {
 }
 
 function generateTrackColor(track, highlight) {
-  if (typeof highlight === 'undefined') highlight = 'plain';
+  if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
-  if (track.hasOwnProperty('type') && track.type === 'read') {
+  if (track.hasOwnProperty("type") && track.type === "read") {
     if (config.colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
         Math.min(60, track.mapping_quality) / 60
       );
     } else {
-      if (track.hasOwnProperty('is_reverse') && track.is_reverse === true) {
+      if (track.hasOwnProperty("is_reverse") && track.is_reverse === true) {
         trackColor = reverseReadColors[track.id % reverseReadColors.length];
       } else {
         trackColor = forwardReadColors[track.id % forwardReadColors.length];
       }
     }
   } else {
-    if (config.showExonsFlag === false || highlight !== 'plain') {
+    if (config.showExonsFlag === false || highlight !== "plain") {
       // don't repeat the color of the first track (reference) to highilight is better
-      if(track.id === 0){
-	trackColor = haplotypeColors[0];
+      if (track.id === 0) {
+        trackColor = haplotypeColors[0];
       } else {
-	trackColor = haplotypeColors[((track.id - 1) % (haplotypeColors.length - 1)) + 1];
+        trackColor =
+          haplotypeColors[((track.id - 1) % (haplotypeColors.length - 1)) + 1];
       }
     } else {
       trackColor = exonColors[track.id % exonColors.length];
@@ -2371,8 +2366,8 @@ function generateSVGShapesFromPath() {
   // generate x coords where each order starts and ends
   const orderStartX = [];
   const orderEndX = [];
-  nodes.forEach(node => {
-    if (node.hasOwnProperty('order')) {
+  nodes.forEach((node) => {
+    if (node.hasOwnProperty("order")) {
       orderStartX[node.order] = node.x;
       if (orderEndX[node.order] === undefined) {
         orderEndX[node.order] = node.x + node.pixelWidth;
@@ -2385,14 +2380,14 @@ function generateSVGShapesFromPath() {
     }
   });
 
-  tracks.forEach(track => {
-    highlight = 'plain';
+  tracks.forEach((track) => {
+    highlight = "plain";
     trackColor = generateTrackColor(track, highlight);
 
     // start of path
     yStart = track.path[0].y;
-    if (track.type !== 'read') {
-      if (track.sequence[0].charAt(0) === '-') {
+    if (track.type !== "read") {
+      if (track.sequence[0].charAt(0) === "-") {
         // The track starts with an inversed node
         xStart = orderEndX[track.path[0].order] + 20;
       } else {
@@ -2406,7 +2401,7 @@ function generateSVGShapesFromPath() {
     // middle of path
     for (let i = 0; i < track.path.length; i += 1) {
       if (track.path[i].y === yStart) {
-        if (track.path[i].hasOwnProperty('features')) {
+        if (track.path[i].hasOwnProperty("features")) {
           reversalFlag =
             i > 0 && track.path[i - 1].order === track.path[i].order;
           dummy = createFeatureRectangle(
@@ -2438,8 +2433,8 @@ function generateSVGShapesFromPath() {
             yEnd: yStart + track.width - 1,
             color: trackColor,
             id: track.id,
-	    name: track.name,
-            type: track.type
+            name: track.name,
+            type: track.type,
           });
         }
 
@@ -2458,8 +2453,8 @@ function generateSVGShapesFromPath() {
             color: trackColor,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
-	    name: track.name,
-            type: track.type
+            name: track.name,
+            type: track.type,
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -2478,8 +2473,8 @@ function generateSVGShapesFromPath() {
             color: trackColor,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
-	    name: track.name,
-            type: track.type
+            name: track.name,
+            type: track.type,
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -2496,7 +2491,7 @@ function generateSVGShapesFromPath() {
               track.id,
               track.path[i].order,
               track.type,
-	      track.name
+              track.name
             );
             xStart = orderEndX[track.path[i].order];
             yStart = track.path[i].y;
@@ -2511,14 +2506,14 @@ function generateSVGShapesFromPath() {
               track.id,
               track.path[i].order,
               track.type,
-	      track.name
+              track.name
             );
             xStart = orderStartX[track.path[i].order];
             yStart = track.path[i].y;
           }
         }
 
-        if (track.path[i].hasOwnProperty('features')) {
+        if (track.path[i].hasOwnProperty("features")) {
           reversalFlag = track.path[i - 1].order === track.path[i].order;
           dummy = createFeatureRectangle(
             track.path[i],
@@ -2538,7 +2533,7 @@ function generateSVGShapesFromPath() {
     }
 
     // ending edges
-    if (track.type !== 'read') {
+    if (track.type !== "read") {
       if (!track.path[track.path.length - 1].isForward) {
         // The track ends with an inversed node
         xEnd = orderStartX[track.path[track.path.length - 1].order] - 20;
@@ -2557,7 +2552,7 @@ function generateSVGShapesFromPath() {
       color: trackColor,
       id: track.id,
       name: track.name,
-      type: track.type
+      type: track.type,
     });
   });
 }
@@ -2582,14 +2577,14 @@ function createFeatureRectangle(
 
   nodeXStart -= 8;
   nodeXEnd += 8;
-  if (nodes[node.node].hasOwnProperty('sequenceLength')) {
+  if (nodes[node.node].hasOwnProperty("sequenceLength")) {
     nodeWidth = nodes[node.node].sequenceLength;
   } else {
     nodeWidth = nodes[node.node].width;
   }
 
   node.features.sort((a, b) => a.start - b.start);
-  node.features.forEach(feature => {
+  node.features.forEach((feature) => {
     if (currentHighlight !== feature.type) {
       // finish incoming rectangle
       c = generateTrackColor(track, currentHighlight);
@@ -2614,8 +2609,8 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: co,
             id: track.id,
-	    name: track.name,
-            type: track.type
+            name: track.name,
+            type: track.type,
           });
         }
 
@@ -2627,8 +2622,8 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: c,
             id: track.id,
-	    name: track.name,
-            type: track.type
+            name: track.name,
+            type: track.type,
           });
         }
       } else {
@@ -2652,8 +2647,8 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: co,
             id: track.id,
-	    name: track.name,
-            type: track.type
+            name: track.name,
+            type: track.type,
           });
         }
 
@@ -2665,15 +2660,15 @@ function createFeatureRectangle(
             yEnd: yStart + track.width - 1,
             color: c,
             id: track.id,
-	    name: track.name,
-            type: track.type
+            name: track.name,
+            type: track.type,
           });
         }
       }
       rectXStart = featureXStart;
       currentHighlight = feature.type;
     }
-    if (feature.end < nodeWidth - 1 || !feature.hasOwnProperty('continue')) {
+    if (feature.end < nodeWidth - 1 || !feature.hasOwnProperty("continue")) {
       // finish internal rectangle
       c = generateTrackColor(track, currentHighlight);
       if (node.isForward === true) {
@@ -2690,8 +2685,8 @@ function createFeatureRectangle(
           yEnd: yStart + track.width - 1,
           color: c,
           id: track.id,
-	  name: track.name,
-          type: track.type
+          name: track.name,
+          type: track.type,
         });
       } else {
         featureXEnd =
@@ -2707,12 +2702,12 @@ function createFeatureRectangle(
           yEnd: yStart + track.width - 1,
           color: c,
           id: track.id,
-	  name: track.name,
-          type: track.type
+          name: track.name,
+          type: track.type,
         });
       }
       rectXStart = featureXEnd + 1;
-      currentHighlight = 'plain';
+      currentHighlight = "plain";
     }
   });
   return { xStart: rectXStart, highlight: currentHighlight };
@@ -2743,7 +2738,7 @@ function generateForwardToReverse(
     color: trackColor,
     id: trackID,
     name: trackName,
-    type
+    type,
   });
   trackVerticalRectangles.push({
     // vertical rectangle
@@ -2754,7 +2749,7 @@ function generateForwardToReverse(
     color: trackColor,
     id: trackID,
     name: trackName,
-    type
+    type,
   });
   trackVerticalRectangles.push({
     xStart: x - 10 * extraRight[order],
@@ -2764,26 +2759,27 @@ function generateForwardToReverse(
     color: trackColor,
     id: trackID,
     name: trackName,
-    type
+    type,
   }); // elongate outgoing rectangle a bit to the right
 
   let d = `M ${x + 5} ${yBottom}`;
   d += ` Q ${x + 5 + radius} ${yBottom} ${x + 5 + radius} ${yBottom - radius}`;
   d += ` H ${x + 5 + radius + Math.min(7, trackWidth)}`;
-  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${yBottom +
-    trackWidth} ${x + 5} ${yBottom + trackWidth}`;
-  d += ' Z ';
+  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${
+    yBottom + trackWidth
+  } ${x + 5} ${yBottom + trackWidth}`;
+  d += " Z ";
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
 
   d = `M ${x + 5} ${yTop}`;
-  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${yTop} ${x +
-    5 +
-    radius +
-    Math.min(7, trackWidth)} ${yTop + trackWidth + radius}`;
+  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${yTop} ${
+    x + 5 + radius + Math.min(7, trackWidth)
+  } ${yTop + trackWidth + radius}`;
   d += ` H ${x + 5 + radius}`;
-  d += ` Q ${x + 5 + radius} ${yTop + trackWidth} ${x + 5} ${yTop +
-    trackWidth}`;
-  d += ' Z ';
+  d += ` Q ${x + 5 + radius} ${yTop + trackWidth} ${x + 5} ${
+    yTop + trackWidth
+  }`;
+  d += " Z ";
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
   extraRight[order] += 1;
 }
@@ -2812,7 +2808,7 @@ function generateReverseToForward(
     color: trackColor,
     id: trackID,
     name: trackName,
-    type
+    type,
   }); // elongate incoming rectangle a bit to the left
   trackVerticalRectangles.push({
     xStart: x - 5 - radius - Math.min(7, trackWidth),
@@ -2822,7 +2818,7 @@ function generateReverseToForward(
     color: trackColor,
     id: trackID,
     name: trackName,
-    type
+    type,
   }); // vertical rectangle
   trackVerticalRectangles.push({
     xStart: x - 6,
@@ -2832,45 +2828,46 @@ function generateReverseToForward(
     color: trackColor,
     id: trackID,
     name: trackName,
-    type
+    type,
   }); // elongate outgoing rectangle a bit to the left
 
   // Path for bottom 90 degree bend
   let d = `M ${x - 5} ${yBottom}`;
   d += ` Q ${x - 5 - radius} ${yBottom} ${x - 5 - radius} ${yBottom - radius}`;
   d += ` H ${x - 5 - radius - Math.min(7, trackWidth)}`;
-  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${yBottom +
-    trackWidth} ${x - 5} ${yBottom + trackWidth}`;
-  d += ' Z ';
+  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${
+    yBottom + trackWidth
+  } ${x - 5} ${yBottom + trackWidth}`;
+  d += " Z ";
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
 
   // Path for top 90 degree bend
   d = `M ${x - 5} ${yTop}`;
-  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${yTop} ${x -
-    5 -
-    radius -
-    Math.min(7, trackWidth)} ${yTop + trackWidth + radius}`;
+  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${yTop} ${
+    x - 5 - radius - Math.min(7, trackWidth)
+  } ${yTop + trackWidth + radius}`;
   d += ` H ${x - 5 - radius}`;
-  d += ` Q ${x - 5 - radius} ${yTop + trackWidth} ${x - 5} ${yTop +
-    trackWidth}`;
-  d += ' Z ';
+  d += ` Q ${x - 5 - radius} ${yTop + trackWidth} ${x - 5} ${
+    yTop + trackWidth
+  }`;
+  d += " Z ";
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
   extraLeft[order] += 1;
 }
 
 // to avoid problems with wrong overlapping of tracks, draw them in order of their color
 function drawReversalsByColor(corners, rectangles, type) {
-  if (typeof type === 'undefined') type = 'haplo';
+  if (typeof type === "undefined") type = "haplo";
   const co = new Set();
-  rectangles.forEach(rect => {
+  rectangles.forEach((rect) => {
     co.add(rect.color);
   });
-  co.forEach(c => {
+  co.forEach((c) => {
     drawTrackRectangles(
-      rectangles.filter(filterObjectByAttribute('color', c)),
+      rectangles.filter(filterObjectByAttribute("color", c)),
       type
     );
-    drawTrackCorners(corners.filter(filterObjectByAttribute('color', c)), type);
+    drawTrackCorners(corners.filter(filterObjectByAttribute("color", c)), type);
   });
 }
 
@@ -2879,7 +2876,7 @@ function drawNodes(dNodes) {
   let x;
   let y;
 
-  dNodes.forEach(node => {
+  dNodes.forEach((node) => {
     // top left arc
     node.d = `M ${node.x - 9} ${node.y} Q ${node.x - 9} ${node.y - 9} ${
       node.x
@@ -2928,21 +2925,21 @@ function drawNodes(dNodes) {
   });
 
   svg
-    .selectAll('.node')
+    .selectAll(".node")
     .data(dNodes)
     .enter()
-    .append('path')
-    .attr('id', d => d.name)
-    .attr('d', d => d.d)
-    .on('mouseover', nodeMouseOver)
-    .on('mouseout', nodeMouseOut)
-    .on('dblclick', nodeDoubleClick)
-    .style('fill', config.transparentNodesFlag ? 'none' : '#fff')
-    .style('fill-opacity', config.showExonsFlag ? '0.4' : '0.6')
-    .style('stroke', 'black')
-    .style('stroke-width', '2px')
-    .append('svg:title')
-    .text(d => getPopUpText(d));
+    .append("path")
+    .attr("id", (d) => d.name)
+    .attr("d", (d) => d.d)
+    .on("mouseover", nodeMouseOver)
+    .on("mouseout", nodeMouseOut)
+    .on("dblclick", nodeDoubleClick)
+    .style("fill", config.transparentNodesFlag ? "none" : "#fff")
+    .style("fill-opacity", config.showExonsFlag ? "0.4" : "0.6")
+    .style("stroke", "black")
+    .style("stroke-width", "2px")
+    .append("svg:title")
+    .text((d) => getPopUpText(d));
 }
 
 function getPopUpText(node) {
@@ -2950,9 +2947,11 @@ function getPopUpText(node) {
     `Node ID: ${node.name}\n` +
     `Node Length: ${node.sequenceLength} bases\n` +
     `Haplotypes: ${node.degree}\n` +
-    `Aligned Reads: ${node.incomingReads.length +
+    `Aligned Reads: ${
+      node.incomingReads.length +
       node.internalReads.length +
-      node.outgoingReads.length}`
+      node.outgoingReads.length
+    }`
   );
 }
 
@@ -2960,17 +2959,17 @@ function getPopUpText(node) {
 function drawLabels(dNodes) {
   if (config.nodeWidthOption === 0) {
     svg
-      .selectAll('text')
+      .selectAll("text")
       .data(dNodes)
       .enter()
-      .append('text')
-      .attr('x', d => d.x - 4)
-      .attr('y', d => d.y + 4)
-      .text(d => d.seq)
-      .attr('font-family', fonts)
-      .attr('font-size', '14px')
-      .attr('fill', 'black')
-      .style('pointer-events', 'none');
+      .append("text")
+      .attr("x", (d) => d.x - 4)
+      .attr("y", (d) => d.y + 4)
+      .text((d) => d.seq)
+      .attr("font-family", fonts)
+      .attr("font-size", "14px")
+      .attr("fill", "black")
+      .style("pointer-events", "none");
   }
 }
 
@@ -2984,172 +2983,213 @@ function drawRuler() {
   if (config.nodeWidthOption === 0) markingInterval = 20;
   // How close may markings be in image space?
   const markingClearance = 80;
-  
+
   // We need to call drawRulerMarking(base pair number, layout X coordinate)
   // for each tick mark we want in our legend. But we can't just walk the path
   // and X at the same time, placing ticks periodically because the ruler path
   // isn't nexessarily used for the layout backbone, and can go all over the
-  // place, including backward through nodes. 
+  // place, including backward through nodes.
 
   // So we walk along the path, place ticks, and then drop the ones that are
   // too close together.
-  
+
   // This will hold pairs of base position, x coordinate.
   let ticks = [];
   let ticks_region = [];
-  
+
   // We keep a cursor to the start of the current node traversal along the path
   let indexOfFirstBaseInNode = rulerTrack.indexOfFirstBase;
   // And the next index along the path that doesn't have a mark but could.
   let nextUnmarkedIndex = indexOfFirstBaseInNode;
 
-  function getCorrectXCoordinateOfBaseWithinNode(position, currentNode, currentNodeIsReverse, is_region=false){
+  function getCorrectXCoordinateOfBaseWithinNode(
+    position,
+    currentNode,
+    currentNodeIsReverse,
+    is_region = false
+  ) {
     // What base along our traversal of this node should we be marking?
     let indexIntoVisitToMark = position - indexOfFirstBaseInNode;
-    
+
     // What offset into the node should we mark at, relative to its forward-strand start?
-    let offsetIntoNodeForward = currentNodeIsReverse ?
-        // If going in reverse, take off bases of the node we use from the right side
-        currentNode.sequenceLength - 1 - indexIntoVisitToMark :
-        // Otherwise, add them to the left side
+    let offsetIntoNodeForward = currentNodeIsReverse
+      ? // If going in reverse, take off bases of the node we use from the right side
+        currentNode.sequenceLength - 1 - indexIntoVisitToMark
+      : // Otherwise, add them to the left side
         indexIntoVisitToMark;
-    
+
     if (config.nodeWidthOption !== 0 && !is_region) {
       // Actually always mark at an edge of the node, if we are scaling the node nonlinearly
       // and if we are not highlighting the input region
-      offsetIntoNodeForward = currentNodeIsReverse ? currentNode.sequenceLength - 1 : 0;
+      offsetIntoNodeForward = currentNodeIsReverse
+        ? currentNode.sequenceLength - 1
+        : 0;
     }
-    
+
     // Where should we mark in the visualization?
-    let xCoordOfMarking = getXCoordinateOfBaseWithinNode(currentNode, offsetIntoNodeForward);
-    return(xCoordOfMarking)
+    let xCoordOfMarking = getXCoordinateOfBaseWithinNode(
+      currentNode,
+      offsetIntoNodeForward
+    );
+    return xCoordOfMarking;
   }
-  
+
   let start_region = Number(inputRegion[0]);
   let end_region = Number(inputRegion[1]);
   for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
     // Walk along the ruler track in ascending coordinate order.
-    const nodeIndex = rulerTrack.indexSequence[rulerTrack.isCompletelyReverse ? (rulerTrack.indexSequence.length - 1 - i) : i];
+    const nodeIndex =
+      rulerTrack.indexSequence[
+        rulerTrack.isCompletelyReverse
+          ? rulerTrack.indexSequence.length - 1 - i
+          : i
+      ];
     const currentNode = nodes[Math.abs(nodeIndex)];
     // Each node may actually have the track's coordinates go through it
     // backward. In fact, the whole track may be laid out backward.
     // So xor the reverse flags, which we assume to be bools
-    const currentNodeIsReverse = isReverse(rulerTrack.sequence[i]) !== rulerTrack.isCompletelyReverse;
-    
+    const currentNodeIsReverse =
+      isReverse(rulerTrack.sequence[i]) !== rulerTrack.isCompletelyReverse;
+
     // For some displayus we want to mark each node only once.
     let alreadyMarkedNode = false;
 
-    if(start_region >= indexOfFirstBaseInNode && start_region < indexOfFirstBaseInNode + currentNode.sequenceLength){
+    if (
+      start_region >= indexOfFirstBaseInNode &&
+      start_region < indexOfFirstBaseInNode + currentNode.sequenceLength
+    ) {
       // add start "region" tick
-      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(start_region, currentNode, currentNodeIsReverse, true)
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(
+        start_region,
+        currentNode,
+        currentNodeIsReverse,
+        true
+      );
       ticks_region.push([start_region, xCoordOfMarking]);
     }
-    if(end_region >= indexOfFirstBaseInNode && end_region < indexOfFirstBaseInNode + currentNode.sequenceLength){
+    if (
+      end_region >= indexOfFirstBaseInNode &&
+      end_region < indexOfFirstBaseInNode + currentNode.sequenceLength
+    ) {
       // add end "region" tick
-      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(end_region, currentNode, currentNodeIsReverse, true)
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(
+        end_region,
+        currentNode,
+        currentNodeIsReverse,
+        true
+      );
       ticks_region.push([end_region, xCoordOfMarking]);
     }
-    
-    while (nextUnmarkedIndex < indexOfFirstBaseInNode + currentNode.sequenceLength) {
+
+    while (
+      nextUnmarkedIndex <
+      indexOfFirstBaseInNode + currentNode.sequenceLength
+    ) {
       // We are thinking of marking a position on this node.
-     
+
       // Where should we mark in the visualization?
-      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(nextUnmarkedIndex, currentNode, currentNodeIsReverse)
-      
+      let xCoordOfMarking = getCorrectXCoordinateOfBaseWithinNode(
+        nextUnmarkedIndex,
+        currentNode,
+        currentNodeIsReverse
+      );
+
       if (config.nodeWidthOption === 0 || !alreadyMarkedNode) {
         // This is a mark we are not filtering due to node compression.
         // Make the mark
         ticks.push([nextUnmarkedIndex, xCoordOfMarking]);
         alreadyMarkedNode = true;
       }
-      
+
       // Think about the next place along the path we care about.
       nextUnmarkedIndex += markingInterval;
     }
     // Advance to the next node
     indexOfFirstBaseInNode += currentNode.sequenceLength;
   }
-  
+
   // Sort ticks on X coordinate
-  ticks.sort(([bp1, x1], [bp2, x2]) => x1 > x2)
-  
+  ticks.sort(([bp1, x1], [bp2, x2]) => x1 > x2);
+
   // Filter ticks for a minimum X separartion
-  let separatedTicks = []
-  ticks.forEach(tick => {
-    if (separatedTicks.length === 0 || tick[1] - separatedTicks[separatedTicks.length - 1][1] >= markingClearance) {
+  let separatedTicks = [];
+  ticks.forEach((tick) => {
+    if (
+      separatedTicks.length === 0 ||
+      tick[1] - separatedTicks[separatedTicks.length - 1][1] >= markingClearance
+    ) {
       // Take only the first tick or ticks far enough from the previous tick taken.
       separatedTicks.push(tick);
     }
-  })
+  });
   ticks = separatedTicks;
 
   // plot ticks highlighting the region
-  ticks_region.forEach(tick => drawRulerMarkingRegion(tick[0], tick[1]));
+  ticks_region.forEach((tick) => drawRulerMarkingRegion(tick[0], tick[1]));
 
   // draw horizontal line
   svg
-    .append('line')
-    .attr('x1', 0)
-    .attr('y1', minYCoordinate - 10)
-    .attr('x2', maxXCoordinate)
-    .attr('y2', minYCoordinate - 10)
-    .attr('stroke-width', 1)
-    .attr('stroke', 'black');
-  
-  // Plot all the ticks
-  ticks.forEach(tick => drawRulerMarking(tick[0], tick[1]));
+    .append("line")
+    .attr("x1", 0)
+    .attr("y1", minYCoordinate - 10)
+    .attr("x2", maxXCoordinate)
+    .attr("y2", minYCoordinate - 10)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
 
+  // Plot all the ticks
+  ticks.forEach((tick) => drawRulerMarking(tick[0], tick[1]));
 }
 
 function drawRulerMarking(sequencePosition, xCoordinate) {
   svg
-    .append('text')
-    .attr('x', xCoordinate)
-    .attr('y', minYCoordinate - 13)
+    .append("text")
+    .attr("x", xCoordinate)
+    .attr("y", minYCoordinate - 13)
     .text(`|${sequencePosition}`)
-    .attr('font-family', fonts)
-    .attr('font-size', '12px')
-    .attr('fill', 'black')
-    .style('pointer-events', 'none');
+    .attr("font-family", fonts)
+    .attr("font-size", "12px")
+    .attr("fill", "black")
+    .style("pointer-events", "none");
 }
 
 function drawRulerMarkingRegion(sequencePosition, xCoordinate) {
   svg
-    .append('circle')
-    .attr('cx', xCoordinate + 3)
-    .attr('cy', minYCoordinate - 13)
-    .attr('r', 10)
-    .attr('opacity', 0.5)
-    .attr('fill', 'yellow')
-    .style('pointer-events', 'none');
+    .append("circle")
+    .attr("cx", xCoordinate + 3)
+    .attr("cy", minYCoordinate - 13)
+    .attr("r", 10)
+    .attr("opacity", 0.5)
+    .attr("fill", "yellow")
+    .style("pointer-events", "none");
 }
 
 function filterObjectByAttribute(attribute, value) {
-  return item => item[attribute] === value;
+  return (item) => item[attribute] === value;
 }
 
 function drawTrackRectangles(rectangles, type) {
-  if (typeof type === 'undefined') type = 'haplo';
-  rectangles = rectangles.filter(filterObjectByAttribute('type', type));
+  if (typeof type === "undefined") type = "haplo";
+  rectangles = rectangles.filter(filterObjectByAttribute("type", type));
 
   svg
-    .selectAll('trackRectangles')
+    .selectAll("trackRectangles")
     .data(rectangles)
     .enter()
-    .append('rect')
-    .attr('x', d => d.xStart)
-    .attr('y', d => d.yStart)
-    .attr('width', d => d.xEnd - d.xStart + 1)
-    .attr('height', d => d.yEnd - d.yStart + 1)
-    .style('fill', d => d.color)
-    .attr('trackID', d => d.id)
-    .attr('class', d => `track${d.id}`)
-    .attr('color', d => d.color)
-    .on('mouseover', trackMouseOver)
-    .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick)
-    .append('svg:title')
-    .text(d => getPopUpTrackText(d.name));
+    .append("rect")
+    .attr("x", (d) => d.xStart)
+    .attr("y", (d) => d.yStart)
+    .attr("width", (d) => d.xEnd - d.xStart + 1)
+    .attr("height", (d) => d.yEnd - d.yStart + 1)
+    .style("fill", (d) => d.color)
+    .attr("trackID", (d) => d.id)
+    .attr("class", (d) => `track${d.id}`)
+    .attr("color", (d) => d.color)
+    .on("mouseover", trackMouseOver)
+    .on("mouseout", trackMouseOut)
+    .on("dblclick", trackDoubleClick)
+    .append("svg:title")
+    .text((d) => getPopUpTrackText(d.name));
 }
 
 function compareCurvesByLineChanges(a, b) {
@@ -3159,250 +3199,249 @@ function compareCurvesByLineChanges(a, b) {
 }
 
 function defineSVGPatterns() {
-  const defs = svg.append('defs');
-  let pattern = defs.append('pattern').attrs({
-    id: 'patternA',
-    width: '7',
-    height: '7',
-    patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)'
+  const defs = svg.append("defs");
+  let pattern = defs.append("pattern").attrs({
+    id: "patternA",
+    width: "7",
+    height: "7",
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
   });
 
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '7', height: '7', fill: '#FFFFFF' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "7", height: "7", fill: "#FFFFFF" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '3', height: '3', fill: '#505050' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "3", height: "3", fill: "#505050" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '4', width: '3', height: '3', fill: '#505050' });
+    .append("rect")
+    .attrs({ x: "0", y: "4", width: "3", height: "3", fill: "#505050" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '0', width: '3', height: '3', fill: '#505050' });
+    .append("rect")
+    .attrs({ x: "4", y: "0", width: "3", height: "3", fill: "#505050" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '4', width: '3', height: '3', fill: '#505050' });
+    .append("rect")
+    .attrs({ x: "4", y: "4", width: "3", height: "3", fill: "#505050" });
 
-  pattern = defs.append('pattern').attrs({
-    id: 'patternB',
-    width: '8',
-    height: '8',
-    patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)'
+  pattern = defs.append("pattern").attrs({
+    id: "patternB",
+    width: "8",
+    height: "8",
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
   });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '8', height: '8', fill: '#FFFFFF' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "8", height: "8", fill: "#FFFFFF" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '3', height: '3', fill: '#1f77b4' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "3", height: "3", fill: "#1f77b4" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '5', width: '3', height: '3', fill: '#1f77b4' });
+    .append("rect")
+    .attrs({ x: "0", y: "5", width: "3", height: "3", fill: "#1f77b4" });
   pattern
-    .append('rect')
-    .attrs({ x: '5', y: '0', width: '3', height: '3', fill: '#1f77b4' });
+    .append("rect")
+    .attrs({ x: "5", y: "0", width: "3", height: "3", fill: "#1f77b4" });
   pattern
-    .append('rect')
-    .attrs({ x: '5', y: '5', width: '3', height: '3', fill: '#1f77b4' });
+    .append("rect")
+    .attrs({ x: "5", y: "5", width: "3", height: "3", fill: "#1f77b4" });
 
-  pattern = defs.append('pattern').attrs({
-    id: 'plaid0',
-    width: '6',
-    height: '6',
-    patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)'
+  pattern = defs.append("pattern").attrs({
+    id: "plaid0",
+    width: "6",
+    height: "6",
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
   });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "6", height: "6", fill: "#FFFFFF" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#1f77b4' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "2", height: "2", fill: "#1f77b4" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#1f77b4' });
+    .append("rect")
+    .attrs({ x: "0", y: "4", width: "2", height: "2", fill: "#1f77b4" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#1f77b4' });
+    .append("rect")
+    .attrs({ x: "4", y: "0", width: "2", height: "2", fill: "#1f77b4" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#1f77b4' });
+    .append("rect")
+    .attrs({ x: "4", y: "4", width: "2", height: "2", fill: "#1f77b4" });
 
-  pattern = defs.append('pattern').attrs({
-    id: 'plaid1',
-    width: '6',
-    height: '6',
-    patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)'
+  pattern = defs.append("pattern").attrs({
+    id: "plaid1",
+    width: "6",
+    height: "6",
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
   });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "6", height: "6", fill: "#FFFFFF" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#ff7f0e' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "2", height: "2", fill: "#ff7f0e" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#ff7f0e' });
+    .append("rect")
+    .attrs({ x: "0", y: "4", width: "2", height: "2", fill: "#ff7f0e" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#ff7f0e' });
+    .append("rect")
+    .attrs({ x: "4", y: "0", width: "2", height: "2", fill: "#ff7f0e" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#ff7f0e' });
+    .append("rect")
+    .attrs({ x: "4", y: "4", width: "2", height: "2", fill: "#ff7f0e" });
 
-  pattern = defs.append('pattern').attrs({
-    id: 'plaid2',
-    width: '6',
-    height: '6',
-    patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)'
+  pattern = defs.append("pattern").attrs({
+    id: "plaid2",
+    width: "6",
+    height: "6",
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
   });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "6", height: "6", fill: "#FFFFFF" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#2ca02c' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "2", height: "2", fill: "#2ca02c" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#2ca02c' });
+    .append("rect")
+    .attrs({ x: "0", y: "4", width: "2", height: "2", fill: "#2ca02c" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#2ca02c' });
+    .append("rect")
+    .attrs({ x: "4", y: "0", width: "2", height: "2", fill: "#2ca02c" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#2ca02c' });
+    .append("rect")
+    .attrs({ x: "4", y: "4", width: "2", height: "2", fill: "#2ca02c" });
 
-  pattern = defs.append('pattern').attrs({
-    id: 'plaid3',
-    width: '6',
-    height: '6',
-    patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)'
+  pattern = defs.append("pattern").attrs({
+    id: "plaid3",
+    width: "6",
+    height: "6",
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
   });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "6", height: "6", fill: "#FFFFFF" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#d62728' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "2", height: "2", fill: "#d62728" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#d62728' });
+    .append("rect")
+    .attrs({ x: "0", y: "4", width: "2", height: "2", fill: "#d62728" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#d62728' });
+    .append("rect")
+    .attrs({ x: "4", y: "0", width: "2", height: "2", fill: "#d62728" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#d62728' });
+    .append("rect")
+    .attrs({ x: "4", y: "4", width: "2", height: "2", fill: "#d62728" });
 
-  pattern = defs.append('pattern').attrs({
-    id: 'plaid4',
-    width: '6',
-    height: '6',
-    patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)'
+  pattern = defs.append("pattern").attrs({
+    id: "plaid4",
+    width: "6",
+    height: "6",
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
   });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "6", height: "6", fill: "#FFFFFF" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#9467bd' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "2", height: "2", fill: "#9467bd" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#9467bd' });
+    .append("rect")
+    .attrs({ x: "0", y: "4", width: "2", height: "2", fill: "#9467bd" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#9467bd' });
+    .append("rect")
+    .attrs({ x: "4", y: "0", width: "2", height: "2", fill: "#9467bd" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#9467bd' });
+    .append("rect")
+    .attrs({ x: "4", y: "4", width: "2", height: "2", fill: "#9467bd" });
 
-  pattern = defs.append('pattern').attrs({
-    id: 'plaid5',
-    width: '6',
-    height: '6',
-    patternUnits: 'userSpaceOnUse',
-    patternTransform: 'rotate(45)'
+  pattern = defs.append("pattern").attrs({
+    id: "plaid5",
+    width: "6",
+    height: "6",
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
   });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '6', height: '6', fill: '#FFFFFF' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "6", height: "6", fill: "#FFFFFF" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '0', width: '2', height: '2', fill: '#8c564b' });
+    .append("rect")
+    .attrs({ x: "0", y: "0", width: "2", height: "2", fill: "#8c564b" });
   pattern
-    .append('rect')
-    .attrs({ x: '0', y: '4', width: '2', height: '2', fill: '#8c564b' });
+    .append("rect")
+    .attrs({ x: "0", y: "4", width: "2", height: "2", fill: "#8c564b" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '0', width: '2', height: '2', fill: '#8c564b' });
+    .append("rect")
+    .attrs({ x: "4", y: "0", width: "2", height: "2", fill: "#8c564b" });
   pattern
-    .append('rect')
-    .attrs({ x: '4', y: '4', width: '2', height: '2', fill: '#8c564b' });
+    .append("rect")
+    .attrs({ x: "4", y: "4", width: "2", height: "2", fill: "#8c564b" });
 }
 
 function drawTrackCurves(type) {
-  if (typeof type === 'undefined') type = 'haplo';
+  if (typeof type === "undefined") type = "haplo";
   const myTrackCurves = trackCurves.filter(
-    filterObjectByAttribute('type', type)
+    filterObjectByAttribute("type", type)
   );
 
   myTrackCurves.sort(compareCurvesByLineChanges);
 
-  myTrackCurves.forEach(curve => {
+  myTrackCurves.forEach((curve) => {
     const xMiddle = (curve.xStart + curve.xEnd) / 2;
     let d = `M ${curve.xStart} ${curve.yStart}`;
-    d += ` C ${xMiddle} ${curve.yStart} ${xMiddle} ${curve.yEnd} ${
-      curve.xEnd
-    } ${curve.yEnd}`;
+    d += ` C ${xMiddle} ${curve.yStart} ${xMiddle} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
     d += ` V ${curve.yEnd + curve.width}`;
-    d += ` C ${xMiddle} ${curve.yEnd + curve.width} ${xMiddle} ${curve.yStart +
-      curve.width} ${curve.xStart} ${curve.yStart + curve.width}`;
-    d += ' Z';
+    d += ` C ${xMiddle} ${curve.yEnd + curve.width} ${xMiddle} ${
+      curve.yStart + curve.width
+    } ${curve.xStart} ${curve.yStart + curve.width}`;
+    d += " Z";
     curve.path = d;
   });
 
   svg
-    .selectAll('trackCurves')
+    .selectAll("trackCurves")
     .data(trackCurves)
     .enter()
-    .append('path')
-    .attr('d', d => d.path)
-    .style('fill', d => d.color)
-    .attr('trackID', d => d.id)
-    .attr('class', d => `track${d.id}`)
-    .attr('color', d => d.color)
-    .on('mouseover', trackMouseOver)
-    .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick)
-    .append('svg:title')
-    .text(d => getPopUpTrackText(d.name));
+    .append("path")
+    .attr("d", (d) => d.path)
+    .style("fill", (d) => d.color)
+    .attr("trackID", (d) => d.id)
+    .attr("class", (d) => `track${d.id}`)
+    .attr("color", (d) => d.color)
+    .on("mouseover", trackMouseOver)
+    .on("mouseout", trackMouseOut)
+    .on("dblclick", trackDoubleClick)
+    .append("svg:title")
+    .text((d) => getPopUpTrackText(d.name));
 }
 
 function drawTrackCorners(corners, type) {
-  if (typeof type === 'undefined') type = 'haplo';
-  corners = corners.filter(filterObjectByAttribute('type', type));
+  if (typeof type === "undefined") type = "haplo";
+  corners = corners.filter(filterObjectByAttribute("type", type));
 
   svg
-    .selectAll('trackCorners')
+    .selectAll("trackCorners")
     .data(corners)
     .enter()
-    .append('path')
-    .attr('d', d => d.path)
-    .style('fill', d => d.color)
-    .attr('trackID', d => d.id)
-    .attr('class', d => `track${d.id}`)
-    .attr('color', d => d.color)
-    .on('mouseover', trackMouseOver)
-    .on('mouseout', trackMouseOut)
-    .on('dblclick', trackDoubleClick)
-    .append('svg:title')
-    .text(d => getPopUpTrackText(d.name));
+    .append("path")
+    .attr("d", (d) => d.path)
+    .style("fill", (d) => d.color)
+    .attr("trackID", (d) => d.id)
+    .attr("class", (d) => `track${d.id}`)
+    .attr("color", (d) => d.color)
+    .on("mouseover", trackMouseOver)
+    .on("mouseout", trackMouseOut)
+    .on("dblclick", trackDoubleClick)
+    .append("svg:title")
+    .text((d) => getPopUpTrackText(d.name));
 }
 
 function drawLegend() {
@@ -3412,12 +3451,12 @@ function drawLegend() {
     '<table class="table-sm table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
   const listeners = [];
   for (let i = 0; i < tracks.length; i += 1) {
-    if (tracks[i].type === 'haplo') {
+    if (tracks[i].type === "haplo") {
       content += `<tr><td style="text-align:right"><div class="color-box" style="background-color: ${generateTrackColor(
         tracks[i],
-        'exon'
+        "exon"
       )};"></div></td>`;
-      if (tracks[i].hasOwnProperty('name')) {
+      if (tracks[i].hasOwnProperty("name")) {
         content += `<td>${tracks[i].name}</td>`;
       } else {
         content += `<td>${tracks[i].id}</td>`;
@@ -3426,55 +3465,55 @@ function drawLegend() {
       listeners.push(i);
     }
   }
-  content += '</table';
+  content += "</table";
   // $('#legendDiv').html(content);
-  document.getElementById('legendDiv').innerHTML = content;
-  listeners.forEach(i => {
+  document.getElementById("legendDiv").innerHTML = content;
+  listeners.forEach((i) => {
     document
       .getElementById(`showTrack${i}`)
-      .addEventListener('click', () => changeTrackVisibility(i), false);
+      .addEventListener("click", () => changeTrackVisibility(i), false);
   });
   document
-    .getElementById('selectall')
-    .addEventListener('click', () =>  changeAllTracksVisibility(true), false);
+    .getElementById("selectall")
+    .addEventListener("click", () => changeAllTracksVisibility(true), false);
   document
-    .getElementById('deselectall')
-    .addEventListener('click', () =>  changeAllTracksVisibility(false), false);
+    .getElementById("deselectall")
+    .addEventListener("click", () => changeAllTracksVisibility(false), false);
 }
 
 // Highlight track on mouseover
 function trackMouseOver() {
   /* jshint validthis: true */
-  const trackID = d3.select(this).attr('trackID');
-  d3.selectAll(`.track${trackID}`).style('fill', 'url(#patternA)');
+  const trackID = d3.select(this).attr("trackID");
+  d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)");
 }
 
 // Highlight node on mouseover
 function nodeMouseOver() {
   /* jshint validthis: true */
-  d3.select(this).style('stroke-width', '4px');
+  d3.select(this).style("stroke-width", "4px");
 }
 
 // Restore original track appearance on mouseout
 function trackMouseOut() {
   /* jshint validthis: true */
-  const trackID = d3.select(this).attr('trackID');
+  const trackID = d3.select(this).attr("trackID");
   d3.selectAll(`.track${trackID}`).each(function clearTrackHighlight() {
-    const c = d3.select(this).attr('color');
-    d3.select(this).style('fill', c);
+    const c = d3.select(this).attr("color");
+    d3.select(this).style("fill", c);
   });
 }
 
 // Restore original node appearance on mouseout
 function nodeMouseOut() {
   /* jshint validthis: true */
-  d3.select(this).style('stroke-width', '2px');
+  d3.select(this).style("stroke-width", "2px");
 }
 
 // Move clicked track to first position
 function trackDoubleClick() {
   /* jshint validthis: true */
-  const trackID = d3.select(this).attr('trackID');
+  const trackID = d3.select(this).attr("trackID");
   let index = 0;
   while (
     index < inputTracks.length &&
@@ -3490,20 +3529,20 @@ function trackDoubleClick() {
 
 // show track name when hovering mouse
 function getPopUpTrackText(trackid) {
-  return (trackid);
+  return trackid;
 }
 
 // Redraw with current node moved to beginning
 function nodeDoubleClick() {
   /* jshint validthis: true */
-  const nodeID = d3.select(this).attr('id');
+  const nodeID = d3.select(this).attr("id");
   if (config.clickableNodesFlag) {
     if (reads && config.showReads) {
-      document.getElementById('hgvmNodeID').value = nodeID;
-      document.getElementById('hgvmPostButton').click();
+      document.getElementById("hgvmNodeID").value = nodeID;
+      document.getElementById("hgvmPostButton").click();
     } else {
-      document.getElementById('nodeID').value = nodeID;
-      document.getElementById('postButton').click();
+      document.getElementById("nodeID").value = nodeID;
+      document.getElementById("postButton").click();
     }
   }
 }
@@ -3511,11 +3550,11 @@ function nodeDoubleClick() {
 // extract info about nodes from vg-json
 export function vgExtractNodes(vg) {
   const result = [];
-  vg.node.forEach(node => {
+  vg.node.forEach((node) => {
     result.push({
       name: `${node.id}`,
       sequenceLength: node.sequence.length,
-      seq: node.sequence
+      seq: node.sequence,
     });
   });
   return result;
@@ -3523,47 +3562,47 @@ export function vgExtractNodes(vg) {
 
 // calculate node widths depending on sequence lengths and chosen calculation method
 function generateNodeWidth() {
-  nodes.forEach(node => {
-    if (!node.hasOwnProperty('sequenceLength')) {
+  nodes.forEach((node) => {
+    if (!node.hasOwnProperty("sequenceLength")) {
       node.sequenceLength = node.seq.length;
     }
   });
 
   switch (config.nodeWidthOption) {
     case 1:
-      nodes.forEach(node => {
+      nodes.forEach((node) => {
         node.width = 1 + Math.log(node.sequenceLength) / Math.log(2);
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
     case 2:
-      nodes.forEach(node => {
+      nodes.forEach((node) => {
         node.width = node.sequenceLength / 100;
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
     default:
-      nodes.forEach(node => {
+      nodes.forEach((node) => {
         node.width = node.sequenceLength;
 
         // get width of node's text label by writing label, measuring it and removing label
         svg
-          .append('text')
-          .attr('x', 0)
-          .attr('y', 100)
-          .attr('id', 'dummytext')
+          .append("text")
+          .attr("x", 0)
+          .attr("y", 100)
+          .attr("id", "dummytext")
           .text(node.seq.substr(1))
-          .attr('font-family', fonts)
-          .attr('font-size', '14px')
-          .attr('fill', 'black')
-          .style('pointer-events', 'none');
+          .attr("font-family", fonts)
+          .attr("font-size", "14px")
+          .attr("fill", "black")
+          .style("pointer-events", "none");
         // TODO: This assumes that svg is in the document.
-        let element = document.getElementById('dummytext');
+        let element = document.getElementById("dummytext");
         if (element.getComputedTextLength) {
           // We are on a platform where text length computation is possible (i.e. a real browser)
           node.pixelWidth = Math.round(element.getComputedTextLength());
         }
-        document.getElementById('dummytext').remove();
+        document.getElementById("dummytext").remove();
       });
   }
 }
@@ -3574,9 +3613,9 @@ export function vgExtractTracks(vg) {
   vg.path.forEach((path, index) => {
     const sequence = [];
     let isCompletelyReverse = true;
-    path.mapping.forEach(pos => {
+    path.mapping.forEach((pos) => {
       if (
-        pos.position.hasOwnProperty('is_reverse') &&
+        pos.position.hasOwnProperty("is_reverse") &&
         pos.position.is_reverse === true
       ) {
         // Visit this node in reverse
@@ -3599,9 +3638,9 @@ export function vgExtractTracks(vg) {
     track.id = index;
     track.sequence = sequence;
     track.isCompletelyReverse = isCompletelyReverse;
-    if (path.hasOwnProperty('freq')) track.freq = path.freq;
-    if (path.hasOwnProperty('name')) track.name = path.name;
-    if (path.hasOwnProperty('indexOfFirstBase')) {
+    if (path.hasOwnProperty("freq")) track.freq = path.freq;
+    if (path.hasOwnProperty("name")) track.name = path.name;
+    if (path.hasOwnProperty("indexOfFirstBase")) {
       track.indexOfFirstBase = Number(path.indexOfFirstBase);
     }
     result.push(track);
@@ -3652,10 +3691,14 @@ function compareReadsByLeftEnd(a, b) {
 
 function compareReadsByLeftEnd2(a, b) {
   // compare by order of first node
-  if (nodes[Math.abs(a.indexSequence[0])].order < nodes[Math.abs(b.indexSequence[0])].order) {
+  if (
+    nodes[Math.abs(a.indexSequence[0])].order <
+    nodes[Math.abs(b.indexSequence[0])].order
+  ) {
     return -1;
   } else if (
-    nodes[Math.abs(a.indexSequence[0])].order > nodes[Math.abs(b.indexSequence[0])].order
+    nodes[Math.abs(a.indexSequence[0])].order >
+    nodes[Math.abs(b.indexSequence[0])].order
   ) {
     return 1;
   }
@@ -3686,13 +3729,13 @@ function compareReadsByLeftEnd2(a, b) {
 
 export function vgExtractReads(myNodes, myTracks, myReads) {
   if (DEBUG) {
-    console.log('Reads:');
+    console.log("Reads:");
     console.log(myReads);
   }
   const extracted = [];
 
   const nodeNames = [];
-  myNodes.forEach(node => {
+  myNodes.forEach((node) => {
     nodeNames.push(node.name, 10);
   });
 
@@ -3707,7 +3750,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
         const edit = {};
         let offset = 0;
         if (
-          pos.position.hasOwnProperty('is_reverse') &&
+          pos.position.hasOwnProperty("is_reverse") &&
           pos.position.is_reverse === true
         ) {
           sequence.push(reverse(`${pos.position.node_id}`));
@@ -3718,7 +3761,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
         }
         if (firstIndex < 0) {
           firstIndex = j;
-          if (pos.position.hasOwnProperty('offset')) {
+          if (pos.position.hasOwnProperty("offset")) {
             pos.position.offset = parseInt(pos.position.offset, 10);
             offset = pos.position.offset;
           }
@@ -3727,45 +3770,43 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
 
         const mismatches = [];
         let posWithinNode = offset;
-        pos.edit.forEach(element => {
+        pos.edit.forEach((element) => {
           if (
-            element.hasOwnProperty('to_length') &&
-            !element.hasOwnProperty('from_length')
+            element.hasOwnProperty("to_length") &&
+            !element.hasOwnProperty("from_length")
           ) {
             // insertion
             mismatches.push({
-              type: 'insertion',
+              type: "insertion",
               pos: posWithinNode,
-              seq: element.sequence
+              seq: element.sequence,
             });
           } else if (
-            !element.hasOwnProperty('to_length') &&
-            element.hasOwnProperty('from_length')
+            !element.hasOwnProperty("to_length") &&
+            element.hasOwnProperty("from_length")
           ) {
             // deletion
             mismatches.push({
-              type: 'deletion',
+              type: "deletion",
               pos: posWithinNode,
-              length: element.from_length
+              length: element.from_length,
             });
-          } else if (element.hasOwnProperty('sequence')) {
+          } else if (element.hasOwnProperty("sequence")) {
             // substitution
             if (element.sequence.length > 1) {
               if (DEBUG) {
                 console.log(
-                  `found substitution at read ${i}, node ${j} = ${
-                    pos.position.node_id
-                  }, seq = ${element.sequence}`
+                  `found substitution at read ${i}, node ${j} = ${pos.position.node_id}, seq = ${element.sequence}`
                 );
               }
             }
             mismatches.push({
-              type: 'substitution',
+              type: "substitution",
               pos: posWithinNode,
-              seq: element.sequence
+              seq: element.sequence,
             });
           }
-          if (element.hasOwnProperty('from_length')) {
+          if (element.hasOwnProperty("from_length")) {
             posWithinNode += element.from_length;
           }
         });
@@ -3782,25 +3823,25 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
       track.id = myTracks.length + extracted.length;
       track.sequence = sequence;
       track.sequenceNew = sequenceNew;
-      track.type = 'read';
-      if (read.path.hasOwnProperty('freq')) track.freq = read.path.freq;
-      if (read.hasOwnProperty('name')) track.name = read.name;
+      track.type = "read";
+      if (read.path.hasOwnProperty("freq")) track.freq = read.path.freq;
+      if (read.hasOwnProperty("name")) track.name = read.name;
 
       // where within node does read start
       track.firstNodeOffset = 0;
-      if (read.path.mapping[firstIndex].position.hasOwnProperty('offset')) {
+      if (read.path.mapping[firstIndex].position.hasOwnProperty("offset")) {
         track.firstNodeOffset = read.path.mapping[firstIndex].position.offset;
       }
 
       // where within node does read end
       const finalNodeEdit = read.path.mapping[lastIndex].edit;
       track.finalNodeCoverLength = 0;
-      if (read.path.mapping[lastIndex].position.hasOwnProperty('offset')) {
+      if (read.path.mapping[lastIndex].position.hasOwnProperty("offset")) {
         track.finalNodeCoverLength +=
           read.path.mapping[lastIndex].position.offset;
       }
-      finalNodeEdit.forEach(edit => {
-        if (edit.hasOwnProperty('from_length')) {
+      finalNodeEdit.forEach((edit) => {
+        if (edit.hasOwnProperty("from_length")) {
           track.finalNodeCoverLength += edit.from_length;
         }
       });
@@ -3832,7 +3873,7 @@ function mergeNodes() {
   if (reads && config.showReads) tracksAndReads = tracks.concat(reads);
   else tracksAndReads = tracks;
 
-  tracksAndReads.forEach(track => {
+  tracksAndReads.forEach((track) => {
     for (let i = 0; i < track.sequence.length; i += 1) {
       if (!isReverse(track.sequence[i])) {
         // forward Node
@@ -3843,8 +3884,8 @@ function mergeNodes() {
             // add 2 predecessors, to make sure there is no node merging in this case
             pred[nodeMap.get(track.sequence[i])].add(forward(nodeName));
           }
-        } else if (track.type === 'haplo') {
-          pred[nodeMap.get(track.sequence[i])].add('None');
+        } else if (track.type === "haplo") {
+          pred[nodeMap.get(track.sequence[i])].add("None");
         }
         if (i < track.sequence.length - 1) {
           nodeName = track.sequence[i + 1];
@@ -3853,8 +3894,8 @@ function mergeNodes() {
             // add 2 successors, to make sure there is no node merging in this case
             succ[nodeMap.get(track.sequence[i])].add(forward(nodeName));
           }
-        } else if (track.type === 'haplo') {
-          succ[nodeMap.get(track.sequence[i])].add('None');
+        } else if (track.type === "haplo") {
+          succ[nodeMap.get(track.sequence[i])].add("None");
         }
       } else {
         // reverse Node
@@ -3868,8 +3909,8 @@ function mergeNodes() {
             succ[nodeMap.get(nodeName)].add(nodeName2);
             succ[nodeMap.get(nodeName)].add(reverse(nodeName2));
           }
-        } else if (track.type === 'haplo') {
-          succ[nodeMap.get(nodeName)].add('None');
+        } else if (track.type === "haplo") {
+          succ[nodeMap.get(nodeName)].add("None");
         }
         if (i < track.sequence.length - 1) {
           nodeName2 = track.sequence[i + 1];
@@ -3879,8 +3920,8 @@ function mergeNodes() {
             pred[nodeMap.get(nodeName)].add(nodeName2);
             pred[nodeMap.get(nodeName)].add(reverse(nodeName2));
           }
-        } else if (track.type === 'haplo') {
-          pred[nodeMap.get(nodeName)].add('None');
+        } else if (track.type === "haplo") {
+          pred[nodeMap.get(nodeName)].add("None");
         }
       }
     }
@@ -3901,7 +3942,7 @@ function mergeNodes() {
     // iterate over all nodes and calculate their position within the new merged node
     const mergeOffset = new Map();
     const mergeOrigin = new Map(); // maps to leftmost node of a node's "merging cascade"
-    sortedNodes.forEach(node => {
+    sortedNodes.forEach((node) => {
       const predecessor = mergeableWithPred(nodeMap.get(node.name), pred, succ);
       if (predecessor) {
         mergeOffset.set(
@@ -3910,7 +3951,7 @@ function mergeNodes() {
             nodes[nodeMap.get(predecessor)].sequenceLength
         );
         mergeOffset.set(
-          '-' + node.name,
+          "-" + node.name,
           mergeOffset.get(predecessor) +
             nodes[nodeMap.get(predecessor)].sequenceLength
         );
@@ -3924,7 +3965,7 @@ function mergeNodes() {
       }
     });
 
-    reads.forEach(read => {
+    reads.forEach((read) => {
       read.firstNodeOffset += mergeOffset.get(read.sequence[0]);
       read.finalNodeCoverLength += mergeOffset.get(
         read.sequence[read.sequence.length - 1]
@@ -3941,7 +3982,7 @@ function mergeNodes() {
             if (i > 0) {
               read.sequence.splice(i, 1);
               // adjust position of mismatches
-              read.sequenceNew[i].mismatches.forEach(mismatch => {
+              read.sequenceNew[i].mismatches.forEach((mismatch) => {
                 mismatch.pos += nodes[nodeMap.get(predecessor)].sequenceLength;
               });
               // append mismatches to previous entry's mismatches
@@ -3951,7 +3992,7 @@ function mergeNodes() {
               read.sequenceNew.splice(i, 1);
             } else {
               read.sequence[0] = mergeOrigin.get(read.sequence[0]);
-              read.sequenceNew[i].mismatches.forEach(mismatch => {
+              read.sequenceNew[i].mismatches.forEach((mismatch) => {
                 mismatch.pos += mergeOffset.get(read.sequenceNew[0].nodeName);
               });
               read.sequenceNew[0].nodeName = mergeOrigin.get(
@@ -3971,7 +4012,7 @@ function mergeNodes() {
       while (mergeableWithSucc(donor, pred, succ)) {
         donor = forward(succ[donor][0]);
         donor = nodeMap.get(donor);
-        if (nodes[i].hasOwnProperty('sequenceLength')) {
+        if (nodes[i].hasOwnProperty("sequenceLength")) {
           nodes[i].sequenceLength += nodes[donor].sequenceLength;
         } else {
           nodes[i].width += nodes[donor].width;
@@ -3982,7 +4023,7 @@ function mergeNodes() {
   }
 
   // actually merge the nodes by removing the corresponding nodes from track data
-  tracks.forEach(track => {
+  tracks.forEach((track) => {
     for (let i = track.sequence.length - 1; i >= 0; i -= 1) {
       nodeName = forward(track.sequence[i]);
       const nodeIndex = nodeMap.get(nodeName);
@@ -4002,29 +4043,29 @@ function mergeNodes() {
 
 function mergeableWithPred(index, pred, succ) {
   if (pred[index].length !== 1) return false;
-  if (pred[index][0] === 'None') return false;
+  if (pred[index][0] === "None") return false;
   let predecessor = forward(pred[index][0]);
   const predecessorIndex = nodeMap.get(predecessor);
   if (succ[predecessorIndex].length !== 1) return false;
-  if (succ[predecessorIndex][0] === 'None') return false;
+  if (succ[predecessorIndex][0] === "None") return false;
   return predecessor;
 }
 
 function mergeableWithSucc(index, pred, succ) {
   if (succ[index].length !== 1) return false;
-  if (succ[index][0] === 'None') return false;
+  if (succ[index][0] === "None") return false;
   let successor = forward(succ[index][0]);
   const successorIndex = nodeMap.get(successor);
   if (pred[successorIndex].length !== 1) return false;
-  if (pred[successorIndex][0] === 'None') return false;
+  if (pred[successorIndex][0] === "None") return false;
   return true;
 }
 
 function drawMismatches() {
   tracks.forEach((read, trackIdx) => {
-    if (read.type === 'read') {
+    if (read.type === "read") {
       read.sequenceNew.forEach((element, i) => {
-        element.mismatches.forEach(mm => {
+        element.mismatches.forEach((mm) => {
           const nodeName = forward(element.nodeName);
           const nodeIndex = nodeMap.get(nodeName);
           const node = nodes[nodeIndex];
@@ -4034,7 +4075,7 @@ function drawMismatches() {
             pathIndex += 1;
           }
           const y = read.path[pathIndex].y;
-          if (mm.type === 'insertion') {
+          if (mm.type === "insertion") {
             if (
               config.showSoftClips ||
               ((mm.pos !== read.firstNodeOffset || i !== 0) &&
@@ -4043,10 +4084,10 @@ function drawMismatches() {
             ) {
               drawInsertion(x - 3, y + 7, mm.seq, node.y);
             }
-          } else if (mm.type === 'deletion') {
+          } else if (mm.type === "deletion") {
             const x2 = getXCoordinateOfBaseWithinNode(node, mm.pos + mm.length);
             drawDeletion(x, x2, y + 4, node.y);
-          } else if (mm.type === 'substitution') {
+          } else if (mm.type === "substitution") {
             const x2 = getXCoordinateOfBaseWithinNode(
               node,
               mm.pos + mm.seq.length
@@ -4061,143 +4102,143 @@ function drawMismatches() {
 
 function drawInsertion(x, y, seq, nodeY) {
   svg
-    .append('text')
-    .attr('x', x)
-    .attr('y', y)
-    .text('*')
-    .attr('font-family', fonts)
-    .attr('font-size', '12px')
-    .attr('fill', 'black')
-    .attr('nodeY', nodeY)
-    .on('mouseover', insertionMouseOver)
-    .on('mouseout', insertionMouseOut)
-    .append('svg:title')
+    .append("text")
+    .attr("x", x)
+    .attr("y", y)
+    .text("*")
+    .attr("font-family", fonts)
+    .attr("font-size", "12px")
+    .attr("fill", "black")
+    .attr("nodeY", nodeY)
+    .on("mouseover", insertionMouseOver)
+    .on("mouseout", insertionMouseOut)
+    .append("svg:title")
     .text(seq);
 }
 
 function drawSubstitution(x1, x2, y, nodeY, seq) {
   svg
-    .append('text')
-    .attr('x', x1)
-    .attr('y', y)
+    .append("text")
+    .attr("x", x1)
+    .attr("y", y)
     .text(seq)
-    .attr('font-family', fonts)
-    .attr('font-size', '12px')
-    .attr('fill', 'black')
-    .attr('nodeY', nodeY)
-    .attr('rightX', x2)
-    .on('mouseover', substitutionMouseOver)
-    .on('mouseout', substitutionMouseOut);
+    .attr("font-family", fonts)
+    .attr("font-size", "12px")
+    .attr("fill", "black")
+    .attr("nodeY", nodeY)
+    .attr("rightX", x2)
+    .on("mouseover", substitutionMouseOver)
+    .on("mouseout", substitutionMouseOut);
 }
 
 function drawDeletion(x1, x2, y, nodeY) {
   // draw horizontal block
   svg
-    .append('line')
-    .attr('x1', x1)
-    .attr('y1', y - 1)
-    .attr('x2', x2)
-    .attr('y2', y - 1)
-    .attr('stroke-width', 7)
-    .attr('stroke', 'grey')
-    .attr('nodeY', nodeY)
-    .on('mouseover', deletionMouseOver)
-    .on('mouseout', deletionMouseOut);
+    .append("line")
+    .attr("x1", x1)
+    .attr("y1", y - 1)
+    .attr("x2", x2)
+    .attr("y2", y - 1)
+    .attr("stroke-width", 7)
+    .attr("stroke", "grey")
+    .attr("nodeY", nodeY)
+    .on("mouseover", deletionMouseOver)
+    .on("mouseout", deletionMouseOut);
 }
 
 function insertionMouseOver() {
   /* jshint validthis: true */
-  d3.select(this).attr('fill', 'red');
-  const x = Number(d3.select(this).attr('x'));
-  const y = Number(d3.select(this).attr('y'));
-  const yTop = Number(d3.select(this).attr('nodeY'));
+  d3.select(this).attr("fill", "red");
+  const x = Number(d3.select(this).attr("x"));
+  const y = Number(d3.select(this).attr("y"));
+  const yTop = Number(d3.select(this).attr("nodeY"));
   svg
-    .append('line')
-    .attr('class', 'insertionHighlight')
-    .attr('x1', x + 4)
-    .attr('y1', y - 10)
-    .attr('x2', x + 4)
-    .attr('y2', yTop + 5)
-    .attr('stroke-width', 1)
-    .attr('stroke', 'black');
+    .append("line")
+    .attr("class", "insertionHighlight")
+    .attr("x1", x + 4)
+    .attr("y1", y - 10)
+    .attr("x2", x + 4)
+    .attr("y2", yTop + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
 }
 
 function deletionMouseOver() {
   /* jshint validthis: true */
-  d3.select(this).attr('stroke', 'red');
-  const x1 = Number(d3.select(this).attr('x1'));
-  const x2 = Number(d3.select(this).attr('x2'));
-  const y = Number(d3.select(this).attr('y1'));
-  const yTop = Number(d3.select(this).attr('nodeY'));
+  d3.select(this).attr("stroke", "red");
+  const x1 = Number(d3.select(this).attr("x1"));
+  const x2 = Number(d3.select(this).attr("x2"));
+  const y = Number(d3.select(this).attr("y1"));
+  const yTop = Number(d3.select(this).attr("nodeY"));
   svg
-    .append('line')
-    .attr('class', 'deletionHighlight')
-    .attr('x1', x1)
-    .attr('y1', y - 3)
-    .attr('x2', x1)
-    .attr('y2', yTop + 5)
-    .attr('stroke-width', 1)
-    .attr('stroke', 'black');
+    .append("line")
+    .attr("class", "deletionHighlight")
+    .attr("x1", x1)
+    .attr("y1", y - 3)
+    .attr("x2", x1)
+    .attr("y2", yTop + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
   svg
-    .append('line')
-    .attr('class', 'deletionHighlight')
-    .attr('x1', x2)
-    .attr('y1', y - 3)
-    .attr('x2', x2)
-    .attr('y2', yTop + 5)
-    .attr('stroke-width', 1)
-    .attr('stroke', 'black');
+    .append("line")
+    .attr("class", "deletionHighlight")
+    .attr("x1", x2)
+    .attr("y1", y - 3)
+    .attr("x2", x2)
+    .attr("y2", yTop + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
 }
 
 function substitutionMouseOver() {
   /* jshint validthis: true */
-  d3.select(this).attr('fill', 'red');
-  const x1 = Number(d3.select(this).attr('x'));
-  const x2 = Number(d3.select(this).attr('rightX'));
-  const y = Number(d3.select(this).attr('y'));
-  const yTop = Number(d3.select(this).attr('nodeY'));
+  d3.select(this).attr("fill", "red");
+  const x1 = Number(d3.select(this).attr("x"));
+  const x2 = Number(d3.select(this).attr("rightX"));
+  const y = Number(d3.select(this).attr("y"));
+  const yTop = Number(d3.select(this).attr("nodeY"));
   svg
-    .append('line')
-    .attr('class', 'substitutionHighlight')
-    .attr('x1', x1 - 1)
-    .attr('y1', y - 7)
-    .attr('x2', x1 - 1)
-    .attr('y2', yTop + 5)
-    .attr('stroke-width', 1)
-    .attr('stroke', 'black');
+    .append("line")
+    .attr("class", "substitutionHighlight")
+    .attr("x1", x1 - 1)
+    .attr("y1", y - 7)
+    .attr("x2", x1 - 1)
+    .attr("y2", yTop + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
   svg
-    .append('line')
-    .attr('class', 'substitutionHighlight')
-    .attr('x1', x2 + 1)
-    .attr('y1', y - 7)
-    .attr('x2', x2 + 1)
-    .attr('y2', yTop + 5)
-    .attr('stroke-width', 1)
-    .attr('stroke', 'black');
+    .append("line")
+    .attr("class", "substitutionHighlight")
+    .attr("x1", x2 + 1)
+    .attr("y1", y - 7)
+    .attr("x2", x2 + 1)
+    .attr("y2", yTop + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
 }
 
 function insertionMouseOut() {
   /* jshint validthis: true */
-  d3.select(this).attr('fill', 'black');
-  d3.selectAll('.insertionHighlight').remove();
+  d3.select(this).attr("fill", "black");
+  d3.selectAll(".insertionHighlight").remove();
 }
 
 function deletionMouseOut() {
   /* jshint validthis: true */
-  d3.select(this).attr('stroke', 'grey');
-  d3.selectAll('.deletionHighlight').remove();
+  d3.select(this).attr("stroke", "grey");
+  d3.selectAll(".deletionHighlight").remove();
 }
 
 function substitutionMouseOut() {
   /* jshint validthis: true */
-  d3.select(this).attr('fill', 'black');
-  d3.selectAll('.substitutionHighlight').remove();
+  d3.select(this).attr("fill", "black");
+  d3.selectAll(".substitutionHighlight").remove();
 }
 
 function filterReads(reads) {
   if (!reads) return reads;
   return reads.filter(
-    read =>
+    (read) =>
       !read.is_secondary && read.mapping_quality >= config.mappingQualityCutoff
   );
 }

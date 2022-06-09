@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Label } from 'reactstrap';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { Label } from "reactstrap";
 import SelectionDropdown from "./SelectionDropdown";
 
 class BedRegionsFormRow extends Component {
-  // TODO: Possibly blend this with the form dropdown in a datalist 
+  // TODO: Possibly blend this with the form dropdown in a datalist
   render() {
     return (
       <React.Fragment>
@@ -14,7 +14,7 @@ class BedRegionsFormRow extends Component {
         >
           Region:
         </Label>
-        
+
         <SelectionDropdown
           className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
           id="regionSelect"
@@ -22,7 +22,6 @@ class BedRegionsFormRow extends Component {
           onChange={this.props.handleInputChange}
           options={this.props.regionSelectOptions}
         />
-
       </React.Fragment>
     );
   }
@@ -31,7 +30,7 @@ class BedRegionsFormRow extends Component {
 BedRegionsFormRow.propTypes = {
   regionSelect: PropTypes.string.isRequired,
   regionSelectOptions: PropTypes.array.isRequired,
-  handleInputChange: PropTypes.func.isRequired
+  handleInputChange: PropTypes.func.isRequired,
 };
 
 export default BedRegionsFormRow;

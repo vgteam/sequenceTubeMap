@@ -52,7 +52,7 @@ const EMPTY_STATE = {
   gamFile: undefined,
   bedFile: undefined,
   dataPath: undefined,
-  region: undefined,
+  region: "none",
   name: undefined,
 
   dataType: dataTypes.BUILT_IN,
@@ -249,40 +249,19 @@ class HeaderForm extends Component {
 
   handleDataSourceChange = (event) => {
     const value = event.target.value;
-    DATA_SOURCES.forEach((ds) => {
-      if (ds.name === value) {
-        let dataPath = ds.dataPath;
-        let bedSelect = "none";
-        if (ds.bedFile) {
-          this.getBedRegions(ds.bedFile, dataPath);
-          bedSelect = ds.bedFile;
-        }
-        this.getPathNames(ds.xgFile, dataPath);
-        this.setState({
-          xgFile: ds.xgFile,
-          xgSelect: ds.xgFile,
-          gbwtFile: ds.gbwtFile,
-          gamFile: ds.gamFile,
-          bedFile: ds.bedFile,
-          bedSelect: bedSelect,
-          dataPath: dataPath,
-          region: ds.region,
-          dataType: dataTypes.BUILT_IN,
-          name: ds.name,
-        });
-        return;
-      }
-    });
+
     if (value === dataTypes.FILE_UPLOAD) {
-      this.setState({
+      const newState = {
         ...EMPTY_STATE,
         dataPath: "upload",
         dataType: dataTypes.FILE_UPLOAD,
         error: this.state.error,
-      });
+      };
+      this.setState(newState, () => {});
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
         return {
+          ...EMPTY_STATE,
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
@@ -295,8 +274,32 @@ class HeaderForm extends Component {
       // Synthetic data examples in dropdown
       this.setState({ dataType: dataTypes.EXAMPLES });
     } else {
-      // TODO: name and others
-      this.setState({ dataType: dataTypes.BUILT_IN });
+      // BUILT-IN EXAMPLES
+      // Find data source whose name matches selection
+      DATA_SOURCES.forEach((ds) => {
+        if (ds.name === value) {
+          let dataPath = ds.dataPath;
+          let bedSelect = "none";
+          if (ds.bedFile) {
+            this.getBedRegions(ds.bedFile, dataPath);
+            bedSelect = ds.bedFile;
+          }
+          this.getPathNames(ds.xgFile, dataPath);
+          this.setState({
+            xgFile: ds.xgFile,
+            xgSelect: ds.xgFile,
+            gbwtFile: ds.gbwtFile,
+            gamFile: ds.gamFile,
+            bedFile: ds.bedFile,
+            bedSelect: bedSelect,
+            dataPath: dataPath,
+            region: ds.region,
+            dataType: dataTypes.BUILT_IN,
+            name: ds.name,
+          });
+          return;
+        }
+      });
     }
   };
   getNextViewTarget = () => ({

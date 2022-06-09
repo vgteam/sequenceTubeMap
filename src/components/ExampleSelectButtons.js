@@ -1,14 +1,14 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Form, Button } from 'reactstrap';
-import { dataOriginTypes } from '../enums';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { Form, Button } from "reactstrap";
+import { dataOriginTypes } from "../enums";
 
 class ExampleSelectButtons extends Component {
   handleClick = (dataOrigin, haploColor, readColor) => {
     this.props.setDataOrigin(dataOrigin);
-    this.props.setColorSetting('haplotypeColors', haploColor);
+    this.props.setColorSetting("haplotypeColors", haploColor);
     if (readColor) {
-      this.props.setColorSetting('forwardReadColors', readColor);
+      this.props.setColorSetting("forwardReadColors", readColor);
     }
   };
 
@@ -19,7 +19,7 @@ class ExampleSelectButtons extends Component {
           color="primary"
           id="example1"
           onClick={() =>
-            this.handleClick(dataOriginTypes.EXAMPLE_1, 'plainColors')
+            this.handleClick(dataOriginTypes.EXAMPLE_1, "plainColors")
           }
         >
           Indels and Polymorphisms only
@@ -28,7 +28,7 @@ class ExampleSelectButtons extends Component {
           color="primary"
           id="example2"
           onClick={() =>
-            this.handleClick(dataOriginTypes.EXAMPLE_2, 'plainColors')
+            this.handleClick(dataOriginTypes.EXAMPLE_2, "plainColors")
           }
         >
           Inversions
@@ -37,7 +37,7 @@ class ExampleSelectButtons extends Component {
           color="primary"
           id="example3"
           onClick={() =>
-            this.handleClick(dataOriginTypes.EXAMPLE_3, 'plainColors')
+            this.handleClick(dataOriginTypes.EXAMPLE_3, "plainColors")
           }
         >
           Nested Inversions
@@ -46,7 +46,7 @@ class ExampleSelectButtons extends Component {
           color="primary"
           id="example4"
           onClick={() =>
-            this.handleClick(dataOriginTypes.EXAMPLE_4, 'plainColors')
+            this.handleClick(dataOriginTypes.EXAMPLE_4, "plainColors")
           }
         >
           Duplications
@@ -55,7 +55,7 @@ class ExampleSelectButtons extends Component {
           color="primary"
           id="example5"
           onClick={() =>
-            this.handleClick(dataOriginTypes.EXAMPLE_5, 'plainColors')
+            this.handleClick(dataOriginTypes.EXAMPLE_5, "plainColors")
           }
         >
           Translocations
@@ -64,7 +64,7 @@ class ExampleSelectButtons extends Component {
           color="primary"
           id="example6"
           onClick={() =>
-            this.handleClick(dataOriginTypes.EXAMPLE_6, 'greys', 'reds')
+            this.handleClick(dataOriginTypes.EXAMPLE_6, "greys", "reds")
           }
         >
           Aligned Reads
@@ -76,7 +76,7 @@ class ExampleSelectButtons extends Component {
 
 ExampleSelectButtons.propTypes = {
   setColorSetting: PropTypes.func.isRequired,
-  setDataOrigin: PropTypes.func.isRequired
+  setDataOrigin: PropTypes.func.isRequired,
 };
 
 export default ExampleSelectButtons;

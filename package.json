@@ -43,7 +43,8 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "serve": "node ./src/server.js"
+    "serve": "node ./src/server.js",
+    "format": "prettier --write \"**/*.+(js|css)\""
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -56,5 +57,8 @@
   ],
   "engines": {
     "node": ">=10.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^2.6.2"
   }
 }

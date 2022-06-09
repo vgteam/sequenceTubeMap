@@ -1,18 +1,18 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Col, Label, Input, FormGroup } from 'reactstrap';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { Col, Label, Input, FormGroup } from "reactstrap";
 
 const colorMap = new Map([
-  ['colorful', 'plainColors'],
-  ['greyscale', 'greys'],
-  ['Ygreyscale', 'ygreys'],
-  ['reds', 'reds'],
-  ['blues', 'blues'],
-  ['pale colors', 'lightColors']
+  ["colorful", "plainColors"],
+  ["greyscale", "greys"],
+  ["Ygreyscale", "ygreys"],
+  ["reds", "reds"],
+  ["blues", "blues"],
+  ["pale colors", "lightColors"],
 ]);
 
 class RadioRow extends Component {
-  onChange = event => {
+  onChange = (event) => {
     this.props.setColorSetting(
       this.props.trackType,
       colorMap.get(event.target.value)
@@ -50,7 +50,7 @@ RadioRow.propTypes = {
   color: PropTypes.string.isRequired,
   rowHeading: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
-  trackType: PropTypes.string.isRequired 
+  trackType: PropTypes.string.isRequired,
 };
 
 export default RadioRow;

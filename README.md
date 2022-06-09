@@ -181,6 +181,14 @@ If you want to run all the tests, you can run:
 
 You can also set the environment variable `CI=true`, or [look sufficiently like a kind of CI environment known to `reach-scripts`](https://create-react-app.dev/docs/running-tests/#command-line-interface).
 
+#### Running Prettier Formatter
+
+In order to format all `.js` and `.css` files you can run:
+
+```
+npm run format
+```
+Currently, this repo currently uses [Prettier's default options](https://prettier.io/docs/en/options.html), including double quotes and 2 space tab width for JS. 
 
 
 ## License

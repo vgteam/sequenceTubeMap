@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Label } from 'reactstrap';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { Label } from "reactstrap";
 import SelectionDropdown from "./SelectionDropdown";
 
 class MountedDataFormRow extends Component {
@@ -59,7 +59,6 @@ class MountedDataFormRow extends Component {
           onChange={this.props.handleInputChange}
           options={this.props.bedSelectOptions}
         />
-
       </React.Fragment>
     );
   }
@@ -76,7 +75,7 @@ MountedDataFormRow.propTypes = {
   pathSelect: PropTypes.string.isRequired,
   pathSelectOptions: PropTypes.array.isRequired,
   xgSelect: PropTypes.string.isRequired,
-  xgSelectOptions: PropTypes.array.isRequired
+  xgSelectOptions: PropTypes.array.isRequired,
 };
 
 export default MountedDataFormRow;

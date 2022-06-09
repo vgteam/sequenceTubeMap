@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Label, Input } from 'reactstrap';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { Label, Input } from "reactstrap";
 
 const MAX_UPLOAD_SIZE = 5242880;
 
@@ -15,27 +15,27 @@ class FileUploadFormRow extends Component {
   onXgFileChange = () => {
     const file = this.xgFileInput.current.files[0];
     if (file === undefined) {
-      this.props.handleFileUpload('xgFile', 'none');
+      this.props.handleFileUpload("xgFile", "none");
     } else {
       if (file.size > MAX_UPLOAD_SIZE) {
-        this.xgFileInput.current.value = '';
+        this.xgFileInput.current.value = "";
         this.props.showFileSizeAlert();
         return;
       }
       this.props.setUploadInProgress(true);
       const formData = new FormData();
-      formData.append('xgFile', file);
+      formData.append("xgFile", file);
       const xhr = new XMLHttpRequest();
-      xhr.responseType = 'json';
+      xhr.responseType = "json";
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
-          this.props.handleFileUpload('xgFile', xhr.response.path);
-          this.props.getPathNames(xhr.response.path, 'upload');
+          this.props.handleFileUpload("xgFile", xhr.response.path);
+          this.props.getPathNames(xhr.response.path, "upload");
         }
       };
-      xhr.open('POST', `${this.props.apiUrl}/xgFileSubmission`, true);
+      xhr.open("POST", `${this.props.apiUrl}/xgFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -43,26 +43,26 @@ class FileUploadFormRow extends Component {
   onGbwtFileChange = () => {
     const file = this.gbwtFileInput.current.files[0];
     if (file === undefined) {
-      this.props.handleFileUpload('gbwtFile', 'none');
+      this.props.handleFileUpload("gbwtFile", "none");
     } else {
       if (file.size > MAX_UPLOAD_SIZE) {
-        this.gbwtFileInput.current.value = '';
+        this.gbwtFileInput.current.value = "";
         this.props.showFileSizeAlert();
         return;
       }
       this.props.setUploadInProgress(true);
       const formData = new FormData();
-      formData.append('gbwtFile', file);
+      formData.append("gbwtFile", file);
       const xhr = new XMLHttpRequest();
-      xhr.responseType = 'json';
+      xhr.responseType = "json";
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
-          this.props.handleFileUpload('gbwtFile', xhr.response.path);
+          this.props.handleFileUpload("gbwtFile", xhr.response.path);
         }
       };
-      xhr.open('POST', `${this.props.apiUrl}/gbwtFileSubmission`, true);
+      xhr.open("POST", `${this.props.apiUrl}/gbwtFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -70,26 +70,26 @@ class FileUploadFormRow extends Component {
   onGamFileChange = () => {
     const file = this.gamFileInput.current.files[0];
     if (file === undefined) {
-      this.props.handleFileUpload('gamFile', 'none');
+      this.props.handleFileUpload("gamFile", "none");
     } else {
       if (file.size > MAX_UPLOAD_SIZE) {
-        this.gamFileInput.current.value = '';
+        this.gamFileInput.current.value = "";
         this.props.showFileSizeAlert();
         return;
       }
       this.props.setUploadInProgress(true);
       const formData = new FormData();
-      formData.append('gamFile', file);
+      formData.append("gamFile", file);
       const xhr = new XMLHttpRequest();
-      xhr.responseType = 'json';
+      xhr.responseType = "json";
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
-          this.props.handleFileUpload('gamFile', xhr.response.path);
+          this.props.handleFileUpload("gamFile", xhr.response.path);
         }
       };
-      xhr.open('POST', `${this.props.apiUrl}/gamFileSubmission`, true);
+      xhr.open("POST", `${this.props.apiUrl}/gamFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -136,7 +136,6 @@ class FileUploadFormRow extends Component {
           innerRef={this.gamFileInput}
           onChange={this.onGamFileChange}
         />
-
       </React.Fragment>
     );
   }
@@ -151,7 +150,7 @@ FileUploadFormRow.propTypes = {
   pathSelectOptions: PropTypes.array.isRequired,
   resetPathNames: PropTypes.func.isRequired,
   setUploadInProgress: PropTypes.func.isRequired,
-  showFileSizeAlert: PropTypes.func.isRequired
+  showFileSizeAlert: PropTypes.func.isRequired,
 };
 
 export default FileUploadFormRow;

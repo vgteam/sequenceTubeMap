@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import * as tubeMap from '../util/tubemap';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import * as tubeMap from "../util/tubemap";
 
 class TubeMap extends Component {
   componentDidMount() {
@@ -13,11 +13,11 @@ class TubeMap extends Component {
 
   createTubeMap = () => {
     tubeMap.create({
-      svgID: '#svg',
+      svgID: "#svg",
       nodes: this.props.nodes,
       tracks: this.props.tracks,
       reads: this.props.reads,
-      region: this.props.region
+      region: this.props.region,
     });
   };
 
@@ -30,7 +30,7 @@ TubeMap.propTypes = {
   nodes: PropTypes.array.isRequired,
   tracks: PropTypes.array.isRequired,
   reads: PropTypes.array.isRequired,
-  region: PropTypes.array.isRequired 
+  region: PropTypes.array.isRequired,
 };
 
 export default TubeMap;

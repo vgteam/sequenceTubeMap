@@ -207,7 +207,7 @@ describe("When we wait for it to load", () => {
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
   const expectedLinkBRCA1 =
-    "localhost?name=snp1kg-BRCA1&xgFile=snp1kg-BRCA1.vg.xg&gamFile=NA12878-BRCA1.sorted.gam&dataPath=default&region=17%3A1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in"
+    "localhost?name=snp1kg-BRCA1&xgFile=snp1kg-BRCA1.vg.xg&gamFile=NA12878-BRCA1.sorted.gam&dataPath=default&region=17%3A1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in";
   // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -216,7 +216,7 @@ it("produces correct link for view before & after go is pressed", async () => {
       "snp1kg-BRCA1"
     );
   });
-  // Wait for server to load / avoid console yelling 
+  // Wait for server to load / avoid console yelling
   await waitForLoadEnd();
 
   clickGoButton();
