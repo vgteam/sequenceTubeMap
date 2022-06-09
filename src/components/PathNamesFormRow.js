@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Label } from 'reactstrap';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { Label } from "reactstrap";
 import SelectionDropdown from "./SelectionDropdown";
 
 class PathNamesFormRow extends Component {
@@ -8,9 +8,9 @@ class PathNamesFormRow extends Component {
     return (
       <React.Fragment>
         <Label
-                for="pathName"
-                className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
-              >
+          for="pathName"
+          className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
+        >
           Path name:
         </Label>
         <SelectionDropdown
@@ -20,7 +20,6 @@ class PathNamesFormRow extends Component {
           onChange={this.props.handleInputChange}
           options={this.props.pathSelectOptions}
         />
-
       </React.Fragment>
     );
   }
@@ -29,7 +28,7 @@ class PathNamesFormRow extends Component {
 PathNamesFormRow.propTypes = {
   pathSelect: PropTypes.string.isRequired,
   pathSelectOptions: PropTypes.array.isRequired,
-  handleInputChange: PropTypes.func.isRequired
+  handleInputChange: PropTypes.func.isRequired,
 };
 
 export default PathNamesFormRow;

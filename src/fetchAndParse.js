@@ -14,8 +14,8 @@ export async function fetchAndParse(...fetchArgs) {
     throw new Error(json.error);
   } else if (response.status < 200 || response.status > 299) {
     // Not a successful response
-    throw new Error('Server responded with error code ' + response.status);
+    throw new Error("Server responded with error code " + response.status);
   }
   // Otherwise return the parsed JSON
   return json;
-};
+}

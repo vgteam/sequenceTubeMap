@@ -257,8 +257,7 @@ class HeaderForm extends Component {
         dataType: dataTypes.FILE_UPLOAD,
         error: this.state.error,
       };
-      this.setState(newState, () => {
-      });
+      this.setState(newState, () => {});
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
         return {

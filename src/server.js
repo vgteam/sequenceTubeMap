@@ -536,8 +536,7 @@ function returnErrorMiddleware(err, req, res, next) {
   const result = { error: "" };
   if (!(err instanceof TubeMapError)) {
     // Unexpected error: we do not have a custom message for this error
-    result.error +=
-      "Something about this request has caused a server error: ";
+    result.error += "Something about this request has caused a server error: ";
   }
   if (err.message) {
     // We have an error message to pass along.

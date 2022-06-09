@@ -1,7 +1,6 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import Select from "react-select";
-
 
 /**
  * A searchable selection dropdown component.
@@ -10,30 +9,32 @@ class SelectionDropdown extends Component {
   render() {
     // Tweaks to the default react-select styles so that it'll look good with tube maps.
     const styles = {
-      control: base => ({
+      control: (base) => ({
         ...base,
         minHeight: "unset",
-        height: "calc(2.25rem - 2px)"
+        height: "calc(2.25rem - 2px)",
       }),
-      valueContainer: base => ({
+      valueContainer: (base) => ({
         ...base,
         // Roughly calculate the width that can fit the largest text. This can't be updated dynamically.
-        width: Math.max(...this.props.options.map(option => option.length)) * 8 + 16,
+        width:
+          Math.max(...this.props.options.map((option) => option.length)) * 8 +
+          16,
         minWidth: "48px",
-        position: "unset"
+        position: "unset",
       }),
-      indicatorsContainer: base => ({
+      indicatorsContainer: (base) => ({
         ...base,
         height: "inherit",
       }),
-      menu: base => ({
+      menu: (base) => ({
         ...base,
         width: "max-content",
-        minWidth: "100%"
+        minWidth: "100%",
       }),
-    }
+    };
 
-    const dropdownOptions = this.props.options.map(option => ({
+    const dropdownOptions = this.props.options.map((option) => ({
       label: option,
       value: option,
     }));
@@ -43,22 +44,25 @@ class SelectionDropdown extends Component {
         target: {
           id: this.props.id,
           value: option.value,
-        }
+        },
       });
-    }
+    };
 
     return (
       <Select
         id={this.props.id}
         className={this.props.className}
-        value={dropdownOptions.find((option) => option.value === this.props.value) || {}}
+        value={
+          dropdownOptions.find((option) => option.value === this.props.value) ||
+          {}
+        }
         styles={styles}
         isSearchable={true}
         onChange={onChange}
         options={dropdownOptions}
         openMenuOnClick={dropdownOptions.length < 2000}
       />
-    )
+    );
   }
 }
 

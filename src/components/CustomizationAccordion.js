@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import {
   Container,
   Collapse,
@@ -9,35 +9,35 @@ import {
   Form,
   Label,
   Input,
-  FormGroup
-} from 'reactstrap';
-import RadioRow from './RadioRow';
+  FormGroup,
+} from "reactstrap";
+import RadioRow from "./RadioRow";
 
 class VisualizationOptions extends Component {
   state = {
     isOpenLegend: false,
-    isOpenVisualizationOptions: true
+    isOpenVisualizationOptions: true,
   };
 
-  toggleLegend = e => {
+  toggleLegend = (e) => {
     this.setState({ isOpenLegend: !this.state.isOpenLegend });
     e.preventDefault();
   };
 
-  toggleVisOptions = e => {
+  toggleVisOptions = (e) => {
     this.setState({
-      isOpenVisualizationOptions: !this.state.isOpenVisualizationOptions
+      isOpenVisualizationOptions: !this.state.isOpenVisualizationOptions,
     });
     e.preventDefault();
   };
 
-  handleMappingQualityCutoffChange = event => {
+  handleMappingQualityCutoffChange = (event) => {
     this.props.handleMappingQualityCutoffChange(event.target.value);
   };
 
   render() {
     const { visOptions, toggleFlag } = this.props;
-    const mappingQualityOptions = Array.from(Array(61).keys()).map(i => {
+    const mappingQualityOptions = Array.from(Array(61).keys()).map((i) => {
       return (
         <option value={i} key={i}>
           {i}
@@ -79,7 +79,7 @@ class VisualizationOptions extends Component {
                       <Input
                         type="checkbox"
                         checked={visOptions.removeRedundantNodes}
-                        onChange={() => toggleFlag('removeRedundantNodes')}
+                        onChange={() => toggleFlag("removeRedundantNodes")}
                       />
                       Remove redundant nodes
                     </Label>
@@ -89,7 +89,7 @@ class VisualizationOptions extends Component {
                       <Input
                         type="checkbox"
                         checked={visOptions.compressedView}
-                        onChange={() => toggleFlag('compressedView')}
+                        onChange={() => toggleFlag("compressedView")}
                       />
                       Compressed view
                     </Label>
@@ -99,7 +99,7 @@ class VisualizationOptions extends Component {
                       <Input
                         type="checkbox"
                         checked={visOptions.transparentNodes}
-                        onChange={() => toggleFlag('transparentNodes')}
+                        onChange={() => toggleFlag("transparentNodes")}
                       />
                       Fully transparent nodes
                     </Label>
@@ -113,7 +113,7 @@ class VisualizationOptions extends Component {
                       <Input
                         type="checkbox"
                         checked={visOptions.showReads}
-                        onChange={() => toggleFlag('showReads')}
+                        onChange={() => toggleFlag("showReads")}
                       />
                       Show sequence reads
                     </Label>
@@ -125,7 +125,7 @@ class VisualizationOptions extends Component {
                           <Input
                             type="checkbox"
                             checked={visOptions.showSoftClips}
-                            onChange={() => toggleFlag('showSoftClips')}
+                            onChange={() => toggleFlag("showSoftClips")}
                           />
                           Show soft clips
                         </Label>
@@ -136,7 +136,7 @@ class VisualizationOptions extends Component {
                             type="checkbox"
                             checked={visOptions.colorReadsByMappingQuality}
                             onChange={() =>
-                              toggleFlag('colorReadsByMappingQuality')
+                              toggleFlag("colorReadsByMappingQuality")
                             }
                           />
                           Color reads by mapping quality
@@ -197,7 +197,7 @@ class VisualizationOptions extends Component {
 
 VisualizationOptions.propTypes = {
   handleMappingQualityCutoffChange: PropTypes.func.isRequired,
-  setColorSetting: PropTypes.func.isRequired
+  setColorSetting: PropTypes.func.isRequired,
 };
 
 export default VisualizationOptions;
