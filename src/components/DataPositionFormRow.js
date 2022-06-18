@@ -123,6 +123,11 @@ class DataPositionFormRow extends Component {
           Download Image
         </Button>
         <CopyLink getCurrentViewTarget={this.props.getCurrentViewTarget} />
+        {this.props.uploadInProgress && (
+          <div class="spinner-grow" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        )}
       </Form>
     );
   }

@@ -11,6 +11,7 @@ import BedRegionsFormRow from "./BedRegionsFormRow";
 import PathNamesFormRow from "./PathNamesFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
+import { ComboBox } from "./ComboBox";
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
@@ -229,6 +230,7 @@ class HeaderForm extends Component {
         const pathSelect = pathNames.includes(state.pathSelect)
           ? state.pathSelect
           : pathNames[0];
+        console.log(pathNames);
         return {
           pathSelectOptions: pathNames,
           pathSelect,
@@ -563,6 +565,7 @@ class HeaderForm extends Component {
                   getCurrentViewTarget={this.props.getCurrentViewTarget}
                 />
               )}
+              <ComboBox pathNames={this.state.pathSelectOptions} />
             </Col>
           </Row>
         </Container>
