@@ -191,6 +191,7 @@ class HeaderForm extends Component {
         const regionSelect = bedRegionsDesc.includes(state.regionSelect)
           ? state.regionSelect
           : bedRegionsDesc[0];
+        console.log(bedRegionsDesc)
         return {
           regionInfo: json.bedRegions,
           regionSelectOptions: bedRegionsDesc,
@@ -565,7 +566,7 @@ class HeaderForm extends Component {
                   getCurrentViewTarget={this.props.getCurrentViewTarget}
                 />
               )}
-              <ComboBox pathNames={this.state.pathSelectOptions} />
+              <ComboBox pathNames={this.state.pathSelectOptions} regions={this.state.regionSelectOptions}/>
             </Col>
           </Row>
         </Container>
