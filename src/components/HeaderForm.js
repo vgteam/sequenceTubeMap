@@ -182,6 +182,7 @@ class HeaderForm extends Component {
       });
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let bedRegionsDesc = json.bedRegions["desc"];
+
       if (!(bedRegionsDesc instanceof Array)) {
         throw new Error(
           "Server did not send back an array of BED region descriptions"
@@ -191,8 +192,9 @@ class HeaderForm extends Component {
         const regionSelect = bedRegionsDesc.includes(state.regionSelect)
           ? state.regionSelect
           : bedRegionsDesc[0];
-        console.log(bedRegionsDesc)
+        console.log(bedRegionsDesc, json.bedRegions);
         return {
+          // RegionInfo: object with chr, chunk, desc arrays
           regionInfo: json.bedRegions,
           regionSelectOptions: bedRegionsDesc,
           regionSelect: regionSelect,
@@ -325,6 +327,23 @@ class HeaderForm extends Component {
     this.props.setCurrentViewTarget(viewTarget);
   };
 
+  getRegionCoords = (desc) => {
+    // Given a region description (string), return the actual corresponding coordinates
+    // Returns null if there is no corresponding coords
+    // i: number that corresponds to record
+    // Find index of given description in regionInfo
+    const i = (this.state.regionInfo["desc"]).findIndex(d => d == desc);
+    if (i === -1)
+      // Not found
+      return null;
+    // Find corresponding chr, start, and end
+    const region_chr = this.state.regionInfo["chr"][i];
+    const region_start = this.state.regionInfo["start"][i];
+    const region_end = this.state.regionInfo["end"][i];
+    // Combine chr, start, and end to get region string 
+    const res =  region_chr.concat(":", region_start, "-", region_end);
+    return res
+  };
   handleInputChange = (event) => {
     const id = event.target.id;
     const value = event.target.value;
@@ -343,20 +362,9 @@ class HeaderForm extends Component {
       this.setState({ region: value.concat(":") });
     } else if (id === "regionSelect") {
       // find which region corresponds to this region label/desc
-      let i = 0;
-      while (
-        i < this.state.regionInfo["desc"].length &&
-        this.state.regionInfo["desc"][i] !== value
-      )
-        i += 1;
-      if (i < this.state.regionInfo["desc"].length) {
-        let region_chr = this.state.regionInfo["chr"][i];
-        let region_start = this.state.regionInfo["start"][i];
-        let region_end = this.state.regionInfo["end"][i];
-        this.setState({
-          region: region_chr.concat(":", region_start, "-", region_end),
-        });
-      }
+      this.setState({
+        region: this.getRegionCoords(value),
+      });
     }
   };
 
@@ -566,7 +574,13 @@ class HeaderForm extends Component {
                   getCurrentViewTarget={this.props.getCurrentViewTarget}
                 />
               )}
-              <ComboBox pathNames={this.state.pathSelectOptions} regions={this.state.regionSelectOptions}/>
+              <ComboBox
+                pathNames={this.state.pathSelectOptions}
+                /* TODO: delete? */
+                regions={this.state.regionSelectOptions}
+                regionInfo={this.state.regionInfo}
+                getRegionCoords={this.getRegionCoords}
+              />
             </Col>
           </Row>
         </Container>
