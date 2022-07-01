@@ -23,3 +23,18 @@ type ViewTarget = {
   dataPath: DataPath;
   dataType: DataType;
 };
+
+type RegionInfo = {
+  // Each index in each of these objects
+  // corresponds to one region
+  // i.e. desc[4] is the desc for chr[4], start[4], end[4]
+  // Chromosome/path before the :
+  chr: string[],
+  chunk: string[],
+  // Description of region from BED
+  desc: string[],
+  // Numerical string
+  end: string[],
+  // Numerical string
+  start: string[]
+}

@@ -342,6 +342,7 @@ class HeaderForm extends Component {
     const region_end = this.state.regionInfo["end"][i];
     // Combine chr, start, and end to get region string 
     const res =  region_chr.concat(":", region_start, "-", region_end);
+    console.log("coords", res)
     return res
   };
   handleInputChange = (event) => {
@@ -558,6 +559,13 @@ class HeaderForm extends Component {
                 You may only upload files with a maximum size of{" "}
                 {MAX_UPLOAD_SIZE_DESCRIPTION}.
               </Alert>
+              <ComboBox
+                pathNames={this.state.pathSelectOptions}
+                /* TODO: delete? */
+                regions={this.state.regionSelectOptions}
+                regionInfo={this.state.regionInfo}
+                getRegionCoords={this.getRegionCoords}
+              />
               {examplesFlag ? (
                 <ExampleSelectButtons
                   setDataOrigin={this.props.setDataOrigin}
@@ -574,13 +582,6 @@ class HeaderForm extends Component {
                   getCurrentViewTarget={this.props.getCurrentViewTarget}
                 />
               )}
-              <ComboBox
-                pathNames={this.state.pathSelectOptions}
-                /* TODO: delete? */
-                regions={this.state.regionSelectOptions}
-                regionInfo={this.state.regionInfo}
-                getRegionCoords={this.getRegionCoords}
-              />
             </Col>
           </Row>
         </Container>
