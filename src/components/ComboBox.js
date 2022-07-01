@@ -4,18 +4,13 @@ import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormHelperText from "@mui/material/FormHelperText";
 
-export const ComboBox = ({
-  regionInfo,
-  pathNames,
-  regions,
-  getRegionCoords,
-}) => {
+export const ComboBox = ({ regionInfo, pathNames, getRegionCoords }) => {
   const [value, setValue] = useState("");
   // Add : to pathNames
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
 
-  const isEmpty = obj => Object.keys(obj).length === 0;
+  const isEmpty = (obj) => Object.keys(obj).length === 0;
 
   if (regionInfo && !isEmpty(regionInfo)) {
     console.log(regionInfo, regionInfo["chr"]);
@@ -25,26 +20,20 @@ export const ComboBox = ({
         path + ":" + regionInfo.start[index] + "-" + regionInfo.end[index]
       );
     }
-    // Add descriptions 
-    pathsWithRegion.push(...regionInfo['desc'])
+    // Add descriptions
+    pathsWithRegion.push(...regionInfo["desc"]);
   }
 
-  const displayRegions = [
-    ...pathsWithRegion,
-    ...pathNamesColon,
-  ];
-  console.log(displayRegions);
+  const displayRegions = [...pathsWithRegion, ...pathNamesColon];
 
   const handleSelected = (selected) => {
-    debugger
-    let coords = selected
-    if (regionInfo['desc'].includes(selected)) {
+    let coords = selected;
+    if (regionInfo["desc"].includes(selected)) {
       // Just a description was selected, get coords
-      coords =  getRegionCoords(selected)
-
+      coords = getRegionCoords(selected);
     }
-    setValue(coords)
-  }
+    setValue(coords);
+  };
 
   return (
     <>
@@ -70,7 +59,6 @@ export const ComboBox = ({
 ComboBox.propTypes = {
   // pathNames: The selectable options for pathNames
   pathNames: PropTypes.array,
-  regions: PropTypes.array,
   getRegionCoords: PropTypes.func.isRequired,
   // Each BED region has its own index
   regionInfo: PropTypes.shape({

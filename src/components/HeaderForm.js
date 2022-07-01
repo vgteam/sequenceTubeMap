@@ -332,18 +332,17 @@ class HeaderForm extends Component {
     // Returns null if there is no corresponding coords
     // i: number that corresponds to record
     // Find index of given description in regionInfo
-    const i = (this.state.regionInfo["desc"]).findIndex(d => d == desc);
+    const i = this.state.regionInfo["desc"].findIndex((d) => d == desc);
     if (i === -1)
       // Not found
       return null;
     // Find corresponding chr, start, and end
-    const region_chr = this.state.regionInfo["chr"][i];
-    const region_start = this.state.regionInfo["start"][i];
-    const region_end = this.state.regionInfo["end"][i];
-    // Combine chr, start, and end to get region string 
-    const res =  region_chr.concat(":", region_start, "-", region_end);
-    console.log("coords", res)
-    return res
+    const regionChr = this.state.regionInfo["chr"][i];
+    const regionStart = this.state.regionInfo["start"][i];
+    const regionEnd = this.state.regionInfo["end"][i];
+    // Combine chr, start, and end to get region string
+    const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
+    return regionString;
   };
   handleInputChange = (event) => {
     const id = event.target.id;
@@ -561,10 +560,9 @@ class HeaderForm extends Component {
               </Alert>
               <ComboBox
                 pathNames={this.state.pathSelectOptions}
-                /* TODO: delete? */
-                regions={this.state.regionSelectOptions}
                 regionInfo={this.state.regionInfo}
                 getRegionCoords={this.getRegionCoords}
+                onChange={this.handleInputChange}
               />
               {examplesFlag ? (
                 <ExampleSelectButtons
