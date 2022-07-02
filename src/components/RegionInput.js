@@ -8,13 +8,12 @@ import FormHelperText from "@mui/material/FormHelperText";
 // Responsible for selecting the path/chr and segment of data to look at 
 const isEmpty = (obj) => Object.keys(obj).length === 0;
 export const RegionInput = ({ region, regionInfo, handleRegionChange, pathNames }) => {
-  const [value, setValue] = useState("");
+  // Generate autocomplete options for regions from regionInfo
   // Add : to pathNames
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
 
 
-  // Generate autocomplete options for regions from regionInfo
   if (regionInfo && !isEmpty(regionInfo)) {
     // Stitch path name + region start and end
     for (const [index, path] of regionInfo["chr"].entries()) {
@@ -43,7 +42,7 @@ export const RegionInput = ({ region, regionInfo, handleRegionChange, pathNames 
       />
       <FormHelperText id="combo-box-helper-text">
         {`
-        Input a data segment to select with format <path>:<region>.  See ? for more information.
+        Input a data segment to select with format <path>:<regionRange> and hit 'Go'.  See ? for more information.
           `}
       </FormHelperText>
     </>

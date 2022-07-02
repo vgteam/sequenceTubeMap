@@ -7,8 +7,6 @@ import { fetchAndParse } from "../fetchAndParse";
 import config from "../config.json";
 import DataPositionFormRow from "./DataPositionFormRow";
 import MountedDataFormRow from "./MountedDataFormRow";
-import BedRegionsFormRow from "./BedRegionsFormRow";
-import PathNamesFormRow from "./PathNamesFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import { RegionInput } from "./RegionInput";
@@ -192,7 +190,6 @@ class HeaderForm extends Component {
         const regionSelect = bedRegionsDesc.includes(state.regionSelect)
           ? state.regionSelect
           : bedRegionsDesc[0];
-        console.log(bedRegionsDesc, json.bedRegions);
         return {
           // RegionInfo: object with chr, chunk, desc arrays
           regionInfo: json.bedRegions,
@@ -201,7 +198,7 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      console.log(`POST to ${this.props.apiUrl}/getBedRegions failed:`, error);
+      console.error(`POST to ${this.props.apiUrl}/getBedRegions failed:`, error);
       this.setState({ error: error });
     }
   };
@@ -234,13 +231,14 @@ class HeaderForm extends Component {
           ? state.pathSelect
           : pathNames[0];
         console.log(pathNames);
+        console.log(state.regionInfo);
         return {
           pathSelectOptions: pathNames,
           pathSelect,
         };
       });
     } catch (error) {
-      console.log(`POST to ${this.props.apiUrl}/getPathNames failed:`, error);
+      console.error(`POST to ${this.props.apiUrl}/getPathNames failed:`, error);
       this.setState({ error: error });
     }
   };
@@ -347,14 +345,14 @@ class HeaderForm extends Component {
   handleRegionChange = (value) => {
     // After user selects a region name or coordinates,
     // update path and region
-    let coords = value
+    let coords = value;
 
     if (this.state.regionInfo["desc"].includes(value)) {
       // Just a description was selected, get coords
       coords = this.getRegionCoords(value);
     }
-    this.setState({region: coords})
-  }
+    this.setState({ region: coords });
+  };
   handleInputChange = (event) => {
     const id = event.target.id;
     const value = event.target.value;
@@ -477,7 +475,6 @@ class HeaderForm extends Component {
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
-    const bedRegionsFlag = this.state.bedSelect !== "none";
     const pathNamesFlag =
       this.state.xgSelect !== "none" &&
       this.state.dataType != dataTypes.FILE_UPLOAD;
@@ -512,6 +509,7 @@ class HeaderForm extends Component {
                 >
                   {dataSourceDropdownOptions}
                 </select>
+                &nbsp;
                 {mountedFilesFlag && (
                   <MountedDataFormRow
                     xgSelect={this.state.xgSelect}
@@ -524,23 +522,15 @@ class HeaderForm extends Component {
                     bedSelectOptions={this.state.bedSelectOptions}
                     regionSelect={this.state.regionSelect}
                     regionSelectOptions={this.state.regionSelectOptions}
-                    pathSelect={this.state.pathSelect}
-                    pathSelectOptions={this.state.pathSelectOptions}
                     handleInputChange={this.handleInputChange}
                   />
                 )}
-                {pathNamesFlag && (
-                  <PathNamesFormRow
-                    pathSelect={this.state.pathSelect}
-                    pathSelectOptions={this.state.pathSelectOptions}
-                    handleInputChange={this.handleInputChange}
-                  />
-                )}
-                {bedRegionsFlag && (
-                  <BedRegionsFormRow
-                    regionSelect={this.state.regionSelect}
-                    regionSelectOptions={this.state.regionSelectOptions}
-                    handleInputChange={this.handleInputChange}
+                {!examplesFlag && (
+                  <RegionInput
+                    pathNames={this.state.pathSelectOptions}
+                    regionInfo={this.state.regionInfo}
+                    handleRegionChange={this.handleRegionChange}
+                    region={this.state.region}
                   />
                 )}
                 {uploadFilesFlag && (
@@ -569,12 +559,6 @@ class HeaderForm extends Component {
                 You may only upload files with a maximum size of{" "}
                 {MAX_UPLOAD_SIZE_DESCRIPTION}.
               </Alert>
-              <RegionInput
-                pathNames={this.state.pathSelectOptions}
-                regionInfo={this.state.regionInfo}
-                handleRegionChange={this.handleRegionChange}
-                region={this.state.region}
-              />
               {examplesFlag ? (
                 <ExampleSelectButtons
                   setDataOrigin={this.props.setDataOrigin}
@@ -582,8 +566,6 @@ class HeaderForm extends Component {
                 />
               ) : (
                 <DataPositionFormRow
-                  region={this.state.region}
-                  handleInputChange={this.handleInputChange}
                   handleGoLeft={this.handleGoLeft}
                   handleGoRight={this.handleGoRight}
                   handleGoButton={this.handleGoButton}
