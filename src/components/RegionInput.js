@@ -4,19 +4,18 @@ import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormHelperText from "@mui/material/FormHelperText";
 
-// ComboBox: The path and region input box component
+// RegionInput: The path and region input box component
 // Responsible for selecting the path/chr and segment of data to look at 
 const isEmpty = (obj) => Object.keys(obj).length === 0;
-export const ComboBox = ({ region, regionInfo, handleRegionChange, pathNames }) => {
+export const RegionInput = ({ region, regionInfo, handleRegionChange, pathNames }) => {
   const [value, setValue] = useState("");
   // Add : to pathNames
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
 
 
-  // Generate autocomplete options for regions
+  // Generate autocomplete options for regions from regionInfo
   if (regionInfo && !isEmpty(regionInfo)) {
-    console.log(regionInfo, regionInfo["chr"]);
     // Stitch path name + region start and end
     for (const [index, path] of regionInfo["chr"].entries()) {
       pathsWithRegion.push(
@@ -29,15 +28,12 @@ export const ComboBox = ({ region, regionInfo, handleRegionChange, pathNames }) 
 
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
 
-  // Update region and path after user selects new
 
   return (
     <>
       <Autocomplete
         disablePortal
-        // TODO: pass down
         value={region}
-        // Process
         onChange={(e, value) => handleRegionChange(value)}
         id="combo-box"
         options={displayRegions}
@@ -53,7 +49,7 @@ export const ComboBox = ({ region, regionInfo, handleRegionChange, pathNames }) 
     </>
   );
 };
-ComboBox.propTypes = {
+RegionInput.propTypes = {
   // pathNames: The selectable options for pathNames
   pathNames: PropTypes.array,
   region: PropTypes.string,

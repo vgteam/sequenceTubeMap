@@ -11,7 +11,7 @@ import BedRegionsFormRow from "./BedRegionsFormRow";
 import PathNamesFormRow from "./PathNamesFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
-import { ComboBox } from "./ComboBox";
+import { RegionInput } from "./RegionInput";
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
@@ -569,7 +569,7 @@ class HeaderForm extends Component {
                 You may only upload files with a maximum size of{" "}
                 {MAX_UPLOAD_SIZE_DESCRIPTION}.
               </Alert>
-              <ComboBox
+              <RegionInput
                 pathNames={this.state.pathSelectOptions}
                 regionInfo={this.state.regionInfo}
                 handleRegionChange={this.handleRegionChange}
