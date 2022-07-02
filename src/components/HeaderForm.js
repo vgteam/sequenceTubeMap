@@ -344,6 +344,17 @@ class HeaderForm extends Component {
     const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
     return regionString;
   };
+  handleRegionChange = (value) => {
+    // After user selects a region name or coordinates,
+    // update path and region
+    let coords = value
+
+    if (this.state.regionInfo["desc"].includes(value)) {
+      // Just a description was selected, get coords
+      coords = this.getRegionCoords(value);
+    }
+    this.setState({region: coords})
+  }
   handleInputChange = (event) => {
     const id = event.target.id;
     const value = event.target.value;
@@ -561,8 +572,8 @@ class HeaderForm extends Component {
               <ComboBox
                 pathNames={this.state.pathSelectOptions}
                 regionInfo={this.state.regionInfo}
-                getRegionCoords={this.getRegionCoords}
-                onChange={this.handleInputChange}
+                handleRegionChange={this.handleRegionChange}
+                region={this.state.region}
               />
               {examplesFlag ? (
                 <ExampleSelectButtons

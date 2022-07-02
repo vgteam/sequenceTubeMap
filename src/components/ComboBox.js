@@ -4,14 +4,17 @@ import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormHelperText from "@mui/material/FormHelperText";
 
-export const ComboBox = ({ regionInfo, pathNames, getRegionCoords }) => {
+// ComboBox: The path and region input box component
+// Responsible for selecting the path/chr and segment of data to look at 
+const isEmpty = (obj) => Object.keys(obj).length === 0;
+export const ComboBox = ({ region, regionInfo, handleRegionChange, pathNames }) => {
   const [value, setValue] = useState("");
   // Add : to pathNames
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
 
-  const isEmpty = (obj) => Object.keys(obj).length === 0;
 
+  // Generate autocomplete options for regions
   if (regionInfo && !isEmpty(regionInfo)) {
     console.log(regionInfo, regionInfo["chr"]);
     // Stitch path name + region start and end
@@ -26,26 +29,20 @@ export const ComboBox = ({ regionInfo, pathNames, getRegionCoords }) => {
 
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
 
-  const handleSelected = (selected) => {
-    let coords = selected;
-    if (regionInfo["desc"].includes(selected)) {
-      // Just a description was selected, get coords
-      coords = getRegionCoords(selected);
-    }
-    setValue(coords);
-  };
+  // Update region and path after user selects new
 
   return (
     <>
       <Autocomplete
         disablePortal
-        value={value}
+        // TODO: pass down
+        value={region}
         // Process
-        onChange={(e, value) => handleSelected(value)}
+        onChange={(e, value) => handleRegionChange(value)}
         id="combo-box"
         options={displayRegions}
         renderInput={(params) => (
-          <TextField {...params} label="Region and path" />
+          <TextField {...params} label="Path and region" />
         )}
       />
       <FormHelperText id="combo-box-helper-text">
@@ -59,7 +56,8 @@ export const ComboBox = ({ regionInfo, pathNames, getRegionCoords }) => {
 ComboBox.propTypes = {
   // pathNames: The selectable options for pathNames
   pathNames: PropTypes.array,
-  getRegionCoords: PropTypes.func.isRequired,
+  region: PropTypes.string,
+  handleRegionChange: PropTypes.func.isRequired,
   // Each BED region has its own index
   regionInfo: PropTypes.shape({
     // Path
@@ -71,13 +69,3 @@ ComboBox.propTypes = {
     start: PropTypes.array,
   }),
 };
-
-// TODO : Add options for actual coords for region descs
-//        Add options for just path names (no region desc after)
-//        Add options for just region desc
-//        Figure out region correspondence with path
-//            Write function getRegionByDesc -> object { chr, start, end, }
-//              possibly back to server or just glue it together here
-//            or could call regRegionCoords and parse the path
-//
-//        make a display name and name for each object - touch server?
