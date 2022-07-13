@@ -3,6 +3,7 @@
 import server from "./server";
 import React from "react";
 // testing-library provides a render() that auto-cleans-up from the global DOM.
+import { getRegionInput } from "./App.test.js";
 import { render, screen, act } from "@testing-library/react";
 import { setCopyCallback, writeToClipboard } from "./components/CopyLink";
 import "@testing-library/jest-dom/extend-expect";
@@ -144,9 +145,9 @@ describe("When we wait for it to load", () => {
   });
 
   it("the regions from the BED files are loaded", async () => {
-    let regionInput = document.getElementById("regionInput");
+    let regionInput = getRegionInput();
     await act(async () => {
-      userEvent.click(regionInput);
+      userEvent.click(getRegionInput());
     });
     // Make sure that option in RegionInput dropdown (17_1_100) is visible
 
@@ -179,18 +180,16 @@ describe("When we wait for it to load", () => {
   it('draws the right SVG for vg "small"', async () => {
     await act(async () => {
       let dropdown = document.getElementById("dataSourceSelect");
-      let region = document.getElementById("region");
 
       await userEvent.selectOptions(
         screen.getByLabelText(/Data/i),
         'vg "small" example'
       );
-      await userEvent.clear(screen.getByLabelText(/Region/i));
-      await userEvent.type(screen.getByLabelText(/Region/i), "node:1+10");
+      await userEvent.clear(getRegionInput());
+      await userEvent.type(getRegionInput(), "node:1+10");
 
       console.log(dropdown.value);
       console.log(dropdown.outerHTML);
-      console.log(region.outerHTML);
 
       let go = document.getElementById("goButton");
       console.log("Clicking button for small");
