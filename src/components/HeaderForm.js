@@ -24,7 +24,6 @@ const EMPTY_STATE = {
   // SelectOptions: The options available in the dropdown displayed
   // Select: The file name (or string "none") that is displayed in the form
   // File: The file name (or undefined)
-  // TODO: Refactor select & file
   xgSelectOptions: ["none"],
   xgSelect: "none",
 
@@ -164,12 +163,12 @@ class HeaderForm extends Component {
       }
     } catch (error) {
       this.setState({ error: error });
-      console.log(`GET to ${this.props.apiUrl}/getFilenames failed:`, error);
+      console.error(`GET to ${this.props.apiUrl}/getFilenames failed:`, error);
     }
   };
 
   getBedRegions = async (bedFile, dataPath) => {
-    this.setState({ error: null });
+    this.setState((prevState) => ({ ...prevState, error: null }));
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
         method: "POST",
@@ -192,13 +191,16 @@ class HeaderForm extends Component {
           : bedRegionsDesc[0];
         return {
           // RegionInfo: object with chr, chunk, desc arrays
-          regionInfo: json.bedRegions,
+          regionInfo: json.bedRegions ?? {},
           regionSelectOptions: bedRegionsDesc,
           regionSelect: regionSelect,
         };
       });
     } catch (error) {
-      console.error(`POST to ${this.props.apiUrl}/getBedRegions failed:`, error);
+      console.error(
+        `POST to ${this.props.apiUrl}/getBedRegions failed:`,
+        error
+      );
       this.setState({ error: error });
     }
   };
@@ -347,7 +349,10 @@ class HeaderForm extends Component {
     // update path and region
     let coords = value;
 
-    if (this.state.regionInfo["desc"].includes(value)) {
+    if (
+      this.state.regionInfo.hasOwnProperty("desc") &&
+      this.state.regionInfo["desc"].includes(value)
+    ) {
       // Just a description was selected, get coords
       coords = this.getRegionCoords(value);
     }
@@ -520,8 +525,6 @@ class HeaderForm extends Component {
                     gamSelectOptions={this.state.gamSelectOptions}
                     bedSelect={this.state.bedSelect}
                     bedSelectOptions={this.state.bedSelectOptions}
-                    regionSelect={this.state.regionSelect}
-                    regionSelectOptions={this.state.regionSelectOptions}
                     handleInputChange={this.handleInputChange}
                   />
                 )}

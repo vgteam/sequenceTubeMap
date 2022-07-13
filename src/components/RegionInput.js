@@ -32,15 +32,16 @@ export const RegionInput = ({ region, regionInfo, handleRegionChange, pathNames 
     <>
       <Autocomplete
         disablePortal
+        freeSolo
         value={region}
         onChange={(e, value) => handleRegionChange(value)}
-        id="combo-box"
+        id="regionInput"
         options={displayRegions}
         renderInput={(params) => (
-          <TextField {...params} label="Path and region" />
+          <TextField {...params} label="Region" name="Region Input" />
         )}
       />
-      <FormHelperText id="combo-box-helper-text">
+      <FormHelperText id="comboBoxHelperText">
         {`
         Input a data segment to select with format <path>:<regionRange> and hit 'Go'.  See ? for more information.
           `}

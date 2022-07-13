@@ -143,11 +143,15 @@ describe("When we wait for it to load", () => {
     expect(loader).toBeFalsy();
   });
 
-  it("the regions from the BED files are loaded", () => {
-    let regionlist = document.getElementById("regionSelect");
-    expect(regionlist).toBeInTheDocument();
-  });
+  it("the regions from the BED files are loaded", async () => {
+    let regionInput = document.getElementById("regionInput");
+    await act(async () => {
+      userEvent.click(regionInput);
+    });
+    // Make sure that option in RegionInput dropdown (17_1_100) is visible
 
+    screen.getByText("17_1_100");
+  });
   it("draws an SVG for synthetic data example 1", async () => {
     await act(async () => {
       let dropdown = document.getElementById("dataSourceSelect");
