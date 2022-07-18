@@ -257,7 +257,7 @@ class HeaderForm extends Component {
         dataType: dataTypes.FILE_UPLOAD,
         error: this.state.error,
       };
-      this.setState(newState, () => {});
+      this.setState(newState, () => { });
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
         return {
@@ -462,8 +462,12 @@ class HeaderForm extends Component {
 
     return (
       <div>
-        {errorDiv}
-        <Container fluid={true}>
+        <Container>
+          <Row>
+            <Col>
+              {errorDiv}
+            </Col>
+          </Row>
           <Row>
             <Col md="auto">
               <img src="./logo.png" alt="Logo" />
@@ -535,34 +539,36 @@ class HeaderForm extends Component {
                   />
                 )}
               </Form>
-              <Alert
-                color="danger"
-                isOpen={this.state.fileSizeAlert}
-                toggle={() => {
-                  this.setState({ fileSizeAlert: false });
-                }}
-                className="mt-3"
-              >
-                <strong>File size too big! </strong>
-                You may only upload files with a maximum size of{" "}
-                {MAX_UPLOAD_SIZE_DESCRIPTION}.
-              </Alert>
-              {examplesFlag ? (
-                <ExampleSelectButtons
-                  setDataOrigin={this.props.setDataOrigin}
-                  setColorSetting={this.props.setColorSetting}
-                />
-              ) : (
-                <DataPositionFormRow
-                  region={this.state.region}
-                  handleInputChange={this.handleInputChange}
-                  handleGoLeft={this.handleGoLeft}
-                  handleGoRight={this.handleGoRight}
-                  handleGoButton={this.handleGoButton}
-                  uploadInProgress={this.state.uploadInProgress}
-                  getCurrentViewTarget={this.props.getCurrentViewTarget}
-                />
-              )}
+              <Row>
+                <Alert
+                  color="danger"
+                  isOpen={this.state.fileSizeAlert}
+                  toggle={() => {
+                    this.setState({ fileSizeAlert: false });
+                  }}
+                  className="mt-3"
+                >
+                  <strong>File size too big! </strong>
+                  You may only upload files with a maximum size of{" "}
+                  {MAX_UPLOAD_SIZE_DESCRIPTION}.
+                </Alert>
+                {examplesFlag ? (
+                  <ExampleSelectButtons
+                    setDataOrigin={this.props.setDataOrigin}
+                    setColorSetting={this.props.setColorSetting}
+                  />
+                ) : (
+                  <DataPositionFormRow
+                    region={this.state.region}
+                    handleInputChange={this.handleInputChange}
+                    handleGoLeft={this.handleGoLeft}
+                    handleGoRight={this.handleGoRight}
+                    handleGoButton={this.handleGoButton}
+                    uploadInProgress={this.state.uploadInProgress}
+                    getCurrentViewTarget={this.props.getCurrentViewTarget}
+                  />
+                )}
+              </Row>
             </Col>
           </Row>
         </Container>
