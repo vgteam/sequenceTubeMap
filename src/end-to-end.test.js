@@ -3,13 +3,16 @@
 import server from "./server";
 import React from "react";
 // testing-library provides a render() that auto-cleans-up from the global DOM.
-import { getRegionInput } from "./App.test.js";
-import { render, screen, act } from "@testing-library/react";
+import { render, getByTestId, screen, act, within } from "@testing-library/react";
 import { setCopyCallback, writeToClipboard } from "./components/CopyLink";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 
+const getRegionInput = () => {
+  // Helper function to select the Region input box
+  return screen.getByRole("combobox", { name: /Region/i });
+};
 // This holds the running server for the duration of each test.
 let serverState = undefined;
 
@@ -185,11 +188,18 @@ describe("When we wait for it to load", () => {
         screen.getByLabelText(/Data/i),
         'vg "small" example'
       );
-      await userEvent.clear(getRegionInput());
-      await userEvent.type(getRegionInput(), "node:1+10");
-
-      console.log(dropdown.value);
-      console.log(dropdown.outerHTML);
+      //const region = getRegionInput();
+      // To try:
+      // Use query selector or tagname
+      // or try the change event or keypress at end
+      // Add new tests
+      // // hit up adam if takes too long 
+      // https://stackoverflow.com/questions/60882089/how-to-test-material-ui-autocomplete-with-react-testing-library
+      const autocomplete = screen.getByTestId("autocomplete");
+      const input = within(autocomplete).getByRole("textbox");
+      autocomplete.focus();
+      await userEvent.clear(input);
+      await userEvent.type(input, "node:1+10");
 
       let go = document.getElementById("goButton");
       console.log("Clicking button for small");

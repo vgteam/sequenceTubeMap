@@ -34,6 +34,7 @@ export const RegionInput = ({ region, regionInfo, handleRegionChange, pathNames 
         disablePortal
         freeSolo
         value={region}
+        data-testid="autocomplete"
         onChange={(e, value) => handleRegionChange(value)}
         id="regionInput"
         options={displayRegions}

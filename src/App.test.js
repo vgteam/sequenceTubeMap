@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import App from "./App";
 // Tests functionality without server
 
-export const getRegionInput = () => {
+const getRegionInput = () => {
   // Helper function to select the Region input box
   return screen.getByRole("combobox", { name: /Region/i });
 };
