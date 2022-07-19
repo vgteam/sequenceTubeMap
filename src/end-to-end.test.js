@@ -189,31 +189,31 @@ describe("When we wait for it to load", () => {
   });
 
   it('draws the right SVG for vg "small"', async () => {
-    await act(async () => {
-      let dropdown = document.getElementById("dataSourceSelect");
+    let dropdown = document.getElementById("dataSourceSelect");
 
-      await userEvent.selectOptions(
-        screen.getByLabelText(/Data/i),
-        'vg "small" example'
-      );
+    // Input data dropdown
+    await userEvent.selectOptions(
+      screen.getByLabelText(/Data/i),
+      'vg "small" example'
+    );
+    const autocomplete = screen.getByTestId("autocomplete");
+    const input = autocomplete.querySelector("input");
 
-      const autocomplete = screen.getByTestId("autocomplete");
-      const input = autocomplete.querySelector("input");
+    await userEvent.clear(input);
 
-      await userEvent.clear(input);
+    // Input region
+    // using fireEvent because userEvent has no change
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "node:1+10" } });
+    expect(input.value).toBe("node:1+10");
+    fireEvent.keyDown(autocomplete, { key: "Enter" });
 
-      // Input input
-      fireEvent.focus(input);
-      fireEvent.change(input, { target: { value: "node:1+10" } });
-      expect(input.value).toBe("node:1+10");
-      fireEvent.keyDown(autocomplete, { key: "Enter" });
-      // Wait for rendered response
-      await waitFor(() => screen.getByTestId("autocomplete"));
+    // Wait for rendered response
+    await waitFor(() => screen.getByTestId("autocomplete"));
 
-      // Click go
-      let go = document.getElementById("goButton");
-      await userEvent.click(go);
-    });
+    // Click go
+    let go = document.getElementById("goButton");
+    await userEvent.click(go);
 
     let loader = document.getElementById("loader");
     expect(loader).toBeTruthy();
