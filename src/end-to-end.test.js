@@ -196,12 +196,7 @@ describe("When we wait for it to load", () => {
         screen.getByLabelText(/Data/i),
         'vg "small" example'
       );
-      //const region = getRegionInput();
-      // To try:
-      // Use query selector or tagname
-      // or try the change event or keypress at end
-      // Add new tests
-      console.log("start the autocomplete");
+
       const autocomplete = screen.getByTestId("autocomplete");
       const input = autocomplete.querySelector("input");
 
@@ -212,15 +207,10 @@ describe("When we wait for it to load", () => {
       fireEvent.change(input, { target: { value: "node:1+10" } });
       expect(input.value).toBe("node:1+10");
       fireEvent.keyDown(autocomplete, { key: "Enter" });
-      // Wait for response
+      // Wait for rendered response
       await waitFor(() => screen.getByTestId("autocomplete"));
 
-
-      /*
-      screen.debug(autocomplete, 10000000);
-      console.log("going to click go")
-
-*/
+      // Click go
       let go = document.getElementById("goButton");
       await userEvent.click(go);
     });
@@ -230,8 +220,8 @@ describe("When we wait for it to load", () => {
 
     await waitForLoadEnd();
 
+    // See if correct svg rendered
     let svg = document.getElementById("svg");
-    console.log(loader);
     expect(svg).toBeTruthy();
     expect(svg.getElementsByTagName("title").length).toEqual(65);
   });

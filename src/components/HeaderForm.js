@@ -232,8 +232,6 @@ class HeaderForm extends Component {
         const pathSelect = pathNames.includes(state.pathSelect)
           ? state.pathSelect
           : pathNames[0];
-        console.log(pathNames);
-        console.log(state.regionInfo);
         return {
           pathSelectOptions: pathNames,
           pathSelect,
@@ -345,6 +343,7 @@ class HeaderForm extends Component {
     return regionString;
   };
   handleRegionChange = (value) => {
+    console.log(value)
     // After user selects a region name or coordinates,
     // update path and region
     let coords = value;
