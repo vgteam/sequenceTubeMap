@@ -3,7 +3,15 @@
 import server from "./server";
 import React from "react";
 // testing-library provides a render() that auto-cleans-up from the global DOM.
-import { render, getByTestId, screen, act, within } from "@testing-library/react";
+import {
+  render,
+  fireEvent,
+  getByTestId,
+  screen,
+  waitFor,
+  act,
+  within,
+} from "@testing-library/react";
 import { setCopyCallback, writeToClipboard } from "./components/CopyLink";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
@@ -193,16 +201,27 @@ describe("When we wait for it to load", () => {
       // Use query selector or tagname
       // or try the change event or keypress at end
       // Add new tests
-      // // hit up adam if takes too long 
-      // https://stackoverflow.com/questions/60882089/how-to-test-material-ui-autocomplete-with-react-testing-library
+      console.log("start the autocomplete");
       const autocomplete = screen.getByTestId("autocomplete");
-      const input = within(autocomplete).getByRole("textbox");
-      autocomplete.focus();
-      await userEvent.clear(input);
-      await userEvent.type(input, "node:1+10");
+      const input = autocomplete.querySelector("input");
 
+      await userEvent.clear(input);
+
+      // Input input
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "node:1+10" } });
+      expect(input.value).toBe("node:1+10");
+      fireEvent.keyDown(autocomplete, { key: "Enter" });
+      // Wait for response
+      await waitFor(() => screen.getByTestId("autocomplete"));
+
+
+      /*
+      screen.debug(autocomplete, 10000000);
+      console.log("going to click go")
+
+*/
       let go = document.getElementById("goButton");
-      console.log("Clicking button for small");
       await userEvent.click(go);
     });
 
@@ -212,6 +231,7 @@ describe("When we wait for it to load", () => {
     await waitForLoadEnd();
 
     let svg = document.getElementById("svg");
+    console.log(loader);
     expect(svg).toBeTruthy();
     expect(svg.getElementsByTagName("title").length).toEqual(65);
   });
