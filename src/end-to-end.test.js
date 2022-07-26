@@ -174,10 +174,10 @@ describe("When we wait for it to load", () => {
       userEvent.click(getRegionInput());
     });
     // Make sure that old option in RegionInput dropdown (17_...) is not visible 
-    expect(screen.getByText('17_1_100')).not.toBeInTheDocument()
-    // Make sure that option in RegionInput dropdown (x:) is visible 
-    expect(await screen.getByText("x:1-100")).toBeInTheDocument();
-
+    expect(screen.queryByText('17_1_100')).not.toBeInTheDocument()
+    await act(async () => {
+      userEvent.click(regionInput);
+    });
 
   });
   it("draws an SVG for synthetic data example 1", async () => {
