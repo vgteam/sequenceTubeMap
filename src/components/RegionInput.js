@@ -40,6 +40,13 @@ export const RegionInput = ({
         data-testid="autocomplete"
         onChange={(event, value) => handleRegionChange(value)}
         id="regionInput"
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            // Prevent's default 'Enter' behavior.
+            event.defaultMuiPrevented = true;
+            // your handler code
+          }
+        }}
         options={displayRegions}
         renderInput={(params) => (
           <TextField
@@ -51,7 +58,7 @@ export const RegionInput = ({
               onKeyDown: (event) => {
                 if (event.key === "Enter") {
                   event.defaultMuiPrevented = true;
-                  console.log("ENTER")
+                  console.log("ENTER");
                 }
               },
             }}
