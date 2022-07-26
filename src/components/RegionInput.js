@@ -38,7 +38,7 @@ export const RegionInput = ({
         freeSolo
         value={region}
         data-testid="autocomplete"
-        onChange={(e, value) => handleRegionChange(value)}
+        onChange={(event, value) => handleRegionChange(value)}
         id="regionInput"
         options={displayRegions}
         renderInput={(params) => (
@@ -48,9 +48,10 @@ export const RegionInput = ({
             name="Region Input"
             inputProps={{
               ...params.inputProps,
-              onKeyDown: (e) => {
-                if (e.key === "Enter") {
-                  e.stopPropagation();
+              onKeyDown: (event) => {
+                if (event.key === "Enter") {
+                  event.defaultMuiPrevented = true;
+                  console.log("ENTER")
                 }
               },
             }}
