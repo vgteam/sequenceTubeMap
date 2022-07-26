@@ -36,12 +36,11 @@ const EMPTY_STATE = {
   bedSelectOptions: ["none"],
   bedSelect: "none",
 
-  regionSelectOptions: ["none"],
   // This tracks several arrays of BED region data, stored by data type, with
   // one entry in each array per region.
   regionInfo: {},
-  regionSelect: "none",
 
+  // Path names, taken from 
   pathNames: ["none"],
 
   xgFile: undefined,
@@ -185,14 +184,9 @@ class HeaderForm extends Component {
         );
       }
       this.setState((state) => {
-        const regionSelect = bedRegionsDesc.includes(state.regionSelect)
-          ? state.regionSelect
-          : bedRegionsDesc[0];
         return {
           // RegionInfo: object with chr, chunk, desc arrays
           regionInfo: json.bedRegions ?? {},
-          regionSelectOptions: bedRegionsDesc,
-          regionSelect: regionSelect,
         };
       });
     } catch (error) {
@@ -206,9 +200,7 @@ class HeaderForm extends Component {
 
   resetBedRegions = () => {
     this.setState({
-      regionSelect: "none",
       regionInfo: {},
-      regionSelectOptions: ["none"],
     });
   };
 
