@@ -42,8 +42,7 @@ const EMPTY_STATE = {
   regionInfo: {},
   regionSelect: "none",
 
-  pathSelectOptions: ["none"],
-  pathSelect: "none",
+  pathNames: ["none"],
 
   xgFile: undefined,
   gbwtFile: undefined,
@@ -229,25 +228,14 @@ class HeaderForm extends Component {
         throw new Error("Server did not send back an array of path names");
       }
       this.setState((state) => {
-        const pathSelect = pathNames.includes(state.pathSelect)
-          ? state.pathSelect
-          : pathNames[0];
         return {
-          pathSelectOptions: pathNames,
-          pathSelect,
+          pathNames: pathNames,
         };
       });
     } catch (error) {
       console.error(`POST to ${this.props.apiUrl}/getPathNames failed:`, error);
       this.setState({ error: error });
     }
-  };
-
-  resetPathNames = () => {
-    this.setState({
-      pathSelectOptions: ["none"],
-      pathSelect: "none",
-    });
   };
 
   handleDataSourceChange = (event) => {
@@ -344,7 +332,6 @@ class HeaderForm extends Component {
     return regionString;
   };
   handleRegionChange = (value) => {
-    console.log(value);
     // After user selects a region name or coordinates,
     // update path and region
     let coords = value;
@@ -372,13 +359,6 @@ class HeaderForm extends Component {
     } else if (id === "bedSelect") {
       this.getBedRegions(value, this.state.dataPath);
       this.setState({ bedFile: value });
-    } else if (id === "pathSelect") {
-      this.setState({ region: value.concat(":") });
-    } else if (id === "regionSelect") {
-      // find which region corresponds to this region label/desc
-      this.setState({
-        region: this.getRegionCoords(value),
-      });
     }
   };
 
@@ -530,7 +510,7 @@ class HeaderForm extends Component {
                 )}
                 {!examplesFlag && (
                   <RegionInput
-                    pathNames={this.state.pathSelectOptions}
+                    pathNames={this.state.pathNames}
                     regionInfo={this.state.regionInfo}
                     handleRegionChange={this.handleRegionChange}
                     region={this.state.region}
@@ -539,10 +519,7 @@ class HeaderForm extends Component {
                 {uploadFilesFlag && (
                   <FileUploadFormRow
                     apiUrl={this.props.apiUrl}
-                    pathSelect={this.state.pathSelect}
-                    pathSelectOptions={this.state.pathSelectOptions}
                     getPathNames={this.getPathNames}
-                    resetPathNames={this.resetPathNames}
                     handleInputChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                     showFileSizeAlert={this.showFileSizeAlert}
