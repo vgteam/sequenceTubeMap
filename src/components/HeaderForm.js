@@ -297,6 +297,7 @@ class HeaderForm extends Component {
             bedSelect: bedSelect,
             dataPath: dataPath,
             region: ds.region,
+            regionInfo: ds.bedFile ? this.state.regionInfo : {},
             dataType: dataTypes.BUILT_IN,
             name: ds.name,
           });
@@ -343,7 +344,7 @@ class HeaderForm extends Component {
     return regionString;
   };
   handleRegionChange = (value) => {
-    console.log(value)
+    console.log(value);
     // After user selects a region name or coordinates,
     // update path and region
     let coords = value;
