@@ -15,6 +15,18 @@ import * as tubeMap from "../util/tubemap";
 const ZOOM_FACTOR = 2.0;
 
 class DataPositionFormRow extends Component {
+  constructor() {
+    super();
+    this.onKeyUp = this.onKeyUp.bind(this);
+  }
+  onKeyUp(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      this.props.handleInputChange(event);
+      this.props.handleGoButton();
+    }
+  }
+
   handleZoomIn = () => {
     tubeMap.zoomBy(ZOOM_FACTOR);
   };
