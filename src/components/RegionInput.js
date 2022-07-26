@@ -42,7 +42,19 @@ export const RegionInput = ({
         id="regionInput"
         options={displayRegions}
         renderInput={(params) => (
-          <TextField {...params} label="Region" name="Region Input" />
+          <TextField
+            {...params}
+            label="Region"
+            name="Region Input"
+            inputProps={{
+              ...params.inputProps,
+              onKeyDown: (e) => {
+                if (e.key === "Enter") {
+                  e.stopPropagation();
+                }
+              },
+            }}
+          />
         )}
       />
       <FormHelperText id="comboBoxHelperText">
