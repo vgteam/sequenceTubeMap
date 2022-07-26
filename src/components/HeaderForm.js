@@ -40,7 +40,6 @@ const EMPTY_STATE = {
   // one entry in each array per region.
   regionInfo: {},
 
-  // Path names, taken from 
   pathNames: ["none"],
 
   xgFile: undefined,
@@ -311,7 +310,7 @@ class HeaderForm extends Component {
     // Returns null if there is no corresponding coords
     // i: number that corresponds to record
     // Find index of given description in regionInfo
-    const i = this.state.regionInfo["desc"].findIndex((d) => d == desc);
+    const i = this.state.regionInfo["desc"].findIndex((d) => d === desc);
     if (i === -1)
       // Not found
       return null;
@@ -452,9 +451,6 @@ class HeaderForm extends Component {
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
-    const pathNamesFlag =
-      this.state.xgSelect !== "none" &&
-      this.state.dataType != dataTypes.FILE_UPLOAD;
 
     return (
       <div>

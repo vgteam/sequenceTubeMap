@@ -1,18 +1,22 @@
-import React, { useState } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormHelperText from "@mui/material/FormHelperText";
 
 // RegionInput: The path and region input box component
-// Responsible for selecting the path/chr and segment of data to look at 
+// Responsible for selecting the path/chr and segment of data to look at
 const isEmpty = (obj) => Object.keys(obj).length === 0;
-export const RegionInput = ({ region, regionInfo, handleRegionChange, pathNames }) => {
+export const RegionInput = ({
+  region,
+  regionInfo,
+  handleRegionChange,
+  pathNames,
+}) => {
   // Generate autocomplete options for regions from regionInfo
   // Add : to pathNames
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
-
 
   if (regionInfo && !isEmpty(regionInfo)) {
     // Stitch path name + region start and end
@@ -26,7 +30,6 @@ export const RegionInput = ({ region, regionInfo, handleRegionChange, pathNames 
   }
 
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
-
 
   return (
     <>

@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { CopyLink } from "./CopyLink";
-import { Form, Label, Input, Button } from "reactstrap";
+import { Form, Button } from "reactstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faStepBackward,
@@ -15,10 +15,6 @@ import * as tubeMap from "../util/tubemap";
 const ZOOM_FACTOR = 2.0;
 
 class DataPositionFormRow extends Component {
-  constructor() {
-    super();
-  }
-
   handleZoomIn = () => {
     tubeMap.zoomBy(ZOOM_FACTOR);
   };

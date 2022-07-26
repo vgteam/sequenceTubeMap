@@ -59,6 +59,7 @@ class MountedDataFormRow extends Component {
           onChange={this.props.handleInputChange}
           options={this.props.bedSelectOptions}
         />
+        &nbsp;
       </React.Fragment>
     );
   }
