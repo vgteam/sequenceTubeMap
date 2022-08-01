@@ -25,7 +25,6 @@ it("allows the data source to be changed", () => {
 
 it("allows the start to be cleared", async () => {
   render(<App />);
-  //expect(getRegionInput().value).toEqual("17:1-100");
   expect(getRegionInput().value).toEqual("17:1-100");
   await userEvent.clear(getRegionInput());
   expect(getRegionInput().value).toEqual("");
