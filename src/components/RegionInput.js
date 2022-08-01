@@ -35,12 +35,16 @@ export const RegionInput = ({
     <>
       <Autocomplete
         disablePortal
+        autoselect
+        getOptionLabel={(option) => option.title || option}
         freeSolo
         value={region}
         data-testid="autocomplete"
-        onChange={(event, value) => handleRegionChange(value)}
+        onChange={(event, value) => {
+          handleRegionChange(value);
+        }}
         id="regionInput"
-        onKeyDown={(event) => {
+        onKeyDown={(event, value) => {
           if (event.key === "Enter") {
             // Prevent's default 'Enter' behavior.
             event.defaultMuiPrevented = true;
@@ -54,11 +58,13 @@ export const RegionInput = ({
             label="Region"
             name="Region Input"
             inputProps={{
+              type: "search",
               ...params.inputProps,
               onKeyDown: (event) => {
                 if (event.key === "Enter") {
+                  // params.inputprops.value holds it
+                  debugger;
                   event.defaultMuiPrevented = true;
-                  console.log("ENTER");
                 }
               },
             }}

@@ -461,7 +461,6 @@ class HeaderForm extends Component {
               <img src="./logo.png" alt="Logo" />
             </Col>
             <Col>
-              <Form inline>
                 <Label
                   className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
                   for="dataSourceSelect"
@@ -514,7 +513,6 @@ class HeaderForm extends Component {
                     setUploadInProgress={this.setUploadInProgress}
                   />
                 )}
-              </Form>
               <Alert
                 color="danger"
                 isOpen={this.state.fileSizeAlert}
