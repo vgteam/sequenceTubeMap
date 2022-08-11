@@ -30,26 +30,22 @@ export const RegionInput = ({
   }
 
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
+  // Value: selected from list
+  // inputValue: what user has entered
 
   return (
     <>
       <Autocomplete
         disablePortal
         autoselect
+        freeSolo // Allows custom input outside of the options
         getOptionLabel={(option) => option.title || option}
-        freeSolo
         value={region}
         data-testid="autocomplete"
-        onChange={(event, value) => {
-          handleRegionChange(value);
-        }}
         id="regionInput"
-        onKeyDown={(event, value) => {
-          if (event.key === "Enter") {
-            // Prevent's default 'Enter' behavior.
-            event.defaultMuiPrevented = true;
-            // your handler code
-          }
+        onInputChange={(event, newInputValue) => {
+          console.log( newInputValue);
+          handleRegionChange(newInputValue);
         }}
         options={displayRegions}
         renderInput={(params) => (
