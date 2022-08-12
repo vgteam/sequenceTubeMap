@@ -47,7 +47,7 @@ const EMPTY_STATE = {
   gamFile: undefined,
   bedFile: undefined,
   dataPath: undefined,
-  region: "none",
+  region: undefined,
   name: undefined,
 
   dataType: dataTypes.BUILT_IN,

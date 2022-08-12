@@ -29,9 +29,9 @@ export const RegionInput = ({
     pathsWithRegion.push(...regionInfo["desc"]);
   }
 
+  // Autocomplete selectable options
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
-  // Value: selected from list
-  // inputValue: what user has entered
+  //if (!region && displayRegions.length >= 1) handleRegionChange(displayRegions[0])
 
   return (
     <>
@@ -41,10 +41,10 @@ export const RegionInput = ({
         freeSolo // Allows custom input outside of the options
         getOptionLabel={(option) => option.title || option}
         value={region}
+        inputValue={region}
         data-testid="autocomplete"
         id="regionInput"
         onInputChange={(event, newInputValue) => {
-          console.log( newInputValue);
           handleRegionChange(newInputValue);
         }}
         options={displayRegions}
@@ -54,15 +54,7 @@ export const RegionInput = ({
             label="Region"
             name="Region Input"
             inputProps={{
-              type: "search",
               ...params.inputProps,
-              onKeyDown: (event) => {
-                if (event.key === "Enter") {
-                  // params.inputprops.value holds it
-                  debugger;
-                  event.defaultMuiPrevented = true;
-                }
-              },
             }}
           />
         )}
