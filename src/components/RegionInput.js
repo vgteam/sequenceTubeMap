@@ -37,7 +37,6 @@ export const RegionInput = ({
     <>
       <Autocomplete
         disablePortal
-        autoselect
         freeSolo // Allows custom input outside of the options
         getOptionLabel={(option) => option.title || option}
         value={region}
