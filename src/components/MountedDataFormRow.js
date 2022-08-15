@@ -5,7 +5,10 @@ import SelectionDropdown from "./SelectionDropdown";
 
 class MountedDataFormRow extends Component {
   render() {
-    console.log('Rendering form row with xg select options: ', this.props.xgSelectOptions)
+    console.log(
+      "Rendering form row with xg select options: ",
+      this.props.xgSelectOptions
+    );
     // We use React-Select's Select, but it can't be labeled by a label pointed at its ID, because it renders as a div with that ID and divs are non-labellable according to https://html.spec.whatwg.org/multipage/forms.html#category-label.
     return (
       <React.Fragment>

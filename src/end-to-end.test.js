@@ -7,7 +7,7 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 import { setCopyCallback, writeToClipboard } from "./components/CopyLink";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
-import selectEvent from 'react-select-event';
+import selectEvent from "react-select-event";
 import App from "./App";
 
 // This holds the running server for the duration of each test.
@@ -257,7 +257,6 @@ it("produces correct link for view before & after go is pressed", async () => {
 });
 
 it("can retrieve the list of mounted xg files", async () => {
-
   // Wait for everything to settle so we don't stop the server while it is thinking
   await waitForLoadEnd();
 
@@ -269,20 +268,19 @@ it("can retrieve the list of mounted xg files", async () => {
       "custom (mounted files)"
     );
   });
-  
+
   // Find the select box's input
   let xgSelectInput = screen.getByLabelText(/xg file:/i);
   expect(xgSelectInput).toBeTruthy();
-  
+
   // We shouldn't see the option before we open the dropdown
   expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
-  
+
   // Make sure the right entry eventually shows up (since we could be racing
   // the initial load from the component mounting)
   await waitFor(() => {
     // Open the selector and see if it is there
     selectEvent.openMenu(xgSelectInput);
     expect(screen.getByText("cactus.vg.xg")).toBeInTheDocument();
-  })
+  });
 });
-

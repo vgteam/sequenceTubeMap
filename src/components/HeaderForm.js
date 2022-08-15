@@ -23,7 +23,7 @@ const dataTypes = {
 };
 
 // We define the subset of the empty state that is safe to apply without
-// clobbering downloaded data from the server which we need 
+// clobbering downloaded data from the server which we need
 const CLEAR_STATE = {
   // Select: The file name (or string "none") that is displayed in each
   // dropdown. From the corresponding SelectOptions list.
@@ -62,9 +62,9 @@ const CLEAR_STATE = {
 // We define the entire empty state template.
 const EMPTY_STATE = {
   ...CLEAR_STATE,
-  
+
   // SelectOptions: The options available in the dropdown displayed.
-  
+
   // These ones are for selecting entire files and need to be preserved when
   // switching dataType.
   xgSelectOptions: ["none"],
@@ -72,8 +72,6 @@ const EMPTY_STATE = {
   gamSelectOptions: ["none"],
   bedSelectOptions: ["none"],
 };
-
-
 
 class HeaderForm extends Component {
   state = EMPTY_STATE;
@@ -116,7 +114,7 @@ class HeaderForm extends Component {
 
   getMountedFilenames = async () => {
     this.setState({ error: null });
-    console.log('Fetching file names...');
+    console.log("Fetching file names...");
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
         method: "GET",
@@ -124,7 +122,7 @@ class HeaderForm extends Component {
           "Content-Type": "application/json",
         },
       });
-      console.log('Filename request succeeded');
+      console.log("Filename request succeeded");
       if (json.xgFiles === undefined) {
         // We did not get back a graph, only (possibly) an error.
         const error = json.error || "Listing file names";
@@ -134,10 +132,10 @@ class HeaderForm extends Component {
         json.gbwtFiles.unshift("none");
         json.gamIndices.unshift("none");
         json.bedFiles.unshift("none");
-        
-        console.log('Got mounted xg files: ', json.xgFiles)
-        console.log('Current dataPath: ', this.state.datapath)
-        console.log('Current xg options: ', this.state.xgSelectOptions)
+
+        console.log("Got mounted xg files: ", json.xgFiles);
+        console.log("Current dataPath: ", this.state.datapath);
+        console.log("Current xg options: ", this.state.xgSelectOptions);
 
         if (this.state.dataPath === "mounted") {
           this.setState((state) => {
@@ -180,8 +178,8 @@ class HeaderForm extends Component {
             };
           });
         }
-        
-        console.log('New xg options: ', this.state.xgSelectOptions)
+
+        console.log("New xg options: ", this.state.xgSelectOptions);
       }
     } catch (error) {
       this.setState({ error: error });
@@ -480,7 +478,10 @@ class HeaderForm extends Component {
       this.state.xgSelect !== "none" &&
       this.state.dataType != dataTypes.FILE_UPLOAD;
 
-    console.log('Rendering header form with xgSelectOptions: ', this.state.xgSelectOptions)
+    console.log(
+      "Rendering header form with xgSelectOptions: ",
+      this.state.xgSelectOptions
+    );
 
     return (
       <div>
