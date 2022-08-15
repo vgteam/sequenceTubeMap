@@ -3,10 +3,11 @@
 import server from "./server";
 import React from "react";
 // testing-library provides a render() that auto-cleans-up from the global DOM.
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import { setCopyCallback, writeToClipboard } from "./components/CopyLink";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
+import selectEvent from 'react-select-event';
 import App from "./App";
 
 // This holds the running server for the duration of each test.
@@ -89,6 +90,7 @@ function clickGoButton() {
 /// Return the option element in the given dropdown with the given displayed text.
 /// Accepts only exact full matches.
 /// Returns undefined if no option exists.
+/// Only works on real select elements and not fancy React controls.
 function findDropdownOption(dropdown, optionText) {
   let wantedEntry = undefined;
   for (let item of dropdown.getElementsByTagName("option")) {
@@ -255,6 +257,10 @@ it("produces correct link for view before & after go is pressed", async () => {
 });
 
 it("can retrieve the list of mounted xg files", async () => {
+
+  // Wait for everything to settle so we don't stop the server while it is thinking
+  await waitForLoadEnd();
+
   // Swap over to the mounted files mode
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -264,16 +270,19 @@ it("can retrieve the list of mounted xg files", async () => {
     );
   });
   
-  // Find the select box
-  let xgSelect = screen.getByLabelText(/xg file:/i);
-  expect(xgSelect).toBeTruthy();
+  // Find the select box's input
+  let xgSelectInput = screen.getByLabelText(/xg file:/i);
+  expect(xgSelectInput).toBeTruthy();
+  
+  // We shouldn't see the option before we open the dropdown
+  expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
   
   // Make sure the right entry eventually shows up (since we could be racing
   // the initial load from the component mounting)
   await waitFor(() => {
-    let wantedEntry = findDropdownOption(xgSelect, "cactus.vg.xg")
-    expect(wantedEntry).toBeTruthy()
-    expect(within(xgSelect).getByText("cactus.vg.xg")).toBeInTheDocument();
+    // Open the selector and see if it is there
+    selectEvent.openMenu(xgSelectInput);
+    expect(screen.getByText("cactus.vg.xg")).toBeInTheDocument();
   })
 });
 

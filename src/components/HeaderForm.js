@@ -21,21 +21,17 @@ const dataTypes = {
   MOUNTED_FILES: "mounted files",
   EXAMPLES: "examples",
 };
-const EMPTY_STATE = {
-  // SelectOptions: The options available in the dropdown displayed
-  // Select: The file name (or string "none") that is displayed in the form
-  // File: The file name (or undefined)
+
+// We define the subset of the empty state that is safe to apply without
+// clobbering downloaded data from the server which we need 
+const CLEAR_STATE = {
+  // Select: The file name (or string "none") that is displayed in each
+  // dropdown. From the corresponding SelectOptions list.
+  // File: The file name actually used (or undefined)
   // TODO: Refactor select & file
-  xgSelectOptions: ["none"],
   xgSelect: "none",
-
-  gbwtSelectOptions: ["none"],
   gbwtSelect: "none",
-
-  gamSelectOptions: ["none"],
   gamSelect: "none",
-
-  bedSelectOptions: ["none"],
   bedSelect: "none",
 
   regionSelectOptions: ["none"],
@@ -62,6 +58,22 @@ const EMPTY_STATE = {
 
   viewTarget: undefined,
 };
+
+// We define the entire empty state template.
+const EMPTY_STATE = {
+  ...CLEAR_STATE,
+  
+  // SelectOptions: The options available in the dropdown displayed.
+  
+  // These ones are for selecting entire files and need to be preserved when
+  // switching dataType.
+  xgSelectOptions: ["none"],
+  gbwtSelectOptions: ["none"],
+  gamSelectOptions: ["none"],
+  bedSelectOptions: ["none"],
+};
+
+
 
 class HeaderForm extends Component {
   state = EMPTY_STATE;
@@ -104,6 +116,7 @@ class HeaderForm extends Component {
 
   getMountedFilenames = async () => {
     this.setState({ error: null });
+    console.log('Fetching file names...');
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
         method: "GET",
@@ -111,6 +124,7 @@ class HeaderForm extends Component {
           "Content-Type": "application/json",
         },
       });
+      console.log('Filename request succeeded');
       if (json.xgFiles === undefined) {
         // We did not get back a graph, only (possibly) an error.
         const error = json.error || "Listing file names";
@@ -258,7 +272,7 @@ class HeaderForm extends Component {
 
     if (value === dataTypes.FILE_UPLOAD) {
       const newState = {
-        ...EMPTY_STATE,
+        ...CLEAR_STATE,
         dataPath: "upload",
         dataType: dataTypes.FILE_UPLOAD,
         error: this.state.error,
@@ -267,7 +281,7 @@ class HeaderForm extends Component {
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
         return {
-          ...EMPTY_STATE,
+          ...CLEAR_STATE,
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
