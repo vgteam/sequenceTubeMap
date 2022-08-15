@@ -15,6 +15,7 @@ import {
 import { setCopyCallback, writeToClipboard } from "./components/CopyLink";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
+import selectEvent from "react-select-event";
 import App from "./App";
 
 const getRegionInput = () => {
@@ -98,6 +99,23 @@ function clickGoButton() {
   });
 }
 
+/// Return the option element in the given dropdown with the given displayed text.
+/// Accepts only exact full matches.
+/// Returns undefined if no option exists.
+/// Only works on real select elements and not fancy React controls.
+function findDropdownOption(dropdown, optionText) {
+  let wantedEntry = undefined;
+  for (let item of dropdown.getElementsByTagName("option")) {
+    // Note that we don't have innerText in React's jsdom:
+    // https://github.com/jsdom/jsdom/issues/1245
+    if (item.textContent == optionText) {
+      // Scan for this particular option.
+      wantedEntry = item;
+    }
+  }
+  return wantedEntry;
+}
+
 beforeEach(async () => {
   await setUp();
 });
@@ -117,15 +135,7 @@ it("populates the available example dropdown", () => {
   expect(dropdown).toBeTruthy();
 
   // Make sure it has a particular example value
-  let wantedEntry = undefined;
-  for (let item of dropdown.getElementsByTagName("option")) {
-    // Note that we don't have innerText in React's jsdom:
-    // https://github.com/jsdom/jsdom/issues/1245
-    if (item.textContent == "snp1kg-BRCA1") {
-      // Scan for this particular option.
-      wantedEntry = item;
-    }
-  }
+  let wantedEntry = findDropdownOption(dropdown, "snp1kg-BRCA1");
   expect(wantedEntry).toBeTruthy();
 });
 
@@ -283,4 +293,33 @@ it("produces correct link for view before & after go is pressed", async () => {
     "localhost?name=cactus&region=ref%3A1-100&xgFile=cactus.vg.xg&gamFile=cactus-NA12879.sorted.gam&bedFile=cactus.bed&dataPath=mounted&dataType=built-in";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
+});
+
+it("can retrieve the list of mounted xg files", async () => {
+  // Wait for everything to settle so we don't stop the server while it is thinking
+  await waitForLoadEnd();
+
+  // Swap over to the mounted files mode
+  await act(async () => {
+    let dropdown = document.getElementById("dataSourceSelect");
+    await userEvent.selectOptions(
+      screen.getByLabelText(/Data/i),
+      "custom (mounted files)"
+    );
+  });
+
+  // Find the select box's input
+  let xgSelectInput = screen.getByLabelText(/xg file:/i);
+  expect(xgSelectInput).toBeTruthy();
+
+  // We shouldn't see the option before we open the dropdown
+  expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
+
+  // Make sure the right entry eventually shows up (since we could be racing
+  // the initial load from the component mounting)
+  await waitFor(() => {
+    // Open the selector and see if it is there
+    selectEvent.openMenu(xgSelectInput);
+    expect(screen.getByText("cactus.vg.xg")).toBeInTheDocument();
+  });
 });
