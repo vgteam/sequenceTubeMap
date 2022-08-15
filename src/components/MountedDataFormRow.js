@@ -5,6 +5,7 @@ import SelectionDropdown from "./SelectionDropdown";
 
 class MountedDataFormRow extends Component {
   render() {
+    console.log('Rendering form row with xg select options: ', this.props.xgSelectOptions)
     return (
       <React.Fragment>
         <Label className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">

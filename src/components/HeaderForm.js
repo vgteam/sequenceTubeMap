@@ -120,6 +120,10 @@ class HeaderForm extends Component {
         json.gbwtFiles.unshift("none");
         json.gamIndices.unshift("none");
         json.bedFiles.unshift("none");
+        
+        console.log('Got mounted xg files: ', json.xgFiles)
+        console.log('Current dataPath: ', this.state.datapath)
+        console.log('Current xg options: ', this.state.xgSelectOptions)
 
         if (this.state.dataPath === "mounted") {
           this.setState((state) => {
@@ -162,6 +166,8 @@ class HeaderForm extends Component {
             };
           });
         }
+        
+        console.log('New xg options: ', this.state.xgSelectOptions)
       }
     } catch (error) {
       this.setState({ error: error });
@@ -459,6 +465,8 @@ class HeaderForm extends Component {
     const pathNamesFlag =
       this.state.xgSelect !== "none" &&
       this.state.dataType != dataTypes.FILE_UPLOAD;
+
+    console.log('Rendering header form with xgSelectOptions: ', this.state.xgSelectOptions)
 
     return (
       <div>
