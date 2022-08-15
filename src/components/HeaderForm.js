@@ -114,7 +114,6 @@ class HeaderForm extends Component {
 
   getMountedFilenames = async () => {
     this.setState({ error: null });
-    console.log("Fetching file names...");
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
         method: "GET",
@@ -122,7 +121,6 @@ class HeaderForm extends Component {
           "Content-Type": "application/json",
         },
       });
-      console.log("Filename request succeeded");
       if (json.xgFiles === undefined) {
         // We did not get back a graph, only (possibly) an error.
         const error = json.error || "Listing file names";
@@ -132,10 +130,6 @@ class HeaderForm extends Component {
         json.gbwtFiles.unshift("none");
         json.gamIndices.unshift("none");
         json.bedFiles.unshift("none");
-
-        console.log("Got mounted xg files: ", json.xgFiles);
-        console.log("Current dataPath: ", this.state.datapath);
-        console.log("Current xg options: ", this.state.xgSelectOptions);
 
         if (this.state.dataPath === "mounted") {
           this.setState((state) => {
@@ -179,7 +173,6 @@ class HeaderForm extends Component {
           });
         }
 
-        console.log("New xg options: ", this.state.xgSelectOptions);
       }
     } catch (error) {
       this.setState({ error: error });
