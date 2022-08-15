@@ -51,6 +51,7 @@ class SelectionDropdown extends Component {
     return (
       <Select
         id={this.props.id}
+        inputId={this.props.inputId}
         className={this.props.className}
         value={
           dropdownOptions.find((option) => option.value === this.props.value) ||
@@ -68,6 +69,7 @@ class SelectionDropdown extends Component {
 
 SelectionDropdown.propTypes = {
   id: PropTypes.string,
+  inputId: PropTypes.string,
   className: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func.isRequired,
@@ -76,6 +78,7 @@ SelectionDropdown.propTypes = {
 
 SelectionDropdown.defaultProps = {
   id: undefined,
+  inputId: undefined,
   className: undefined,
   value: undefined,
 };
