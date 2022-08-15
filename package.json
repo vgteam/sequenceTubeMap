@@ -30,6 +30,7 @@
     "react-fast-compare": "^3.2.0",
     "react-scripts": "5.0.0",
     "react-select": "^5.2.2",
+    "react-select-event": "^5.5.1",
     "reactstrap": "^9.0.1",
     "uuid": "^8.3.2",
     "webpack": "5.69.1",
@@ -59,7 +60,6 @@
     "node": ">=10.0.0"
   },
   "devDependencies": {
-    "prettier": "^2.6.2",
-    "react-select-event": "^5.5.1"
+    "prettier": "^2.6.2" 
   }
 }
