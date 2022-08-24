@@ -20,20 +20,16 @@ const dataTypes = {
   MOUNTED_FILES: "mounted files",
   EXAMPLES: "examples",
 };
-const EMPTY_STATE = {
-  // SelectOptions: The options available in the dropdown displayed
-  // Select: The file name (or string "none") that is displayed in the form
-  // File: The file name (or undefined)
-  xgSelectOptions: ["none"],
+
+// We define the subset of the empty state that is safe to apply without
+// clobbering downloaded data from the server which we need
+const CLEAR_STATE = {
+  // Select: The file name (or string "none") that is displayed in each
+  // dropdown. From the corresponding SelectOptions list.
+  // File: The file name actually used (or undefined)
   xgSelect: "none",
-
-  gbwtSelectOptions: ["none"],
   gbwtSelect: "none",
-
-  gamSelectOptions: ["none"],
   gamSelect: "none",
-
-  bedSelectOptions: ["none"],
   bedSelect: "none",
 
   // This tracks several arrays of BED region data, stored by data type, with
@@ -56,6 +52,20 @@ const EMPTY_STATE = {
   error: null,
 
   viewTarget: undefined,
+};
+
+// We define the entire empty state template.
+const EMPTY_STATE = {
+  ...CLEAR_STATE,
+
+  // SelectOptions: The options available in the dropdown displayed.
+
+  // These ones are for selecting entire files and need to be preserved when
+  // switching dataType.
+  xgSelectOptions: ["none"],
+  gbwtSelectOptions: ["none"],
+  gamSelectOptions: ["none"],
+  bedSelectOptions: ["none"],
 };
 
 class HeaderForm extends Component {
@@ -157,6 +167,7 @@ class HeaderForm extends Component {
             };
           });
         }
+
       }
     } catch (error) {
       this.setState({ error: error });
@@ -234,7 +245,7 @@ class HeaderForm extends Component {
 
     if (value === dataTypes.FILE_UPLOAD) {
       const newState = {
-        ...EMPTY_STATE,
+        ...CLEAR_STATE,
         dataPath: "upload",
         dataType: dataTypes.FILE_UPLOAD,
         error: this.state.error,
@@ -243,7 +254,7 @@ class HeaderForm extends Component {
     } else if (value === dataTypes.MOUNTED_FILES) {
       this.setState((state) => {
         return {
-          ...EMPTY_STATE,
+          ...CLEAR_STATE,
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
@@ -453,6 +464,11 @@ class HeaderForm extends Component {
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
+
+    console.log(
+      "Rendering header form with xgSelectOptions: ",
+      this.state.xgSelectOptions
+    );
 
     return (
       <div>
