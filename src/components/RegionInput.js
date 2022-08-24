@@ -31,7 +31,6 @@ export const RegionInput = ({
 
   // Autocomplete selectable options
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
-  //if (!region && displayRegions.length >= 1) handleRegionChange(displayRegions[0])
 
   return (
     <>

@@ -165,7 +165,7 @@ class HeaderForm extends Component {
   };
 
   getBedRegions = async (bedFile, dataPath) => {
-    this.setState((prevState) => ({ ...prevState, error: null }));
+    this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
         method: "POST",
@@ -265,6 +265,9 @@ class HeaderForm extends Component {
           if (ds.bedFile) {
             this.getBedRegions(ds.bedFile, dataPath);
             bedSelect = ds.bedFile;
+          } else {
+            // Without bedFile, we have no regions
+            this.setState({ regionInfo: {} });
           }
           this.getPathNames(ds.xgFile, dataPath);
           this.setState({
@@ -276,7 +279,6 @@ class HeaderForm extends Component {
             bedSelect: bedSelect,
             dataPath: dataPath,
             region: ds.region,
-            regionInfo: ds.bedFile ? this.state.regionInfo : {},
             dataType: dataTypes.BUILT_IN,
             name: ds.name,
           });
@@ -461,58 +463,58 @@ class HeaderForm extends Component {
               <img src="./logo.png" alt="Logo" />
             </Col>
             <Col>
-                <Label
-                  className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
-                  for="dataSourceSelect"
-                >
-                  Data:
-                </Label>
-                <select
-                  type="select"
-                  value={
-                    this.state.dataType === dataTypes.BUILT_IN
-                      ? this.state.name
-                      : this.state.dataType
-                  }
-                  id="dataSourceSelect"
-                  className="form-select
+              <Label
+                className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
+                for="dataSourceSelect"
+              >
+                Data:
+              </Label>
+              <select
+                type="select"
+                value={
+                  this.state.dataType === dataTypes.BUILT_IN
+                    ? this.state.name
+                    : this.state.dataType
+                }
+                id="dataSourceSelect"
+                className="form-select
                   mb-2 mr-sm-4 mb-sm-0"
-                  onChange={this.handleDataSourceChange}
-                >
-                  {dataSourceDropdownOptions}
-                </select>
-                &nbsp;
-                {mountedFilesFlag && (
-                  <MountedDataFormRow
-                    xgSelect={this.state.xgSelect}
-                    xgSelectOptions={this.state.xgSelectOptions}
-                    gbwtSelect={this.state.gbwtSelect}
-                    gbwtSelectOptions={this.state.gbwtSelectOptions}
-                    gamSelect={this.state.gamSelect}
-                    gamSelectOptions={this.state.gamSelectOptions}
-                    bedSelect={this.state.bedSelect}
-                    bedSelectOptions={this.state.bedSelectOptions}
-                    handleInputChange={this.handleInputChange}
-                  />
-                )}
-                {!examplesFlag && (
-                  <RegionInput
-                    pathNames={this.state.pathNames}
-                    regionInfo={this.state.regionInfo}
-                    handleRegionChange={this.handleRegionChange}
-                    region={this.state.region}
-                  />
-                )}
-                {uploadFilesFlag && (
-                  <FileUploadFormRow
-                    apiUrl={this.props.apiUrl}
-                    getPathNames={this.getPathNames}
-                    handleInputChange={this.handleInputChange}
-                    handleFileUpload={this.handleFileUpload}
-                    showFileSizeAlert={this.showFileSizeAlert}
-                    setUploadInProgress={this.setUploadInProgress}
-                  />
-                )}
+                onChange={this.handleDataSourceChange}
+              >
+                {dataSourceDropdownOptions}
+              </select>
+              &nbsp;
+              {mountedFilesFlag && (
+                <MountedDataFormRow
+                  xgSelect={this.state.xgSelect}
+                  xgSelectOptions={this.state.xgSelectOptions}
+                  gbwtSelect={this.state.gbwtSelect}
+                  gbwtSelectOptions={this.state.gbwtSelectOptions}
+                  gamSelect={this.state.gamSelect}
+                  gamSelectOptions={this.state.gamSelectOptions}
+                  bedSelect={this.state.bedSelect}
+                  bedSelectOptions={this.state.bedSelectOptions}
+                  handleInputChange={this.handleInputChange}
+                />
+              )}
+              {!examplesFlag && (
+                <RegionInput
+                  pathNames={this.state.pathNames}
+                  regionInfo={this.state.regionInfo}
+                  handleRegionChange={this.handleRegionChange}
+                  region={this.state.region}
+                />
+              )}
+              {uploadFilesFlag && (
+                <FileUploadFormRow
+                  apiUrl={this.props.apiUrl}
+                  getPathNames={this.getPathNames}
+                  handleInputChange={this.handleInputChange}
+                  handleFileUpload={this.handleFileUpload}
+                  showFileSizeAlert={this.showFileSizeAlert}
+                  setUploadInProgress={this.setUploadInProgress}
+                />
+              )}
               <Alert
                 color="danger"
                 isOpen={this.state.fileSizeAlert}
