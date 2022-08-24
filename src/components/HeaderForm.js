@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Container, Row, Col, Form, Label, Alert } from "reactstrap";
+import { Container, Row, Col, Label, Alert } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
 // import defaultConfig from '../config.default.json';
@@ -167,7 +167,6 @@ class HeaderForm extends Component {
             };
           });
         }
-
       }
     } catch (error) {
       this.setState({ error: error });
