@@ -3,13 +3,25 @@
 import server from "./server";
 import React from "react";
 // testing-library provides a render() that auto-cleans-up from the global DOM.
-import { render, screen, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  fireEvent,
+  getByTestId,
+  screen,
+  waitFor,
+  act,
+  within,
+} from "@testing-library/react";
 import { setCopyCallback, writeToClipboard } from "./components/CopyLink";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
 import selectEvent from "react-select-event";
 import App from "./App";
 
+const getRegionInput = () => {
+  // Helper function to select the Region input box
+  return screen.getByRole("combobox", { name: /Region/i });
+};
 // This holds the running server for the duration of each test.
 let serverState = undefined;
 
@@ -153,11 +165,31 @@ describe("When we wait for it to load", () => {
     expect(loader).toBeFalsy();
   });
 
-  it("the regions from the BED files are loaded", () => {
-    let regionlist = document.getElementById("regionSelect");
-    expect(regionlist).toBeInTheDocument();
+  it("the regions from the BED files are loaded", async () => {
+    let regionInput = getRegionInput();
+    await act(async () => {
+      userEvent.click(getRegionInput());
+    });
+    // Make sure that option in RegionInput dropdown (17_1_100) is visible
+    expect(screen.getByText("17_1_100")).toBeInTheDocument()
   });
+  it("the region options in autocomplete are cleared after selecting new data", async () => {
+    // Input data dropdown
+    await userEvent.selectOptions(
+      screen.getByLabelText(/Data/i),
+      'vg "small" example'
+    );
+    let regionInput = getRegionInput();
+    await act(async () => {
+      userEvent.click(getRegionInput());
+    });
+    // Make sure that old option in RegionInput dropdown (17_...) is not visible 
+    expect(screen.queryByText('17_1_100')).not.toBeInTheDocument()
+    await act(async () => {
+      userEvent.click(regionInput);
+    });
 
+  });
   it("draws an SVG for synthetic data example 1", async () => {
     await act(async () => {
       let dropdown = document.getElementById("dataSourceSelect");
@@ -183,31 +215,38 @@ describe("When we wait for it to load", () => {
   });
 
   it('draws the right SVG for vg "small"', async () => {
-    await act(async () => {
-      let dropdown = document.getElementById("dataSourceSelect");
-      let region = document.getElementById("region");
+    let dropdown = document.getElementById("dataSourceSelect");
 
-      await userEvent.selectOptions(
-        screen.getByLabelText(/Data/i),
-        'vg "small" example'
-      );
-      await userEvent.clear(screen.getByLabelText(/Region/i));
-      await userEvent.type(screen.getByLabelText(/Region/i), "node:1+10");
+    // Input data dropdown
+    await userEvent.selectOptions(
+      screen.getByLabelText(/Data/i),
+      'vg "small" example'
+    );
+    const autocomplete = screen.getByTestId("autocomplete");
+    const input = autocomplete.querySelector("input");
 
-      console.log(dropdown.value);
-      console.log(dropdown.outerHTML);
-      console.log(region.outerHTML);
+    await userEvent.clear(input);
 
-      let go = document.getElementById("goButton");
-      console.log("Clicking button for small");
-      await userEvent.click(go);
-    });
+    // Input region
+    // using fireEvent because userEvent has no change
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "node:1+10" } });
+    expect(input.value).toBe("node:1+10");
+    fireEvent.keyDown(autocomplete, { key: "Enter" });
+
+    // Wait for rendered response
+    await waitFor(() => screen.getByTestId("autocomplete"));
+
+    // Click go
+    let go = document.getElementById("goButton");
+    await userEvent.click(go);
 
     let loader = document.getElementById("loader");
     expect(loader).toBeTruthy();
 
     await waitForLoadEnd();
 
+    // See if correct svg rendered
     let svg = document.getElementById("svg");
     expect(svg).toBeTruthy();
     expect(svg.getElementsByTagName("title").length).toEqual(65);

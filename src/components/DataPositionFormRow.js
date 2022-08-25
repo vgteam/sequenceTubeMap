@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { CopyLink } from "./CopyLink";
-import { Form, Label, Input, Button } from "reactstrap";
+import { Form, Button } from "reactstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faStepBackward,
@@ -18,6 +18,13 @@ class DataPositionFormRow extends Component {
   constructor() {
     super();
     this.onKeyUp = this.onKeyUp.bind(this);
+  }
+  onKeyUp(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      this.props.handleInputChange(event);
+      this.props.handleGoButton();
+    }
   }
 
   handleZoomIn = () => {
@@ -44,14 +51,6 @@ class DataPositionFormRow extends Component {
     document.body.removeChild(downloadLink);
   };
 
-  onKeyUp(event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      this.props.handleInputChange(event);
-      this.props.handleGoButton();
-    }
-  }
-
   // When the user clicks on the help icon, open the popup
   // TODO: React-ify
   helpPopupFunction = () => {
@@ -62,18 +61,6 @@ class DataPositionFormRow extends Component {
   render() {
     return (
       <Form inline>
-        <Label className="tight-label mb-2 mr-sm-2 mb-sm-0 ml-2" for="region">
-          Region:
-        </Label>
-        <Input
-          type="text"
-          className="custom-input form-control mb-2 mr-sm-4 mb-sm-0"
-          id="region"
-          size="36"
-          value={this.props.region}
-          onChange={this.props.handleInputChange}
-          onKeyPress={this.onKeyUp}
-        />
         &nbsp;
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
@@ -123,6 +110,11 @@ class DataPositionFormRow extends Component {
           Download Image
         </Button>
         <CopyLink getCurrentViewTarget={this.props.getCurrentViewTarget} />
+        {this.props.uploadInProgress && (
+          <div class="spinner-grow" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        )}
       </Form>
     );
   }
@@ -132,8 +124,6 @@ DataPositionFormRow.propTypes = {
   handleGoButton: PropTypes.func.isRequired,
   handleGoLeft: PropTypes.func.isRequired,
   handleGoRight: PropTypes.func.isRequired,
-  handleInputChange: PropTypes.func.isRequired,
-  region: PropTypes.string,
   uploadInProgress: PropTypes.bool.isRequired,
   getCurrentViewTarget: PropTypes.func.isRequired,
 };

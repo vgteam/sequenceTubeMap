@@ -18,8 +18,8 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    // Set ds to either URL params (if present) or the first example
-    const ds =
+    // Set defaultViewTarget to either URL params (if present) or the first example
+    this.defaultViewTarget =
       urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
     this.state = {
       // These describe the files on the server side that we are working on.
@@ -27,7 +27,7 @@ class App extends Component {
       // but lets us toggle between data from
       // the server and local test data
       dataOrigin: dataOriginTypes.API,
-      viewTarget: ds,
+      viewTarget: this.defaultViewTarget,
       // These are the current rendering settings.
       visOptions: {
         removeRedundantNodes: true,
@@ -136,7 +136,7 @@ class App extends Component {
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
-          defaultViewTarget={urlParamsToViewTarget(document.location)}
+          defaultViewTarget={this.defaultViewTarget}
           getCurrentViewTarget={this.getCurrentViewTarget}
         />
         <TubeMapContainer

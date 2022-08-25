@@ -67,6 +67,7 @@ class MountedDataFormRow extends Component {
           onChange={this.props.handleInputChange}
           options={this.props.bedSelectOptions}
         />
+        &nbsp;
       </React.Fragment>
     );
   }
@@ -79,11 +80,9 @@ MountedDataFormRow.propTypes = {
   bedSelectOptions: PropTypes.array.isRequired,
   gbwtSelect: PropTypes.string.isRequired,
   gbwtSelectOptions: PropTypes.array.isRequired,
-  handleInputChange: PropTypes.func.isRequired,
-  pathSelect: PropTypes.string.isRequired,
-  pathSelectOptions: PropTypes.array.isRequired,
   xgSelect: PropTypes.string.isRequired,
   xgSelectOptions: PropTypes.array.isRequired,
+  handleInputChange: PropTypes.func.isRequired,
 };
 
 export default MountedDataFormRow;

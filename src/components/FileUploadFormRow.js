@@ -146,9 +146,6 @@ FileUploadFormRow.propTypes = {
   getPathNames: PropTypes.func.isRequired,
   handleFileUpload: PropTypes.func.isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  pathSelect: PropTypes.string.isRequired,
-  pathSelectOptions: PropTypes.array.isRequired,
-  resetPathNames: PropTypes.func.isRequired,
   setUploadInProgress: PropTypes.func.isRequired,
   showFileSizeAlert: PropTypes.func.isRequired,
 };
