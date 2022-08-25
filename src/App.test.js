@@ -31,6 +31,7 @@ it("allows the start to be cleared", async () => {
 });
 
 it("allows the start to be changed", async () => {
+  // Test that after inputting a value not in the bed regions, it still updates
   render(<App />);
   expect(getRegionInput().value).toEqual("17:1-100");
   // TODO: {selectall} fake keystroke is glitchy and sometimes gets dropped or
