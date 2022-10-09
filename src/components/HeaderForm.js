@@ -257,7 +257,9 @@ class HeaderForm extends Component {
           xgFile: state.xgSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
-          bedFile: state.bedSelect,
+          bedFile: "none",
+          // not sure why we would like to keep the previous selection when changing data sources. What I know is it creates a bug for the regions, where the tubemap tries to read the previous bedFile (e.g. defaulted to example 1), can't find it and raises an error
+          // bedFile: state.bedSelect,
           dataPath: "mounted",
           dataType: dataTypes.MOUNTED_FILES,
         };
@@ -360,7 +362,9 @@ class HeaderForm extends Component {
     } else if (id === "gamSelect") {
       this.setState({ gamFile: value });
     } else if (id === "bedSelect") {
-      this.getBedRegions(value, this.state.dataPath);
+      if (value !== "none") {
+        this.getBedRegions(value, this.state.dataPath);
+      }
       this.setState({ bedFile: value });
     }
   };
