@@ -1589,10 +1589,7 @@ function switchNodeOrientation() {
   toSwitch.forEach((value, key) => {
     if (value > 0) {
       currentNode = nodeMap.get(key);
-      nodes[currentNode].seq = nodes[currentNode].seq
-        .split("")
-        .reverse()
-        .join("");
+      nodes[currentNode].seq = getReverseComplement(nodes[currentNode].seq);
       nodes[currentNode].switched = true;
     }
   });
