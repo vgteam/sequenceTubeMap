@@ -23,7 +23,7 @@ export function CopyLink(props) {
     const viewTarget = props.getCurrentViewTarget();
 
     const params = new URLSearchParams(viewTarget).toString();
-    const full = window.location.host + "?" + params;
+    const full = window.location.origin + "?" + params;
     copyCallback(full);
 
     // Write link to clipboard
