@@ -40,6 +40,14 @@ const ALLOWED_DATA_DIRECTORIES = [
   SCRATCH_DATA_PATH,
 ].map((p) => path.resolve(p));
 
+const GRAPH_EXTENSIONS = [
+  ".xg",
+  ".vg",
+  ".pg",
+  ".hg",
+  ".gbz"
+]
+
 // Make sure that the scratch directory exists at startup, so multiple requests
 // can't fight over its creation.
 fs.mkdirSync(SCRATCH_DATA_PATH, { recursive: true });
@@ -112,8 +120,8 @@ api.use((req, res, next) => {
   next();
 });
 
-api.post("/xgFileSubmission", upload.single("xgFile"), (req, res) => {
-  console.log("/xgFileSubmission");
+api.post("graphFileSubmission", upload.single("graphFile"), (req, res) => {
+  console.log("/graphFileSubmission");
   console.log(req.file);
   res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
 });
@@ -156,6 +164,15 @@ function indexGamSorted(req, res) {
   });
 }
 
+function endsWithExtensions(file, extensions) {
+  for (const extension of extensions) {
+    if (file.endsWith(extension)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 api.post("/getChunkedData", (req, res, next) => {
   // We only want to have one downstream callback chain out of here.
   // TODO: Does Express let us next(err) multiple times if multiple errors happen concurrently???
@@ -177,7 +194,7 @@ api.post("/getChunkedData", (req, res, next) => {
   req.rmChunk = true;
 
   // We always have an XG file
-  const xgFile = req.body.xgFile;
+  const graphFile = req.body.graphFile;
 
   // We sometimes have a GAM file with reads
   const gamFile = req.body.gamFile;
@@ -281,14 +298,14 @@ api.post("/getChunkedData", (req, res, next) => {
     // call 'vg chunk' to generate graph
     let vgChunkParams = ["chunk"];
     // double-check that the file is a .xg and allowed
-    if (!xgFile.endsWith(".xg")) {
-      throw new BadRequestError("XG file doesn't end in .xg: " + xgFile);
+    if (!endsWithExtensions(graphFile, GRAPH_EXTENSIONS)) {
+      throw new BadRequestError("Graph file does not end in valid extension: " + graphFile);
     }
-    if (!isAllowedPath(`${dataPath}${xgFile}`)) {
-      throw new BadRequestError("XG file path not allowed: " + xgFile);
+    if (!isAllowedPath(`${dataPath}${graphFile}`)) {
+      throw new BadRequestError("Graph file path not allowed: " + graphFile);
     }
     // TODO: Use same variable for check and command line?
-    vgChunkParams.push("-x", `${dataPath}${xgFile}`);
+    vgChunkParams.push("-x", `${dataPath}${graphFile}`);
 
     if (req.withGam) {
       // double-check that the file is a .gam and allowed
@@ -818,7 +835,7 @@ function pickDataPath(reqDataPath) {
 api.get("/getFilenames", (req, res) => {
   console.log("received request for filenames");
   const result = {
-    xgFiles: [],
+    graphFiles: [],
     gbwtFiles: [],
     gamIndices: [],
     bedFiles: [],
@@ -827,8 +844,8 @@ api.get("/getFilenames", (req, res) => {
   if (isAllowedPath(MOUNTED_DATA_PATH)) {
     // list files in folder
     fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
-      if (file.endsWith(".xg")) {
-        result.xgFiles.push(file);
+      if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
+        result.graphFiles.push(file);
       }
       if (file.endsWith(".gbwt")) {
         result.gbwtFiles.push(file);
@@ -862,22 +879,22 @@ api.post("/getPathNames", (req, res, next) => {
   let dataPath = pickDataPath(req.body.dataPath);
 
   // call 'vg paths' to get path name information
-  const xgFile = `${dataPath}${req.body.xgFile}`;
+  const graphFile = `${dataPath}${req.body.graphFile}`;
 
-  if (!isAllowedPath(xgFile)) {
+  if (!isAllowedPath(graphFile)) {
     // Spit back the provided user data in the error, not the generated and
     // possibly absolute path full of cool facts about the server setup.
     throw new BadRequestError(
-      "Path to XG file not allowed: " + req.body.xgFile
+      "Path to Graph file not allowed: " + req.body.graphFile
     );
   }
-  if (!xgFile.endsWith(".xg")) {
+  if (!endsWithExtensions(graphFile, GRAPH_EXTENSIONS)) {
     throw new BadRequestError(
-      "Path to XG file does not end in .xg: " + req.body.xgFile
+      "Path to Graph file does not end in valid extension: " + req.body.graphFile
     );
   }
 
-  const vgViewChild = spawn(`${VG_PATH}vg`, ["paths", "-L", "-x", xgFile]);
+  const vgViewChild = spawn(`${VG_PATH}vg`, ["paths", "-L", "-x", graphFile]);
 
   vgViewChild.stderr.on("data", (data) => {
     console.log(`err data: ${data}`);

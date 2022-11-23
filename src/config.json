@@ -3,7 +3,7 @@
   "DATA_SOURCES": [
     {
       "name": "snp1kg-BRCA1",
-      "xgFile": "snp1kg-BRCA1.vg.xg",
+      "graphFile": "snp1kg-BRCA1.vg.xg",
       "gamFile": "NA12878-BRCA1.sorted.gam",
       "dataPath": "default",
       "region": "17:1-100",
@@ -12,7 +12,7 @@
     },
     {
       "name": "vg \"small\" example",
-      "xgFile": "x.vg.xg",
+      "graphFile": "x.vg.xg",
       "gbwtFile": "x.vg.gbwt",
       "dataPath": "mounted",
       "dataType": "built-in",
@@ -20,7 +20,7 @@
     },
     {
       "name": "cactus",
-      "xgFile": "cactus.vg.xg",
+      "graphFile": "cactus.vg.xg",
       "gamFile": "cactus-NA12879.sorted.gam",
       "dataPath": "mounted",
       "bedFile": "cactus.bed",

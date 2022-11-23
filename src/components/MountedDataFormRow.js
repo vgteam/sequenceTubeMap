@@ -9,18 +9,18 @@ class MountedDataFormRow extends Component {
     return (
       <React.Fragment>
         <Label
-          for="xgSelectInput"
+          for="graphSelectInput"
           className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
         >
-          xg file:
+          graph file:
         </Label>
         <SelectionDropdown
           className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
-          id="xgSelect"
-          inputId="xgSelectInput"
-          value={this.props.xgSelect}
+          id="graphSelect"
+          inputId="graphSelectInput"
+          value={this.props.graphSelect}
           onChange={this.props.handleInputChange}
-          options={this.props.xgSelectOptions}
+          options={this.props.graphSelectOptions}
         />
 
         <Label
@@ -80,8 +80,8 @@ MountedDataFormRow.propTypes = {
   bedSelectOptions: PropTypes.array.isRequired,
   gbwtSelect: PropTypes.string.isRequired,
   gbwtSelectOptions: PropTypes.array.isRequired,
-  xgSelect: PropTypes.string.isRequired,
-  xgSelectOptions: PropTypes.array.isRequired,
+  graphSelect: PropTypes.string.isRequired,
+  graphSelectOptions: PropTypes.array.isRequired,
   handleInputChange: PropTypes.func.isRequired,
 };
 

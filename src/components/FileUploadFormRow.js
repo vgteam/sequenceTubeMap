@@ -7,35 +7,35 @@ const MAX_UPLOAD_SIZE = 5242880;
 class FileUploadFormRow extends Component {
   constructor(props) {
     super(props);
-    this.xgFileInput = React.createRef();
+    this.graphFileInput = React.createRef();
     this.gbwtFileInput = React.createRef();
     this.gamFileInput = React.createRef();
   }
 
-  onXgFileChange = () => {
-    const file = this.xgFileInput.current.files[0];
+  onGraphFileChange = () => {
+    const file = this.graphFileInput.current.files[0];
     if (file === undefined) {
-      this.props.handleFileUpload("xgFile", "none");
+      this.props.handleFileUpload("graphFile", "none");
     } else {
       if (file.size > MAX_UPLOAD_SIZE) {
-        this.xgFileInput.current.value = "";
+        this.graphFileInput.current.value = "";
         this.props.showFileSizeAlert();
         return;
       }
       this.props.setUploadInProgress(true);
       const formData = new FormData();
-      formData.append("xgFile", file);
+      formData.append("graphFile", file);
       const xhr = new XMLHttpRequest();
       xhr.responseType = "json";
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           this.props.setUploadInProgress(false);
-          this.props.handleFileUpload("xgFile", xhr.response.path);
+          this.props.handleFileUpload("graphFile", xhr.response.path);
           this.props.getPathNames(xhr.response.path, "upload");
         }
       };
-      xhr.open("POST", `${this.props.apiUrl}/xgFileSubmission`, true);
+      xhr.open("POST", `${this.props.apiUrl}/graphFileSubmission`, true);
       xhr.send(formData);
     }
   };
@@ -98,15 +98,15 @@ class FileUploadFormRow extends Component {
     return (
       <React.Fragment>
         <Label className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2">
-          xg file:
+          graph file:
         </Label>
         <Input
           type="file"
           className="customDataUpload form-control-file"
-          id="xgFileUpload"
-          accept=".xg"
-          innerRef={this.xgFileInput}
-          onChange={this.onXgFileChange}
+          id="graphFileUpload"
+          accept=".xg,.vg,.hg,.gbz,.pg"
+          innerRef={this.graphFileInput}
+          onChange={this.onGraphFileChange}
         />
         <Label
           for="gbwtFileSelect"

@@ -27,7 +27,7 @@ const CLEAR_STATE = {
   // Select: The file name (or string "none") that is displayed in each
   // dropdown. From the corresponding SelectOptions list.
   // File: The file name actually used (or undefined)
-  xgSelect: "none",
+  graphSelect: "none",
   gbwtSelect: "none",
   gamSelect: "none",
   bedSelect: "none",
@@ -38,7 +38,7 @@ const CLEAR_STATE = {
 
   pathNames: ["none"],
 
-  xgFile: undefined,
+  graphFile: undefined,
   gbwtFile: undefined,
   gamFile: undefined,
   bedFile: undefined,
@@ -62,7 +62,7 @@ const EMPTY_STATE = {
 
   // These ones are for selecting entire files and need to be preserved when
   // switching dataType.
-  xgSelectOptions: ["none"],
+  graphSelectOptions: ["none"],
   gbwtSelectOptions: ["none"],
   gamSelectOptions: ["none"],
   bedSelectOptions: ["none"],
@@ -80,7 +80,7 @@ class HeaderForm extends Component {
   initState = () => {
     // Populate state with either viewTarget or the first example
     let ds = this.props.defaultViewTarget ?? DATA_SOURCES[0];
-    const xgSelect = ds.xgFile ? ds.xgFile : "none";
+    const graphSelect = ds.graphFile ? ds.graphFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
     const dataPath = ds.dataPath;
 
@@ -88,12 +88,12 @@ class HeaderForm extends Component {
       if (bedSelect !== "none") {
         this.getBedRegions(bedSelect, dataPath);
       }
-      if (xgSelect !== "none") {
-        this.getPathNames(xgSelect, dataPath);
+      if (graphSelect !== "none") {
+        this.getPathNames(graphSelect, dataPath);
       }
       const stateVals = {
-        xgFile: ds.xgFile,
-        xgSelect: xgSelect,
+        graphFile: ds.graphFile,
+        graphSelect: graphSelect,
         gbwtFile: ds.gbwtFile,
         gamFile: ds.gamFile,
         bedFile: ds.bedFile,
@@ -116,20 +116,20 @@ class HeaderForm extends Component {
           "Content-Type": "application/json",
         },
       });
-      if (json.xgFiles === undefined) {
+      if (json.graphFiles === undefined) {
         // We did not get back a graph, only (possibly) an error.
         const error = json.error || "Listing file names";
         this.setState({ error: error });
       } else {
-        json.xgFiles.unshift("none");
+        json.graphFiles.unshift("none");
         json.gbwtFiles.unshift("none");
         json.gamIndices.unshift("none");
         json.bedFiles.unshift("none");
 
         if (this.state.dataPath === "mounted") {
           this.setState((state) => {
-            const xgSelect = json.xgFiles.includes(state.xgSelect)
-              ? state.xgSelect
+            const graphSelect = json.graphFiles.includes(state.graphSelect)
+              ? state.graphSelect
               : "none";
             const gbwtSelect = json.gbwtFiles.includes(state.gbwtSelect)
               ? state.gbwtSelect
@@ -143,15 +143,15 @@ class HeaderForm extends Component {
             if (bedSelect !== "none") {
               this.getBedRegions(bedSelect, "mounted");
             }
-            if (xgSelect !== "none") {
-              this.getPathNames(xgSelect, "mounted");
+            if (graphSelect !== "none") {
+              this.getPathNames(graphSelect, "mounted");
             }
             return {
-              xgSelectOptions: json.xgFiles,
+              graphSelectOptions: json.graphFiles,
               gbwtSelectOptions: json.gbwtFiles,
               gamSelectOptions: json.gamIndices,
               bedSelectOptions: json.bedFiles,
-              xgSelect,
+              graphSelect,
               gbwtSelect,
               gamSelect,
               bedSelect,
@@ -160,7 +160,7 @@ class HeaderForm extends Component {
         } else {
           this.setState((state) => {
             return {
-              xgSelectOptions: json.xgFiles,
+              graphSelectOptions: json.graphFiles,
               gbwtSelectOptions: json.gbwtFiles,
               gamSelectOptions: json.gamIndices,
               bedSelectOptions: json.bedFiles,
@@ -213,7 +213,7 @@ class HeaderForm extends Component {
     });
   };
 
-  getPathNames = async (xgFile, dataPath) => {
+  getPathNames = async (graphFile, dataPath) => {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
@@ -221,7 +221,7 @@ class HeaderForm extends Component {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ xgFile, dataPath }),
+        body: JSON.stringify({ graphFile, dataPath }),
       });
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
@@ -254,7 +254,7 @@ class HeaderForm extends Component {
       this.setState((state) => {
         return {
           ...CLEAR_STATE,
-          xgFile: state.xgSelect,
+          graphFile: state.graphSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
           bedFile: "none",
@@ -281,10 +281,10 @@ class HeaderForm extends Component {
             // Without bedFile, we have no regions
             this.setState({ regionInfo: {} });
           }
-          this.getPathNames(ds.xgFile, dataPath);
+          this.getPathNames(ds.graphFile, dataPath);
           this.setState({
-            xgFile: ds.xgFile,
-            xgSelect: ds.xgFile,
+            graphFile: ds.graphFile,
+            graphSelect: ds.graphFile,
             gbwtFile: ds.gbwtFile,
             gamFile: ds.gamFile,
             bedFile: ds.bedFile,
@@ -302,7 +302,7 @@ class HeaderForm extends Component {
   getNextViewTarget = () => ({
     name: this.state.name,
     region: this.state.region,
-    xgFile: this.state.xgFile,
+    graphFile: this.state.graphFile,
     gbwtFile: this.state.gbwtFile,
     gamFile: this.state.gamFile,
     bedFile: this.state.bedFile,
@@ -354,9 +354,9 @@ class HeaderForm extends Component {
     const id = event.target.id;
     const value = event.target.value;
     this.setState({ [id]: value });
-    if (id === "xgSelect") {
+    if (id === "graphSelect") {
       this.getPathNames(value, this.state.dataPath);
-      this.setState({ xgFile: value });
+      this.setState({ graphFile: value });
     } else if (id === "gbwtSelect") {
       this.setState({ gbwtFile: value });
     } else if (id === "gamSelect") {
@@ -469,8 +469,8 @@ class HeaderForm extends Component {
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
 
     console.log(
-      "Rendering header form with xgSelectOptions: ",
-      this.state.xgSelectOptions
+      "Rendering header form with graphSelectOptions: ",
+      this.state.graphSelectOptions
     );
 
     return (
@@ -505,8 +505,8 @@ class HeaderForm extends Component {
               &nbsp;
               {mountedFilesFlag && (
                 <MountedDataFormRow
-                  xgSelect={this.state.xgSelect}
-                  xgSelectOptions={this.state.xgSelectOptions}
+                  graphSelect={this.state.graphSelect}
+                  graphSelectOptions={this.state.graphSelectOptions}
                   gbwtSelect={this.state.gbwtSelect}
                   gbwtSelectOptions={this.state.gbwtSelectOptions}
                   gamSelect={this.state.gamSelect}
