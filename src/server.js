@@ -193,7 +193,7 @@ api.post("/getChunkedData", (req, res, next) => {
   // This request owns the directory, so clean it up when the request finishes.
   req.rmChunk = true;
 
-  // We always have an XG file
+  // We always have an graph file
   const graphFile = req.body.graphFile;
 
   // We sometimes have a GAM file with reads
@@ -204,7 +204,7 @@ api.post("/getChunkedData", (req, res, next) => {
     console.log("no gam index provided.");
   }
 
-  // We sometimes have a GBWT with haplotypes that override any in the XG
+  // We sometimes have a GBWT with haplotypes that override any in the graph file
   const gbwtFile = req.body.gbwtFile;
   req.withGbwt = true;
   if (!gbwtFile || gbwtFile === "none") {
@@ -297,7 +297,7 @@ api.post("/getChunkedData", (req, res, next) => {
   if (chunkPath === "") {
     // call 'vg chunk' to generate graph
     let vgChunkParams = ["chunk"];
-    // double-check that the file is a .xg and allowed
+    // double-check that the file has a valid graph extension and is allowed
     if (!endsWithExtensions(graphFile, GRAPH_EXTENSIONS)) {
       throw new BadRequestError("Graph file does not end in valid extension: " + graphFile);
     }
