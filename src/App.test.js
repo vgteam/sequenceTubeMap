@@ -1,9 +1,11 @@
 import React from "react";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 // Tests functionality without server
+
+jest.mock("./fetchAndParse");
 
 const getRegionInput = () => {
   // Helper function to select the Region input box
