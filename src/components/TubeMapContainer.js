@@ -15,7 +15,23 @@ class TubeMapContainer extends Component {
   };
 
   componentDidMount() {
+    this.fetchCanceler = new AbortController();
+    this.cancelSignal = this.fetchCanceler.signal;
     this.getRemoteTubeMapData();
+  }
+
+  componentWillUnmount() {
+    // Cancel the requests since we may have long running requests pending.
+    this.fetchCanceler.abort();
+  }
+
+  handleFetchError(error, message) {
+    if(!this.cancelSignal.aborted){
+      console.log(message, error);
+      this.setState({error: error, isLoading: false});
+    } else {
+      console.log("fetch canceled by componentWillUnmount", error);
+    }
   }
 
   componentDidUpdate(prevProps) {
@@ -89,6 +105,7 @@ class TubeMapContainer extends Component {
     this.setState({ isLoading: true, error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getChunkedData`, {
+        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +130,7 @@ class TubeMapContainer extends Component {
         });
       }
     } catch (error) {
-      this.setState({ error: error, isLoading: false });
+      this.handleFetchError(error, `POST to ${this.props.apiUrl}/getChunkedData failed:`);
     }
   };
 

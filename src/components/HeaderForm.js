@@ -71,9 +71,23 @@ const EMPTY_STATE = {
 class HeaderForm extends Component {
   state = EMPTY_STATE;
   componentDidMount() {
+    this.fetchCanceler = new AbortController();
+    this.cancelSignal = this.fetchCanceler.signal;
     this.initState();
     this.getMountedFilenames();
     this.setUpWebsocket();
+  }
+  componentWillUnmount() {
+    // Cancel the requests since we may have long running requests pending.
+    this.fetchCanceler.abort();
+  }
+  handleFetchError(error, message) {
+    if(!this.cancelSignal.aborted){
+      console.log(message, error);
+      this.setState({error: error});
+    } else {
+      console.log("fetch canceled by componentWillUnmount", error);
+    }
   }
   DATA_NAMES = DATA_SOURCES.map((source) => source.name);
 
@@ -110,6 +124,7 @@ class HeaderForm extends Component {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
+        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -168,8 +183,7 @@ class HeaderForm extends Component {
         }
       }
     } catch (error) {
-      this.setState({ error: error });
-      console.error(`GET to ${this.props.apiUrl}/getFilenames failed:`, error);
+      this.handleFetchError(error , `GET to ${this.props.apiUrl}/getFilenames failed:`);
     }
   };
 
@@ -177,6 +191,7 @@ class HeaderForm extends Component {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
+        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -198,11 +213,7 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      console.error(
-        `POST to ${this.props.apiUrl}/getBedRegions failed:`,
-        error
-      );
-      this.setState({ error: error });
+      this.handleFetchError(error , `POST to ${this.props.apiUrl}/getBedRegions failed:`);
     }
   };
 
@@ -216,6 +227,7 @@ class HeaderForm extends Component {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
+        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -233,8 +245,7 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      console.error(`POST to ${this.props.apiUrl}/getPathNames failed:`, error);
-      this.setState({ error: error });
+      this.handleFetchError(error , `POST to ${this.props.apiUrl}/getPathNames failed:`);
     }
   };
 
