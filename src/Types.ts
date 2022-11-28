@@ -13,7 +13,7 @@ type DataType = "built-in" | "file-upload" | "mounted files" | "examples";
 // These parameters can be extracted from defaults (config), Header Form input, or URL parameters
 type ViewTarget = {
   region: string; // Format: path:start-end
-  xgFile: string;
+  graphFile: string;
   gbwtFile?: string;
   gamFile?: string;
   bedFile?: string;

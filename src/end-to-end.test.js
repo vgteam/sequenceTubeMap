@@ -256,7 +256,7 @@ describe("When we wait for it to load", () => {
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
   const expectedLinkBRCA1 =
-    "http://localhost?name=snp1kg-BRCA1&xgFile=snp1kg-BRCA1.vg.xg&gamFile=NA12878-BRCA1.sorted.gam&dataPath=default&region=17%3A1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in";
+    "http://localhost?name=snp1kg-BRCA1&graphFile=snp1kg-BRCA1.vg.xg&gamFile=NA12878-BRCA1.sorted.gam&dataPath=default&region=17%3A1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in";
   // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -290,12 +290,12 @@ it("produces correct link for view before & after go is pressed", async () => {
   await clickCopyLink();
 
   const expectedLinkCactus =
-    "http://localhost?name=cactus&region=ref%3A1-100&xgFile=cactus.vg.xg&gamFile=cactus-NA12879.sorted.gam&bedFile=cactus.bed&dataPath=mounted&dataType=built-in";
+    "http://localhost?name=cactus&region=ref%3A1-100&graphFile=cactus.vg.xg&gamFile=cactus-NA12879.sorted.gam&bedFile=cactus.bed&dataPath=mounted&dataType=built-in";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
 });
 
-it("can retrieve the list of mounted xg files", async () => {
+it("can retrieve the list of mounted graph files", async () => {
   // Wait for everything to settle so we don't stop the server while it is thinking
   await waitForLoadEnd();
 
@@ -309,8 +309,8 @@ it("can retrieve the list of mounted xg files", async () => {
   });
 
   // Find the select box's input
-  let xgSelectInput = screen.getByLabelText(/xg file:/i);
-  expect(xgSelectInput).toBeTruthy();
+  let graphSelectInput = screen.getByLabelText(/graph file:/i);
+  expect(graphSelectInput).toBeTruthy();
 
   // We shouldn't see the option before we open the dropdown
   expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
@@ -319,7 +319,7 @@ it("can retrieve the list of mounted xg files", async () => {
   // the initial load from the component mounting)
   await waitFor(() => {
     // Open the selector and see if it is there
-    selectEvent.openMenu(xgSelectInput);
+    selectEvent.openMenu(graphSelectInput);
     expect(screen.getByText("cactus.vg.xg")).toBeInTheDocument();
   });
 });
