@@ -120,7 +120,7 @@ api.use((req, res, next) => {
   next();
 });
 
-api.post("graphFileSubmission", upload.single("graphFile"), (req, res) => {
+api.post("/graphFileSubmission", upload.single("graphFile"), (req, res) => {
   console.log("/graphFileSubmission");
   console.log(req.file);
   res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
