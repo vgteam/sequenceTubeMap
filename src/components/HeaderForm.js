@@ -83,14 +83,13 @@ class HeaderForm extends Component {
     const graphSelect = ds.graphFile ? ds.graphFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
     const dataPath = ds.dataPath;
-
+    if (bedSelect !== "none") {
+      this.getBedRegions(bedSelect, dataPath);
+    }
+    if (graphSelect !== "none") {
+      this.getPathNames(graphSelect, dataPath);
+    }
     this.setState((state) => {
-      if (bedSelect !== "none") {
-        this.getBedRegions(bedSelect, dataPath);
-      }
-      if (graphSelect !== "none") {
-        this.getPathNames(graphSelect, dataPath);
-      }
       const stateVals = {
         graphFile: ds.graphFile,
         graphSelect: graphSelect,
