@@ -83,10 +83,10 @@ class HeaderForm extends Component {
   }
   handleFetchError(error, message) {
     if(!this.cancelSignal.aborted){
-      console.log(message, error);
+      console.log(message, error.name, error.message);
       this.setState({error: error});
     } else {
-      console.log("fetch canceled by componentWillUnmount", error);
+      console.log("fetch canceled by componentWillUnmount", error.name, error.message);
     }
   }
   DATA_NAMES = DATA_SOURCES.map((source) => source.name);
@@ -132,7 +132,7 @@ class HeaderForm extends Component {
       });
       if (json.graphFiles === undefined) {
         // We did not get back a graph, only (possibly) an error.
-        const error = json.error || "Listing file names";
+        const error = json.error || "Server did not return a list of mounted filenames.";
         this.setState({ error: error });
       } else {
         json.graphFiles.unshift("none");
@@ -199,9 +199,7 @@ class HeaderForm extends Component {
         body: JSON.stringify({ bedFile, dataPath }),
       });
       // We need to do all our parsing here, if we expect the catch to catch errors.
-      let bedRegionsDesc = json.bedRegions["desc"];
-
-      if (!(bedRegionsDesc instanceof Array)) {
+      if (!json.bedRegions || !(json.bedRegions["desc"] instanceof Array)) {
         throw new Error(
           "Server did not send back an array of BED region descriptions"
         );
