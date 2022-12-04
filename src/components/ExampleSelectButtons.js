@@ -14,7 +14,7 @@ class ExampleSelectButtons extends Component {
 
   render() {
     return (
-      <Form inline>
+      <Form>
         <Button
           color="primary"
           id="example1"
