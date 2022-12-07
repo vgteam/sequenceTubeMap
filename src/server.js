@@ -1027,12 +1027,11 @@ function start() {
       connections: undefined,
       // Shut down the server
       close: async () => {
-        // Close out all the servers
+        // Shutdown the Websocket Server.
         state.wss.shutDown();
-        state.server.close();
+        // Close the file watcher.
         state.watcher.close();
-
-        // Wait for all the web sockets to be closed.
+      
         await new Promise((resolve, reject) => {
           function stopIfReady() {
             if (state.connections.size === 0) {
@@ -1046,8 +1045,21 @@ function start() {
           stopIfReady();
         });
 
+        // Wait for the HTTP server to close.
+        await new Promise((resolve, reject) => {
+          // close server
+          state.server.close((err) => {
+            if (err) {
+              console.log("HTTP server has closed with error: " + err.message);
+            }
+            else {
+              console.log("HTTP server has closed.");
+            }
+            resolve();
+          });
+        });
+
         console.log("TubeMapServer stopped.");
-        // TODO: do we have to do more to wait for the close to take effect?
       },
       // Get the URL the server is listening on
       getUrl: () => {
@@ -1090,7 +1102,7 @@ function start() {
     wss.on("request", function (request) {
       // We received a websocket connection request and we need to accept it.
       console.log(
-        new Date() + " Connection from origin " + request.origin + "."
+        new Date() + "New WebSocket connection from origin: " + request.origin + "."
       );
       const connection = request.accept(null, request.origin);
       // We save the connection so that we can notify them when there is a change in the file system
@@ -1098,7 +1110,7 @@ function start() {
       connection.on("close", function (reasonCode, description) {
         // When the websocket connection closes, we delete it from our set of open connections
         state.connections.delete(connection);
-        console.log("A connection has been closed");
+        console.log("A WebSocket connection has been closed: " + state.connections.size + " remain open.");
       });
     });
 
