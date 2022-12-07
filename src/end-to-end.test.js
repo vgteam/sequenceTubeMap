@@ -33,9 +33,6 @@ let fakeClipboard = undefined;
 
 // This needs to be called by global and per-scope beforeEach
 async function setUp() {
-  // Start the server
-  serverState = await server.start();
-
   setCopyCallback((value) => (fakeClipboard = value));
 
   // Create the application.
@@ -43,8 +40,27 @@ async function setUp() {
 }
 
 // This needs to be called by global and per-scope afterEach
+// Any mutations of the server (e.g. file uploads)
+// or globals (e.g. the clipboard) should be undone here.
 async function tearDown() {
   setCopyCallback(writeToClipboard);
+}
+
+beforeEach(async () => {
+  await setUp();
+});
+
+afterEach(async () => {
+  await tearDown();
+});
+
+// Starting the server once per test run will speed up tests
+beforeAll(async () => {
+  // Start the server
+  serverState = await server.start();
+});
+
+afterAll(async () => {
   try {
     // Shut down the server
     await serverState.close();
@@ -52,7 +68,7 @@ async function tearDown() {
   } catch (e) {
     console.error(e);
   }
-}
+});
 
 // Wait for the loading throbber to appear
 async function waitForLoadStart() {
@@ -115,14 +131,6 @@ function findDropdownOption(dropdown, optionText) {
   }
   return wantedEntry;
 }
-
-beforeEach(async () => {
-  await setUp();
-});
-
-afterEach(async () => {
-  await tearDown();
-});
 
 it("initially renders as loading", () => {
   let loader = document.getElementById("loader");
