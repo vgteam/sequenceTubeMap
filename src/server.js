@@ -359,7 +359,7 @@ api.post("/getChunkedData", (req, res, next) => {
     const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
     const vgViewCall = spawn(`${VG_PATH}vg`, ["view", "-j", "-"]);
     let graphAsString = "";
-    req.error = new Buffer(0);
+    req.error = Buffer.alloc(0);
 
     vgChunkCall.on("error", function (err) {
       console.log(
@@ -453,7 +453,7 @@ api.post("/getChunkedData", (req, res, next) => {
       `${req.chunkDir}/chunk.vg`,
     ]);
     let graphAsString = "";
-    req.error = new Buffer(0);
+    req.error = Buffer.alloc(0);
     vgViewCall.on("error", function (err) {
       console.log('Error executing "vg view": ' + err);
       if (!sentResponse) {
