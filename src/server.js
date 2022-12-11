@@ -40,13 +40,7 @@ const ALLOWED_DATA_DIRECTORIES = [
   SCRATCH_DATA_PATH,
 ].map((p) => path.resolve(p));
 
-const GRAPH_EXTENSIONS = [
-  ".xg",
-  ".vg",
-  ".pg",
-  ".hg",
-  ".gbz"
-]
+const GRAPH_EXTENSIONS = [".xg", ".vg", ".pg", ".hg", ".gbz"];
 
 // Make sure that the scratch directory exists at startup, so multiple requests
 // can't fight over its creation.
@@ -298,7 +292,9 @@ api.post("/getChunkedData", (req, res, next) => {
     let vgChunkParams = ["chunk"];
     // double-check that the file has a valid graph extension and is allowed
     if (!endsWithExtensions(graphFile, GRAPH_EXTENSIONS)) {
-      throw new BadRequestError("Graph file does not end in valid extension: " + graphFile);
+      throw new BadRequestError(
+        "Graph file does not end in valid extension: " + graphFile
+      );
     }
     if (!isAllowedPath(`${dataPath}${graphFile}`)) {
       throw new BadRequestError("Graph file path not allowed: " + graphFile);
@@ -889,7 +885,8 @@ api.post("/getPathNames", (req, res, next) => {
   }
   if (!endsWithExtensions(graphFile, GRAPH_EXTENSIONS)) {
     throw new BadRequestError(
-      "Path to Graph file does not end in valid extension: " + req.body.graphFile
+      "Path to Graph file does not end in valid extension: " +
+        req.body.graphFile
     );
   }
 
@@ -1003,7 +1000,9 @@ function getServerURL(server) {
   let address = server.address();
   return (
     "http://" +
-    (address.family === "IPv6" ? "[" + address.address + "]" : address.address) +
+    (address.family === "IPv6"
+      ? "[" + address.address + "]"
+      : address.address) +
     ":" +
     address.port
   );
@@ -1031,7 +1030,7 @@ function start() {
         state.wss.shutDown();
         // Close the file watcher.
         state.watcher.close();
-      
+
         await new Promise((resolve, reject) => {
           function stopIfReady() {
             if (state.connections.size === 0) {
@@ -1051,8 +1050,7 @@ function start() {
           state.server.close((err) => {
             if (err) {
               console.log("HTTP server has closed with error: " + err.message);
-            }
-            else {
+            } else {
               console.log("HTTP server has closed.");
             }
             resolve();
@@ -1102,7 +1100,7 @@ function start() {
     wss.on("request", function (request) {
       // We received a websocket connection request and we need to accept it.
       console.log(
-        new Date() + "New WebSocket connection from origin: " + request.origin + "."
+        `${new Date()} New WebSocket connection from origin: ${request.origin}.`
       );
       const connection = request.accept(null, request.origin);
       // We save the connection so that we can notify them when there is a change in the file system
@@ -1110,7 +1108,9 @@ function start() {
       connection.on("close", function (reasonCode, description) {
         // When the websocket connection closes, we delete it from our set of open connections
         state.connections.delete(connection);
-        console.log("A WebSocket connection has been closed: " + state.connections.size + " remain open.");
+        console.log(
+          `A WebSocket connection has been closed: ${state.connections.size} remain open.`
+        );
       });
     });
 

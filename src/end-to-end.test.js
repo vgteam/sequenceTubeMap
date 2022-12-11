@@ -179,7 +179,7 @@ describe("When we wait for it to load", () => {
       userEvent.click(getRegionInput());
     });
     // Make sure that option in RegionInput dropdown (17_1_100) is visible
-    expect(screen.getByText("17_1_100")).toBeInTheDocument()
+    expect(screen.getByText("17_1_100")).toBeInTheDocument();
   });
   it("the region options in autocomplete are cleared after selecting new data", async () => {
     // Input data dropdown
@@ -191,12 +191,11 @@ describe("When we wait for it to load", () => {
     await act(async () => {
       userEvent.click(getRegionInput());
     });
-    // Make sure that old option in RegionInput dropdown (17_...) is not visible 
-    expect(screen.queryByText('17_1_100')).not.toBeInTheDocument()
+    // Make sure that old option in RegionInput dropdown (17_...) is not visible
+    expect(screen.queryByText("17_1_100")).not.toBeInTheDocument();
     await act(async () => {
       userEvent.click(regionInput);
     });
-
   });
   it("draws an SVG for synthetic data example 1", async () => {
     await act(async () => {

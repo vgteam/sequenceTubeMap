@@ -82,11 +82,15 @@ class HeaderForm extends Component {
     this.fetchCanceler.abort();
   }
   handleFetchError(error, message) {
-    if(!this.cancelSignal.aborted){
+    if (!this.cancelSignal.aborted) {
       console.log(message, error.name, error.message);
-      this.setState({error: error});
+      this.setState({ error: error });
     } else {
-      console.log("fetch canceled by componentWillUnmount", error.name, error.message);
+      console.log(
+        "fetch canceled by componentWillUnmount",
+        error.name,
+        error.message
+      );
     }
   }
   DATA_NAMES = DATA_SOURCES.map((source) => source.name);
@@ -132,7 +136,8 @@ class HeaderForm extends Component {
       });
       if (json.graphFiles === undefined) {
         // We did not get back a graph, only (possibly) an error.
-        const error = json.error || "Server did not return a list of mounted filenames.";
+        const error =
+          json.error || "Server did not return a list of mounted filenames.";
         this.setState({ error: error });
       } else {
         json.graphFiles.unshift("none");
@@ -183,7 +188,10 @@ class HeaderForm extends Component {
         }
       }
     } catch (error) {
-      this.handleFetchError(error , `GET to ${this.props.apiUrl}/getFilenames failed:`);
+      this.handleFetchError(
+        error,
+        `GET to ${this.props.apiUrl}/getFilenames failed:`
+      );
     }
   };
 
@@ -211,7 +219,10 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      this.handleFetchError(error , `POST to ${this.props.apiUrl}/getBedRegions failed:`);
+      this.handleFetchError(
+        error,
+        `POST to ${this.props.apiUrl}/getBedRegions failed:`
+      );
     }
   };
 
@@ -243,7 +254,10 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      this.handleFetchError(error , `POST to ${this.props.apiUrl}/getPathNames failed:`);
+      this.handleFetchError(
+        error,
+        `POST to ${this.props.apiUrl}/getPathNames failed:`
+      );
     }
   };
 
