@@ -9,10 +9,27 @@ type DataPath = "mounted" | "default" | "upload";
 // Fills input for the "Data:" dropdown in the HeaderForm
 type DataType = "built-in" | "file-upload" | "mounted files" | "examples";
 
+// Possible filestypes taken from the request
+// Files like GBZ contains graph and maybe haplotype
+type filetype = "graph" | "haplotype" | "read" | "bed" | "graph-haplotype";
+
+// Describes a file via name and type(graph, haplotype)
+// e.g name: cactus.xg, type: graph
+type file = {
+  name: string;
+  type: filetype;
+};
+
+// Contains information necessary to make a track
+type track = {
+  files: Array<file>
+}
+
 // Describes something the Tube Map can look at, specifically a region and the files the region is in.
 // These parameters can be extracted from defaults (config), Header Form input, or URL parameters
 type ViewTarget = {
   region: string; // Format: path:start-end
+  tracks: Array<track>;
   graphFile: string;
   gbwtFile?: string;
   gamFile?: string;

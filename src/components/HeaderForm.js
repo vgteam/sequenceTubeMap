@@ -20,6 +20,13 @@ const dataTypes = {
   MOUNTED_FILES: "mounted files",
   EXAMPLES: "examples",
 };
+const fileTypes = {
+  GRAPH: "graph",
+  HAPLOTYPE: "haplotype",
+  READ: "read",
+  BED:"bed",
+};
+
 
 // We define the subset of the empty state that is safe to apply without
 // clobbering downloaded data from the server which we need
@@ -38,6 +45,7 @@ const CLEAR_STATE = {
 
   pathNames: ["none"],
 
+  track: undefined,
   graphFile: undefined,
   gbwtFile: undefined,
   gamFile: undefined,
@@ -67,6 +75,40 @@ const EMPTY_STATE = {
   gamSelectOptions: ["none"],
   bedSelectOptions: ["none"],
 };
+
+// Creates track to be stored in ViewTarget
+// Modify as the track system changes
+// INPUT: file structure, see Types.ts
+function create_track(file) {
+  //track properties
+  const files = [file]
+
+  //remove empty files here?
+
+  const track = {
+    files: files,
+  };
+  return track;
+}
+
+// Checks if all file names in the track are equal
+function tracks_equal(curr, next) {
+  if (curr.files.length !== next.files.length) {
+    return false;
+  }
+  //loop through file names to see if they're equal
+  for (let i = 0; i < curr.files.length; i++) {
+    const curr_file = curr.files[i].name;
+    const next_file = next.files[i].name;
+    
+    //count falsy file names as the same
+    if ((!curr_file && !next_file) || curr_file === next_file) {
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
 
 class HeaderForm extends Component {
   state = EMPTY_STATE;
@@ -300,23 +342,31 @@ class HeaderForm extends Component {
     }
   };
   getNextViewTarget = () => ({
+    tracks: new Array(create_track({name: this.state.graphFile, type: fileTypes.GRAPH}), 
+                      create_track({name: this.state.gbwtFile, type: fileTypes.HAPLOTYPE}), 
+                      create_track({name: this.state.gamFile, type: fileTypes.READ}), 
+                      create_track({name: this.state.bedFile, type: fileTypes.BED})),
     name: this.state.name,
     region: this.state.region,
-    graphFile: this.state.graphFile,
-    gbwtFile: this.state.gbwtFile,
-    gamFile: this.state.gamFile,
-    bedFile: this.state.bedFile,
     dataPath: this.state.dataPath,
     dataType: this.state.dataType,
   });
 
   handleGoButton = () => {
+    console.log("HANDLING GO BUTTON:");
     if (this.props.dataOrigin !== dataOriginTypes.API) {
       this.props.setColorSetting("haplotypeColors", "ygreys");
       this.props.setColorSetting("forwardReadColors", "reds");
     }
-    const viewTarget = this.getNextViewTarget();
-    this.props.setCurrentViewTarget(viewTarget);
+
+    for (let i = 0; i < this.props.getCurrentViewTarget().tracks.length; i++) {
+      if (!tracks_equal(this.props.getCurrentViewTarget().tracks[i], this.getNextViewTarget().tracks[i])){
+        const viewTarget = this.getNextViewTarget();
+        this.props.setCurrentViewTarget(viewTarget);
+        break;
+      }
+    }
+
   };
 
   getRegionCoords = (desc) => {

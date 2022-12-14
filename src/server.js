@@ -48,6 +48,18 @@ const GRAPH_EXTENSIONS = [
   ".gbz"
 ]
 
+const HAPLOTYPE_EXTENSIONS = [
+  ".gbwt",
+  ".gbz"
+]
+
+const fileTypes = {
+  GRAPH: "graph",
+  HAPLOTYPE: "haplotype",
+  READ: "read",
+  BED:"bed",
+};
+
 // Make sure that the scratch directory exists at startup, so multiple requests
 // can't fight over its creation.
 fs.mkdirSync(SCRATCH_DATA_PATH, { recursive: true });
@@ -173,6 +185,15 @@ function endsWithExtensions(file, extensions) {
   return false;
 }
 
+function getFileFromType(track, type) {
+  for (const file of track.files) {
+    if (file.type == type) {
+      return file.name;
+    }
+  }
+  return "none";
+}
+
 api.post("/getChunkedData", (req, res, next) => {
   // We only want to have one downstream callback chain out of here.
   // TODO: Does Express let us next(err) multiple times if multiple errors happen concurrently???
@@ -193,27 +214,31 @@ api.post("/getChunkedData", (req, res, next) => {
   // This request owns the directory, so clean it up when the request finishes.
   req.rmChunk = true;
 
-  // We always have an graph file
-  const graphFile = req.body.graphFile;
+  //TODO: loop through and process all tracks
 
+
+  // We always have an graph file
+  const graphFile = getFileFromType(req.body.tracks[0], fileTypes.GRAPH);
+  // We sometimes have a GBWT with haplotypes that override any in the graph file
+  const gbwtFile = getFileFromType(req.body.tracks[1], fileTypes.HAPLOTYPE);
   // We sometimes have a GAM file with reads
-  const gamFile = req.body.gamFile;
+  const gamFile = getFileFromType(req.body.tracks[2], fileTypes.READ);
+  // We sometimes have a BED file with regions to look at
+  const bedFile = getFileFromType(req.body.tracks[3], fileTypes.BED);
+
+
   req.withGam = true;
   if (!gamFile || gamFile === "none") {
     req.withGam = false;
     console.log("no gam index provided.");
   }
 
-  // We sometimes have a GBWT with haplotypes that override any in the graph file
-  const gbwtFile = req.body.gbwtFile;
   req.withGbwt = true;
   if (!gbwtFile || gbwtFile === "none") {
     req.withGbwt = false;
     console.log("no gbwt file provided.");
   }
 
-  // We sometimes have a BED file with regions to look at
-  const bedFile = req.body.bedFile;
   req.withBed = true;
   if (!bedFile || bedFile === "none") {
     req.withBed = false;
@@ -305,7 +330,55 @@ api.post("/getChunkedData", (req, res, next) => {
       throw new BadRequestError("Graph file path not allowed: " + graphFile);
     }
     // TODO: Use same variable for check and command line?
-    vgChunkParams.push("-x", `${dataPath}${graphFile}`);
+
+    // Maybe check using file types in the future
+
+    // See if we need to ignore haplotypes in gbz graph file
+/*
+    if (graphFile.endsWith(".gbz")) {
+      if (req.withGbwt) {
+        if (gbwtFile.endsWith(".gbz")) {
+          vgChunkParams.push("-x", `${dataPath}${graphFile}`);
+        } else {
+          vgChunkParams.push("-x", "--ignore-embedded-haplotypes", `${dataPath}${graphFile}`);
+        }
+      }
+    }
+*/
+    if (req.withGbwt) {
+      //either push gbz with graph and haplotype or push seperate graph and gbwt file
+      if (graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz")) { 
+        // use gbz haplotype
+        vgChunkParams.push("-x", `${dataPath}${graphFile}`);
+      } else if (!graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz")){
+        throw new BadRequestError("Cannot use gbz as haplotype alone.");
+      } else {
+        // ignoring haplotype from graph file and using haplotype from gbwt file
+        vgChunkParams.push("--no-embedded-haplotypes", "-x", `${dataPath}${graphFile}`);
+
+        // double-check that the file is a .gbwt and allowed
+        if (!endsWithExtensions(gbwtFile, HAPLOTYPE_EXTENSIONS)) {
+          throw new BadRequestError(
+            "GBWT file doesn't end in .gbwt or .gbz: " + gbwtFile
+          );
+        }
+        if (!isAllowedPath(`${dataPath}${gbwtFile}`)) {
+          throw new BadRequestError("GBWT file path not allowed: " + gbwtFile);
+        }
+        // Use a GBWT haplotype database
+        vgChunkParams.push("--gbwt-name", `${dataPath}${gbwtFile}`);
+      }
+    } else {
+      // push graph file
+      if (graphFile.endsWith(".gbz")) {
+        vgChunkParams.push("-x", `${dataPath}${graphFile}`, "--no-embedded-haplotypes");
+      } else {
+        vgChunkParams.push("-x", `${dataPath}${graphFile}`);
+      }
+    }
+    
+    
+    //vgChunkParams.push("-x", `${dataPath}${graphFile}`);
 
     if (req.withGam) {
       // double-check that the file is a .gam and allowed
@@ -318,6 +391,7 @@ api.post("/getChunkedData", (req, res, next) => {
       // Use a GAM index
       vgChunkParams.push("-a", `${dataPath}${gamFile}`, "-g");
     }
+    /*
     if (req.withGbwt) {
       // double-check that the file is a .gbwt and allowed
       if (!gbwtFile.endsWith(".gbwt")) {
@@ -331,6 +405,7 @@ api.post("/getChunkedData", (req, res, next) => {
       // Use a GBWT haplotype database
       vgChunkParams.push("--gbwt-name", `${dataPath}${gbwtFile}`);
     }
+    */
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
     if (region_col[0] === "node") {
       if (distance > -1) {
@@ -847,7 +922,7 @@ api.get("/getFilenames", (req, res) => {
       if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
         result.graphFiles.push(file);
       }
-      if (file.endsWith(".gbwt")) {
+      if (endsWithExtensions(file, HAPLOTYPE_EXTENSIONS)) {
         result.gbwtFiles.push(file);
       }
       if (file.endsWith(".sorted.gam")) {

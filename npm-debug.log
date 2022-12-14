@@ -1,0 +1,40 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'C:\\Program Files (x86)\\nodejs\\node.exe',
+1 verbose cli   'C:\\Program Files (x86)\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'view',
+1 verbose cli   '--json',
+1 verbose cli   'prop-types',
+1 verbose cli   'description',
+1 verbose cli   'dist-tags.latest',
+1 verbose cli   'homepage',
+1 verbose cli   'version' ]
+2 info using npm@1.3.2
+3 info using node@v8.9.1
+4 verbose url raw prop-types
+5 verbose url resolving [ 'https://registry.npmjs.org/', './prop-types' ]
+6 verbose url resolved https://registry.npmjs.org/prop-types
+7 info trying registry request attempt 1 at 20:45:46
+8 http GET https://registry.npmjs.org/prop-types
+9 info retry will retry, error on last attempt: Error: getaddrinfo ENOTFOUND registry.npmjs.org registry.npmjs.org:443
+10 info trying registry request attempt 2 at 20:46:07
+11 http GET https://registry.npmjs.org/prop-types
+12 info retry will retry, error on last attempt: Error: connect ETIMEDOUT 104.16.19.35:443
+13 info trying registry request attempt 3 at 20:47:34
+14 http GET https://registry.npmjs.org/prop-types
+15 error Error: connect ETIMEDOUT 104.16.19.35:443
+15 error     at Object._errnoException (util.js:1024:11)
+15 error     at _exceptionWithHostPort (util.js:1046:20)
+15 error     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1182:14)
+16 error If you need help, you may report this log at:
+16 error     <http://github.com/isaacs/npm/issues>
+16 error or email it to:
+16 error     <npm-@googlegroups.com>
+17 error System Windows_NT 10.0.19045
+18 error command "C:\\Program Files (x86)\\nodejs\\node.exe" "C:\\Program Files (x86)\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "view" "--json" "prop-types" "description" "dist-tags.latest" "homepage" "version"
+19 error cwd c:\Users\Dickson Chung\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState\rootfs\home\ducku\gi\sequenceTubeMap
+20 error node -v v8.9.1
+21 error npm -v 1.3.2
+22 error syscall connect
+23 error code ETIMEDOUT
+24 error errno ETIMEDOUT
+25 verbose exit [ 1, true ]
