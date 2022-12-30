@@ -45,7 +45,7 @@ const CLEAR_STATE = {
 
   pathNames: ["none"],
 
-  track: undefined,
+  tracks: [],
   graphFile: undefined,
   gbwtFile: undefined,
   gamFile: undefined,
@@ -79,7 +79,7 @@ const EMPTY_STATE = {
 // Creates track to be stored in ViewTarget
 // Modify as the track system changes
 // INPUT: file structure, see Types.ts
-function create_track(file) {
+function createTrack(file) {
   //track properties
   const files = [file]
 
@@ -92,7 +92,7 @@ function create_track(file) {
 }
 
 // Checks if all file names in the track are equal
-function tracks_equal(curr, next) {
+function tracksEqual(curr, next) {
   if (curr.files.length !== next.files.length) {
     return false;
   }
@@ -342,10 +342,10 @@ class HeaderForm extends Component {
     }
   };
   getNextViewTarget = () => ({
-    tracks: new Array(create_track({name: this.state.graphFile, type: fileTypes.GRAPH}), 
-                      create_track({name: this.state.gbwtFile, type: fileTypes.HAPLOTYPE}), 
-                      create_track({name: this.state.gamFile, type: fileTypes.READ}), 
-                      create_track({name: this.state.bedFile, type: fileTypes.BED})),
+    tracks: new Array(createTrack({name: this.state.graphFile, type: fileTypes.GRAPH}), 
+                      createTrack({name: this.state.gbwtFile, type: fileTypes.HAPLOTYPE}), 
+                      createTrack({name: this.state.gamFile, type: fileTypes.READ})),
+    bedFile: this.state.bedFile,
     name: this.state.name,
     region: this.state.region,
     dataPath: this.state.dataPath,
@@ -359,12 +359,20 @@ class HeaderForm extends Component {
       this.props.setColorSetting("forwardReadColors", "reds");
     }
 
-    for (let i = 0; i < this.props.getCurrentViewTarget().tracks.length; i++) {
-      if (!tracks_equal(this.props.getCurrentViewTarget().tracks[i], this.getNextViewTarget().tracks[i])){
-        const viewTarget = this.getNextViewTarget();
-        this.props.setCurrentViewTarget(viewTarget);
+    const nextViewTarget = this.getNextViewTarget();
+    const currViewTarget = this.props.getCurrentViewTarget();
+
+    // Update if view target tracks are not equal
+    for (let i = 0; i < currViewTarget.tracks.length; i++) {
+      if (!tracksEqual(currViewTarget.tracks[i], nextViewTarget.tracks[i])){
+        this.props.setCurrentViewTarget(nextViewTarget);
         break;
       }
+    }
+
+    // Update if regions are not equal
+    if (currViewTarget.region !== nextViewTarget.region) {
+       this.props.setCurrentViewTarget(nextViewTarget);
     }
 
   };

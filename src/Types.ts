@@ -10,8 +10,8 @@ type DataPath = "mounted" | "default" | "upload";
 type DataType = "built-in" | "file-upload" | "mounted files" | "examples";
 
 // Possible filestypes taken from the request
-// Files like GBZ contains graph and maybe haplotype
-type filetype = "graph" | "haplotype" | "read" | "bed" | "graph-haplotype";
+// Files like GBZ contains graph and maybe haplotype and so can be either
+type filetype = "graph" | "haplotype" | "read" | "bed";
 
 // Describes a file via name and type(graph, haplotype)
 // e.g name: cactus.xg, type: graph

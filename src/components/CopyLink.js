@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "reactstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLink } from "@fortawesome/free-solid-svg-icons";
+import * as qs from 'qs';
 
 const UNCLICKED_TEXT = " Copy link to data";
 const CLICKED_TEXT = " Copied link!";
@@ -9,6 +10,7 @@ const CLICKED_TEXT = " Copied link!";
 export const writeToClipboard = (text) => {
   navigator.clipboard.writeText(text);
 };
+
 
 // For testing purposes
 let copyCallback = writeToClipboard;
@@ -22,8 +24,11 @@ export function CopyLink(props) {
     // Turn viewTarget into a URL query string
     const viewTarget = props.getCurrentViewTarget();
 
-    const params = new URLSearchParams(viewTarget).toString();
+    console.log("copying");
+    //const params = new URLSearchParams(viewTarget).toString();
+    const params = qs.stringify(viewTarget, { encode: false });
     const full = window.location.origin + "?" + params;
+    console.log(full);
     copyCallback(full);
 
     // Write link to clipboard
@@ -46,18 +51,36 @@ export const urlParamsToViewTarget = (url) => {
   // Returns: Object (viewTarget) - see App.js
   // Source for parsing: https://stackoverflow.com/questions/8648892/how-to-convert-url-parameters-to-a-javascript-object
 
-  // Get portion of URL after '?'
-  const params = new URL(url).searchParams;
-  if (params.toString() === "") return null;
-  // Parse the parameters from the URL
-  const urlParams = new URLSearchParams(params);
-  const entries = urlParams.entries();
-  const result = {};
-  for (const [key, value] of entries) {
-    // each 'entry' is a [key, value] tuple
-    if (value !== undefined) {
-      result[key] = value;
+  var result = {};
+  const s = url.href.split('?');
+  // If url contains information on viewObject
+  if (s[1]) {
+    result = qs.parse(s[1]);
+  } else {
+    // Get portion of URL after '?'
+    const params = new URL(url).searchParams;
+
+    if (params.toString() === "") return null;
+    // Parse the parameters from the URL
+    const urlParams = new URLSearchParams(params);
+    const entries = urlParams.entries();
+    for (const [key, value] of entries) {
+      console.log("key: ", key);
+      console.log("value: ", value);
+      // each 'entry' is a [key, value] tuple
+      if (value !== undefined) {
+        // If multiple values under the same key is recieved
+        if (Object.prototype.hasOwnProperty.call(result, key)) {
+          if (typeof result[key] === 'string') {
+            result[key] = [result[key]];
+          }
+          result[key].push(value);
+        } else {
+          result[key] = value;
+        }
+      }
     }
   }
+ 
   return result;
 };

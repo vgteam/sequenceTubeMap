@@ -4,8 +4,7 @@
     {
       "tracks": [{"files": [{"name": "snp1kg-BRCA1.vg.xg", "type": "graph"}]},
                  {"files": [{"name": null, "type": "haplotype"}]},
-                 {"files": [{"name": "NA12878-BRCA1.sorted.gam", "type": "read"}]},
-                 {"files": [{"name": "snp1kg-BRCA1.bed", "type": "bed"}]}],
+                 {"files": [{"name": "NA12878-BRCA1.sorted.gam", "type": "read"}]}],
                    
       "name": "snp1kg-BRCA1",
       "graphFile": "snp1kg-BRCA1.vg.xg",

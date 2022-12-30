@@ -224,7 +224,7 @@ api.post("/getChunkedData", (req, res, next) => {
   // We sometimes have a GAM file with reads
   const gamFile = getFileFromType(req.body.tracks[2], fileTypes.READ);
   // We sometimes have a BED file with regions to look at
-  const bedFile = getFileFromType(req.body.tracks[3], fileTypes.BED);
+  const bedFile = req.bedFile;
 
 
   req.withGam = true;
@@ -334,20 +334,10 @@ api.post("/getChunkedData", (req, res, next) => {
     // Maybe check using file types in the future
 
     // See if we need to ignore haplotypes in gbz graph file
-/*
-    if (graphFile.endsWith(".gbz")) {
-      if (req.withGbwt) {
-        if (gbwtFile.endsWith(".gbz")) {
-          vgChunkParams.push("-x", `${dataPath}${graphFile}`);
-        } else {
-          vgChunkParams.push("-x", "--ignore-embedded-haplotypes", `${dataPath}${graphFile}`);
-        }
-      }
-    }
-*/
+
     if (req.withGbwt) {
       //either push gbz with graph and haplotype or push seperate graph and gbwt file
-      if (graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz")) { 
+      if (graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz") && graphFile === gbwtFile) { 
         // use gbz haplotype
         vgChunkParams.push("-x", `${dataPath}${graphFile}`);
       } else if (!graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz")){
@@ -391,21 +381,7 @@ api.post("/getChunkedData", (req, res, next) => {
       // Use a GAM index
       vgChunkParams.push("-a", `${dataPath}${gamFile}`, "-g");
     }
-    /*
-    if (req.withGbwt) {
-      // double-check that the file is a .gbwt and allowed
-      if (!gbwtFile.endsWith(".gbwt")) {
-        throw new BadRequestError(
-          "GBWT file doesn't end in .gbwt: " + gbwtFile
-        );
-      }
-      if (!isAllowedPath(`${dataPath}${gbwtFile}`)) {
-        throw new BadRequestError("GBWT file path not allowed: " + gbwtFile);
-      }
-      // Use a GBWT haplotype database
-      vgChunkParams.push("--gbwt-name", `${dataPath}${gbwtFile}`);
-    }
-    */
+
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
     if (region_col[0] === "node") {
       if (distance > -1) {
