@@ -24,8 +24,8 @@ export function CopyLink(props) {
     // Turn viewTarget into a URL query string
     const viewTarget = props.getCurrentViewTarget();
 
-    console.log("copying");
-    //const params = new URLSearchParams(viewTarget).toString();
+    // Don't stringify objects for readability
+    // https://github.com/ljharb/qs#stringifying
     const params = qs.stringify(viewTarget, { encode: false });
     const full = window.location.origin + "?" + params;
     console.log(full);
@@ -49,37 +49,12 @@ export const urlParamsToViewTarget = (url) => {
   // Take any saved parameters in the query part of the URL
   // and turn to object to populate in HeaderForm state and viewTarget
   // Returns: Object (viewTarget) - see App.js
-  // Source for parsing: https://stackoverflow.com/questions/8648892/how-to-convert-url-parameters-to-a-javascript-object
 
-  var result = {};
+  var result = null;
   const s = url.href.split('?');
   // If url contains information on viewObject
   if (s[1]) {
     result = qs.parse(s[1]);
-  } else {
-    // Get portion of URL after '?'
-    const params = new URL(url).searchParams;
-
-    if (params.toString() === "") return null;
-    // Parse the parameters from the URL
-    const urlParams = new URLSearchParams(params);
-    const entries = urlParams.entries();
-    for (const [key, value] of entries) {
-      console.log("key: ", key);
-      console.log("value: ", value);
-      // each 'entry' is a [key, value] tuple
-      if (value !== undefined) {
-        // If multiple values under the same key is recieved
-        if (Object.prototype.hasOwnProperty.call(result, key)) {
-          if (typeof result[key] === 'string') {
-            result[key] = [result[key]];
-          }
-          result[key].push(value);
-        } else {
-          result[key] = value;
-        }
-      }
-    }
   }
  
   return result;

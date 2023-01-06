@@ -176,6 +176,7 @@ function indexGamSorted(req, res) {
   });
 }
 
+// Checks if a file has one of the extensions provided
 function endsWithExtensions(file, extensions) {
   for (const extension of extensions) {
     if (file.endsWith(extension)) {
@@ -185,6 +186,10 @@ function endsWithExtensions(file, extensions) {
   return false;
 }
 
+// INPUT: (track {files: }, string)
+// OUTPUT: string
+// returns the file name of the specified type in that track
+// returns falsy value if file type is not found
 function getFileFromType(track, type) {
   for (const file of track.files) {
     if (file.type == type) {
@@ -367,8 +372,6 @@ api.post("/getChunkedData", (req, res, next) => {
       }
     }
     
-    
-    //vgChunkParams.push("-x", `${dataPath}${graphFile}`);
 
     if (req.withGam) {
       // double-check that the file is a .gam and allowed

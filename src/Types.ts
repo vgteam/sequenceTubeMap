@@ -30,9 +30,6 @@ type track = {
 type ViewTarget = {
   region: string; // Format: path:start-end
   tracks: Array<track>;
-  graphFile: string;
-  gbwtFile?: string;
-  gamFile?: string;
   bedFile?: string;
 
   // Non-essential to server, used for examples
