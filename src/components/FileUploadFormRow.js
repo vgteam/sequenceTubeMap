@@ -118,7 +118,7 @@ class FileUploadFormRow extends Component {
           type="file"
           className="customDataUpload form-control-file"
           id="gbwtFileUpload"
-          accept=".gbwt"
+          accept=".gbwt,.gbz"
           innerRef={this.gbwtFileInput}
           onChange={this.onGbwtFileChange}
         />
