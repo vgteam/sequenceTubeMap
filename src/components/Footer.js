@@ -13,7 +13,7 @@ export default function Footer() {
   return (
     <Container tag="footer" fluid={true} style={{marginTop: "1em"}}>
       <Row className="bg-light">
-        <Col sm={{offset: 2, size: 8}}>
+        <Col lg={{offset: 2, size: 8}}>
           <Navbar>
             <Nav className="mr-auto">
               <NavItem>
