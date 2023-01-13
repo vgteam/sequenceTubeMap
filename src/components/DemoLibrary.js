@@ -55,12 +55,12 @@ let demoList = []
 for (let moduleName of getFromContext.keys()) {
   // Load all the demos available.
   
-  // Work out what file this should be a demo for (change the extension)
-  let componentFile = moduleName.replace(/\.demo\.js$/, '.js') 
+  // Work out what import this should be a demo for (drop the whole extension)
+  let componentFile = moduleName.replace(/\.demo\.js$/, '') 
   // Work out what this should be a demo for (drop './' and extension and split
   // path segments).
   // Last one will be the component name.
-  let componentPathSegments = componentFile.replace(/^\.\//, '').replace(/\.js$/, '').split('/')
+  let componentPathSegments = componentFile.replace(/^\.\//, '').split('/')
   
   // We need to fetch out the default export manually by its magic name. See
   // <https://stackoverflow.com/a/33705077>
