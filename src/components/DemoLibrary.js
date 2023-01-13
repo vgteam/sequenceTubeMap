@@ -1,5 +1,5 @@
-/// DemoLibrary.js: page that shows a library of demos for different controls included in this project.
-/// When developing a control, you can work on it on its demo page until it
+/// DemoLibrary.js: page that shows a library of demos for different components included in this project.
+/// When developing a component, you can work on it on its demo page until it
 /// actually starts working, and then perfect automated tests and add it to the
 /// actual application. This is compatible with the dev server's hot reloading!
 ///
@@ -16,7 +16,7 @@
 /// 4. If the component needs props, pass a "props" attribute to the Demo
 ///    component, with the props to use. See
 ///    <https://github.com/rpominov/react-demo#available-demoprops>.
-/// 5. If the control needs two-way binding, use "advanced mode"
+/// 5. If the component needs two-way binding, use "advanced mode"
 ///    <https://github.com/rpominov/react-demo#advanced-mode>. Make the Demo
 ///    tag have a body which is a function that takes "props" and "update".
 ///    Return your component rendered with the "props", and use "update" as if
@@ -33,16 +33,18 @@
 import Library from 'react-demo-library'
 
 // To auto-magically pick up demos, we use this magic to tell Webpack what we
-// want it to grab (*.demo.js, recursively), which it can work out at compile
+// want it to grab (*.demo.js, recursively), which it can work out at bundle
 // time. See
 // <https://webpack.js.org/guides/dependency-management/#requirecontext>.
-const getFromContext = require.context('.', true, /\.demo.js$/)
+// Can't use constandt here, arguments *MUST* be literals for the magic to
+// work.
+const getFromContext = require.context('.', true, /\.demo\.js$/)
 
 // Each demo gets an object in this array with fields:
 // location: array of path components to mount at, after a hashbang
 // demo: React element for the demo itself, a react-demo Demo component
 // description: text about the demo, if any
-// importPath: hint about where to find the control to use it
+// importPath: hint about where to find the component to use it
 // fullWidth: boolean, true if we want to hide the demo picker
 // files: array of name and content objects to show along with the demo.
 // 
@@ -51,9 +53,17 @@ let demoList = []
 
 for (let moduleName of getFromContext.keys()) {
   // Load all the demos available.
+  
+  // Work out what file this should be a demo for (change the extension)
+  let componentFile = moduleName.replace(/\.demo\.js$/, '.js') 
+  // Work out what this should be a demo for (drop './' and extension and split
+  // path segments).
+  // Last one will be the component name.
+  let componentPathSegments = componentFile.replace(/^\.\//, '').replace(/\.js$/, '').split('/')
+  
   // We need to fetch out the default export manually by its magic name. See
   // <https://stackoverflow.com/a/33705077>
-  demoList.push({location: [moduleName], demo: getFromContext(moduleName).default})
+  demoList.push({location: componentPathSegments, importPath: componentFile, demo: getFromContext(moduleName).default})
 }
 
 export const DemoLibrary = () => {
