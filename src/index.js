@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.css";
 import App from "./App";
-import demo from "./components/RegionInput.demo";
+import { DemoLibrary } from "./components/DemoLibrary";
 
 
 ReactDOM.render((
@@ -11,8 +11,11 @@ ReactDOM.render((
 <BrowserRouter>
   <Routes>
     <Route path="/">
+      // Main application renders at the root
       <Route index element={<App />} />
-      <Route path="demo" element={demo} />
+      // Demos for custom controls show up at /demo
+      // Each demo gets a nice hashbang URL.
+      <Route path="demo" element={<DemoLibrary />} />
     </Route>
   </Routes>
 </BrowserRouter>
