@@ -31,6 +31,7 @@
 /// (Assuming this component is mounted there in the React router.)
 
 import Library from 'react-demo-library'
+import { Link } from "react-router-dom"
 
 // To auto-magically pick up demos, we use this magic to tell Webpack what we
 // want it to grab (*.demo.js, recursively), which it can work out at bundle
@@ -68,7 +69,14 @@ for (let moduleName of getFromContext.keys()) {
 
 export const DemoLibrary = () => {
   return (
-    // Make a library with our loaded list of demos
-    <Library demos={demoList}/>
+    <>
+      {
+        // Because the demo UI does a bunch of full-browser-size stuff we have to float our back link over it
+      }
+      <div style={{position: "absolute", left: "0.5em", bottom: "0.5em", zIndex: 1001}}>
+        <Link to="/">Back to Tube Map</Link>
+      </div>
+      <Library demos={demoList}/>
+    </>
   )
 }
