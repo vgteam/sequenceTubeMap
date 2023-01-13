@@ -81,3 +81,5 @@ RegionInput.propTypes = {
     start: PropTypes.array,
   }),
 };
+
+export default RegionInput;

@@ -18,7 +18,6 @@ export default (<Demo
 >
   {
     (props, update) => {
-      console.log('Making with', props)
       // We need to render the component under test using the props in props, and
       // call update when the component wants to adjust the props.
       return <RegionInput {...props} handleRegionChange={(newRegion) => {

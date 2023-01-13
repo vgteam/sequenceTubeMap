@@ -57,7 +57,6 @@ for (let moduleName of getFromContext.keys()) {
 }
 
 export const DemoLibrary = () => {
-  console.log(demoList)
   return (
     // Make a library with our loaded list of demos
     <Library demos={demoList}/>
