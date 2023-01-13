@@ -1,6 +1,6 @@
 import { render, fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { RegionInput } from "./RegionInput";
+import RegionInput from "./RegionInput";
 import "@testing-library/jest-dom";
 const handleRegionChangeMock = jest.fn();
 const MOCK_PATHS = ["pathy", "anotherPath", "node", "chr600"];

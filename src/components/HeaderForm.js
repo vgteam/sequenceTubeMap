@@ -9,7 +9,7 @@ import DataPositionFormRow from "./DataPositionFormRow";
 import MountedDataFormRow from "./MountedDataFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
-import { RegionInput } from "./RegionInput";
+import RegionInput from "./RegionInput";
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;

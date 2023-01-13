@@ -1,7 +1,7 @@
 import Demo, {props as P} from 'react-demo'
 // See https://github.com/rpominov/react-demo for how to make a demo
 
-import { RegionInput } from "./RegionInput";
+import RegionInput from "./RegionInput";
 
 // We want to two-way-bind the demo region prop so we use advanced mode and pass the render function.
 export default (<Demo
