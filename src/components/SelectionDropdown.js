@@ -4,8 +4,21 @@ import Select from "react-select";
 
 /**
  * A searchable selection dropdown component.
+ * Expects a two-way-binding where "value" is the selected value (out of the
+ * array in "options"), and calling "onChange" with an event-like object
+ * updates the value.
+ * 
+ * The onChange argument is meant to look enough like a DOM change event on a
+ * "real" <select> to fool most people. It is an object with a "target"
+ * property, which then has an "id" property with this component's "id" prop,
+ * and a "value" property with the new value.
+ * 
+ * So for example:
+ * <SelectionDropdown id="box1" value="a" options={["a", "b"]} onChange={(e) => {
+ *   // Here e is {"target": {"id": "box1", "value": "b"}}
+ * }}>
  */
-class SelectionDropdown extends Component {
+export class SelectionDropdown extends Component {
   render() {
     // Tweaks to the default react-select styles so that it'll look good with tube maps.
     const styles = {

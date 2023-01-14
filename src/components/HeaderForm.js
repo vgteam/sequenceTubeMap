@@ -9,7 +9,7 @@ import DataPositionFormRow from "./DataPositionFormRow";
 import MountedDataFormRow from "./MountedDataFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
-import { RegionInput } from "./RegionInput";
+import RegionInput from "./RegionInput";
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
@@ -342,9 +342,11 @@ class HeaderForm extends Component {
     }
   };
   getNextViewTarget = () => ({
-    tracks: new Array(createTrack({name: this.state.graphFile, type: fileTypes.GRAPH}), 
-                      createTrack({name: this.state.gbwtFile, type: fileTypes.HAPLOTYPE}), 
-                      createTrack({name: this.state.gamFile, type: fileTypes.READ})),
+    tracks: [
+      createTrack({name: this.state.graphFile, type: fileTypes.GRAPH}), 
+      createTrack({name: this.state.gbwtFile, type: fileTypes.HAPLOTYPE}), 
+      createTrack({name: this.state.gamFile, type: fileTypes.READ})
+    ],
     bedFile: this.state.bedFile,
     name: this.state.name,
     region: this.state.region,
