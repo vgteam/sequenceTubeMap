@@ -40,13 +40,7 @@ const ALLOWED_DATA_DIRECTORIES = [
   SCRATCH_DATA_PATH,
 ].map((p) => path.resolve(p));
 
-const GRAPH_EXTENSIONS = [
-  ".xg",
-  ".vg",
-  ".pg",
-  ".hg",
-  ".gbz"
-]
+const GRAPH_EXTENSIONS = [".xg", ".vg", ".pg", ".hg", ".gbz"];
 
 const HAPLOTYPE_EXTENSIONS = [
   ".gbwt",
@@ -132,7 +126,7 @@ api.use((req, res, next) => {
   next();
 });
 
-api.post("graphFileSubmission", upload.single("graphFile"), (req, res) => {
+api.post("/graphFileSubmission", upload.single("graphFile"), (req, res) => {
   console.log("/graphFileSubmission");
   console.log(req.file);
   res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
@@ -206,7 +200,6 @@ api.post("/getChunkedData", (req, res, next) => {
   console.time("request-duration");
   console.log("http POST getChunkedData received");
   console.log(`region = ${req.body.region}`);
-  debugger;
 
   // Assign each request a UUID. v1 UUIDs can be very similar for similar
   // timestamps on the same node, but are still guaranteed to be unique within
@@ -273,10 +266,10 @@ api.post("/getChunkedData", (req, res, next) => {
   let r_start = -1;
   let r_end = -1;
   let distance = -1;
-  if (start_end.length == 2) {
+  if (start_end.length === 2) {
     r_start = Number(start_end[0]);
     r_end = Number(start_end[1]);
-  } else if (pos_dist.length == 2) {
+  } else if (pos_dist.length === 2) {
     r_start = Number(pos_dist[0]);
     distance = Number(pos_dist[1]);
   } else {
@@ -329,7 +322,9 @@ api.post("/getChunkedData", (req, res, next) => {
     let vgChunkParams = ["chunk"];
     // double-check that the file has a valid graph extension and is allowed
     if (!endsWithExtensions(graphFile, GRAPH_EXTENSIONS)) {
-      throw new BadRequestError("Graph file does not end in valid extension: " + graphFile);
+      throw new BadRequestError(
+        "Graph file does not end in valid extension: " + graphFile
+      );
     }
     if (!isAllowedPath(`${dataPath}${graphFile}`)) {
       throw new BadRequestError("Graph file path not allowed: " + graphFile);
@@ -414,7 +409,7 @@ api.post("/getChunkedData", (req, res, next) => {
     const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
     const vgViewCall = spawn(`${VG_PATH}vg`, ["view", "-j", "-"]);
     let graphAsString = "";
-    req.error = new Buffer(0);
+    req.error = Buffer.alloc(0);
 
     vgChunkCall.on("error", function (err) {
       console.log(
@@ -444,7 +439,7 @@ api.post("/getChunkedData", (req, res, next) => {
     vgChunkCall.on("close", (code) => {
       console.log(`vg chunk exited with code ${code}`);
       vgViewCall.stdin.end();
-      if (code != 0) {
+      if (code !== 0) {
         console.log("Error from " + VG_PATH + "vg " + vgChunkParams.join(" "));
         // Execution failed
         if (!sentResponse) {
@@ -474,7 +469,7 @@ api.post("/getChunkedData", (req, res, next) => {
     vgViewCall.on("close", (code) => {
       console.log(`vg view exited with code ${code}`);
       console.timeEnd("vg chunk");
-      if (code != 0) {
+      if (code !== 0) {
         // Execution failed
         if (!sentResponse) {
           sentResponse = true;
@@ -508,7 +503,7 @@ api.post("/getChunkedData", (req, res, next) => {
       `${req.chunkDir}/chunk.vg`,
     ]);
     let graphAsString = "";
-    req.error = new Buffer(0);
+    req.error = Buffer.alloc(0);
     vgViewCall.on("error", function (err) {
       console.log('Error executing "vg view": ' + err);
       if (!sentResponse) {
@@ -722,7 +717,7 @@ function processGamFile(req, res, next) {
       req.gamArr = gamJSON
         .split("\n")
         .filter(function (a) {
-          return a != "";
+          return a !== "";
         })
         .map(function (a) {
           return JSON.parse(a);
@@ -766,7 +761,7 @@ function processRegionFile(req, res, next) {
   }
 }
 
-// Cleanup functuion shared between success and error code paths.
+// Cleanup function shared between success and error code paths.
 // May throw.
 // TODO: Use as a middleware?
 function cleanUpChunkIfOwned(req, res) {
@@ -815,7 +810,7 @@ function isAllowedPath(inputPath) {
   // Split on delimeters
   let parts = inputPath.split(/[\/\\]/);
   for (let part of parts) {
-    if (part == "..") {
+    if (part === "..") {
       // One of the path components is a .., so disallow it.
       return false;
     }
@@ -944,7 +939,8 @@ api.post("/getPathNames", (req, res, next) => {
   }
   if (!endsWithExtensions(graphFile, GRAPH_EXTENSIONS)) {
     throw new BadRequestError(
-      "Path to Graph file does not end in valid extension: " + req.body.graphFile
+      "Path to Graph file does not end in valid extension: " +
+        req.body.graphFile
     );
   }
 
@@ -969,7 +965,7 @@ api.post("/getPathNames", (req, res, next) => {
   });
 
   vgViewChild.on("close", (code) => {
-    if (code != 0) {
+    if (code !== 0) {
       // Execution failed
       if (!sentResponse) {
         sentResponse = true;
@@ -981,7 +977,7 @@ api.post("/getPathNames", (req, res, next) => {
       .split("\n")
       .filter(function (a) {
         // Eliminate empty names or underscore-prefixed internal names (like _alt paths)
-        return a != "" && !a.startsWith("_");
+        return a !== "" && !a.startsWith("_");
       })
       .sort();
     console.log(result);
@@ -999,14 +995,14 @@ api.post("/getBedRegions", (req, res) => {
     error: null,
   };
 
-  if (req.body.bedFile != "none") {
+  if (req.body.bedFile !== "none") {
     let dataPath = pickDataPath(req.body.dataPath);
     let bed_info = getBedRegions(req.body.bedFile, dataPath);
     console.log("bed reading done");
     result.bedRegions = bed_info;
     res.json(result);
   } else {
-    throw new BadReqestError("No BED file specified");
+    throw new BadRequestError("No BED file specified");
   }
 });
 
@@ -1058,7 +1054,9 @@ function getServerURL(server) {
   let address = server.address();
   return (
     "http://" +
-    (address.family == "IPv6" ? "[" + address.address + "]" : address.address) +
+    (address.family === "IPv6"
+      ? "[" + address.address + "]"
+      : address.address) +
     ":" +
     address.port
   );
@@ -1082,15 +1080,14 @@ function start() {
       connections: undefined,
       // Shut down the server
       close: async () => {
-        // Close out all the servers
+        // Shutdown the Websocket Server.
         state.wss.shutDown();
-        state.server.close();
+        // Close the file watcher.
         state.watcher.close();
 
-        // Wait for all the web sockets to be closed.
         await new Promise((resolve, reject) => {
           function stopIfReady() {
-            if (state.connections.size == 0) {
+            if (state.connections.size === 0) {
               // No more open connections!
               resolve();
             } else {
@@ -1101,8 +1098,20 @@ function start() {
           stopIfReady();
         });
 
+        // Wait for the HTTP server to close.
+        await new Promise((resolve, reject) => {
+          // close server
+          state.server.close((err) => {
+            if (err) {
+              console.log("HTTP server has closed with error: " + err.message);
+            } else {
+              console.log("HTTP server has closed.");
+            }
+            resolve();
+          });
+        });
+
         console.log("TubeMapServer stopped.");
-        // TODO: do we have to do more to wait for the close to take effect?
       },
       // Get the URL the server is listening on
       getUrl: () => {
@@ -1126,7 +1135,7 @@ function start() {
     }
 
     // Start the server on the selected port and save the HTTP server instance
-    // created by app.listen for the WebScoketServer
+    // created by app.listen for the WebSocketServer
     const server = app.listen(SERVER_PORT, SERVER_BIND_ADDRESS, () => {
       console.log("TubeMapServer listening on " + getServerURL(server));
       // Server is ready so add to state.
@@ -1143,9 +1152,9 @@ function start() {
     state.connections = new Set();
 
     wss.on("request", function (request) {
-      // We recieved a websocket connection request and we need to accept it.
+      // We received a websocket connection request and we need to accept it.
       console.log(
-        new Date() + " Connection from origin " + request.origin + "."
+        `${new Date()} New WebSocket connection from origin: ${request.origin}.`
       );
       const connection = request.accept(null, request.origin);
       // We save the connection so that we can notify them when there is a change in the file system
@@ -1153,7 +1162,9 @@ function start() {
       connection.on("close", function (reasonCode, description) {
         // When the websocket connection closes, we delete it from our set of open connections
         state.connections.delete(connection);
-        console.log("A connection has been closed");
+        console.log(
+          `A WebSocket connection has been closed: ${state.connections.size} remain open.`
+        );
       });
     });
 

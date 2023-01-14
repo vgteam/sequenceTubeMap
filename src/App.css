@@ -21,8 +21,8 @@ body {
   margin-right: 0px !important;
 }
 
-.form-inline button {
-  margin: 0.25rem !important;
+button {
+  margin: 0.25rem;
 }
 
 input[type="file"] {
@@ -72,6 +72,7 @@ input[type="file"] {
   0% {
     -webkit-transform: rotate(0deg);
   }
+
   100% {
     -webkit-transform: rotate(360deg);
   }
@@ -81,6 +82,7 @@ input[type="file"] {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -173,6 +175,7 @@ input[type="file"] {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -182,6 +185,7 @@ input[type="file"] {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }

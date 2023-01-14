@@ -15,7 +15,23 @@ class TubeMapContainer extends Component {
   };
 
   componentDidMount() {
+    this.fetchCanceler = new AbortController();
+    this.cancelSignal = this.fetchCanceler.signal;
     this.getRemoteTubeMapData();
+  }
+
+  componentWillUnmount() {
+    // Cancel the requests since we may have long running requests pending.
+    this.fetchCanceler.abort();
+  }
+
+  handleFetchError(error, message) {
+    if (!this.cancelSignal.aborted) {
+      console.log(message, error.name, error.message);
+      this.setState({ error: error, isLoading: false });
+    } else {
+      console.log("fetch canceled by componentWillUnmount", error.message);
+    }
   }
 
   componentDidUpdate(prevProps) {
@@ -44,7 +60,6 @@ class TubeMapContainer extends Component {
     const { isLoading, error } = this.state;
 
     if (error) {
-      console.log(error);
       const message = error.message ? error.message : error;
       return (
         <div id="tubeMapContainer">
@@ -89,6 +104,7 @@ class TubeMapContainer extends Component {
     this.setState({ isLoading: true, error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getChunkedData`, {
+        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +114,7 @@ class TubeMapContainer extends Component {
       if (json.graph === undefined) {
         // We did not get back a graph, even if we didn't get an error either.
         const error = "Fetching remote data returned error";
-        this.setState({ error: error, isLoading: false });
+        throw new Error(error);
       } else {
         const nodes = tubeMap.vgExtractNodes(json.graph);
         const tracks = tubeMap.vgExtractTracks(json.graph);
@@ -113,12 +129,15 @@ class TubeMapContainer extends Component {
         });
       }
     } catch (error) {
-      this.setState({ error: error, isLoading: false });
+      this.handleFetchError(
+        error,
+        `POST to ${this.props.apiUrl}/getChunkedData failed:`
+      );
     }
   };
 
   getExampleData = async () => {
-    this.setState({ isLoading: true, error: null });
+    this.setState({ isLoading: true });
     // Nodes, tracks, and reads are all required, so start with defaults.
     let nodes = [];
     let tracks = [];
