@@ -1,15 +1,16 @@
 /// Footer.js: main page footer component. Includes project page links and demo link.
 
 import { Container, Row, Col, Navbar, Nav, NavItem, NavLink } from "reactstrap"
-import { Link } from "react-router-dom"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGithub } from "@fortawesome/free-brands-svg-icons"
 import { faCode, faDna } from "@fortawesome/free-solid-svg-icons"
 
+import SafeLink from "./SafeLink"
+
 import PACKAGE from "../../package.json"
 
 
-export default function Footer() {
+export const Footer = () => {
   return (
     <Container tag="footer" fluid={true} style={{marginTop: "1em"}}>
       <Row className="bg-light">
@@ -30,7 +31,7 @@ export default function Footer() {
             </Nav>
             <Nav>
               <NavItem>
-                <Link to="/demo" title="Component Demos" style={{textDecoration: "none"}}><NavLink><FontAwesomeIcon icon={faCode} size="md" /> Component Demos</NavLink></Link>
+                <SafeLink to="/demo" title="Component Demos" style={{textDecoration: "none"}}><NavLink><FontAwesomeIcon icon={faCode} size="md" /> Component Demos</NavLink></SafeLink>
               </NavItem>
             </Nav>
           </Navbar>
@@ -39,3 +40,5 @@ export default function Footer() {
     </Container>
   )
 }
+
+export default Footer

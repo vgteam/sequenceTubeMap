@@ -11,10 +11,14 @@ ReactDOM.render((
 <BrowserRouter>
   <Routes>
     <Route path="/">
-      // Main application renders at the root
+      {
+        // Main application renders at the root
+      }
       <Route index element={<App />} />
-      // Demos for custom controls show up at /demo
-      // Each demo gets a nice hashbang URL.
+      {
+        // Demos for custom controls show up at /demo
+        // Each demo gets a nice hashbang URL.
+      }
       <Route path="demo" element={<DemoLibrary />} />
     </Route>
   </Routes>
