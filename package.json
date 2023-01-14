@@ -7,6 +7,7 @@
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
     "@fortawesome/fontawesome-svg-core": "^6.2.1",
+    "@fortawesome/free-brands-svg-icons": "^6.2.1",
     "@fortawesome/free-solid-svg-icons": "^6.2.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@material-ui/core": "^4.12.4",
@@ -30,8 +31,11 @@
     "polyfill-object.fromentries": "^1.0.1",
     "prop-types": "^15.8.1",
     "react": "^17.0.2",
+    "react-demo": "^2.0.0",
+    "react-demo-library": "^2.0.0",
     "react-dom": "^17.0.2",
     "react-fast-compare": "^3.2.0",
+    "react-router-dom": "^6.6.2",
     "react-scripts": "5.0.1",
     "react-select": "^5.6.1",
     "react-select-event": "^5.5.1",
@@ -64,6 +68,7 @@
     "node": ">=10.0.0"
   },
   "devDependencies": {
-    "prettier": "^2.7.1"
+    "prettier": "^2.7.1",
+    "qs": "^6.11.0"
   }
 }

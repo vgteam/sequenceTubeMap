@@ -2,6 +2,10 @@
   "BACKEND_URL": false,
   "DATA_SOURCES": [
     {
+      "tracks": [{"files": [{"name": "snp1kg-BRCA1.vg.xg", "type": "graph"}]},
+                 {"files": [{"name": null, "type": "haplotype"}]},
+                 {"files": [{"name": "NA12878-BRCA1.sorted.gam", "type": "read"}]}],
+                   
       "name": "snp1kg-BRCA1",
       "graphFile": "snp1kg-BRCA1.vg.xg",
       "gamFile": "NA12878-BRCA1.sorted.gam",

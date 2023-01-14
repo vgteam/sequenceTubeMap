@@ -10,6 +10,7 @@ import HeaderForm from "./components/HeaderForm";
 import TubeMapContainer from "./components/TubeMapContainer";
 import { urlParamsToViewTarget } from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
+import Footer from "./components/Footer";
 import { dataOriginTypes } from "./enums";
 import * as tubeMap from "./util/tubemap";
 import config from "./config.json";
@@ -152,6 +153,7 @@ class App extends Component {
           }
           setColorSetting={this.setColorSetting}
         />
+        <Footer/>
       </div>
     );
   }
