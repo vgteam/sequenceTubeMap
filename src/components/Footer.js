@@ -18,10 +18,10 @@ export const Footer = () => {
           <Navbar>
             <Nav className="mr-auto">
               <NavItem>
-                <NavLink target="_blank" href="https://github.com/vgteam/sequenceTubeMap"><FontAwesomeIcon icon={faGithub} /> Github</NavLink>
+                <SafeLink target="_blank" href="https://github.com/vgteam/sequenceTubeMap"><FontAwesomeIcon icon={faGithub} /> Github</SafeLink>
               </NavItem>
               <NavItem>
-                <NavLink target="_blank" href="https://genomics.ucsc.edu/"><FontAwesomeIcon icon={faDna} /> UCSC GI</NavLink>
+                <SafeLink target="_blank" href="https://genomics.ucsc.edu/"><FontAwesomeIcon icon={faDna} /> UCSC GI</SafeLink>
               </NavItem>
             </Nav>
             <Nav>
@@ -31,7 +31,7 @@ export const Footer = () => {
             </Nav>
             <Nav>
               <NavItem>
-                <SafeLink to="/demo" title="Component Demos" style={{textDecoration: "none"}}><NavLink><FontAwesomeIcon icon={faCode} /> Component Demos</NavLink></SafeLink>
+                <SafeLink to="/demo" title="Component Demos" style={{textDecoration: "none"}}><FontAwesomeIcon icon={faCode} /> Component Demos</SafeLink>
               </NavItem>
             </Nav>
           </Navbar>
