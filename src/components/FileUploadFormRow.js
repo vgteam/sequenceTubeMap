@@ -10,6 +10,7 @@ class FileUploadFormRow extends Component {
     this.graphFileInput = React.createRef();
     this.gbwtFileInput = React.createRef();
     this.gamFileInput = React.createRef();
+    this.gamFile2Input = React.createRef();
   }
 
   onGraphFileChange = () => {
@@ -94,6 +95,33 @@ class FileUploadFormRow extends Component {
     }
   };
 
+  onGamFile2Change = () => {
+    const file = this.gamFile2Input.current.files[0];
+    if (file === undefined) {
+      this.props.handleFileUpload("gamFile2", "none");
+    } else {
+      if (file.size > MAX_UPLOAD_SIZE) {
+        this.gamFile2Input.current.value = "";
+        this.props.showFileSizeAlert();
+        return;
+      }
+      this.props.setUploadInProgress(true);
+      const formData = new FormData();
+      formData.append("gamFile2", file);
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = "json";
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          // Every thing ok, file uploaded
+          this.props.setUploadInProgress(false);
+          this.props.handleFileUpload("gamFile2", xhr.response.path);
+        }
+      };
+      xhr.open("POST", `${this.props.apiUrl}/gamFile2Submission`, true);
+      xhr.send(formData);
+    }
+  };
+
   render() {
     return (
       <React.Fragment>
@@ -135,6 +163,20 @@ class FileUploadFormRow extends Component {
           accept=".gam"
           innerRef={this.gamFileInput}
           onChange={this.onGamFileChange}
+        />
+        <Label
+          for="gamFile2Select"
+          className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
+        >
+          gam index 2:
+        </Label>
+        <Input
+          type="file"
+          className="customDataUpload form-control-file"
+          id="gamFile2Upload"
+          accept=".gam"
+          innerRef={this.gamFile2Input}
+          onChange={this.onGamFile2Change}
         />
       </React.Fragment>
     );

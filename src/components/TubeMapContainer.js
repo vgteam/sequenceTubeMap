@@ -118,7 +118,16 @@ class TubeMapContainer extends Component {
       } else {
         const nodes = tubeMap.vgExtractNodes(json.graph);
         const tracks = tubeMap.vgExtractTracks(json.graph);
-        const reads = tubeMap.vgExtractReads(nodes, tracks, json.gam);
+        // Call vgExtractReads on each individual read and store in readsArr
+        let readsArr = [];
+        for (const gam of Object.values(json.gam)) {
+          // Include readsArr length to prevent duplicate ids
+          readsArr.push(tubeMap.vgExtractReads(nodes, tracks, gam, readsArr.length));
+        }
+
+        // concatenate all reads together
+        const reads = readsArr.flat();
+
         const region = json.region;
         this.setState({
           isLoading: false,

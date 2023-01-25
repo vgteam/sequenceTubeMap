@@ -193,6 +193,18 @@ function getFileFromType(track, type) {
   return "none";
 }
 
+// Returns an array of the first gam file of every track
+function getGams(tracks) {
+  let gams = [];
+  for (const track of tracks) {
+    const file = getFileFromType(track, fileTypes.READ);
+    if (file && file !== "none") {
+      gams.push(file);
+    }
+  }
+  return gams;
+}
+
 api.post("/getChunkedData", (req, res, next) => {
   // We only want to have one downstream callback chain out of here.
   // TODO: Does Express let us next(err) multiple times if multiple errors happen concurrently???
@@ -224,9 +236,10 @@ api.post("/getChunkedData", (req, res, next) => {
   // We sometimes have a BED file with regions to look at
   const bedFile = req.bedFile;
 
+  let gamFiles = getGams(req.body.tracks);
 
   req.withGam = true;
-  if (!gamFile || gamFile === "none") {
+  if (!gamFiles || !gamFiles.length) {
     req.withGam = false;
     console.log("no gam index provided.");
   }
@@ -366,7 +379,21 @@ api.post("/getChunkedData", (req, res, next) => {
         vgChunkParams.push("-x", `${dataPath}${graphFile}`);
       }
     }
+
+    // push all gam files
+    for (const gamFile of gamFiles) {
+      if (!gamFile.endsWith(".gam")) {
+        throw new BadRequestError("GAM file doesn't end in .gam: " + gamFile);
+      }
+      if (!isAllowedPath(`${dataPath}${gamFile}`)) {
+        throw new BadRequestError("GAM file path not allowed: " + gamFile);
+      }
+      // Use a GAM index
+      console.log("pushing gam file", gamFile);
+      vgChunkParams.push("-a", `${dataPath}${gamFile}`, "-g");
+    }
     
+    /*
 
     if (req.withGam) {
       // double-check that the file is a .gam and allowed
@@ -379,6 +406,7 @@ api.post("/getChunkedData", (req, res, next) => {
       // Use a GAM index
       vgChunkParams.push("-a", `${dataPath}${gamFile}`, "-g");
     }
+    */
 
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
     if (region_col[0] === "node") {
@@ -669,7 +697,7 @@ function processAnnotationFile(req, res, next) {
     lineReader.on("close", () => {
       console.timeEnd("processing annotation file");
       if (req.withGam === true) {
-        processGamFile(req, res, next);
+        processGamFiles(req, res, next);
       } else {
         processRegionFile(req, res, next);
       }
@@ -681,27 +709,18 @@ function processAnnotationFile(req, res, next) {
   }
 }
 
-function processGamFile(req, res, next) {
-  try {
-    console.time("processing gam file");
-    // Find gam file
-    fs.readdirSync(req.chunkDir).forEach((file) => {
-      if (file.endsWith(".gam")) {
-        req.gamFile = req.chunkDir + "/" + file;
-      }
-    });
-
-    if (!isAllowedPath(req.gamFile)) {
+function processGamFile(req, res, next, gamFile) {
+  try{
+    if (!isAllowedPath(gamFile)) {
       // This is probably under SCRATCH_DATA_PATH
       throw new BadRequestError("Path to GAM file not allowed: " + req.gamFile);
     }
 
-    // call 'vg view' to transform gam to json
     const vgViewChild = spawn(`${VG_PATH}vg`, [
       "view",
       "-j",
       "-a",
-      req.gamFile,
+      gamFile,
     ]);
 
     vgViewChild.stderr.on("data", (data) => {
@@ -714,7 +733,7 @@ function processGamFile(req, res, next) {
     });
 
     vgViewChild.on("close", () => {
-      req.gamArr = gamJSON
+      const gamArr = gamJSON
         .split("\n")
         .filter(function (a) {
           return a !== "";
@@ -722,9 +741,38 @@ function processGamFile(req, res, next) {
         .map(function (a) {
           return JSON.parse(a);
         });
-      console.timeEnd("processing gam file");
-      processRegionFile(req, res, next);
+        req.gamObj[gamFile] = gamArr;
+        req.gamRemaining -= 1;
+        if (req.gamRemaining == 0) {
+          processRegionFile(req, res, next);
+        }
     });
+
+  } catch (error) {
+    return next(error);
+  }
+
+}
+
+function processGamFiles(req, res, next) {
+  try {
+    console.time("processing gam files");
+    // Find gam files
+    let gamFiles = [];
+    fs.readdirSync(req.chunkDir).forEach((file) => {
+      console.log(file);
+      if (file.endsWith(".gam")) {
+        gamFiles.push(req.chunkDir + "/" + file);
+      }
+    });
+
+    req.gamObj = {};
+    req.gamRemaining = gamFiles.length;
+    for (const gamFile of gamFiles){
+      processGamFile(req, res, next, gamFile);
+    }
+    console.timeEnd("processing gam files");
+
   } catch (error) {
     return next(error);
   }
@@ -783,7 +831,7 @@ function cleanUpAndSendResult(req, res, next) {
     // TODO: Any standard error output will make an error response.
     result.error = req.error.toString("utf-8");
     result.graph = req.graph;
-    result.gam = req.withGam === true ? req.gamArr : [];
+    result.gam = req.withGam === true ? req.gamObj : [];
     result.region = req.region;
     res.json(result);
     console.timeEnd("request-duration");

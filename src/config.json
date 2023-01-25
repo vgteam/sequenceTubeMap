@@ -30,6 +30,16 @@
       "bedFile": "cactus.bed",
       "region": "ref:1-100",
       "dataType": "built-in"
+    },
+    {
+      "name": "cactus multiple reads",
+      "graphFile": "cactus.vg.xg",
+      "gamFile": "cactus0_10.sorted.gam",
+      "gamFile2": "cactus10_20.sorted.gam",
+      "dataPath": "mounted",
+      "bedFile": "cactus.bed",
+      "region": "ref:1-100",
+      "dataType": "built-in"
     }
   ],
   "vgPath": "",
