@@ -1,6 +1,6 @@
 /// Footer.js: main page footer component. Includes project page links and demo link.
 
-import { Container, Row, Col, Navbar, Nav, NavItem, NavLink } from "reactstrap"
+import { Container, Row, Col, Navbar, Nav, NavItem } from "reactstrap"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGithub } from "@fortawesome/free-brands-svg-icons"
 import { faCode, faDna } from "@fortawesome/free-solid-svg-icons"
@@ -18,10 +18,10 @@ export const Footer = () => {
           <Navbar>
             <Nav className="mr-auto">
               <NavItem>
-                <NavLink target="_blank" href="https://github.com/vgteam/sequenceTubeMap"><FontAwesomeIcon icon={faGithub} size="md" /> Github</NavLink>
+                <SafeLink className="nav-link" target="_blank" href="https://github.com/vgteam/sequenceTubeMap"><FontAwesomeIcon icon={faGithub} /> Github</SafeLink>
               </NavItem>
               <NavItem>
-                <NavLink target="_blank" href="https://genomics.ucsc.edu/"><FontAwesomeIcon icon={faDna} size="md" /> UCSC GI</NavLink>
+                <SafeLink className="nav-link" target="_blank" href="https://genomics.ucsc.edu/"><FontAwesomeIcon icon={faDna} /> UCSC GI</SafeLink>
               </NavItem>
             </Nav>
             <Nav>
@@ -31,7 +31,7 @@ export const Footer = () => {
             </Nav>
             <Nav>
               <NavItem>
-                <SafeLink to="/demo" title="Component Demos" style={{textDecoration: "none"}}><NavLink><FontAwesomeIcon icon={faCode} size="md" /> Component Demos</NavLink></SafeLink>
+                <SafeLink className="nav-link" to="/demo" title="Component Demos" style={{textDecoration: "none"}}><FontAwesomeIcon icon={faCode} /> Component Demos</SafeLink>
               </NavItem>
             </Nav>
           </Navbar>
