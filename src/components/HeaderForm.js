@@ -377,7 +377,8 @@ class HeaderForm extends Component {
     tracks: [
       createTrack({name: this.state.graphFile, type: fileTypes.GRAPH}), 
       createTrack({name: this.state.gbwtFile, type: fileTypes.HAPLOTYPE}), 
-      createTrack({name: this.state.gamFile, type: fileTypes.READ})
+      createTrack({name: this.state.gamFile, type: fileTypes.READ}),
+      createTrack({name: this.state.gamFile2, type: fileTypes.READ})
     ],
 
     bedFile: this.state.bedFile,

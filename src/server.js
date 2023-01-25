@@ -232,7 +232,7 @@ api.post("/getChunkedData", (req, res, next) => {
   // We sometimes have a GBWT with haplotypes that override any in the graph file
   const gbwtFile = getFileFromType(req.body.tracks[1], fileTypes.HAPLOTYPE);
   // We sometimes have a GAM file with reads
-  const gamFile = getFileFromType(req.body.tracks[2], fileTypes.READ);
+  //const gamFile = getFileFromType(req.body.tracks[2], fileTypes.READ);
   // We sometimes have a BED file with regions to look at
   const bedFile = req.bedFile;
 
@@ -393,20 +393,6 @@ api.post("/getChunkedData", (req, res, next) => {
       vgChunkParams.push("-a", `${dataPath}${gamFile}`, "-g");
     }
     
-    /*
-
-    if (req.withGam) {
-      // double-check that the file is a .gam and allowed
-      if (!gamFile.endsWith(".gam")) {
-        throw new BadRequestError("GAM file doesn't end in .gam: " + gamFile);
-      }
-      if (!isAllowedPath(`${dataPath}${gamFile}`)) {
-        throw new BadRequestError("GAM file path not allowed: " + gamFile);
-      }
-      // Use a GAM index
-      vgChunkParams.push("-a", `${dataPath}${gamFile}`, "-g");
-    }
-    */
 
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
     if (region_col[0] === "node") {
