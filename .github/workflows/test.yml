@@ -29,4 +29,6 @@ jobs:
           chmod +x bin/vg
       - name: Run tests
         run: PATH=$PATH:$(pwd)/bin CI=true npm run test
+      - name: Test build
+        run: npm run build
 
