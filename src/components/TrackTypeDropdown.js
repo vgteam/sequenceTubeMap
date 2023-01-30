@@ -16,11 +16,20 @@ import SelectionDropdown from "./SelectionDropdown";
  *   // Here newValue is "read"
  * }}>
  */
+ const onChange = (option) => {
+  this.props.onChange({
+    target: {
+      id: this.props.id,
+      value: option.value,
+    },
+  });
+};
+
 export function TrackTypeDropdown (props) {
     // Tweaks to the default react-select styles so that it'll look good with tube maps.
     let {onChange, ...rest} = props;
     return (
-      <SelectionDropdown {...rest} options={['graph', 'haplotype', 'read']} onChange={() => {}} />
+      <SelectionDropdown {...rest} options={['graph', 'haplotype', 'read']} onChange={(onChange)} />
     );
 }
 
