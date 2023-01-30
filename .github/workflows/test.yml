@@ -17,12 +17,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Use Ubuntu 20.04's nodejs
-        uses: actions/setup-node@v2
-        with:
-          node-version: 10.x
-      - name: Install node modules
-        run: npm install
+      - name: Use node from .nvmrc
+        uses: dcodeIO/setup-node-nvm@master
+      - name: Install node modules as specified in lockfile
+        run: npm ci
       - name: Install latest vg release
         # See https://gist.github.com/steinwaywhw/a4cd19cda655b8249d908261a62687f8 for how we pull out the right URL
         run: |
