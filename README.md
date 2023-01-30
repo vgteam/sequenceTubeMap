@@ -51,12 +51,14 @@ If you are using vg and want visualize the graphs it generates, the online versi
 
 #### Prerequisites
 
-yarn or npm, nodejs, and [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
+* The NodeJS version [specified in the `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc), which as of this writing is **18.7.0**. Other several other NodeJS versions will work, or at least mostly work, but only this version is tested. THis version of NodeJS can be installed on most systems with [nvm](https://github.com/nvm-sh/nvm).
+* NPM or `yarn`. NPM comes included in most NodeJS installations. Ubuntu packages it as a separate `npm` package.
+* [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
 
 The directory containing the vg executable needs to be added to your environment path:
 
 ```
-PATH=/<your_path_to_vg>:$PATH
+PATH=/<your_path_to_folder_with_vg>:$PATH
 ```
 
 #### Installation

@@ -17,12 +17,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Use Ubuntu 20.04's nodejs
+      - name: Read .nvmrc
+        # See <https://remarkablemark.org/blog/2021/03/11/setup-nodejs-with-nvmrc-in-github-actions/>
+        # # And <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-output-parameter>
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+        id: nvmrc
+      - name: Use Node.js from .nvmrc
         uses: actions/setup-node@v2
         with:
-          node-version: 10.x
-      - name: Install node modules
-        run: npm install
+          node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
+      - name: Install node modules as specified in lockfile
+        run: npm ci
       - name: Install latest vg release
         # See https://gist.github.com/steinwaywhw/a4cd19cda655b8249d908261a62687f8 for how we pull out the right URL
         run: |
@@ -31,4 +36,6 @@ jobs:
           chmod +x bin/vg
       - name: Run tests
         run: PATH=$PATH:$(pwd)/bin CI=true npm run test
+      - name: Test build
+        run: npm run build
 

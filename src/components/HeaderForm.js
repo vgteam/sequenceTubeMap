@@ -37,6 +37,7 @@ const CLEAR_STATE = {
   graphSelect: "none",
   gbwtSelect: "none",
   gamSelect: "none",
+  gam2Select: "none",
   bedSelect: "none",
 
   // This tracks several arrays of BED region data, stored by data type, with
@@ -49,6 +50,7 @@ const CLEAR_STATE = {
   graphFile: undefined,
   gbwtFile: undefined,
   gamFile: undefined,
+  gamFile2: undefined,
   bedFile: undefined,
   dataPath: undefined,
   region: "",
@@ -155,6 +157,7 @@ class HeaderForm extends Component {
         graphSelect: graphSelect,
         gbwtFile: ds.gbwtFile,
         gamFile: ds.gamFile,
+        gamFile2: ds.gamFile2,
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
         dataPath: dataPath,
@@ -198,6 +201,9 @@ class HeaderForm extends Component {
             const gamSelect = json.gamIndices.includes(state.gamSelect)
               ? state.gamSelect
               : "none";
+            const gam2Select = json.gamIndices.includes(state.gam2Select)
+              ? state.gam2Select
+              : "none";
             const bedSelect = json.bedFiles.includes(state.bedSelect)
               ? state.bedSelect
               : "none";
@@ -215,6 +221,7 @@ class HeaderForm extends Component {
               graphSelect,
               gbwtSelect,
               gamSelect,
+              gam2Select,
               bedSelect,
             };
           });
@@ -321,6 +328,7 @@ class HeaderForm extends Component {
           graphFile: state.graphSelect,
           gbwtFile: state.gbwtSelect,
           gamFile: state.gamSelect,
+          gamFile2: state.gam2Select,
           bedFile: "none",
           // not sure why we would like to keep the previous selection when changing data sources. What I know is it creates a bug for the regions, where the tubemap tries to read the previous bedFile (e.g. defaulted to example 1), can't find it and raises an error
           // bedFile: state.bedSelect,
@@ -351,6 +359,7 @@ class HeaderForm extends Component {
             graphSelect: ds.graphFile,
             gbwtFile: ds.gbwtFile,
             gamFile: ds.gamFile,
+            gamFile2: ds.gamFile2,
             bedFile: ds.bedFile,
             bedSelect: bedSelect,
             dataPath: dataPath,
@@ -364,11 +373,14 @@ class HeaderForm extends Component {
     }
   };
   getNextViewTarget = () => ({
+
     tracks: [
       createTrack({name: this.state.graphFile, type: fileTypes.GRAPH}), 
       createTrack({name: this.state.gbwtFile, type: fileTypes.HAPLOTYPE}), 
-      createTrack({name: this.state.gamFile, type: fileTypes.READ})
+      createTrack({name: this.state.gamFile, type: fileTypes.READ}),
+      createTrack({name: this.state.gamFile2, type: fileTypes.READ})
     ],
+
     bedFile: this.state.bedFile,
     name: this.state.name,
     region: this.state.region,
@@ -443,6 +455,8 @@ class HeaderForm extends Component {
       this.setState({ gbwtFile: value });
     } else if (id === "gamSelect") {
       this.setState({ gamFile: value });
+    } else if (id === "gam2Select") {
+      this.setState({ gamFile2: value });
     } else if (id === "bedSelect") {
       if (value !== "none") {
         this.getBedRegions(value, this.state.dataPath);
@@ -592,6 +606,7 @@ class HeaderForm extends Component {
                   gbwtSelect={this.state.gbwtSelect}
                   gbwtSelectOptions={this.state.gbwtSelectOptions}
                   gamSelect={this.state.gamSelect}
+                  gam2Select={this.state.gam2Select}
                   gamSelectOptions={this.state.gamSelectOptions}
                   bedSelect={this.state.bedSelect}
                   bedSelectOptions={this.state.bedSelectOptions}

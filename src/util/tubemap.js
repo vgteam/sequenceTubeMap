@@ -3724,7 +3724,7 @@ function compareReadsByLeftEnd2(a, b) {
   return 0;
 }
 
-export function vgExtractReads(myNodes, myTracks, myReads) {
+export function vgExtractReads(myNodes, myTracks, myReads, idLength = 0) {
   if (DEBUG) {
     console.log("Reads:");
     console.log(myReads);
@@ -3817,7 +3817,7 @@ export function vgExtractReads(myNodes, myTracks, myReads) {
       }
     } else {
       const track = {};
-      track.id = myTracks.length + extracted.length;
+      track.id = myTracks.length + extracted.length + idLength;
       track.sequence = sequence;
       track.sequenceNew = sequenceNew;
       track.type = "read";

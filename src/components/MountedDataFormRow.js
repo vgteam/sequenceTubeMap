@@ -51,6 +51,21 @@ class MountedDataFormRow extends Component {
           options={this.props.gamSelectOptions}
         />
         <Label
+          for="gam2SelectInput"
+          className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
+        >
+          gam index 2:
+        </Label>
+        <SelectionDropdown
+          className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
+          id="gam2Select"
+          inputId="gam2SelectInput"
+          value={this.props.gam2Select}
+          onChange={this.props.handleInputChange}
+          options={this.props.gamSelectOptions}
+        />
+
+        <Label
           for="bedSelectInput"
           className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
         >
