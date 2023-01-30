@@ -258,7 +258,48 @@ describe("When we wait for it to load", () => {
     expect(svg).toBeTruthy();
     expect(svg.getElementsByTagName("title").length).toEqual(65);
   });
+
+  it('draws the right SVG for cactus multiple reads', async () => {
+    let dropdown = document.getElementById("dataSourceSelect");
+
+    // Input data dropdown
+    await userEvent.selectOptions(
+      screen.getByLabelText(/Data/i),
+      'cactus multiple reads'
+    );
+    const autocomplete = screen.getByTestId("autocomplete");
+    const input = autocomplete.querySelector("input");
+
+    await userEvent.clear(input);
+
+    // Input region
+    // using fireEvent because userEvent has no change
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "node:1+10" } });
+    expect(input.value).toBe("node:1+10");
+    fireEvent.keyDown(autocomplete, { key: "Enter" });
+
+    // Wait for rendered response
+    await waitFor(() => screen.getByTestId("autocomplete"));
+
+    // Click go
+    let go = document.getElementById("goButton");
+    await userEvent.click(go);
+
+    let loader = document.getElementById("loader");
+    expect(loader).toBeTruthy();
+
+    await waitForLoadEnd();
+
+    // See if correct svg rendered
+    let svg = document.getElementById("svg");
+    expect(svg).toBeTruthy();
+    expect(svg.getElementsByTagName("title").length).toEqual(20);
+  });
+
 });
+
+
 
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
@@ -297,7 +338,7 @@ it("produces correct link for view before & after go is pressed", async () => {
   await clickCopyLink();
 
   const expectedLinkCactus =
-    "http://localhost?tracks[0][files][0][name]=cactus.vg.xg&tracks[0][files][0][type]=graph&tracks[1][files][0][type]=haplotype&tracks[2][files][0][name]=cactus-NA12879.sorted.gam&tracks[2][files][0][type]=read&bedFile=cactus.bed&name=cactus&region=ref:1-100&dataPath=mounted&dataType=built-in";
+    "http://localhost?tracks[0][files][0][name]=cactus.vg.xg&tracks[0][files][0][type]=graph&tracks[1][files][0][type]=haplotype&tracks[2][files][0][name]=cactus-NA12879.sorted.gam&tracks[2][files][0][type]=read&tracks[3][files][0][type]=read&bedFile=cactus.bed&name=cactus&region=ref:1-100&dataPath=mounted&dataType=built-in";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
 });
