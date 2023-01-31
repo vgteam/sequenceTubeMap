@@ -28,14 +28,21 @@ import SelectionDropdown from "./SelectionDropdown";
 export function TrackTypeDropdown (props) {
     // Tweaks to the default react-select styles so that it'll look good with tube maps.
     let {onChange, ...rest} = props;
+    let variable = (
+      <select {...rest} onChange={(onChange)}>
+        <option value="graph">graph</option>
+        <option value="haplotype">haplotype</option>
+        <option value="read">read</option>
+      </select>
+    );
     return (
-      <SelectionDropdown {...rest} options={['graph', 'haplotype', 'read']} onChange={(onChange)} />
+      variable
     );
 }
 
 TrackTypeDropdown.propTypes = {
   id: PropTypes.string,
-  inputId: PropTypes.string,
+  
   className: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func.isRequired,
@@ -43,7 +50,7 @@ TrackTypeDropdown.propTypes = {
 
 TrackTypeDropdown.defaultProps = {
   id: undefined,
-  inputId: undefined,
+  
   className: undefined,
   value: undefined,
 };

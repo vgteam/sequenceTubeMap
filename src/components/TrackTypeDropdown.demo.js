@@ -7,7 +7,7 @@ import TrackTypeDropdown from "./TrackTypeDropdown";
 export default (<Demo
   props={{
     id: P.string('theDropdown'),
-    inputId: P.string('theTextBox'),
+    
     className: P.string('someCSSClass'),
     value: P.choices(['graph', 'haplotype', 'read']),
   }}
