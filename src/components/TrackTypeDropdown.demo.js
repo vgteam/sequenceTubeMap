@@ -7,7 +7,6 @@ import TrackTypeDropdown from "./TrackTypeDropdown";
 export default (<Demo
   props={{
     id: P.string('theDropdown'),
-    
     className: P.string('someCSSClass'),
     value: P.choices(['graph', 'haplotype', 'read']),
   }}
@@ -19,7 +18,7 @@ export default (<Demo
       return <TrackTypeDropdown {...props} onChange={(fakeEvent) => {
         // Bind new value back up to value.
         // Remember: we get a fake event object with a "target" that has an "id" and a "value"
-        update({value: fakeEvent.target.value})
+      update({value: fakeEvent.target.value})
       }}/>
     }
   }

@@ -1,8 +1,5 @@
-import React, { Component } from "react";
+import React from "react";
 import PropTypes from "prop-types";
-import Select from "react-select";
-import SelectionDropdown from "./SelectionDropdown";
-
 /**
  * A searchable track type dropdown component.
  * Expects a two-way-binding where "value" is the selected value (out of the
@@ -16,33 +13,32 @@ import SelectionDropdown from "./SelectionDropdown";
  *   // Here newValue is "read"
  * }}>
  */
- const onChange = (option) => {
-  this.props.onChange({
-    target: {
+export function TrackTypeDropdown (props) {
+  const onChange = (option) => {
+    this.props.onChange({
+      target: {
       id: this.props.id,
       value: option.value,
     },
   });
 };
-
-export function TrackTypeDropdown (props) {
-    // Tweaks to the default react-select styles so that it'll look good with tube maps.
-    let {onChange, ...rest} = props;
-    let variable = (
-      <select {...rest} onChange={(onChange)}>
-        <option value="graph">graph</option>
-        <option value="haplotype">haplotype</option>
-        <option value="read">read</option>
-      </select>
-    );
-    return (
-      variable
-    );
+  
+// Tweaks to the default react-select styles so that it'll look good with tube maps.
+// let {onChange, ...rest} = props;
+let variable = (
+  <select {...props}>
+    <option value="graph">graph</option>
+    <option value="haplotype">haplotype</option>
+    <option value="read">read</option>
+  </select>
+  );
+  return (
+    variable
+  );
 }
 
 TrackTypeDropdown.propTypes = {
   id: PropTypes.string,
-  
   className: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func.isRequired,
@@ -50,7 +46,6 @@ TrackTypeDropdown.propTypes = {
 
 TrackTypeDropdown.defaultProps = {
   id: undefined,
-  
   className: undefined,
   value: undefined,
 };
