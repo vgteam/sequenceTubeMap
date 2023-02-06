@@ -40,6 +40,9 @@ class App extends Component {
         forwardReadColors: "reds",
         reverseReadColors: "blues",
         colorReadsByMappingQuality: false,
+        colors: [{"forward": "ygreys", "reverse": "ygreys", "colorReadsByMappingQuality": false},
+                 {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false},
+                 {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false}],
         mappingQualityCutoff: 0,
       },
     };
@@ -54,13 +57,17 @@ class App extends Component {
     tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
     tubeMap.setShowReadsFlag(visOptions.showReads);
     tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
-    tubeMap.setColorSet("haplotypeColors", visOptions.haplotypeColors);
-    tubeMap.setColorSet("forwardReadColors", visOptions.forwardReadColors);
-    tubeMap.setColorSet("reverseReadColors", visOptions.reverseReadColors);
-    tubeMap.setColorReadsByMappingQualityFlag(
-      visOptions.colorReadsByMappingQuality
-    );
+
+    //To be changed, add options to change colorReadsByMappingQuality individually
+    for (let i = 0; i < visOptions.colors.length; i++) {
+      visOptions.colors[i].colorReadsByMappingQuality = visOptions.colorReadsByMappingQuality;
+    }
+
+    
+
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
+
+    console.log(visOptions.colors);
   }
   /*
    * Drop undefined values
@@ -115,11 +122,14 @@ class App extends Component {
     }));
   };
 
-  setColorSetting = (key, value) => {
+  // key = forward/backward, index = index of colors (0 = haplotype)
+  setColorSetting = (key, index, value) => {
+    let newcolors = [...this.state.visOptions.colors]
+    newcolors[index][key] = value;
     this.setState((state) => ({
       visOptions: {
         ...state.visOptions,
-        [key]: value,
+        colors: newcolors,
       },
     }));
   };

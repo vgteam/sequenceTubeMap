@@ -52,3 +52,18 @@ type RegionInfo = {
   // Numerical string
   start: string[]
 }
+
+// Available color sets
+enum examplecolors{
+  greys,
+  ygreys,
+  blues,
+  reds,
+  plainColors,
+  lightColors
+}
+
+// tubemap.js
+// Stores the assigned color of the track system, also stores boolean colorReadsByMappingQuality
+// Each entry contains the coloring of 1 haplotype file or 1 read file
+type colors = [{"forward": examplecolors, "reverse": examplecolors, "colorReadsByMappingQuality": boolean}]

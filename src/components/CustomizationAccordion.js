@@ -163,24 +163,47 @@ class VisualizationOptions extends Component {
                 <h5>Colors</h5>
                 <Form>
                   <RadioRow
-                    rowHeading="Haplotypes"
-                    color={visOptions.haplotypeColors}
-                    trackType="haplotypeColors"
+                    rowHeading="Haplotypes Forward"
+                    color={visOptions.colors[0].forward}
+                    trackType="forward"
+                    index="0"
                     setColorSetting={this.props.setColorSetting}
                   />
-                  {visOptions.showReads &&
-                    !visOptions.colorReadsByMappingQuality && (
+                  <RadioRow
+                    rowHeading="Haplotypes Reverse"
+                    color={visOptions.colors[0].reverse}
+                    trackType="reverse"
+                    index="0"
+                    setColorSetting={this.props.setColorSetting}
+                  />
+                  {visOptions.showReads && (
                       <React.Fragment>
                         <RadioRow
-                          rowHeading="Reads (forward strand)"
-                          color={visOptions.forwardReadColors}
-                          trackType="forwardReadColors"
+                          rowHeading="Gam1 Forward"
+                          color={visOptions.colors[1].forward}
+                          trackType="forward"
+                          index="1"
                           setColorSetting={this.props.setColorSetting}
                         />
                         <RadioRow
-                          rowHeading="Reads (reverse strand)"
-                          color={visOptions.reverseReadColors}
-                          trackType="reverseReadColors"
+                          rowHeading="Gam1 Reverse"
+                          color={visOptions.colors[1].reverse}
+                          trackType="reverse"
+                          index="1"
+                          setColorSetting={this.props.setColorSetting}
+                        />
+                        <RadioRow
+                          rowHeading="Gam2 Forward"
+                          color={visOptions.colors[2].forward}
+                          trackType="forward"
+                          index="2"
+                          setColorSetting={this.props.setColorSetting}
+                        />
+                        <RadioRow
+                          rowHeading="Gam2 Reverse"
+                          color={visOptions.colors[2].reverse}
+                          trackType="reverse"
+                          index="2"
                           setColorSetting={this.props.setColorSetting}
                         />
                       </React.Fragment>

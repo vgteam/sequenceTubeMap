@@ -125,6 +125,13 @@ class TubeMapContainer extends Component {
           readsArr.push(tubeMap.vgExtractReads(nodes, tracks, gam, readsArr.length));
         }
 
+        // Go through every read and assign it a source file number
+        for (let i = 0; i < readsArr.length; i++) {
+          for (let j = 0; j < readsArr[i].length; j++) {
+            readsArr[i][j].sourceReadID = i;
+          }
+        }
+
         // concatenate all reads together
         const reads = readsArr.flat();
 

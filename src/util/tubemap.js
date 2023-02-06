@@ -91,6 +91,11 @@ const fonts = '"Courier New", "Courier", "Lucida Console", monospace';
 let haplotypeColors = [];
 let forwardReadColors = [];
 let reverseReadColors = [];
+let gam1Colors = [];
+let gam2Colors = [];
+let colors = [{"forward": [], "reverse": []}, 
+              {"forward": [], "reverse": []}, 
+              {"forward": [], "reverse": []}];
 let exonColors = [];
 
 let svgID; // the (html-tag) ID of the svg
@@ -128,6 +133,13 @@ const config = {
   haplotypeColors: "ygreys",
   forwardReadColors: "reds",
   reverseReadColors: "blues",
+  gam1Colors: "reds",
+  gam2Colors: "blues",
+  colors: [{"forward": "ygreys", "reverse": "ygreys", "colorReadsByMappingQuality": false}, 
+           {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false}, 
+           {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false}], 
+           // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
+           // stores haplotype color in the first slot
   exonColors: "lightColors",
   hideLegendFlag: false,
   colorReadsByMappingQuality: false,
@@ -157,7 +169,7 @@ export function create(params) {
   svg = d3.select(params.svgID);
   inputNodes = JSON.parse(JSON.stringify(params.nodes)); // deep copy
   inputTracks = JSON.parse(JSON.stringify(params.tracks)); // deep copy
-  inputReads = params.reads || null;
+  inputReads = params.reads;
   inputRegion = params.region;
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
@@ -321,9 +333,11 @@ export function setShowReadsFlag(value) {
   }
 }
 
-export function setColorSet(trackType, colorSet) {
-  if (config[trackType] !== colorSet) {
-    config[trackType] = colorSet;
+export function setColorSet(fileID, forwardColorSet, reverseColorSet) {
+  const fileColors = colors[fileID];
+  if ((config[fileColors.forward] !== forwardColorSet) || config[fileColors.reverse] !== reverseColorSet) {
+    config[fileColors.forward] = forwardColorSet;
+    config[fileColors.reverse] = reverseColorSet;
     const tr = createTubeMap();
     if (!config.hideLegendFlag && tracks) drawLegend(tr);
   }
@@ -2255,7 +2269,13 @@ function assignColorSets() {
   haplotypeColors = getColorSet(config.haplotypeColors);
   forwardReadColors = getColorSet(config.forwardReadColors);
   reverseReadColors = getColorSet(config.reverseReadColors);
+  gam1Colors = getColorSet(config.gam1Colors);
+  gam2Colors = getColorSet(config.gam2Colors);
   exonColors = getColorSet(config.exonColors);
+  for (let i = 0; i < config.colors.length; i++) {
+    colors[i].forward = getColorSet(config.colors[i].forward);
+    colors[i].reverse = getColorSet(config.colors[i].reverse);
+  }
 }
 
 function getColorSet(colorSetName) {
@@ -2281,25 +2301,28 @@ function generateTrackColor(track, highlight) {
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
   if (track.hasOwnProperty("type") && track.type === "read") {
-    if (config.colorReadsByMappingQuality) {
+    const sourceID = track.sourceReadID + 1;
+    if (config.colors[sourceID].colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
         Math.min(60, track.mapping_quality) / 60
       );
     } else {
+      // offset id by one to skip haplotype color
       if (track.hasOwnProperty("is_reverse") && track.is_reverse === true) {
-        trackColor = reverseReadColors[track.id % reverseReadColors.length];
+        // get the color currently stored for this read source file, and stagger color using modulo
+        trackColor = colors[sourceID].reverse[track.id % colors[sourceID].reverse.length];
       } else {
-        trackColor = forwardReadColors[track.id % forwardReadColors.length];
+        trackColor = colors[sourceID].forward[track.id % colors[sourceID].forward.length];
       }
     }
   } else {
     if (config.showExonsFlag === false || highlight !== "plain") {
       // don't repeat the color of the first track (reference) to highilight is better
       if (track.id === 0) {
-        trackColor = haplotypeColors[0];
+        trackColor = colors[0].forward[0];
       } else {
         trackColor =
-          haplotypeColors[((track.id - 1) % (haplotypeColors.length - 1)) + 1];
+          colors[0].forward[((track.id - 1) % (colors[0].forward.length - 1)) + 1];
       }
     } else {
       trackColor = exonColors[track.id % exonColors.length];
