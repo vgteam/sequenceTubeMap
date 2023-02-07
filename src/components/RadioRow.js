@@ -52,7 +52,7 @@ RadioRow.propTypes = {
   rowHeading: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   trackType: PropTypes.string.isRequired,
-  index: PropTypes.number
+  index: PropTypes.number.isRequired,
 };
 
 export default RadioRow;

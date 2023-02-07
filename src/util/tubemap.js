@@ -333,11 +333,11 @@ export function setShowReadsFlag(value) {
   }
 }
 
-export function setColorSet(fileID, forwardColorSet, reverseColorSet) {
-  const fileColors = colors[fileID];
-  if ((config[fileColors.forward] !== forwardColorSet) || config[fileColors.reverse] !== reverseColorSet) {
-    config[fileColors.forward] = forwardColorSet;
-    config[fileColors.reverse] = reverseColorSet;
+export function setColorSet(fileID, newColor) {
+  const currColor = config.colors[fileID];
+  // update if forward or backward color is different
+  if ((currColor.forward !== newColor.forward) || (currColor.reverse !== newColor.reverse)) {
+    config.colors[fileID] = newColor;
     const tr = createTubeMap();
     if (!config.hideLegendFlag && tracks) drawLegend(tr);
   }
@@ -357,8 +357,13 @@ export function setNodeWidthOption(value) {
 }
 
 export function setColorReadsByMappingQualityFlag(value) {
+  // to be changed, add options to change colorReadsByMappingQuality individually
   if (config.colorReadsByMappingQuality !== value) {
     config.colorReadsByMappingQuality = value;
+    // update all values
+    for (let i = 0; i < config.colors.length; i++) {
+      config.colors[i].colorReadsByMappingQuality = value;
+    }
     svg = d3.select(svgID);
     createTubeMap();
   }

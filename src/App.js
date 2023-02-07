@@ -58,10 +58,15 @@ class App extends Component {
     tubeMap.setShowReadsFlag(visOptions.showReads);
     tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
 
-    //To be changed, add options to change colorReadsByMappingQuality individually
+    // apply new colorReadsByMappingQuality value to all tracks
+    // to be changed, add options to change colorReadsByMappingQuality individually
+    tubeMap.setColorReadsByMappingQualityFlag(visOptions.colorReadsByMappingQuality);
+
     for (let i = 0; i < visOptions.colors.length; i++) {
-      visOptions.colors[i].colorReadsByMappingQuality = visOptions.colorReadsByMappingQuality;
+      // update tubemap colors 
+      tubeMap.setColorSet(i, visOptions.colors[i]);
     }
+
 
     
 
