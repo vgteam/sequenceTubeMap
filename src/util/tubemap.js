@@ -88,11 +88,6 @@ const lightColors = [
 // if they don't have the first font named here.
 const fonts = '"Courier New", "Courier", "Lucida Console", monospace';
 
-let haplotypeColors = [];
-let forwardReadColors = [];
-let reverseReadColors = [];
-let gam1Colors = [];
-let gam2Colors = [];
 let colors = [{"forward": [], "reverse": []}, 
               {"forward": [], "reverse": []}, 
               {"forward": [], "reverse": []}];
@@ -130,11 +125,6 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  haplotypeColors: "ygreys",
-  forwardReadColors: "reds",
-  reverseReadColors: "blues",
-  gam1Colors: "reds",
-  gam2Colors: "blues",
   colors: [{"forward": "ygreys", "reverse": "ygreys", "colorReadsByMappingQuality": false}, 
            {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false}, 
            {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false}], 
@@ -2271,11 +2261,6 @@ export function useColorScheme(x) {
 }
 
 function assignColorSets() {
-  haplotypeColors = getColorSet(config.haplotypeColors);
-  forwardReadColors = getColorSet(config.forwardReadColors);
-  reverseReadColors = getColorSet(config.reverseReadColors);
-  gam1Colors = getColorSet(config.gam1Colors);
-  gam2Colors = getColorSet(config.gam2Colors);
   exonColors = getColorSet(config.exonColors);
   for (let i = 0; i < config.colors.length; i++) {
     colors[i].forward = getColorSet(config.colors[i].forward);

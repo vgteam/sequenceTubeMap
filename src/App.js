@@ -66,13 +66,8 @@ class App extends Component {
       // update tubemap colors 
       tubeMap.setColorSet(i, visOptions.colors[i]);
     }
-
-
-    
-
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
 
-    console.log(visOptions.colors);
   }
   /*
    * Drop undefined values
