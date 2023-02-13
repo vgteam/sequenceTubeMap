@@ -36,13 +36,11 @@ class App extends Component {
         transparentNodes: false,
         showReads: true,
         showSoftClips: true,
-        haplotypeColors: "ygreys",
-        forwardReadColors: "reds",
-        reverseReadColors: "blues",
         colorReadsByMappingQuality: false,
-        colors: [{"forward": "ygreys", "reverse": "ygreys", "colorReadsByMappingQuality": false},
-                 {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false},
-                 {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false}],
+        colorSchemes: [{"mainPallate": "ygreys", "auxPallate": "ygreys", "colorReadsByMappingQuality": false},
+                 {"mainPallate": "ygreys", "auxPallate": "ygreys", "colorReadsByMappingQuality": false},
+                 {"mainPallate": "reds", "auxPallate": "blues", "colorReadsByMappingQuality": false},
+                 {"mainPallate": "reds", "auxPallate": "blues", "colorReadsByMappingQuality": false}],
         mappingQualityCutoff: 0,
       },
     };
@@ -62,9 +60,9 @@ class App extends Component {
     // to be changed, add options to change colorReadsByMappingQuality individually
     tubeMap.setColorReadsByMappingQualityFlag(visOptions.colorReadsByMappingQuality);
 
-    for (let i = 0; i < visOptions.colors.length; i++) {
+    for (let i = 0; i < visOptions.colorSchemes.length; i++) {
       // update tubemap colors 
-      tubeMap.setColorSet(i, visOptions.colors[i]);
+      tubeMap.setColorSet(i, visOptions.colorSchemes[i]);
     }
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
 
@@ -122,9 +120,19 @@ class App extends Component {
     }));
   };
 
-  // key = forward/backward, index = index of colors (0 = haplotype)
+  // Set a color scheme setting for a particular track.
+  //
+  // key is the name of the setting to set, and may be "mainPallate", "auxPallate", or "colorByMappingQuality".
+  //
+  // index is the index in the tracks array of the track to operate on. For now,
+  // haplotypes and paths are lumped together as track 0 here, with up to two
+  // tracks of reads afterward; eventually this will follow the indexing of the real
+  // tracks array. 
+  //
+  // value is the value to set. For "mainPallate" and "auxPallate" this is the name
+  // of a color palette, such as "reds".
   setColorSetting = (key, index, value) => {
-    let newcolors = [...this.state.visOptions.colors]
+    let newcolors = [...this.state.visOptions.colorSchemes]
     newcolors[index][key] = value;
     this.setState((state) => ({
       visOptions: {

@@ -54,7 +54,7 @@ type RegionInfo = {
 }
 
 // Available color sets
-enum examplecolors{
+enum ColorPallete{
   greys,
   ygreys,
   blues,
@@ -63,7 +63,13 @@ enum examplecolors{
   lightColors
 }
 
-// tubemap.js
-// Stores the assigned color of the track system, also stores boolean colorReadsByMappingQuality
-// Each entry contains the coloring of 1 haplotype file or 1 read file
-type colors = [{"forward": examplecolors, "reverse": examplecolors, "colorReadsByMappingQuality": boolean}]
+// Describes the coloring information for a track
+type ColorScheme = {
+    mainPallate: ColorPallete,
+    auxPallate: ColorPallete,
+    colorReadsByMappingQuality: boolean
+}
+
+// Stores the assigned colorschemes of all tracks
+// Entries correspond to their track counterpart, e.g colorSchemes[0] corresponds to tracks[0]
+type colorSchemes = Array<ColorScheme>;

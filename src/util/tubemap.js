@@ -11,6 +11,8 @@
 import * as d3 from "d3";
 import "d3-selection-multi";
 
+const deepEqual = require("deep-equal");
+
 const DEBUG = false;
 
 const greys = [
@@ -82,16 +84,23 @@ const lightColors = [
   "#A8E7ED",
 ];
 
+const defaultHaplotypeColorPallete = {
+  "mainPallate": "ygreys", 
+  "auxPallate": "ygreys", 
+  "colorReadsByMappingQuality": false
+}
+
+const defaultReadColorPallete = {
+  "mainPallate": "reds", 
+  "auxPallate": "blues", 
+  "colorReadsByMappingQuality": false
+}
+
 // Font stack we will use in the SVG
 // We start with Courier New because it exists a lot more places than
 // "Courier", and because tools like Inkscape can't interpret the text properly
 // if they don't have the first font named here.
 const fonts = '"Courier New", "Courier", "Lucida Console", monospace';
-
-let colors = [{"forward": [], "reverse": []}, 
-              {"forward": [], "reverse": []}, 
-              {"forward": [], "reverse": []}];
-let exonColors = [];
 
 let svgID; // the (html-tag) ID of the svg
 let svg; // the svg
@@ -117,7 +126,6 @@ const config = {
   transparentNodesFlag: false,
   clickableNodesFlag: false,
   showExonsFlag: false,
-  colorScheme: 0,
   // Options for the width of sequence nodes:
   // 0...scale node width linear with number of bases within node
   // 1...scale node width with log2 of number of bases within node
@@ -125,9 +133,7 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  colors: [{"forward": "ygreys", "reverse": "ygreys", "colorReadsByMappingQuality": false}, 
-           {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false}, 
-           {"forward": "reds", "reverse": "blues", "colorReadsByMappingQuality": false}], 
+  colorSchemes: [], 
            // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
            // stores haplotype color in the first slot
   exonColors: "lightColors",
@@ -159,7 +165,7 @@ export function create(params) {
   svg = d3.select(params.svgID);
   inputNodes = JSON.parse(JSON.stringify(params.nodes)); // deep copy
   inputTracks = JSON.parse(JSON.stringify(params.tracks)); // deep copy
-  inputReads = params.reads;
+  inputReads = params.reads || null;
   inputRegion = params.region;
   bed = params.bed || null;
   config.clickableNodesFlag = params.clickableNodes || false;
@@ -324,10 +330,10 @@ export function setShowReadsFlag(value) {
 }
 
 export function setColorSet(fileID, newColor) {
-  const currColor = config.colors[fileID];
+  const currColor = config.colorSchemes[fileID];
   // update if forward or backward color is different
-  if ((currColor.forward !== newColor.forward) || (currColor.reverse !== newColor.reverse)) {
-    config.colors[fileID] = newColor;
+  if (!currColor || !deepEqual(currColor, newColor)) {
+    config.colorSchemes[fileID] = newColor;
     const tr = createTubeMap();
     if (!config.hideLegendFlag && tracks) drawLegend(tr);
   }
@@ -347,12 +353,12 @@ export function setNodeWidthOption(value) {
 }
 
 export function setColorReadsByMappingQualityFlag(value) {
-  // to be changed, add options to change colorReadsByMappingQuality individually
+  // TODO: add options to change colorReadsByMappingQuality individually
   if (config.colorReadsByMappingQuality !== value) {
     config.colorReadsByMappingQuality = value;
     // update all values
-    for (let i = 0; i < config.colors.length; i++) {
-      config.colors[i].colorReadsByMappingQuality = value;
+    for (let i = 0; i < config.colorSchemes.length; i++) {
+      config.colorSchemes[i].colorReadsByMappingQuality = value;
     }
     svg = d3.select(svgID);
     createTubeMap();
@@ -395,7 +401,6 @@ function createTubeMap() {
   tracks = JSON.parse(JSON.stringify(inputTracks));
   reads = JSON.parse(JSON.stringify(inputReads));
 
-  assignColorSets();
   reads = filterReads(reads);
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
@@ -2253,20 +2258,8 @@ function calculateTrackWidth() {
   }
 }
 
-export function useColorScheme(x) {
-  config.colorScheme = x;
-  svg = d3.select(svgID);
-  const tr = createTubeMap();
-  if (!config.hideLegendFlag && tracks) drawLegend(tr);
-}
 
-function assignColorSets() {
-  exonColors = getColorSet(config.exonColors);
-  for (let i = 0; i < config.colors.length; i++) {
-    colors[i].forward = getColorSet(config.colors[i].forward);
-    colors[i].reverse = getColorSet(config.colors[i].reverse);
-  }
-}
+
 
 function getColorSet(colorSetName) {
   switch (colorSetName) {
@@ -2288,34 +2281,43 @@ function getColorSet(colorSetName) {
 }
 
 function generateTrackColor(track, highlight) {
+
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
   if (track.hasOwnProperty("type") && track.type === "read") {
-    const sourceID = track.sourceReadID + 1;
-    if (config.colors[sourceID].colorReadsByMappingQuality) {
+    const sourceID = track.sourceTrackID;
+    if (!config.colorSchemes[sourceID]) {
+      config.colorSchemes[sourceID] = defaultReadColorPallete;
+    }
+    if (config.colorSchemes[sourceID].colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
         Math.min(60, track.mapping_quality) / 60
       );
     } else {
-      // offset id by one to skip haplotype color
       if (track.hasOwnProperty("is_reverse") && track.is_reverse === true) {
         // get the color currently stored for this read source file, and stagger color using modulo
-        trackColor = colors[sourceID].reverse[track.id % colors[sourceID].reverse.length];
+        const colorSet = getColorSet(config.colorSchemes[sourceID].auxPallate);
+        trackColor = colorSet[track.id % colorSet.length];
       } else {
-        trackColor = colors[sourceID].forward[track.id % colors[sourceID].forward.length];
+        const colorSet = getColorSet(config.colorSchemes[sourceID].mainPallate);
+        trackColor = colorSet[track.id % colorSet.length];
       }
     }
   } else {
     if (config.showExonsFlag === false || highlight !== "plain") {
+      if (!config.colorSchemes[1]) {
+        config.colorSchemes[1] = defaultHaplotypeColorPallete;
+      }
       // don't repeat the color of the first track (reference) to highilight is better
       if (track.id === 0) {
-        trackColor = colors[0].forward[0];
+        trackColor = getColorSet(config.colorSchemes[1].mainPallate)[0];
       } else {
-        trackColor =
-          colors[0].forward[((track.id - 1) % (colors[0].forward.length - 1)) + 1];
+        const colorSet = getColorSet(config.colorSchemes[1].mainPallate);
+        trackColor = colorSet[((track.id - 1) % (colorSet.length - 1)) + 1];
       }
     } else {
-      trackColor = exonColors[track.id % exonColors.length];
+      const colorSet = getColorSet(config.exonColors);
+      trackColor = colorSet[track.id % colorSet.length];
     }
   }
   return trackColor;
