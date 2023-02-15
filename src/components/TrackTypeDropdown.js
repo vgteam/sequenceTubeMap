@@ -6,35 +6,51 @@ import PropTypes from "prop-types";
  * possible track types), and calling "onChange" with an string
  * updates the value.
  * 
- * 
- * 
  * So for example:
  * <TrackTypeDropdown id="box1" value="read" onChange={(newValue) => {
  *   // Here newValue is "read"
  * }}>
  */
 export function TrackTypeDropdown (props) {
-  const onChange = (option) => {
-    this.props.onChange({
-      target: {
-      id: this.props.id,
-      value: option.value,
-    },
-  });
-};
-  
-// Tweaks to the default react-select styles so that it'll look good with tube maps.
-// let {onChange, ...rest} = props;
-let variable = (
-  <select {...props}>
-    <option value="graph">graph</option>
-    <option value="haplotype">haplotype</option>
-    <option value="read">read</option>
-  </select>
-  );
-  return (
-    variable
-  );
+    // Tweaks to the default react-select styles so that it'll look good with tube maps.
+
+    // Given a change event on a dropdown with various options, return the 
+      //string value for the user's selection 
+    
+    const eventToString = (changeEvent) => {
+      return changeEvent.target.value;
+    }
+
+    // eventToString function to stringFnToEventFn function
+    const stringFnToEventFn = (eventToString) => {
+      
+    }
+
+
+
+    /*
+    const onChange = (props) => {
+      props({
+        target: {
+          id: props.id,
+          value: props.value,
+        },
+      });
+    };
+    */
+
+    let {...rest} = props;
+    
+    let variable = (
+      <select {...rest} onChange={(props.onChange)}>
+        <option value="graph">graph</option>
+        <option value="haplotype">haplotype</option>
+        <option value="read">read</option>
+      </select>
+    );
+    return (
+      variable
+    );
 }
 
 TrackTypeDropdown.propTypes = {

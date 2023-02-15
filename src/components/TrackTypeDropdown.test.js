@@ -16,5 +16,6 @@ describe('TrackTypeDropdown', () => {
             'graph'
           );
         expect(onChange).toHaveBeenCalledTimes(1);
+        expect(onChange).toHaveBeenLastCalledWith("graph");
     });
 });
