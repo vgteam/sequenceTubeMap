@@ -124,6 +124,27 @@ class TubeMapContainer extends Component {
           // Include readsArr length to prevent duplicate ids
           readsArr.push(tubeMap.vgExtractReads(nodes, tracks, gam, readsArr.length));
         }
+        
+        // go through viewTarget and create array of read file track numbers
+        let sourceTrackIDs = [];
+        for (let i = 0; i < this.props.viewTarget.tracks.length; i++) {
+          const track = this.props.viewTarget.tracks[i];
+          //add track index to array if the track contains a gam file
+          for (const file of track.files) {
+            if (file.type === "read") {
+              sourceTrackIDs.push(i);
+              break;
+            }
+          }
+        }
+
+        console.log(sourceTrackIDs);
+        // Go through every read and assign it a source file number
+        for (let i = 0; i < readsArr.length; i++) {
+          for (let j = 0; j < readsArr[i].length; j++) {
+            readsArr[i][j].sourceTrackID = sourceTrackIDs[i];
+          }
+        }
 
         // concatenate all reads together
         const reads = readsArr.flat();

@@ -52,3 +52,24 @@ type RegionInfo = {
   // Numerical string
   start: string[]
 }
+
+// Available color sets
+enum ColorPallete{
+  greys,
+  ygreys,
+  blues,
+  reds,
+  plainColors,
+  lightColors
+}
+
+// Describes the coloring information for a track
+type ColorScheme = {
+    mainPallete: ColorPallete,
+    auxPallete: ColorPallete,
+    colorReadsByMappingQuality: boolean
+}
+
+// Stores the assigned colorschemes of all tracks
+// Entries correspond to their track counterpart, e.g colorSchemes[0] corresponds to tracks[0]
+type colorSchemes = Array<ColorScheme>;

@@ -10,6 +10,9 @@
 /* eslint no-return-assign: "off" */
 import * as d3 from "d3";
 import "d3-selection-multi";
+import externalConfig from "../config.json";
+
+const deepEqual = require("deep-equal");
 
 const DEBUG = false;
 
@@ -82,16 +85,12 @@ const lightColors = [
   "#A8E7ED",
 ];
 
+
 // Font stack we will use in the SVG
 // We start with Courier New because it exists a lot more places than
 // "Courier", and because tools like Inkscape can't interpret the text properly
 // if they don't have the first font named here.
 const fonts = '"Courier New", "Courier", "Lucida Console", monospace';
-
-let haplotypeColors = [];
-let forwardReadColors = [];
-let reverseReadColors = [];
-let exonColors = [];
 
 let svgID; // the (html-tag) ID of the svg
 let svg; // the svg
@@ -117,7 +116,6 @@ const config = {
   transparentNodesFlag: false,
   clickableNodesFlag: false,
   showExonsFlag: false,
-  colorScheme: 0,
   // Options for the width of sequence nodes:
   // 0...scale node width linear with number of bases within node
   // 1...scale node width with log2 of number of bases within node
@@ -125,9 +123,9 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  haplotypeColors: "ygreys",
-  forwardReadColors: "reds",
-  reverseReadColors: "blues",
+  colorSchemes: [], 
+           // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
+           // stores haplotype color in the first slot
   exonColors: "lightColors",
   hideLegendFlag: false,
   colorReadsByMappingQuality: false,
@@ -321,9 +319,11 @@ export function setShowReadsFlag(value) {
   }
 }
 
-export function setColorSet(trackType, colorSet) {
-  if (config[trackType] !== colorSet) {
-    config[trackType] = colorSet;
+export function setColorSet(fileID, newColor) {
+  const currColor = config.colorSchemes[fileID];
+  // update if forward or backward color is different
+  if (!currColor || !deepEqual(currColor, newColor)) {
+    config.colorSchemes[fileID] = newColor;
     const tr = createTubeMap();
     if (!config.hideLegendFlag && tracks) drawLegend(tr);
   }
@@ -343,8 +343,13 @@ export function setNodeWidthOption(value) {
 }
 
 export function setColorReadsByMappingQualityFlag(value) {
+  // TODO: add options to change colorReadsByMappingQuality individually
   if (config.colorReadsByMappingQuality !== value) {
     config.colorReadsByMappingQuality = value;
+    // update all values
+    for (let i = 0; i < config.colorSchemes.length; i++) {
+      config.colorSchemes[i].colorReadsByMappingQuality = value;
+    }
     svg = d3.select(svgID);
     createTubeMap();
   }
@@ -386,7 +391,6 @@ function createTubeMap() {
   tracks = JSON.parse(JSON.stringify(inputTracks));
   reads = JSON.parse(JSON.stringify(inputReads));
 
-  assignColorSets();
   reads = filterReads(reads);
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
@@ -2244,19 +2248,8 @@ function calculateTrackWidth() {
   }
 }
 
-export function useColorScheme(x) {
-  config.colorScheme = x;
-  svg = d3.select(svgID);
-  const tr = createTubeMap();
-  if (!config.hideLegendFlag && tracks) drawLegend(tr);
-}
 
-function assignColorSets() {
-  haplotypeColors = getColorSet(config.haplotypeColors);
-  forwardReadColors = getColorSet(config.forwardReadColors);
-  reverseReadColors = getColorSet(config.reverseReadColors);
-  exonColors = getColorSet(config.exonColors);
-}
+
 
 function getColorSet(colorSetName) {
   switch (colorSetName) {
@@ -2278,31 +2271,43 @@ function getColorSet(colorSetName) {
 }
 
 function generateTrackColor(track, highlight) {
+
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
   if (track.hasOwnProperty("type") && track.type === "read") {
-    if (config.colorReadsByMappingQuality) {
+    const sourceID = track.sourceTrackID;
+    if (!config.colorSchemes[sourceID]) {
+      config.colorSchemes[sourceID] = externalConfig.defaultReadColorPallete;
+    }
+    if (config.colorSchemes[sourceID].colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
         Math.min(60, track.mapping_quality) / 60
       );
     } else {
       if (track.hasOwnProperty("is_reverse") && track.is_reverse === true) {
-        trackColor = reverseReadColors[track.id % reverseReadColors.length];
+        // get the color currently stored for this read source file, and stagger color using modulo
+        const colorSet = getColorSet(config.colorSchemes[sourceID].auxPallete);
+        trackColor = colorSet[track.id % colorSet.length];
       } else {
-        trackColor = forwardReadColors[track.id % forwardReadColors.length];
+        const colorSet = getColorSet(config.colorSchemes[sourceID].mainPallete);
+        trackColor = colorSet[track.id % colorSet.length];
       }
     }
   } else {
     if (config.showExonsFlag === false || highlight !== "plain") {
+      if (!config.colorSchemes[1]) {
+        config.colorSchemes[1] = externalConfig.defaultHaplotypeColorPallete;
+      }
       // don't repeat the color of the first track (reference) to highilight is better
       if (track.id === 0) {
-        trackColor = haplotypeColors[0];
+        trackColor = getColorSet(config.colorSchemes[1].mainPallete)[0];
       } else {
-        trackColor =
-          haplotypeColors[((track.id - 1) % (haplotypeColors.length - 1)) + 1];
+        const colorSet = getColorSet(config.colorSchemes[1].mainPallete);
+        trackColor = colorSet[((track.id - 1) % (colorSet.length - 1)) + 1];
       }
     } else {
-      trackColor = exonColors[track.id % exonColors.length];
+      const colorSet = getColorSet(config.exonColors);
+      trackColor = colorSet[track.id % colorSet.length];
     }
   }
   return trackColor;
