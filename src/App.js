@@ -37,10 +37,11 @@ class App extends Component {
         showReads: true,
         showSoftClips: true,
         colorReadsByMappingQuality: false,
-        colorSchemes: [{"mainPallate": "ygreys", "auxPallate": "ygreys", "colorReadsByMappingQuality": false},
-                 {"mainPallate": "ygreys", "auxPallate": "ygreys", "colorReadsByMappingQuality": false},
-                 {"mainPallate": "reds", "auxPallate": "blues", "colorReadsByMappingQuality": false},
-                 {"mainPallate": "reds", "auxPallate": "blues", "colorReadsByMappingQuality": false}],
+        colorSchemes: [
+                  {...config.defaultHaplotypeColorPallete},
+                  {...config.defaultHaplotypeColorPallete},
+                  {...config.defaultReadColorPallete},
+                  {...config.defaultReadColorPallete}],
         mappingQualityCutoff: 0,
       },
     };
@@ -122,14 +123,14 @@ class App extends Component {
 
   // Set a color scheme setting for a particular track.
   //
-  // key is the name of the setting to set, and may be "mainPallate", "auxPallate", or "colorByMappingQuality".
+  // key is the name of the setting to set, and may be "mainPallete", "auxPallete", or "colorByMappingQuality".
   //
   // index is the index in the tracks array of the track to operate on. For now,
   // haplotypes and paths are lumped together as track 0 here, with up to two
   // tracks of reads afterward; eventually this will follow the indexing of the real
   // tracks array. 
   //
-  // value is the value to set. For "mainPallate" and "auxPallate" this is the name
+  // value is the value to set. For "mainPallete" and "auxPallete" this is the name
   // of a color palette, such as "reds".
   setColorSetting = (key, index, value) => {
     let newcolors = [...this.state.visOptions.colorSchemes]

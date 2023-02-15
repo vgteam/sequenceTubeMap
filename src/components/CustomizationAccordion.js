@@ -164,15 +164,15 @@ class VisualizationOptions extends Component {
                 <Form>
                   <RadioRow
                     rowHeading="Haplotypes Forward"
-                    color={visOptions.colorSchemes[1].mainPallate}
-                    trackType="mainPallate"
+                    color={visOptions.colorSchemes[1].mainPallete}
+                    trackType="mainPallete"
                     index="1"
                     setColorSetting={this.props.setColorSetting}
                   />
                   <RadioRow
                     rowHeading="Haplotypes Reverse"
-                    color={visOptions.colorSchemes[1].auxPallate}
-                    trackType="auxPallate"
+                    color={visOptions.colorSchemes[1].auxPallete}
+                    trackType="auxPallete"
                     index="1"
                     setColorSetting={this.props.setColorSetting}
                   />
@@ -180,29 +180,29 @@ class VisualizationOptions extends Component {
                       <React.Fragment>
                         <RadioRow
                           rowHeading="Gam1 Forward"
-                          color={visOptions.colorSchemes[2].mainPallate}
-                          trackType="mainPallate"
+                          color={visOptions.colorSchemes[2].mainPallete}
+                          trackType="mainPallete"
                           index="2"
                           setColorSetting={this.props.setColorSetting}
                         />
                         <RadioRow
                           rowHeading="Gam1 Reverse"
-                          color={visOptions.colorSchemes[2].auxPallate}
-                          trackType="auxPallate"
+                          color={visOptions.colorSchemes[2].auxPallete}
+                          trackType="auxPallete"
                           index="2"
                           setColorSetting={this.props.setColorSetting}
                         />
                         <RadioRow
                           rowHeading="Gam2 Forward"
-                          color={visOptions.colorSchemes[3].mainPallate}
-                          trackType="mainPallate"
+                          color={visOptions.colorSchemes[3].mainPallete}
+                          trackType="mainPallete"
                           index="3"
                           setColorSetting={this.props.setColorSetting}
                         />
                         <RadioRow
                           rowHeading="Gam2 Reverse"
-                          color={visOptions.colorSchemes[3].auxPallate}
-                          trackType="auxPallate"
+                          color={visOptions.colorSchemes[3].auxPallete}
+                          trackType="auxPallete"
                           index="3"
                           setColorSetting={this.props.setColorSetting}
                         />

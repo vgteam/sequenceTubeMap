@@ -44,5 +44,17 @@
   ],
   "vgPath": "",
   "dataPath": "./exampleData",
-  "internalDataPath": "./exampleData/internal/"
+  "internalDataPath": "./exampleData/internal/",
+
+  "defaultHaplotypeColorPallete" : {
+    "mainPallete": "ygreys", 
+    "auxPallete": "ygreys", 
+    "colorReadsByMappingQuality": false
+  },
+  
+  "defaultReadColorPallete" : {
+    "mainPallete": "reds", 
+    "auxPallete": "blues", 
+    "colorReadsByMappingQuality": false
+  }
 }

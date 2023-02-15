@@ -65,8 +65,8 @@ enum ColorPallete{
 
 // Describes the coloring information for a track
 type ColorScheme = {
-    mainPallate: ColorPallete,
-    auxPallate: ColorPallete,
+    mainPallete: ColorPallete,
+    auxPallete: ColorPallete,
     colorReadsByMappingQuality: boolean
 }
 
