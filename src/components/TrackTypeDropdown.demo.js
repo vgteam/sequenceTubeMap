@@ -15,10 +15,10 @@ export default (<Demo
     (props, update) => {
       // We need to render the component under test using the props in props, and
       // call update when the component wants to adjust the props.
-      return <TrackTypeDropdown {...props} onChange={(fakeEvent) => {
+      return <TrackTypeDropdown {...props} onChange={(new_value) => {
         // Bind new value back up to value.
-        // Remember: we get a fake event object with a "target" that has an "id" and a "value"
-      update({value: fakeEvent.target.value})
+        // Remember: we get a string 
+      update({value: new_value})
       }}/>
     }
   }
