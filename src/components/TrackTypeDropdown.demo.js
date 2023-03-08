@@ -3,7 +3,6 @@ import Demo, {props as P} from 'react-demo'
 
 import TrackTypeDropdown from "./TrackTypeDropdown";
 
-// We want to two-way-bind the demo region prop so we use advanced mode and pass the render function.
 export default (<Demo
   props={{
     id: P.string('theDropdown'),
@@ -18,7 +17,7 @@ export default (<Demo
       return <TrackTypeDropdown {...props} onChange={(new_value) => {
         // Bind new value back up to value.
         // Remember: we get a string 
-      update({value: new_value})
+        update({value: new_value})
       }}/>
     }
   }
