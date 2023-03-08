@@ -2,55 +2,37 @@ import React from "react";
 import PropTypes from "prop-types";
 /**
  * A searchable track type dropdown component.
- * Expects a two-way-binding where "value" is the selected value (out of the
- * possible track types), and calling "onChange" with an string
- * updates the value.
+ * Created using composition of functions approach.
  * 
- * So for example:
- * <TrackTypeDropdown id="box1" value="read" onChange={(newValue) => {
- *   // Here newValue is "read"
- * }}>
+ * Expects a two-way-binding where "value" is the selected value (out of the
+ * possible track types), and calling "onChange" updates the value.
+ * 
  */
-
-// todo: create an onChange function that takes in an event and turns it to a string
 
 export function TrackTypeDropdown (props) {
     // Tweaks to the default react-select styles so that it'll look good with tube maps.
 
-    // Given a change event on a dropdown with various options, return the 
+    // eventToString: given a change event on a dropdown with various options, return the 
       //string value for the user's selection 
-    
-    
     const eventToString = (changeEvent) => {
       return changeEvent.target.value;
     }
 
+    // composition function
     const compose = (f, g) => x => f(g(x));
 
-    // input event handler that takes in a string (Track type)
-    // output event handler to take in an event
-    // this function should change event handler's input type
-    // eventToString function to stringFnToEventFn function
+    // input string function, and output function to take in an event 
+    // props.onChange will be the outer function accepting result of eventToString, 
+    //  to result in a function that accepts a selection event
     const stringFnToEventFn = (StringFn) => {
-      //props.onChange(StringFn);
       return compose(StringFn, eventToString);
     }
-    
-    /*
-    const onChange = (props) => {
-      props({
-        target: {
-          id: props.id,
-          value: props.value,
-        },
-      });
-    };
-    */
-
+  
     // copies props into rest 
     let {...rest} = props;
     
-    
+    // dropdown and selections
+    // upon selection of a dropdown option, call onChange function 
     let dropdown = (
       <select {...rest} onChange={stringFnToEventFn(props.onChange)}>
         <option value="graph">graph</option>
