@@ -7,16 +7,21 @@ import TrackFilePicker from "./TrackFilePicker";
 
 export default (<Demo
   props={{
-    fileOptions: P.json(["fileA", "fileB", "fileC", "anotherfile.vg"]),
-    fileSelect: P.string("fileA"),
-    pickerType: P.string("dropdown"),
+    tracks: P.json([{"files": [{"name": "fileA1.vg", "type": "graph"},
+                              {"name": "fileA2.gbwt", "type": "haplotype"}]},
+                    {"files": [{"name": "fileB1.gbwt", "type": "haplotype"},
+                              {"name": "fileB2.gam", "type": "read"}]},
+                    {"files": [{"name": "fileC1.xg", "type": "graph"}]}]),
+
+    fileType: P.choices(["graph", "haplotype", "read"]),
+    pickerType: P.choices(["dropdown", "upload"]),
   }}
 >
   {
     (props, update) => {
       return <TrackFilePicker {...props} handleInputChange={(file) => {
         // takes file name as value, updates the fileSelect prop in TrackFilePicker
-        update({fileSelect: file});
+        update({value: file});
       }}/>
     }
   }

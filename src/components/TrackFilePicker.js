@@ -6,37 +6,42 @@ import Select from "react-select";
 
 //handleInputChange takes in a string trackType
 export const TrackFilePicker = ({
-  fileOptions, // array of string representing files names
-  fileSelect, 
+  tracks, // array of available tracks
+  fileType, // e.g read, gam, graph
   handleInputChange,
   pickerType, // either "dropdown or upload" to determine which component we render
   className 
 }) => {
 
-    const [currFile, setFile] = useState(fileSelect);
-
 
     function onChange(option) {
-      // update state
-      setFile(option.value);
-      // handle input change from parent
+      // update parent state
       handleInputChange(option.value);
+    }
+
+
+    const fileOptions = []
+    // find all file options matching the specified file type
+    for (const track of tracks) {
+        for (const file of track["files"]) {
+          if (file["type"] === fileType) {
+            fileOptions.push(file);
+          }
+        }
     }
 
     // takes in an array of options and maps them into a format <Select> takes
     const dropDownOptions = fileOptions.map((option) => ({
-      label: option,
+      label: option["name"],
       value: option,
     }));
+    
 
     if (pickerType === "dropdown"){
       return(
       // wrap Select container in div to easily query in tests
         <div data-testid="file-select-component">
             <Select 
-              value={dropDownOptions.filter(function(option) {
-                return option.value === currFile;})
-              } 
               options={dropDownOptions} 
               onChange={onChange}
               placeholder="Select a file"
@@ -54,14 +59,13 @@ export const TrackFilePicker = ({
 
       );
     } else {
-      console.log("use dropdown or upload as pickerType");
-      return <h1>Something went wrong.</h1>;
+      throw new Error("Invalid picker type");
     }
 }
 
 TrackFilePicker.propTypes = {
-    fileOptions: PropTypes.array.isRequired,
-    fileSelect: PropTypes.string.isRequired,
+    tracks: PropTypes.array.isRequired,
+    fileType: PropTypes.string.isRequired,
     handleInputChange: PropTypes.func.isRequired,
     pickerType: PropTypes.string,
     className: PropTypes.string,
@@ -69,7 +73,7 @@ TrackFilePicker.propTypes = {
   
 TrackFilePicker.defaultProps = {
   pickerType: "dropdown",
-  classname: undefined
+  className: undefined
 }
 
 export default TrackFilePicker;

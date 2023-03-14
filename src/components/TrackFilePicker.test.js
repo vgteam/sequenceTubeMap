@@ -5,20 +5,24 @@ import {TrackFilePicker} from './TrackFilePicker';
 
 
 describe('TrackFilePicker', () => {
-    const testOptions = ["fileA", "fileB", "fileC"];
+    const testTracks = [{"files": [{"name": "fileA1.vg", "type": "graph"},
+                                   {"name": "fileA2.gbwt", "type": "haplotype"}]},
+                        {"files": [{"name": "fileB1.gbwt", "type": "haplotype"},
+                                   {"name": "fileB2.gam", "type": "read"}]},
+                        {"files": [{"name": "fileC1.xg", "type": "graph"}]}];
 
     it('should render withouterrors', async () => {
         const fakeOnChange = jest.fn();
         const { getByText } = render(
             <TrackFilePicker 
-            fileOptions={testOptions}
-            fileSelect={"fileA"}
+            tracks={testTracks}
+            fileType={"graph"}
             pickerType={"dropdown"}
             handleInputChange={fakeOnChange}/>
         );
 
         // maybe need to search by "Select a file"
-        const placeholder = getByText("fileA");
+        const placeholder = getByText("Select a file");
         expect(placeholder).toBeTruthy();
     });
 
@@ -26,8 +30,8 @@ describe('TrackFilePicker', () => {
         const fakeOnChange = jest.fn();
         const { getByText, queryByTestId } = render(
             <TrackFilePicker 
-            fileOptions={testOptions}
-            fileSelect={"fileA"}
+            tracks={testTracks}
+            fileType={"haplotype"}
             pickerType={"dropdown"}
             handleInputChange={fakeOnChange}/>
         );
@@ -40,28 +44,28 @@ describe('TrackFilePicker', () => {
 
         // expand the select box
         fireEvent.keyDown(fileSelectComponent.firstChild, {key: "ArrowDown"});
-        await waitFor(() => getByText("fileB"));
-        fireEvent.click(getByText("fileB"));
+        await waitFor(() => getByText("fileB1.gbwt"));
+        fireEvent.click(getByText("fileB1.gbwt"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
-        expect(fakeOnChange).toHaveBeenCalledWith("fileB");
+        expect(fakeOnChange).toHaveBeenCalledWith({"name": "fileB1.gbwt", "type": "haplotype"});
 
         // make sure we can repeat the process
         fireEvent.keyDown(fileSelectComponent.firstChild, {key: "ArrowDown"});
-        await waitFor(() => getByText("fileC"));
-        fireEvent.click(getByText("fileC"));
+        await waitFor(() => getByText("fileA2.gbwt"));
+        fireEvent.click(getByText("fileA2.gbwt"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(2);
-        expect(fakeOnChange).toHaveBeenCalledWith("fileC");
+        expect(fakeOnChange).toHaveBeenCalledWith({"name": "fileA2.gbwt", "type": "haplotype"});
 
     });
 
-    it('should call onChange when filter by input value' ,async() => {
+    it('should call onChange when queried by input value' ,async() => {
         const fakeOnChange = jest.fn();
         const { getByText, queryByTestId, container  } = render(
             <TrackFilePicker 
-            fileOptions={testOptions}
-            fileSelect={"fileA"}
+            tracks={testTracks}
+            fileType={"graph"}
             pickerType={"dropdown"}
             handleInputChange={fakeOnChange}/>
         );
@@ -69,16 +73,16 @@ describe('TrackFilePicker', () => {
         const fileSelectComponent = queryByTestId('file-select-component');
         
         fireEvent.change(container.querySelector('input'), {
-            target: { value: 'fileC' },
+            target: { value: 'fileC1.xg' },
         });
         
         fireEvent.keyDown(fileSelectComponent.firstChild, { key: 'ArrowDown' });  
 
-        await waitFor(() => getByText("fileC"));
-        fireEvent.click(getByText("fileC"));
+        await waitFor(() => getByText("fileC1.xg"));
+        fireEvent.click(getByText("fileC1.xg"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
-        expect(fakeOnChange).toHaveBeenCalledWith("fileC");
+        expect(fakeOnChange).toHaveBeenCalledWith({"name": "fileC1.xg", "type": "graph"});
     })
     
 });
