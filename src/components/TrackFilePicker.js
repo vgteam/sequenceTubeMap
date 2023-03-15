@@ -43,8 +43,15 @@ export const TrackFilePicker = ({
       // wrap Select container in div to easily query in tests
         <div data-testid="file-select-component">
             <Select 
-              options={dropDownOptions} 
-              defaultValue={{label: value["name"], value: value}}
+              options={dropDownOptions}
+              value={{label: value["name"], value: value}}
+              // Identical-looking object literals will compare unequal, so we
+              // need to provide a way to turn them into strings so that
+              // `value` can be matched up with the corresponding item in
+              // `options`.
+              getOptionValue={(o) => {
+                return o["label"];
+              }}
               onChange={onChange}
               //placeholder="Select a file"
               autoComplete="on"
