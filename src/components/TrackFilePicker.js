@@ -7,6 +7,7 @@ import Select from "react-select";
 export const TrackFilePicker = ({
   tracks, // array of available tracks
   fileType, // e.g read, gam, graph
+  value, // input file
   handleInputChange,
   pickerType, // either "dropdown or upload" to determine which component we render
   className 
@@ -15,6 +16,7 @@ export const TrackFilePicker = ({
 
     function onChange(option) {
       // update parent state
+      value = option.value;
       handleInputChange(option.value);
     }
 
@@ -42,8 +44,9 @@ export const TrackFilePicker = ({
         <div data-testid="file-select-component">
             <Select 
               options={dropDownOptions} 
+              defaultValue={{label: value["name"], value: value}}
               onChange={onChange}
-              placeholder="Select a file"
+              //placeholder="Select a file"
               autoComplete="on"
               className={className}
             />  
@@ -65,12 +68,14 @@ export const TrackFilePicker = ({
 TrackFilePicker.propTypes = {
     tracks: PropTypes.array.isRequired,
     fileType: PropTypes.string.isRequired,
+    value: PropTypes.object,
     handleInputChange: PropTypes.func.isRequired,
     pickerType: PropTypes.string,
     className: PropTypes.string,
 }
   
 TrackFilePicker.defaultProps = {
+  value: {"name": "Select a file", "type": undefined},
   pickerType: "dropdown",
   className: undefined
 }

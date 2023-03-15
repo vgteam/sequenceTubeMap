@@ -13,6 +13,7 @@ export default (<Demo
                               {"name": "fileB2.gam", "type": "read"}]},
                     {"files": [{"name": "fileC1.xg", "type": "graph"}]}]),
 
+    value: P.json({"name": "fileA1.vg", "type": "graph"}),
     fileType: P.choices(["graph", "haplotype", "read"]),
     pickerType: P.choices(["dropdown", "upload"]),
   }}
