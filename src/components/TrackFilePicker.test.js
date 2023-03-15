@@ -11,7 +11,7 @@ describe('TrackFilePicker', () => {
                                    {"name": "fileB2.gam", "type": "read"}]},
                         {"files": [{"name": "fileC1.xg", "type": "graph"}]}];
 
-    it('should render withouterrors', async () => {
+    it('should render without errors', async () => {
         const fakeOnChange = jest.fn();
         const { getByText } = render(
             <TrackFilePicker 
@@ -22,8 +22,39 @@ describe('TrackFilePicker', () => {
         );
 
         // maybe need to search by "Select a file"
-        const placeholder = getByText("Select a file");
+        const placeholder = await getByText("Select a file");
         expect(placeholder).toBeTruthy();
+    });
+    
+    it('should allow value to be controlled', async () => {
+        const fakeOnChange = jest.fn();
+        const { getByText, queryByText, rerender } = render(
+            <TrackFilePicker 
+            tracks={testTracks}
+            fileType={"graph"}
+            pickerType={"dropdown"}
+            value={{"name": "fileA1.vg", "type": "graph"}}
+            handleInputChange={fakeOnChange}/>
+        );
+
+        let displayed = getByText("fileA1.vg");
+        expect(displayed).toBeTruthy();
+        let notDisplayed = queryByText("fileC1.xg");
+        expect(notDisplayed).toBeFalsy();
+        
+        rerender(
+            <TrackFilePicker 
+            tracks={testTracks}
+            fileType={"graph"}
+            pickerType={"dropdown"}
+            value={{"name": "fileC1.xg", "type": "graph"}}
+            handleInputChange={fakeOnChange}/>
+        );
+        
+        displayed = getByText("fileC1.xg");
+        expect(displayed).toBeTruthy();
+        notDisplayed = queryByText("fileA1.vg");
+        expect(notDisplayed).toBeFalsy();
     });
 
     it('should call onChange when an option is selected', async () => {
