@@ -53,7 +53,6 @@ export const TrackFilePicker = ({
                 return o["label"];
               }}
               onChange={onChange}
-              //placeholder="Select a file"
               autoComplete="on"
               className={className}
             />  
