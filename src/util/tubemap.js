@@ -3020,8 +3020,9 @@ function drawNodes(dNodes) {
 }
 
 function getPopUpText(node) {
+
   return (
-    `Node ID: ${node.name}\n` +
+    `Node ID: ${node.name}` + (node.switched ? ` (reversed)` : ``) + `\n` +
     `Node Length: ${node.sequenceLength} bases\n` +
     `Haplotypes: ${node.degree}\n` +
     `Aligned Reads: ${
