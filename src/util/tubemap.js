@@ -1031,17 +1031,26 @@ function generateTrackIndexSequences(tracksOrReads) {
     track.sequence.forEach((nodeName) => {
       // if node was switched, reverse it here
       // Q? Is flipping the index enough? It looks like yes. Or should we also flip the node name in 'sequence'?
-      if (nodes[nodeMap.get(forward(nodeName))].switched) {
+      let switched = nodes[nodeMap.get(forward(nodeName))].switched || false;
+      if (switched) {
+        console.log('Visit to ' + nodeName + ' is a visit to a switched node so we should appear to visit ' + flip(nodeName));
         nodeName = flip(nodeName);
       }
+      // Get the index to visit the node. If the node is switched, this means
+      // visiting it reverse. Otherwise, this means visiting it forward.
       let nodeIndex = nodeMap.get(forward(nodeName));
       if (nodeIndex == 0) {
         // If a node index is ever 0, we can't visit it in reverse, so we don't allow that to happen.
         throw new Error('Node ' + forward(nodeName) + ' has prohibited index 0'); 
       }
-      if (isReverse(nodeName)) {
+      if (isReverse(nodeName) != switched) {
+        // If we visit the node in reverse XOR the node is switched, go through
+        // it right to left as displayed.
         track.indexSequence.push(-nodeIndex);
       } else {
+        // If either the node isn't switched and we go through it forward, or
+        // the node is switched *and* we go through it backward, go through it
+        // left to right as displayed. 
         track.indexSequence.push(nodeIndex);
       }
     });
