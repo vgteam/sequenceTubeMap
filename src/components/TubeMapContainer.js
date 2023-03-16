@@ -173,6 +173,7 @@ class TubeMapContainer extends Component {
     let tracks = [];
     let reads = [];
     let region = [];
+    let vg;
     const data = await import("../util/demo-data");
     nodes = data.inputNodes;
     switch (this.props.dataOrigin) {
@@ -192,13 +193,23 @@ class TubeMapContainer extends Component {
         tracks = data.inputTracks5;
         break;
       case dataOriginTypes.EXAMPLE_6:
-        const vg = JSON.parse(data.k3138);
+        vg = JSON.parse(data.k3138);
         nodes = tubeMap.vgExtractNodes(vg);
         tracks = tubeMap.vgExtractTracks(vg);
         reads = tubeMap.vgExtractReads(
           nodes,
           tracks,
           this.readsFromStringToArray(data.demoReads)
+        );
+        break;
+      case dataOriginTypes.EXAMPLE_7:
+        vg = data.reverseAlignmentGraph;
+        nodes = tubeMap.vgExtractNodes(vg);
+        tracks = tubeMap.vgExtractTracks(vg);
+        reads = tubeMap.vgExtractReads(
+          nodes,
+          tracks,
+          data.reverseAlignmentReads
         );
         break;
       case dataOriginTypes.NO_DATA:
