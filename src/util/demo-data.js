@@ -190,6 +190,53 @@ export const reverseAlignmentGraph = {
 export const mixedAlignmentReads = [
     {
         "identity": 1,
+        "name": "Read0",
+        "path": {
+            "mapping": [
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080786"
+                    },
+                    "rank": "1"
+                },
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "is_reverse": true,
+                        "node_id": "60080785"
+                    },
+                    "rank": "2"
+                },
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080783"
+                    },
+                    "rank": "3"
+                },
+            ]
+        },
+        "score": 110,
+        "sequence": "GTGTTT"
+    },
+    {
+        "identity": 1,
         "name": "Read1",
         "path": {
             "mapping": [
@@ -374,6 +421,6 @@ export const mixedAlignmentReads = [
             ]
         },
         "score": 110,
-        "sequence": "GTACTT"
+        "sequence": "TACTT"
     }
 ];
