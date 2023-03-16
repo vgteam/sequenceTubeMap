@@ -14,7 +14,7 @@ import externalConfig from "../config.json";
 
 const deepEqual = require("deep-equal");
 
-const DEBUG = true;
+const DEBUG = false;
 
 const greys = [
   "#d9d9d9",
@@ -1033,7 +1033,6 @@ function generateTrackIndexSequences(tracksOrReads) {
       // Q? Is flipping the index enough? It looks like yes. Or should we also flip the node name in 'sequence'?
       let switched = nodes[nodeMap.get(forward(nodeName))].switched || false;
       if (switched) {
-        console.log('Visit to ' + nodeName + ' is a visit to a switched node so we should appear to visit ' + flip(nodeName));
         nodeName = flip(nodeName);
       }
       // Get the index to visit the node. If the node is switched, this means
@@ -1587,8 +1586,6 @@ function switchNodeOrientation() {
 // References and modifies the global nodes variable.
 function switchNodeOrientationForPaths(paths, pivotPath) {
 
-  console.log('Switching node orientation for ' + (paths.length - 1) + ' paths');
-  
   const toSwitch = new Map();
   let nodeName;
   let prevNode;
@@ -1602,7 +1599,6 @@ function switchNodeOrientationForPaths(paths, pivotPath) {
       currentNode = nodes[nodeMap.get(nodeName)];
       if (pivotPath && pivotPath.sequence.indexOf(nodeName) === -1) {
         // do not change orientation for nodes which are part of the pivot path
-        console.log('Node ' + nodeName + ' which is ' + currentNode + ' is not on the pivot path and could be flipped.');
         if (j > 0) {
           prevNode = nodes[nodeMap.get(forward(paths[i].sequence[j - 1]))];
         }
@@ -1615,15 +1611,12 @@ function switchNodeOrientationForPaths(paths, pivotPath) {
             currentNode.order < nextNode.order)
         ) {
           // Node is visited in increasing order along the path
-          console.log('Node ' + nodeName + ' is visited in increasing order along the path');
           if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
           if (isReverse(paths[i].sequence[j])) {
             // Node is reverse, so increment
-            console.log('Node ' + nodeName + ' is visited in reverse')
             toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
           } else {
             // Node is forward, so decrement
-            console.log('Node ' + nodeName + ' is visited forward')
             toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
           }
         }
@@ -1633,15 +1626,12 @@ function switchNodeOrientationForPaths(paths, pivotPath) {
             currentNode.order > nextNode.order)
         ) {
           // Node is visited in *decreasing* order along the path, so is already backward
-          console.log('Node ' + nodeName + ' is visited in decreasing order along the path');
           if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
           if (isReverse(paths[i].sequence[j])) {
             // Node is reverse, so decrement
-            console.log('Node ' + nodeName + ' is visited in reverse')
             toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
           } else {
             // Node is forward, so increment
-            console.log('Node ' + nodeName + ' is visited forward')
             toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
           }
         }
@@ -1654,7 +1644,6 @@ function switchNodeOrientationForPaths(paths, pivotPath) {
       nodeName = forward(node);
       if (toSwitch.has(nodeName) && toSwitch.get(nodeName) > 0) {
         // This node is backward more so flip it around
-        console.log('Node ' + nodeName + ' ought to be flipped');
         paths[pathIndex].sequence[nodeIndex] = flip(node);
         paths[pathIndex].indexSequence[nodeIndex] =
           -paths[pathIndex].indexSequence[nodeIndex];
@@ -1667,7 +1656,6 @@ function switchNodeOrientationForPaths(paths, pivotPath) {
     if (value > 0) {
       currentNode = nodeMap.get(key);
       let newSeq = getReverseComplement(nodes[currentNode].seq);
-      console.log('Change sequence of node ' + currentNode + ' from ' + nodes[currentNode].seq + ' to ' + newSeq);
       nodes[currentNode].seq = newSeq;
       nodes[currentNode].switched = true;
     }

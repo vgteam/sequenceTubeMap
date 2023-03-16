@@ -124,6 +124,19 @@ export const reverseAlignmentGraph = {
             "from": "60080783",
             "from_start": true,
             "to": "60080785"
+        },
+        {
+            "from": "60080783",
+            "to": "60080785",
+        },
+        {
+            "from": "60080786",
+            "to": "60080785"
+        },
+        {
+            "from": "60080786",
+            "to": "60080785",
+            "to_end": true
         }
     ],
     "node": [
@@ -174,10 +187,58 @@ export const reverseAlignmentGraph = {
     ]
 };
 
-export const reverseAlignmentReads = [
+export const mixedAlignmentReads = [
     {
         "identity": 1,
-        "name": "14d9f9588f5e9e52",
+        "name": "Read1",
+        "path": {
+            "mapping": [
+                {
+                    "edit": [
+                        {
+                            "from_length": 1,
+                            "to_length": 1
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080786",
+                        "offset": 1
+                    },
+                    "rank": "1"
+                },
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "is_reverse": true,
+                        "node_id": "60080785"
+                    },
+                    "rank": "2"
+                },
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080783"
+                    },
+                    "rank": "3"
+                },
+            ]
+        },
+        "score": 110,
+        "sequence": "TGTTT"
+    },
+    {
+        "identity": 1,
+        "name": "Read2",
         "path": {
             "mapping": [
                 {
@@ -221,5 +282,98 @@ export const reverseAlignmentReads = [
         },
         "score": 110,
         "sequence": "GTGTTT"
+    },
+    {
+        "identity": 1,
+        "name": "Read3",
+        "path": {
+            "mapping": [
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080786"
+                    },
+                    "rank": "1"
+                },
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080785"
+                    },
+                    "rank": "2"
+                },
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080783"
+                    },
+                    "rank": "3"
+                },
+            ]
+        },
+        "score": 110,
+        "sequence": "GTACTT"
+    },
+    {
+        "identity": 1,
+        "name": "Read4",
+        "path": {
+            "mapping": [
+                {
+                    "edit": [
+                        {
+                            "from_length": 1,
+                            "to_length": 1
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080786",
+                        "offset": 1
+                    },
+                    "rank": "1"
+                },
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080785"
+                    },
+                    "rank": "2"
+                },
+                {
+                    "edit": [
+                        {
+                            "from_length": 2,
+                            "to_length": 2
+                        }
+                    ],
+                    "position": {
+                        "node_id": "60080783"
+                    },
+                    "rank": "3"
+                },
+            ]
+        },
+        "score": 110,
+        "sequence": "GTACTT"
     }
 ];

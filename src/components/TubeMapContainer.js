@@ -209,7 +209,7 @@ class TubeMapContainer extends Component {
         reads = tubeMap.vgExtractReads(
           nodes,
           tracks,
-          data.reverseAlignmentReads
+          data.mixedAlignmentReads
         );
         break;
       case dataOriginTypes.NO_DATA:
