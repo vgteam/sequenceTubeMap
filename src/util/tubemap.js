@@ -1038,11 +1038,11 @@ function generateTrackIndexSequences(tracksOrReads) {
       // Get the index to visit the node. If the node is switched, this means
       // visiting it reverse. Otherwise, this means visiting it forward.
       let nodeIndex = nodeMap.get(forward(nodeName));
-      if (nodeIndex == 0) {
+      if (nodeIndex === 0) {
         // If a node index is ever 0, we can't visit it in reverse, so we don't allow that to happen.
         throw new Error('Node ' + forward(nodeName) + ' has prohibited index 0'); 
       }
-      if (isReverse(nodeName) != switched) {
+      if (isReverse(nodeName) !== switched) {
         // If we visit the node in reverse XOR the node is switched, go through
         // it right to left as displayed.
         track.indexSequence.push(-nodeIndex);
@@ -1572,7 +1572,7 @@ function switchNodeOrientation() {
   if (reads && config.showReads) {
     // Any changes should be committed back
     for (let i = 0; i < reads.length; i++) {
-      if (reads[i] != countPaths[i + tracks.length - 1]) {
+      if (reads[i] !== countPaths[i + tracks.length - 1]) {
         throw new Error("Read inequality");
       }
     }
