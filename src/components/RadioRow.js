@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Col, Label, Input, FormGroup } from "reactstrap";
 
+// map of all possible colors [displayedName, value]
 const colorMap = new Map([
   ["colorful", "plainColors"],
   ["greyscale", "greys"],
@@ -13,30 +14,34 @@ const colorMap = new Map([
 
 class RadioRow extends Component {
   onChange = (event) => {
+
     this.props.setColorSetting(
       this.props.trackType,
-      this.props.index,
       colorMap.get(event.target.value)
     );
+
   };
 
   render() {
     const colorRadios = Array.from(colorMap).map(([keyColor, valueColor]) => {
-      return (
-        <Col xs="auto" key={keyColor}>
-          <FormGroup check>
-            <Label check>
-              <Input
-                type="radio"
-                value={keyColor}
-                checked={this.props.color === valueColor}
-                onChange={this.onChange}
-              />
-              {keyColor}
-            </Label>
-          </FormGroup>
-        </Col>
-      );
+      if(this.props.availableColors.includes(valueColor)){
+        return (
+          <Col xs="auto" key={keyColor}>
+            <FormGroup check>
+              <Label check>
+                <Input
+                  type="radio"
+                  value={keyColor}
+                  checked={this.props.color === valueColor}
+                  onChange={this.onChange}
+                />
+                {keyColor}
+              </Label>
+            </FormGroup>
+          </Col>
+        );
+      }
+      return <></>;
     });
     return (
       <FormGroup row className="mb-1">
@@ -52,7 +57,11 @@ RadioRow.propTypes = {
   rowHeading: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   trackType: PropTypes.string.isRequired,
-  index: PropTypes.number.isRequired,
+  availableColors: PropTypes.array
 };
+
+RadioRow.defaultProps = {
+  availableColors: ["greys", "ygreys", "blues", "reds", "plainColors", "lightColors"]
+}
 
 export default RadioRow;

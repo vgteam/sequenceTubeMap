@@ -35,6 +35,12 @@ class VisualizationOptions extends Component {
     this.props.handleMappingQualityCutoffChange(event.target.value);
   };
 
+  setColorWithIndex = (index) => {
+    return (key, value) => {
+      this.props.setColorSetting(key, index, value);
+    };
+  }
+
   render() {
     const { visOptions, toggleFlag } = this.props;
     const mappingQualityOptions = Array.from(Array(61).keys()).map((i) => {
@@ -166,15 +172,13 @@ class VisualizationOptions extends Component {
                     rowHeading="Haplotypes Forward"
                     color={visOptions.colorSchemes[1].mainPallete}
                     trackType="mainPallete"
-                    index="1"
-                    setColorSetting={this.props.setColorSetting}
+                    setColorSetting={this.setColorWithIndex(1)}
                   />
                   <RadioRow
                     rowHeading="Haplotypes Reverse"
                     color={visOptions.colorSchemes[1].auxPallete}
                     trackType="auxPallete"
-                    index="1"
-                    setColorSetting={this.props.setColorSetting}
+                    setColorSetting={this.setColorWithIndex(1)}
                   />
                   {visOptions.showReads && (
                       <React.Fragment>
@@ -182,29 +186,25 @@ class VisualizationOptions extends Component {
                           rowHeading="Gam1 Forward"
                           color={visOptions.colorSchemes[2].mainPallete}
                           trackType="mainPallete"
-                          index="2"
-                          setColorSetting={this.props.setColorSetting}
+                          setColorSetting={this.setColorWithIndex(2)}
                         />
                         <RadioRow
                           rowHeading="Gam1 Reverse"
                           color={visOptions.colorSchemes[2].auxPallete}
                           trackType="auxPallete"
-                          index="2"
-                          setColorSetting={this.props.setColorSetting}
+                          setColorSetting={this.setColorWithIndex(2)}
                         />
                         <RadioRow
                           rowHeading="Gam2 Forward"
                           color={visOptions.colorSchemes[3].mainPallete}
                           trackType="mainPallete"
-                          index="3"
-                          setColorSetting={this.props.setColorSetting}
+                          setColorSetting={this.setColorWithIndex(3)}
                         />
                         <RadioRow
                           rowHeading="Gam2 Reverse"
                           color={visOptions.colorSchemes[3].auxPallete}
                           trackType="auxPallete"
-                          index="3"
-                          setColorSetting={this.props.setColorSetting}
+                          setColorSetting={this.setColorWithIndex(3)}
                         />
                       </React.Fragment>
                     )}
