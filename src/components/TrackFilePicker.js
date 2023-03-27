@@ -1,7 +1,15 @@
 import PropTypes from "prop-types";
 import Select from "react-select";
 
-
+/*
+ * A selection dropdown component that select files.
+ * Expects a file type object in the form of {"name": string, "type": string}
+ * 
+ * The handleInputChange function expects to be passed an option type object in the form of
+ * {"label": string, "value": file}
+ *  
+ * See demo and test file for examples of this component.
+ */
 
 //handleInputChange takes in a string trackType
 export const TrackFilePicker = ({

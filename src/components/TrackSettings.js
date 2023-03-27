@@ -8,13 +8,30 @@ import {
   } from "reactstrap";
 import RadioRow from "./RadioRow";
 
+/**
+ * A component meant to contain settings related to an individual track
+ * 
+ * fileType expects a string specifying the filetype, e.g "haplotype", "read"
+ * 
+ * trackColorSettings expects an object in the form of 
+ * {mainPallete: string,
+ *  auxPallate: string,
+ *  colorReadsByMappingQuality: boolean}
+ * 
+ * The handleInputChange function expects to be passed a new trackColorSettings object
+ * 
+ * availableColors expects an array of colors, must correspond to valid colors defined in RadioRow.js and tubemap.js
+ *  
+ * See demo and test file for examples of this component.
+ */
+
 export const TrackSettings = ({
     fileType,
     trackColorSettings,
     setTrackColorSetting,
     availableColors
 }) => {
-    function renderSwitch(fileType) {
+    function colorRenderSwitch(fileType) {
         switch(fileType) {
             case "graph":
             case "haplotype":
@@ -58,7 +75,7 @@ export const TrackSettings = ({
             <Card>
                 <CardBody>
                     <h5>Colors</h5>
-                    {renderSwitch(fileType)}
+                    {colorRenderSwitch(fileType)}
                 </CardBody>
             </Card>
         </Container>
