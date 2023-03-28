@@ -16,7 +16,7 @@ class RadioRow extends Component {
   onChange = (event) => {
 
     this.props.setColorSetting(
-      this.props.trackType,
+      this.props.setting,
       colorMap.get(event.target.value)
     );
 
@@ -56,7 +56,7 @@ RadioRow.propTypes = {
   color: PropTypes.string.isRequired,
   rowHeading: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
-  trackType: PropTypes.string.isRequired,
+  setting: PropTypes.string.isRequired,
   availableColors: PropTypes.array
 };
 

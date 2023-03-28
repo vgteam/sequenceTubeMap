@@ -11,7 +11,7 @@ import {
   Input,
   FormGroup,
 } from "reactstrap";
-import RadioRow from "./RadioRow";
+import TrackSettings from "./TrackSettings";
 
 class VisualizationOptions extends Component {
   state = {
@@ -165,50 +165,13 @@ class VisualizationOptions extends Component {
                     </React.Fragment>
                   )}
                 </FormGroup>
-
-                <h5>Colors</h5>
-                <Form>
-                  <RadioRow
-                    rowHeading="Haplotypes Forward"
-                    color={visOptions.colorSchemes[1].mainPallete}
-                    trackType="mainPallete"
-                    setColorSetting={this.setColorWithIndex(1)}
-                  />
-                  <RadioRow
-                    rowHeading="Haplotypes Reverse"
-                    color={visOptions.colorSchemes[1].auxPallete}
-                    trackType="auxPallete"
-                    setColorSetting={this.setColorWithIndex(1)}
-                  />
-                  {visOptions.showReads && (
-                      <React.Fragment>
-                        <RadioRow
-                          rowHeading="Gam1 Forward"
-                          color={visOptions.colorSchemes[2].mainPallete}
-                          trackType="mainPallete"
-                          setColorSetting={this.setColorWithIndex(2)}
-                        />
-                        <RadioRow
-                          rowHeading="Gam1 Reverse"
-                          color={visOptions.colorSchemes[2].auxPallete}
-                          trackType="auxPallete"
-                          setColorSetting={this.setColorWithIndex(2)}
-                        />
-                        <RadioRow
-                          rowHeading="Gam2 Forward"
-                          color={visOptions.colorSchemes[3].mainPallete}
-                          trackType="mainPallete"
-                          setColorSetting={this.setColorWithIndex(3)}
-                        />
-                        <RadioRow
-                          rowHeading="Gam2 Reverse"
-                          color={visOptions.colorSchemes[3].auxPallete}
-                          trackType="auxPallete"
-                          setColorSetting={this.setColorWithIndex(3)}
-                        />
-                      </React.Fragment>
-                    )}
-                </Form>
+                <TrackSettings label="Haplotype" fileType="haplotype" trackColorSettings={visOptions.colorSchemes[1]} setTrackColorSetting={this.setColorWithIndex(1)} /> 
+                {visOptions.showReads && (
+                    <React.Fragment>
+                      <TrackSettings label="GAM Index 1" fileType="read" trackColorSettings={visOptions.colorSchemes[2]} setTrackColorSetting={this.setColorWithIndex(2)} />
+                      <TrackSettings label="GAM Index 2" fileType="read" trackColorSettings={visOptions.colorSchemes[3]} setTrackColorSetting={this.setColorWithIndex(3)} />
+                    </React.Fragment>
+                  )}
               </CardBody>
             </Collapse>
           </Card>

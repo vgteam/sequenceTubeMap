@@ -1,9 +1,6 @@
 import React from 'react';
 import PropTypes from "prop-types";
 import {
-    Container,
-    CardBody,
-    Card,
     Form,
   } from "reactstrap";
 import RadioRow from "./RadioRow";
@@ -29,6 +26,7 @@ export const TrackSettings = ({
     fileType,
     trackColorSettings,
     setTrackColorSetting,
+    label,
     availableColors
 }) => {
     function colorRenderSwitch(fileType) {
@@ -38,9 +36,9 @@ export const TrackSettings = ({
                 return(
                     <Form>
                         <RadioRow
-                            rowHeading="Haplotypes Forward"
+                            rowHeading="Haplotypes"
                             color={trackColorSettings.mainPallete}
-                            trackType="mainPallete"
+                            setting="mainPallete"
                             setColorSetting={setTrackColorSetting}
                             availableColors={availableColors}
                         />
@@ -50,16 +48,16 @@ export const TrackSettings = ({
                 return(
                     <Form>
                         <RadioRow
-                            rowHeading="Gam Forward"
+                            rowHeading="Forward Reads"
                             color={trackColorSettings.mainPallete}
-                            trackType="mainPallete"
+                            setting="mainPallete"
                             setColorSetting={setTrackColorSetting}
                             availableColors={availableColors}
                         />
                         <RadioRow
-                            rowHeading="Gam Reverse"
+                            rowHeading="Reverse Reads"
                             color={trackColorSettings.auxPallete}
-                            trackType="auxPallete"
+                            setting="auxPallete"
                             setColorSetting={setTrackColorSetting}
                             availableColors={availableColors}
                         />
@@ -71,14 +69,10 @@ export const TrackSettings = ({
     }
 
     return(
-        <Container>
-            <Card>
-                <CardBody>
-                    <h5>Colors</h5>
-                    {colorRenderSwitch(fileType)}
-                </CardBody>
-            </Card>
-        </Container>
+        <>
+          <h5>{label} Colors</h5>
+          {colorRenderSwitch(fileType)}
+        </>
     )
 }
 
@@ -86,6 +80,7 @@ TrackSettings.propTypes = {
     fileType: PropTypes.string.isRequired,
     trackColorSettings: PropTypes.object.isRequired,
     setTrackColorSetting: PropTypes.func.isRequired,
+    label: PropTypes.string,
     availableColors: PropTypes.array
 }
 
