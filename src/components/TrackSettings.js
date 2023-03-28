@@ -40,7 +40,7 @@ export const TrackSettings = ({
                         <RadioRow
                             rowHeading="Haplotypes"
                             color={trackColorSettings.mainPallete}
-                            trackType="mainPallete"
+                            setting="mainPallete"
                             setColorSetting={setTrackColorSetting}
                             availableColors={availableColors}
                         />
@@ -52,14 +52,14 @@ export const TrackSettings = ({
                         <RadioRow
                             rowHeading="Gam Forward"
                             color={trackColorSettings.mainPallete}
-                            trackType="mainPallete"
+                            setting="mainPallete"
                             setColorSetting={setTrackColorSetting}
                             availableColors={availableColors}
                         />
                         <RadioRow
                             rowHeading="Gam Reverse"
                             color={trackColorSettings.auxPallete}
-                            trackType="auxPallete"
+                            setting="auxPallete"
                             setColorSetting={setTrackColorSetting}
                             availableColors={availableColors}
                         />

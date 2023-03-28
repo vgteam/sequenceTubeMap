@@ -171,33 +171,33 @@ class VisualizationOptions extends Component {
                   <RadioRow
                     rowHeading="Haplotypes"
                     color={visOptions.colorSchemes[1].mainPallete}
-                    trackType="mainPallete"
+                    setting="mainPallete"
                     setColorSetting={this.setColorWithIndex(1)}
                   />
                   {visOptions.showReads && (
                       <React.Fragment>
                         <RadioRow
                           rowHeading="Gam1 Forward"
-                          color={visOptions.colorSchemes[2].mainPallete}
-                          trackType="mainPallete"
+                          setting={visOptions.colorSchemes[2].mainPallete}
+                          setting="mainPallete"
                           setColorSetting={this.setColorWithIndex(2)}
                         />
                         <RadioRow
                           rowHeading="Gam1 Reverse"
                           color={visOptions.colorSchemes[2].auxPallete}
-                          trackType="auxPallete"
+                          setting="auxPallete"
                           setColorSetting={this.setColorWithIndex(2)}
                         />
                         <RadioRow
                           rowHeading="Gam2 Forward"
                           color={visOptions.colorSchemes[3].mainPallete}
-                          trackType="mainPallete"
+                          setting="mainPallete"
                           setColorSetting={this.setColorWithIndex(3)}
                         />
                         <RadioRow
                           rowHeading="Gam2 Reverse"
                           color={visOptions.colorSchemes[3].auxPallete}
-                          trackType="auxPallete"
+                          setting="auxPallete"
                           setColorSetting={this.setColorWithIndex(3)}
                         />
                       </React.Fragment>
