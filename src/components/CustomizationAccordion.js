@@ -11,7 +11,7 @@ import {
   Input,
   FormGroup,
 } from "reactstrap";
-import RadioRow from "./RadioRow";
+import TrackSettingsButton from "./TrackSettingsButton";
 
 class VisualizationOptions extends Component {
   state = {
@@ -168,38 +168,11 @@ class VisualizationOptions extends Component {
 
                 <h5>Colors</h5>
                 <Form>
-                  <RadioRow
-                    rowHeading="Haplotypes"
-                    color={visOptions.colorSchemes[1].mainPallete}
-                    setting="mainPallete"
-                    setColorSetting={this.setColorWithIndex(1)}
-                  />
+                  <TrackSettingsButton fileType="haplotype" trackColorSettings={visOptions.colorSchemes[1]} setTrackColorSetting={this.setColorWithIndex(1)} /> 
                   {visOptions.showReads && (
                       <React.Fragment>
-                        <RadioRow
-                          rowHeading="Gam1 Forward"
-                          setting={visOptions.colorSchemes[2].mainPallete}
-                          setting="mainPallete"
-                          setColorSetting={this.setColorWithIndex(2)}
-                        />
-                        <RadioRow
-                          rowHeading="Gam1 Reverse"
-                          color={visOptions.colorSchemes[2].auxPallete}
-                          setting="auxPallete"
-                          setColorSetting={this.setColorWithIndex(2)}
-                        />
-                        <RadioRow
-                          rowHeading="Gam2 Forward"
-                          color={visOptions.colorSchemes[3].mainPallete}
-                          setting="mainPallete"
-                          setColorSetting={this.setColorWithIndex(3)}
-                        />
-                        <RadioRow
-                          rowHeading="Gam2 Reverse"
-                          color={visOptions.colorSchemes[3].auxPallete}
-                          setting="auxPallete"
-                          setColorSetting={this.setColorWithIndex(3)}
-                        />
+                        <TrackSettingsButton fileType="read" trackColorSettings={visOptions.colorSchemes[2]} setTrackColorSetting={this.setColorWithIndex(2)} />
+                        <TrackSettingsButton fileType="read" trackColorSettings={visOptions.colorSchemes[3]} setTrackColorSetting={this.setColorWithIndex(3)} />
                       </React.Fragment>
                     )}
                 </Form>

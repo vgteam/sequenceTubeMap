@@ -50,14 +50,14 @@ export const TrackSettings = ({
                 return(
                     <Form>
                         <RadioRow
-                            rowHeading="Gam Forward"
+                            rowHeading="Forward Reads"
                             color={trackColorSettings.mainPallete}
                             setting="mainPallete"
                             setColorSetting={setTrackColorSetting}
                             availableColors={availableColors}
                         />
                         <RadioRow
-                            rowHeading="Gam Reverse"
+                            rowHeading="Reverse Reads"
                             color={trackColorSettings.auxPallete}
                             setting="auxPallete"
                             setColorSetting={setTrackColorSetting}
