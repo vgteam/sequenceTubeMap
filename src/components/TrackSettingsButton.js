@@ -10,7 +10,7 @@ export const TrackSettingsButton = ({
     availableColors
 }) => {
     return(
-        <Popup trigger={<button> Settings </button>} position="right center"> 
+        <Popup trigger={<button type="button"> Settings </button>} position="right center"> 
             <TrackSettings 
             fileType={fileType}
             trackColorSettings={trackColorSettings}
@@ -25,6 +25,10 @@ TrackSettingsButton.propTypes = {
     trackColorSettings: PropTypes.object.isRequired,
     setTrackColorSetting: PropTypes.func.isRequired,
     availableColors: PropTypes.array
+}
+
+TrackSettingsButton.defaultProps = {
+    availableColors: ["greys", "ygreys", "blues", "reds", "plainColors", "lightColors"]
 }
 
 export default TrackSettingsButton;
