@@ -10,7 +10,7 @@ export const TrackSettingsButton = ({
     availableColors
 }) => {
     return(
-        <Popup trigger={<button type="button"> Settings </button>} position="right center"> 
+        <Popup trigger={<button type="button"> Settings </button>} position="right center" modal> 
             <TrackSettings 
             fileType={fileType}
             trackColorSettings={trackColorSettings}
