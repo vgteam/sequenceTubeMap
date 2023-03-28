@@ -169,15 +169,9 @@ class VisualizationOptions extends Component {
                 <h5>Colors</h5>
                 <Form>
                   <RadioRow
-                    rowHeading="Haplotypes Forward"
+                    rowHeading="Haplotypes"
                     color={visOptions.colorSchemes[1].mainPallete}
                     trackType="mainPallete"
-                    setColorSetting={this.setColorWithIndex(1)}
-                  />
-                  <RadioRow
-                    rowHeading="Haplotypes Reverse"
-                    color={visOptions.colorSchemes[1].auxPallete}
-                    trackType="auxPallete"
                     setColorSetting={this.setColorWithIndex(1)}
                   />
                   {visOptions.showReads && (

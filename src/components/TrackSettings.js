@@ -38,7 +38,7 @@ export const TrackSettings = ({
                 return(
                     <Form>
                         <RadioRow
-                            rowHeading="Haplotypes Forward"
+                            rowHeading="Haplotypes"
                             color={trackColorSettings.mainPallete}
                             trackType="mainPallete"
                             setColorSetting={setTrackColorSetting}
