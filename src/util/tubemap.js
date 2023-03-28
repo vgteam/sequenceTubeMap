@@ -153,8 +153,15 @@ export function create(params) {
   // optional parameters: bed, clickableNodes, reads, showLegend
   svgID = params.svgID;
   svg = d3.select(params.svgID);
-  inputNodes = JSON.parse(JSON.stringify(params.nodes)); // deep copy
-  inputTracks = JSON.parse(JSON.stringify(params.tracks)); // deep copy
+  inputNodes = deepCopy(params.nodes); // deep copy
+  // Nodes are referenced in inputs by internal `name` attribute and not by index.
+  // Internally in e.g. a path's indexSequence we need to reference nodes by *signed* index.
+  // Which means that index 0 can never be allowed to be used, so we need to make sure it is not there.
+  // So budge everything down
+  inputNodes.unshift(undefined);
+  // And then leave a hole in the array at 0 which we won't iterate over.
+  delete inputNodes[0];
+  inputTracks = deepCopy(params.tracks); // deep copy
   inputReads = params.reads || null;
   inputRegion = params.region;
   bed = params.bed || null;
@@ -162,6 +169,18 @@ export function create(params) {
   config.hideLegendFlag = params.hideLegend || false;
   const tr = createTubeMap();
   if (!config.hideLegendFlag) drawLegend(tr);
+}
+
+// Deep copy something, but preserve array holes at the top level
+function deepCopy(val) {
+  let newVal = JSON.parse(JSON.stringify(val));
+  for (let prop of Object.keys(newVal)) {
+    if (!Object.hasOwn(val, prop)) {
+      // This should be a hole, so punch it
+      delete newVal[prop];
+    }
+  }
+  return newVal;
 }
 
 // Return true if the given name names a reverse strand node, and false otherwise.
@@ -209,6 +228,7 @@ function moveTrackToFirstPosition(index) {
 
 // straighten track given by index by inverting inverted nodes
 // only keep them inverted if this single track runs thrugh them in both directions
+// TODO: This operates on `inputNodes`, etc. when it probably ought to operate on `nodes` 
 function straightenTrack(index) {
   let i;
   let j;
@@ -387,9 +407,9 @@ function createTubeMap() {
   if (inputNodes.length === 0 || inputTracks.length === 0) return;
 
   straightenTrack(0);
-  nodes = JSON.parse(JSON.stringify(inputNodes)); // deep copy (can add stuff to copy and leave original unchanged)
-  tracks = JSON.parse(JSON.stringify(inputTracks));
-  reads = JSON.parse(JSON.stringify(inputReads));
+  nodes = deepCopy(inputNodes); // deep copy (can add stuff to copy and leave original unchanged)
+  tracks = deepCopy(inputTracks);
+  reads = deepCopy(inputReads);
 
   reads = filterReads(reads);
 
@@ -1011,13 +1031,26 @@ function generateTrackIndexSequences(tracksOrReads) {
     track.sequence.forEach((nodeName) => {
       // if node was switched, reverse it here
       // Q? Is flipping the index enough? It looks like yes. Or should we also flip the node name in 'sequence'?
-      if (nodes[nodeMap.get(forward(nodeName))].switched) {
+      let switched = nodes[nodeMap.get(forward(nodeName))].switched || false;
+      if (switched) {
         nodeName = flip(nodeName);
       }
-      if (isReverse(nodeName)) {
-        track.indexSequence.push(-nodeMap.get(forward(nodeName)));
+      // Get the index to visit the node. If the node is switched, this means
+      // visiting it reverse. Otherwise, this means visiting it forward.
+      let nodeIndex = nodeMap.get(forward(nodeName));
+      if (nodeIndex === 0) {
+        // If a node index is ever 0, we can't visit it in reverse, so we don't allow that to happen.
+        throw new Error('Node ' + forward(nodeName) + ' has prohibited index 0'); 
+      }
+      if (isReverse(nodeName) !== switched) {
+        // If we visit the node in reverse XOR the node is switched, go through
+        // it right to left as displayed.
+        track.indexSequence.push(-nodeIndex);
       } else {
-        track.indexSequence.push(nodeMap.get(forward(nodeName)));
+        // If either the node isn't switched and we go through it forward, or
+        // the node is switched *and* we go through it backward, go through it
+        // left to right as displayed. 
+        track.indexSequence.push(nodeIndex);
       }
     });
   });
@@ -1028,7 +1061,7 @@ function removeUnusedNodes(allNodes) {
   const dNodes = allNodes.slice(0);
   let i;
   for (i = dNodes.length - 1; i >= 0; i -= 1) {
-    if (!dNodes[i].hasOwnProperty("x")) {
+    if (!dNodes[i] || !dNodes[i].hasOwnProperty("x")) {
       dNodes.splice(i, 1);
     }
   }
@@ -1526,51 +1559,79 @@ function generateNodeDegree() {
   });
 }
 
-// if more tracks pass through a specific node in reverse direction than in
-// regular direction, switch its orientation
-// (does not apply to the first track's nodes, these are always oriented as
-// dictated by the first track)
+// Optimize the orientations for nodes in the global `nodes` for displaying the
+// paths in the global `tracks` and the read paths, if applicable, in the
+// global `reads` 
 function switchNodeOrientation() {
+  let pivotPath = tracks[0];
+  let countPaths = tracks.slice(1, tracks.length);
+  if (reads && config.showReads) {
+    countPaths = countPaths.concat(reads);
+  }
+  switchNodeOrientationForPaths(countPaths, pivotPath);
+  if (reads && config.showReads) {
+    // Any changes should be committed back
+    for (let i = 0; i < reads.length; i++) {
+      if (reads[i] !== countPaths[i + tracks.length - 1]) {
+        throw new Error("Read inequality");
+      }
+    }
+  }
+}
+
+// If more of the given paths pass through a specific node in reverse direction than in
+// regular direction, switch its orientation. Processes all paths' nodes in
+// place, so if you want e.g. a first track with nodes fixed in that
+// orientation, pass it as pivotPath.
+// References and modifies the global nodes variable.
+function switchNodeOrientationForPaths(paths, pivotPath) {
+
   const toSwitch = new Map();
   let nodeName;
   let prevNode;
   let nextNode;
   let currentNode;
 
-  for (let i = 1; i < tracks.length; i += 1) {
-    for (let j = 0; j < tracks[i].sequence.length; j += 1) {
-      nodeName = tracks[i].sequence[j];
+  for (let i = 0; i < paths.length; i += 1) {
+    for (let j = 0; j < paths[i].sequence.length; j += 1) {
+      nodeName = paths[i].sequence[j];
       nodeName = forward(nodeName);
       currentNode = nodes[nodeMap.get(nodeName)];
-      if (tracks[0].sequence.indexOf(nodeName) === -1) {
-        // do not change orientation for nodes which are part of the pivot track
+      if (pivotPath && pivotPath.sequence.indexOf(nodeName) === -1) {
+        // do not change orientation for nodes which are part of the pivot path
         if (j > 0) {
-          prevNode = nodes[nodeMap.get(forward(tracks[i].sequence[j - 1]))];
+          prevNode = nodes[nodeMap.get(forward(paths[i].sequence[j - 1]))];
         }
-        if (j < tracks[i].sequence.length - 1) {
-          nextNode = nodes[nodeMap.get(forward(tracks[i].sequence[j + 1]))];
+        if (j < paths[i].sequence.length - 1) {
+          nextNode = nodes[nodeMap.get(forward(paths[i].sequence[j + 1]))];
         }
         if (
           (j === 0 || prevNode.order < currentNode.order) &&
-          (j === tracks[i].sequence.length - 1 ||
+          (j === paths[i].sequence.length - 1 ||
             currentNode.order < nextNode.order)
         ) {
+          // Node is visited in increasing order along the path
           if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
-          if (isReverse(tracks[i].sequence[j])) {
+          if (isReverse(paths[i].sequence[j])) {
+            // Node is reverse, so increment
             toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
           } else {
+            // Node is forward, so decrement
             toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
           }
         }
         if (
           (j === 0 || prevNode.order > currentNode.order) &&
-          (j === tracks[i].sequence.length - 1 ||
+          (j === paths[i].sequence.length - 1 ||
             currentNode.order > nextNode.order)
         ) {
+          // Node is visited in *decreasing* order along the path, so is already backward
           if (!toSwitch.has(nodeName)) toSwitch.set(nodeName, 0);
-          if (isReverse(tracks[i].sequence[j])) {
+          if (isReverse(paths[i].sequence[j])) {
+            // Node is reverse, so decrement
             toSwitch.set(nodeName, toSwitch.get(nodeName) - 1);
           } else {
+            // Node is forward, so increment
             toSwitch.set(nodeName, toSwitch.get(nodeName) + 1);
           }
         }
@@ -1578,13 +1639,14 @@ function switchNodeOrientation() {
     }
   }
 
-  tracks.forEach((track, trackIndex) => {
-    track.sequence.forEach((node, nodeIndex) => {
+  paths.forEach((path, pathIndex) => {
+    path.sequence.forEach((node, nodeIndex) => {
       nodeName = forward(node);
       if (toSwitch.has(nodeName) && toSwitch.get(nodeName) > 0) {
-        tracks[trackIndex].sequence[nodeIndex] = flip(node);
-        tracks[trackIndex].indexSequence[nodeIndex] =
-          -tracks[trackIndex].indexSequence[nodeIndex];
+        // This node is backward more so flip it around
+        paths[pathIndex].sequence[nodeIndex] = flip(node);
+        paths[pathIndex].indexSequence[nodeIndex] =
+          -paths[pathIndex].indexSequence[nodeIndex];
       }
     });
   });
@@ -1593,7 +1655,8 @@ function switchNodeOrientation() {
   toSwitch.forEach((value, key) => {
     if (value > 0) {
       currentNode = nodeMap.get(key);
-      nodes[currentNode].seq = getReverseComplement(nodes[currentNode].seq);
+      let newSeq = getReverseComplement(nodes[currentNode].seq);
+      nodes[currentNode].seq = newSeq;
       nodes[currentNode].switched = true;
     }
   });
@@ -2945,8 +3008,9 @@ function drawNodes(dNodes) {
 }
 
 function getPopUpText(node) {
+
   return (
-    `Node ID: ${node.name}\n` +
+    `Node ID: ${node.name}` + (node.switched ? ` (reversed)` : ``) + `\n` +
     `Node Length: ${node.sequenceLength} bases\n` +
     `Haplotypes: ${node.degree}\n` +
     `Aligned Reads: ${
