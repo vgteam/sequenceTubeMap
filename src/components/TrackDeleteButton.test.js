@@ -11,13 +11,8 @@ describe('TrackDeleteButton', () => {
             <TrackDeleteButton onClick={onClick}></TrackDeleteButton>
         );
 
-        // get by label text - aria label 
-        await userEvent.selectOptions(
-            screen.getByRole('combobox'),
-            'graph'
-          );
+        await userEvent.click(screen.getByRole('button'));
 
         expect(onClick).toHaveBeenCalledTimes(1);
-        //expect(onChange).toHaveBeenLastCalledWith("graph");
     });
 });
