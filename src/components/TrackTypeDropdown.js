@@ -31,11 +31,13 @@ export function TrackTypeDropdown (props) {
     // dropdown and selections
     // upon selection of a dropdown option, call onChange function 
     let dropdown = (
-      <select {...props} onChange={stringFnToEventFn(props.onChange)}>
-        <option value="graph">graph</option>
-        <option value="haplotype">haplotype</option>
-        <option value="read">read</option>
-      </select>
+      <div data-testid="filetype-select-component">
+        <select {...props} onChange={stringFnToEventFn(props.onChange)}>
+          <option value="graph">graph</option>
+          <option value="haplotype">haplotype</option>
+          <option value="read">read</option>
+        </select>
+      </div>
     );
     
     return (
