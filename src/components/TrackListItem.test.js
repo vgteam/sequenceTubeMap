@@ -23,7 +23,7 @@ describe('TrackSettings', () => {
              />
         );
 
-        let placeholder = await getByText("Settings");
+        let placeholder = await getByText("Settings", { selector: "button" })
         expect(placeholder).toBeTruthy();
 
         placeholder = await getByText("graph");
