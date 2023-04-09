@@ -10,7 +10,7 @@ describe('TrackTypeDropdown', () => {
             <TrackTypeDropdown value="haplotype" onChange={onChange}>
             </TrackTypeDropdown>
         );
-        const fileTypeSelectComponent = queryByTestId('filetype-select-component');
+        const fileTypeSelectComponent = queryByTestId('file-type-select-component');
         fireEvent.keyDown(fileTypeSelectComponent.firstChild, {key: "ArrowDown"});
         await waitFor(() => screen.getByText("graph"));
         fireEvent.click(screen.getByText("graph"));

@@ -33,7 +33,7 @@ export function TrackTypeDropdown (props) {
     // dropdown and selections
     // upon selection of a dropdown option, call onChange function 
     let dropdown = (
-      <div data-testid="filetype-select-component">
+      <div data-testid="file-type-select-component">
         <Select {...props} onChange={stringFnToEventFn(props.onChange)}
           options={["graph", "haplotype", "read"].map(o => ({label: o, value: o}))}
           value={{label: props.value, value: props.value}}

@@ -15,7 +15,7 @@ describe('TrackSettings', () => {
     it('should render without errors', async () => {
         const fakeOnChange = jest.fn();
         const fakeOnDelete = jest.fn();
-        const { getByText } = render(
+        const { getByText, getByRole } = render(
             <TrackListItem 
               availableTracks={availableTracks}
               onChange = {fakeOnChange}
@@ -23,7 +23,7 @@ describe('TrackSettings', () => {
              />
         );
 
-        let placeholder = await getByText("Settings", { selector: "button" })
+        let placeholder = getByRole("button", {name: /Settings/i});
         expect(placeholder).toBeTruthy();
 
         placeholder = await getByText("graph");
@@ -37,7 +37,7 @@ describe('TrackSettings', () => {
         const fakeOnChange = jest.fn();
         const fakeOnDelete = jest.fn();
         
-        const { getByText, queryByTestId, rerender } = render(
+        const { getByText, queryByTestId, rerender, getByRole } = render(
             <TrackListItem 
               availableColors={availableColors}
               availableTracks={availableTracks}
@@ -49,7 +49,7 @@ describe('TrackSettings', () => {
         expect(fakeOnChange).toHaveBeenCalledTimes(0);
 
         // change track type
-        const fileTypeSelectComponent = queryByTestId('filetype-select-component');
+        const fileTypeSelectComponent = queryByTestId("file-type-select-component");
         fireEvent.keyDown(fileTypeSelectComponent.firstChild, {key: "ArrowDown"});
         await waitFor(() => getByText("haplotype"));
         fireEvent.click(getByText("haplotype"));
@@ -80,7 +80,8 @@ describe('TrackSettings', () => {
 
 
         // change color settings
-        fireEvent.click(getByText("Settings", { selector: "button" }));
+        fireEvent.click(getByRole("button", {name: /Settings/i}));
+        await waitFor(() => getByText("reds"));
         fireEvent.click(getByText("reds"));
         fireEvent.click(document);
 
