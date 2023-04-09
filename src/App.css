@@ -190,3 +190,10 @@ input[type="file"] {
     opacity: 1;
   }
 }
+
+.class-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}

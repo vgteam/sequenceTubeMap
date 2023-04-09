@@ -55,6 +55,8 @@ describe('TrackSettings', () => {
         fireEvent.click(getByText("haplotype"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
+        // should be called with undefined as file
+        expect(fakeOnChange).toHaveBeenCalledWith("haplotype", undefined, {"auxPallete": "reds", "colorReadsByMappingQuality": false, "mainPallete": "blues"});
 
         // simulate onchange rerendering component
         rerender(

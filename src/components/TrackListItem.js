@@ -9,10 +9,9 @@ import {TrackTypeDropdown} from './TrackTypeDropdown';
 import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
 
-// fileOptions expects an object of filenames mapped to tracktype
 
 export const TrackListItem = ({
-    trackType,
+    trackType,  
     trackFile,
     availableTracks,
     onChange, 
@@ -38,13 +37,13 @@ export const TrackListItem = ({
 
     return (
       <Container>
-        <Row>
-          <Col>
+        <Row sm="4" noGutters="true">
+          <Col sm="2">
             <TrackTypeDropdown value={trackType} 
                               onChange={trackTypeOnChange}
                               />
           </Col>
-          <Col>
+          <Col sm="3">
             <TrackFilePicker tracks={availableTracks} 
                             fileType={trackType} 
                             value={trackFile}
@@ -52,14 +51,14 @@ export const TrackListItem = ({
                             handleInputChange={trackFileOnChange}
                             />
           </Col>
-          <Col>
+          <Col className="class-col" sm="1">
             <TrackSettingsButton fileType={trackType}
                                 trackColorSettings={trackColorSettings}
                                 setTrackColorSetting={trackSettingsOnChange}
                                 availableColors={availableColors}
                                 />
           </Col>
-          <Col>
+          <Col className="class-col" md="1">
             <TrackDeleteButton onClick={onDelete}
                               />
           </Col>
