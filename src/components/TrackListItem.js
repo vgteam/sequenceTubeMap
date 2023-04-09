@@ -37,7 +37,7 @@ export const TrackListItem = ({
 
     return (
       <Container>
-        <Row sm="4" noGutters="true">
+        <Row sm="4" noGutters={true}>
           <Col sm="2">
             <TrackTypeDropdown value={trackType} 
                               onChange={trackTypeOnChange}
