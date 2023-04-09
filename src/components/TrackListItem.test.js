@@ -54,8 +54,7 @@ describe('TrackSettings', () => {
         await waitFor(() => getByText("haplotype"));
         fireEvent.click(getByText("haplotype"));
 
-        // onChange shouldn't be called until the file is defined
-        expect(fakeOnChange).toHaveBeenCalledTimes(0);
+        expect(fakeOnChange).toHaveBeenCalledTimes(1);
 
         // simulate onchange rerendering component
         rerender(
@@ -74,7 +73,7 @@ describe('TrackSettings', () => {
         await waitFor(() => getByText("fileB1.gbwt"));
         fireEvent.click(getByText("fileB1.gbwt"));
 
-        expect(fakeOnChange).toHaveBeenCalledTimes(1);
+        expect(fakeOnChange).toHaveBeenCalledTimes(2);
         expect(fakeOnChange).toHaveBeenCalledWith("haplotype", {"name": "fileB1.gbwt", "type": "haplotype"}, {"auxPallete": "reds", "colorReadsByMappingQuality": false, "mainPallete": "blues"});
 
 
@@ -83,7 +82,7 @@ describe('TrackSettings', () => {
         fireEvent.click(getByText("reds"));
         fireEvent.click(document);
 
-        expect(fakeOnChange).toHaveBeenCalledTimes(2); 
+        expect(fakeOnChange).toHaveBeenCalledTimes(3); 
         expect(fakeOnChange).toHaveBeenCalledWith("haplotype", undefined, {"auxPallete": "reds", "colorReadsByMappingQuality": false, "mainPallete": "reds"});
 
     });

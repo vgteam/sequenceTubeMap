@@ -1,6 +1,8 @@
 import PropTypes from "prop-types";
 import {
-    Form,
+    Container,
+    Row,
+    Col
   } from "reactstrap";
 import {TrackFilePicker} from './TrackFilePicker';
 import {TrackTypeDropdown} from './TrackTypeDropdown';
@@ -35,24 +37,34 @@ export const TrackListItem = ({
     }
 
     return (
-      <Form>
-        <TrackTypeDropdown value={trackType} 
-                           onChange={trackTypeOnChange}
-                           />
-        <TrackFilePicker tracks={availableTracks} 
-                         fileType={trackType} 
-                         value={trackFile}
-                         pickerType={"dropdown"} 
-                         handleInputChange={trackFileOnChange}
-                         />
-        <TrackSettingsButton fileType={trackType}
-                             trackColorSettings={trackColorSettings}
-                             setTrackColorSetting={trackSettingsOnChange}
-                             availableColors={availableColors}
-                             />
-        <TrackDeleteButton onClick={onDelete}
-                           />
-      </Form>
+      <Container>
+        <Row>
+          <Col>
+            <TrackTypeDropdown value={trackType} 
+                              onChange={trackTypeOnChange}
+                              />
+          </Col>
+          <Col>
+            <TrackFilePicker tracks={availableTracks} 
+                            fileType={trackType} 
+                            value={trackFile}
+                            pickerType={"dropdown"} 
+                            handleInputChange={trackFileOnChange}
+                            />
+          </Col>
+          <Col>
+            <TrackSettingsButton fileType={trackType}
+                                trackColorSettings={trackColorSettings}
+                                setTrackColorSetting={trackSettingsOnChange}
+                                availableColors={availableColors}
+                                />
+          </Col>
+          <Col>
+            <TrackDeleteButton onClick={onDelete}
+                              />
+          </Col>
+        </Row>
+      </Container>
     );
     
   }
