@@ -8,60 +8,83 @@ import {TrackFilePicker} from './TrackFilePicker';
 import {TrackTypeDropdown} from './TrackTypeDropdown';
 import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
+import React, { useState, useEffect } from 'react';
 
 
 export const TrackListItem = ({
-    trackType,  
-    trackFile,
-    availableTracks,
-    onChange, 
-    trackColorSettings,
+    trackProps,
+    // trackProps expects an object with
+      // trackType: string
+      // trackFile: file object
+      // availableTracks: array of tracks(see types.ts)
+      // trackColorSettings: object(aka. colorScheme)
+      // availableColors: array of ColorPalletes
+    onChange, // expects a new trackProps object
     onDelete,
-    availableColors
   }) => {
+    const [myTrackFile, setFile] = useState(trackProps["trackFile"]);
+    const [myTrackType, setTrack] = useState(trackProps["trackType"]);
+    const [myTrackColorSettings, setColorSettings] = useState(trackProps["trackColorSettings"]);
+
+    function getNewTrackProps() {
+      // give onChange an updated object with values from local state
+      let newTrackProps = {...trackProps};
+      newTrackProps["trackFile"] = myTrackFile;
+      newTrackProps["trackType"] = myTrackType;
+      newTrackProps["trackColorSettings"] = myTrackColorSettings;
+      return newTrackProps;
+    }
   
-    function trackTypeOnChange(newTrackType) {
-      // clear filedropdown to prevent calling onChange with invalid (tracktype, trackfile) pairing
-      onChange(newTrackType, undefined, trackColorSettings);
+    const trackTypeOnChange = async(newTrackType) => {
+      // wait until file change to call onChange
+      setTrack(newTrackType);
+      setFile(undefined);
     }
 
-    function trackFileOnChange(newFile) {
-      onChange(trackType, newFile, trackColorSettings);
+    const trackFileOnChange = async(newFile) => {
+      setFile(newFile);
     }
 
-    function trackSettingsOnChange(key, value) {
-      let newTrackColorSettings = {...trackColorSettings};
+    const trackSettingsOnChange = async(key, value) => {
+      let newTrackColorSettings = {...trackProps["trackColorSettings"]};
       newTrackColorSettings[key] = value;
-      onChange(trackType, trackFile, newTrackColorSettings)
+      setColorSettings(newTrackColorSettings);
     }
+
+    // useEffect hook to tell react to call onchange after state changes
+    useEffect(() => {
+      if (typeof myTrackFile !== "undefined") {
+        // hold off on calling onchange until a file is selected
+        onChange(getNewTrackProps());
+      }
+    }, [myTrackFile, myTrackType, myTrackColorSettings]);
 
     return (
       <Container>
-        <Row sm="4">
-          <Col sm="2">
-            <TrackTypeDropdown value={trackType} 
+        <Row className="g-0">
+          <Col className="tracklist-dropdown" sm="2">
+            <TrackTypeDropdown value={myTrackType} 
                               onChange={trackTypeOnChange}
                               />
           </Col>
-          <Col sm="3">
-            <TrackFilePicker tracks={availableTracks} 
-                            fileType={trackType} 
-                            value={trackFile}
+          <Col className="tracklist-dropdown" sm="3">
+            <TrackFilePicker tracks={trackProps["availableTracks"]} 
+                            fileType={myTrackType} 
+                            value={myTrackFile}
                             pickerType={"dropdown"} 
                             handleInputChange={trackFileOnChange}
                             />
           </Col>
-          <Col className="class-col" sm="1">
-            <TrackSettingsButton fileType={trackType}
-                                trackColorSettings={trackColorSettings}
+          <Col className="tracklist-button" sm="1">
+            <TrackSettingsButton fileType={myTrackType}
+                                trackColorSettings={myTrackColorSettings}
                                 setTrackColorSetting={trackSettingsOnChange}
-                                availableColors={availableColors}
+                                availableColors={trackProps["availableColors"]}
                                 />
-          </Col>
-          <Col className="class-col" md="1">
             <TrackDeleteButton onClick={onDelete}
                               />
           </Col>
+
         </Row>
       </Container>
     );
@@ -69,25 +92,11 @@ export const TrackListItem = ({
   }
   
   TrackListItem.propTypes = {
-    trackType: PropTypes.string,
-    trackFile: PropTypes.string,
-    availableTracks: PropTypes.array.isRequired,
+    trackProps: PropTypes.object.isRequired,
     onChange: PropTypes.func.isRequired,
-    trackColorSettings: PropTypes.object,
     onDelete: PropTypes.func.isRequired,
-    availableColors: PropTypes.array,
   }
     
-  TrackListItem.defaultProps = {
-    trackType: "graph",
-    trackFile: undefined,
-    availableColors: undefined,
-    trackColorSettings: {    
-      mainPallete: "blues",
-      auxPallete: "reds",
-      colorReadsByMappingQuality: false},
-    
-  }
   
   export default TrackListItem;
   

@@ -191,9 +191,14 @@ input[type="file"] {
   }
 }
 
-.class-col {
+.tracklist-button {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: left;
+  justify-content: left;
   height: 100%;
+  margin-left: 10px;
+}
+
+.tracklist-dropdown {
+  margin-top: 4px;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor, cleanup }  from '@testing-library/react';
+import { render, fireEvent, waitFor }  from '@testing-library/react';
 import {TrackFilePicker} from './TrackFilePicker';
 
 

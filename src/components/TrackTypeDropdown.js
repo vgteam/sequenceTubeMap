@@ -12,33 +12,20 @@ import Select from "react-select";
  */
 
 export function TrackTypeDropdown (props) {
-
-    // eventToString: given a change event on a dropdown with various options, return the 
-    //string value for the user's selection 
-    const eventToString = (changeEvent) => {
-      return changeEvent.value;
-    }
-
-    // composition function
-    const compose = (f, g) => x => f(g(x));
-
-    // input string function, and output function to take in an event 
-    // props.onChange will be the outer function accepting result of eventToString, 
-    //  to result in a function that accepts a selection event
-    const stringFnToEventFn = (StringFn) => {
-      return compose(StringFn, eventToString);
-    }
   
     
     // dropdown and selections
     // upon selection of a dropdown option, call onChange function 
     let dropdown = (
       <div data-testid="file-type-select-component">
-        <Select {...props} onChange={stringFnToEventFn(props.onChange)}
-          options={["graph", "haplotype", "read"].map(o => ({label: o, value: o}))}
+        <Select {...props} onChange={o => {
+          props.onChange(o.value)}
+        }
+          options={["graph", "haplotype", "read"].map(o => ({
+            label: o, value: o
+          }))}
           value={{label: props.value, value: props.value}}
         />
-
       </div>
     );
     
