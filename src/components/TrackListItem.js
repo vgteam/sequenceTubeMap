@@ -8,7 +8,7 @@ import {TrackFilePicker} from './TrackFilePicker';
 import {TrackTypeDropdown} from './TrackTypeDropdown';
 import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
-import React, { useEffect, useReducer, useCallback } from 'react';
+import React, { useEffect, useReducer, useRef } from 'react';
 
 
 export const TrackListItem = ({
@@ -23,14 +23,9 @@ export const TrackListItem = ({
     onDelete,
   }) => {
     const [myTrackProps, dispatch] = useReducer(reducer, trackProps);
-    const _onChange = useCallback(() => {
-      if (myTrackProps.trackFile !== undefined) {
-        onChange(myTrackProps);
-      }
-    }, [myTrackProps])
+    const _onChange = useRef(onChange);
 
     // https://overreacted.io/a-complete-guide-to-useeffect/
-    // use reducer as a work around for passing props into useEffect
     function reducer(state, action) {
       let newState = {...state};
       switch (action.type){
@@ -68,8 +63,10 @@ export const TrackListItem = ({
     // https://stackoverflow.com/questions/55840294/how-to-fix-missing-dependency-warning-when-using-useeffect-react-hook
     // useEffect hook to tell react to call onchange after state changes
     useEffect(() => {
-      _onChange();
-    }, [dispatch, myTrackProps.trackFile, myTrackProps.trackType, myTrackProps.trackColorSettings, _onChange]); //passing in trackProps or onChange causes infinite recusive calls
+      if (myTrackProps.trackFile !== undefined){
+        _onChange.current(myTrackProps);
+      }
+    }, [myTrackProps.trackFile, myTrackProps.trackType, myTrackProps.trackColorSettings, myTrackProps, _onChange]);
 
     return (
       <Container>
