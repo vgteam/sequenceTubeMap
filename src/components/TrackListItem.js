@@ -24,6 +24,7 @@ export const TrackListItem = ({
   }) => {
     const [myTrackProps, dispatch] = useReducer(reducer, trackProps);
     const _onChange = useRef(onChange);
+    const initialRender = useRef(true);
 
     // https://overreacted.io/a-complete-guide-to-useeffect/
     function reducer(state, action) {
@@ -63,8 +64,12 @@ export const TrackListItem = ({
     // https://stackoverflow.com/questions/55840294/how-to-fix-missing-dependency-warning-when-using-useeffect-react-hook
     // useEffect hook to tell react to call onchange after state changes
     useEffect(() => {
-      if (myTrackProps.trackFile !== undefined){
-        _onChange.current(myTrackProps);
+      if (initialRender.current) {
+        initialRender.current = false;
+      } else{
+        if (myTrackProps.trackFile !== undefined) {
+          _onChange.current(myTrackProps);
+        }
       }
     }, [myTrackProps.trackFile, myTrackProps.trackType, myTrackProps.trackColorSettings, myTrackProps, _onChange]);
 
