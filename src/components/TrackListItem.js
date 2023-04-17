@@ -8,14 +8,14 @@ import {TrackFilePicker} from './TrackFilePicker';
 import {TrackTypeDropdown} from './TrackTypeDropdown';
 import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
-import React, { useEffect, useReducer } from 'react';
+import React, { useEffect, useReducer, useCallback } from 'react';
 
 
 export const TrackListItem = ({
     trackProps,
     // trackProps expects an object with
       // trackType: string
-      // trackFile: file object
+      // trackFile: file object / undefined
       // availableTracks: array of tracks(see types.ts)
       // trackColorSettings: object(aka. colorScheme)
       // availableColors: array of ColorPalletes
@@ -23,18 +23,17 @@ export const TrackListItem = ({
     onDelete,
   }) => {
     const [myTrackProps, dispatch] = useReducer(reducer, trackProps);
+    const _onChange = useCallback(() => {
+      if (myTrackProps.trackFile !== undefined) {
+        onChange(myTrackProps);
+      }
+    }, [myTrackProps])
 
     // https://overreacted.io/a-complete-guide-to-useeffect/
     // use reducer as a work around for passing props into useEffect
     function reducer(state, action) {
       let newState = {...state};
       switch (action.type){
-        case "update":
-          // hold off on calling onchange until a file is selected
-          if (state["trackFile"] !== undefined){
-            onChange(state);
-          }
-          break;
         case "setType":
           newState["trackFile"] = undefined;
           newState["trackType"] = action.payload;
@@ -47,7 +46,6 @@ export const TrackListItem = ({
           break;
         default:
           throw new Error();
-
       }
       return newState;
     }
@@ -70,10 +68,8 @@ export const TrackListItem = ({
     // https://stackoverflow.com/questions/55840294/how-to-fix-missing-dependency-warning-when-using-useeffect-react-hook
     // useEffect hook to tell react to call onchange after state changes
     useEffect(() => {
-      console.log("useeffect");
-      
-      dispatch({ type: "update" });
-    }, [dispatch, myTrackProps.trackFile, myTrackProps.trackType, myTrackProps.trackColorSettings]); //passing in trackProps or onChange causes infinite recusive calls
+      _onChange();
+    }, [dispatch, myTrackProps.trackFile, myTrackProps.trackType, myTrackProps.trackColorSettings, _onChange]); //passing in trackProps or onChange causes infinite recusive calls
 
     return (
       <Container>
