@@ -190,3 +190,15 @@ input[type="file"] {
     opacity: 1;
   }
 }
+
+.tracklist-button {
+  display: flex;
+  align-items: left;
+  justify-content: left;
+  height: 100%;
+  margin-left: 10px;
+}
+
+.tracklist-dropdown {
+  margin-top: 4px;
+}

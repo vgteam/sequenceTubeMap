@@ -1,5 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
+import Select from "react-select";
+
 /**
  * A track type dropdown component.
  * Created using composition of functions approach.
@@ -10,32 +12,21 @@ import PropTypes from "prop-types";
  */
 
 export function TrackTypeDropdown (props) {
-
-    // eventToString: given a change event on a dropdown with various options, return the 
-    //string value for the user's selection 
-    const eventToString = (changeEvent) => {
-      return changeEvent.target.value;
-    }
-
-    // composition function
-    const compose = (f, g) => x => f(g(x));
-
-    // input string function, and output function to take in an event 
-    // props.onChange will be the outer function accepting result of eventToString, 
-    //  to result in a function that accepts a selection event
-    const stringFnToEventFn = (StringFn) => {
-      return compose(StringFn, eventToString);
-    }
   
     
     // dropdown and selections
     // upon selection of a dropdown option, call onChange function 
     let dropdown = (
-      <select {...props} onChange={stringFnToEventFn(props.onChange)}>
-        <option value="graph">graph</option>
-        <option value="haplotype">haplotype</option>
-        <option value="read">read</option>
-      </select>
+      <div data-testid="file-type-select-component">
+        <Select {...props} onChange={o => {
+          props.onChange(o.value)}
+        }
+          options={["graph", "haplotype", "read"].map(o => ({
+            label: o, value: o
+          }))}
+          value={{label: props.value, value: props.value}}
+        />
+      </div>
     );
     
     return (

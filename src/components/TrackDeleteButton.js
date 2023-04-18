@@ -17,7 +17,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
     // upon click, call onClick function 
     
     return (
-        <Button {...props}><FontAwesomeIcon icon={faX} /></Button>
+        <Button data-testid="delete-button" {...props}><FontAwesomeIcon icon={faX} /></Button>
     );
 }
 
