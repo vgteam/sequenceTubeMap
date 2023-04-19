@@ -12,13 +12,15 @@ import React, { useEffect, useReducer, useRef } from 'react';
 
 
 export const TrackListItem = ({
+    // trackProps expects an object with:
+    // * trackType: string
+    // * trackFile: file object / undefined
+    // * trackColorSettings: object(aka. colorScheme)
     trackProps,
-    // trackProps expects an object with
-      // trackType: string
-      // trackFile: file object / undefined
-      // availableTracks: array of tracks(see types.ts)
-      // trackColorSettings: object(aka. colorScheme)
-      // availableColors: array of ColorPalletes
+    // availableTracks: array of tracks(see types.ts)
+    availableTracks,
+    // availableColors: array of ColorPalletes
+    availableColors,
     onChange, // expects a new trackProps object
     onDelete,
   }) => {
@@ -78,7 +80,7 @@ export const TrackListItem = ({
                               />
           </Col>
           <Col className="tracklist-dropdown" sm="3">
-            <TrackFilePicker tracks={myTrackProps["availableTracks"]} 
+            <TrackFilePicker tracks={availableTracks} 
                             fileType={myTrackProps["trackType"]} 
                             value={myTrackProps["trackFile"]}
                             pickerType={"dropdown"} 
@@ -89,7 +91,7 @@ export const TrackListItem = ({
             <TrackSettingsButton fileType={myTrackProps["trackType"]}
                                 trackColorSettings={myTrackProps["trackColorSettings"]}
                                 setTrackColorSetting={trackSettingsOnChange}
-                                availableColors={trackProps["availableColors"]}
+                                availableColors={availableColors}
                                 />
             <TrackDeleteButton onClick={onDelete}
                               />
@@ -103,6 +105,8 @@ export const TrackListItem = ({
   
   TrackListItem.propTypes = {
     trackProps: PropTypes.object.isRequired,
+    availableTracks: PropTypes.array.isRequired,
+    availableColors: PropTypes.array,
     onChange: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
   }

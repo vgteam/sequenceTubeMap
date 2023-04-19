@@ -27,10 +27,10 @@ describe('TrackSettings', () => {
               trackProps={{
                 trackFile: trackFile,
                 trackType: trackType,
-                availableColors: availableColors,
-                availableTracks: availableTracks,
                 trackColorSettings: trackColorSettings
               }}
+              availableColors = {availableColors}
+              availableTracks = {availableTracks}
               onChange = {fakeOnChange}
               onDelete = {fakeOnDelete}
              />
@@ -55,10 +55,10 @@ describe('TrackSettings', () => {
             trackProps={{
                 trackFile: trackFile,
                 trackType: trackType,
-                availableColors: availableColors,
-                availableTracks: availableTracks,
                 trackColorSettings: trackColorSettings
               }}
+              availableColors = {availableColors}
+              availableTracks = {availableTracks}
               onChange = {fakeOnChange}
               onDelete = {fakeOnDelete}
              />
@@ -81,10 +81,10 @@ describe('TrackSettings', () => {
             trackProps={{
                 trackFile: trackFile,
                 trackType: "haplotype",
-                availableColors: availableColors,
-                availableTracks: availableTracks,
                 trackColorSettings: trackColorSettings
               }}
+              availableColors = {availableColors}
+              availableTracks = {availableTracks}
               onChange = {fakeOnChange}
               onDelete = {fakeOnDelete}
              />
@@ -100,8 +100,6 @@ describe('TrackSettings', () => {
         expect(fakeOnChange).toHaveBeenCalledWith({
             trackFile: {"name": "fileB1.gbwt", "type": "haplotype"},
             trackType: "haplotype",
-            availableColors: availableColors,
-            availableTracks: availableTracks,
             trackColorSettings: trackColorSettings
         });
 
@@ -125,10 +123,10 @@ describe('TrackSettings', () => {
             trackProps={{
                 trackFile: trackFile,
                 trackType: trackType,
-                availableColors: availableColors,
-                availableTracks: availableTracks,
                 trackColorSettings: trackColorSettings
               }}
+              availableColors = {availableColors}
+              availableTracks = {availableTracks}
               onChange = {fakeOnChange}
               onDelete = {fakeOnDelete}
              />
