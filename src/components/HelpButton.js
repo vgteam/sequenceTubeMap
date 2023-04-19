@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { Button } from 'reactstrap'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQuestion } from '@fortawesome/free-solid-svg-icons';
+import Markdown from 'markdown-to-jsx';
 
 import {
   Container,
@@ -12,6 +13,7 @@ import {
 } from 'reactstrap';
 
 export const HelpButton = ({
+  /* Expects a file input */
   file
 }) => {
     // based off of https://react-popup.elazizi.com/controlled-popup/#using-open-prop
@@ -29,17 +31,15 @@ export const HelpButton = ({
 
     return(
       <div>
-        
         <Button aria-label="Help" onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faQuestion} /></Button>
-      
         {/* Popup has a trigger option, but passing in a button to trigger did not allow for the popup to be opened and closed
          with a Reactstrap button. We had to use onClick and onClose instead to open and close depending on the state of the popup */}
         <Popup open={open} closeOnDocumentClick onClose={close} contentStyle={{width: "760px"}} modal>
           <Container>
             <Card>
               <CardBody>
-                  <h2>Help</h2>
-                  {content}
+                  {/* Displays text from document */}
+                  <Markdown children={content}/>
               </CardBody>
             </Card>
           </Container>
