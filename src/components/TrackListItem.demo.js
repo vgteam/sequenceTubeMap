@@ -10,16 +10,19 @@ export default (<Demo
     trackProps: P.json({
       trackFile: undefined,
       trackType: "graph",
-      availableTracks: [{"files": [{"name": "fileA1.vg", "type": "graph"},
-                                          {"name": "fileA2.gbwt", "type": "haplotype"}]},
-                               {"files": [{"name": "fileB1.gbwt", "type": "haplotype"},
-                                          {"name": "fileB2.gam", "type": "read"}]},
-                               {"files": [{"name": "fileC1.xg", "type": "graph"}]}],
       trackColorSettings: {    
         mainPallete: "blues",
         auxPallete: "reds",
-        colorReadsByMappingQuality: false},
-    })
+        colorReadsByMappingQuality: false
+      }
+    }),
+    availableTracks: P.json([
+      {"files": [{"name": "fileA1.vg", "type": "graph"},
+                 {"name": "fileA2.gbwt", "type": "haplotype"}]},
+      {"files": [{"name": "fileB1.gbwt", "type": "haplotype"},
+                 {"name": "fileB2.gam", "type": "read"}]},
+      {"files": [{"name": "fileC1.xg", "type": "graph"}]}
+    ])
   }}
 >
   {
