@@ -30,7 +30,7 @@ export const HelpButton = ({
     }, [file])
 
     return(
-      <div>
+      <>
         <Button aria-label="Help" onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faQuestion} /></Button>
         {/* Popup has a trigger option, but passing in a button to trigger did not allow for the popup to be opened and closed
          with a Reactstrap button. We had to use onClick and onClose instead to open and close depending on the state of the popup */}
@@ -44,7 +44,7 @@ export const HelpButton = ({
             </Card>
           </Container>
         </Popup>
-      </div>
+      </>
     )
 }
 
