@@ -47,9 +47,11 @@ export const TrackList = ({
 
         Object.keys(myTracks).forEach((trackID, index) => {
             const trackProps = myTracks[trackID]
+            console.log(trackProps);
             trackMarkdown.push(           
-            <Row>
-                <TrackListItem trackProps={trackProps}
+            <Row key={trackID}>
+                <TrackListItem 
+                trackProps={trackProps}
                 availableTracks={availableTracks}
                 availableColors={availableColors}
                 onChange={trackItemOnChange}
@@ -62,6 +64,8 @@ export const TrackList = ({
         return trackMarkdown;
     }
 
+    console.log("tracks", tracks);
+    console.log("mytracks", myTracks);
     return(<Container>
               {renderTracks()}
            </Container>);
