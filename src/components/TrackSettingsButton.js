@@ -17,7 +17,8 @@ export const TrackSettingsButton = ({
     trackColorSettings,
     setTrackColorSetting,
     label,
-    availableColors
+    availableColors,
+    testID
 }) => {
     // based off of https://react-popup.elazizi.com/controlled-popup/#using-open-prop
     const [open, setOpen] = useState(false);
@@ -25,7 +26,7 @@ export const TrackSettingsButton = ({
     return(
       <div>
         
-        <Button aria-label="Settings" onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faGear} /></Button>
+        <Button aria-label="Settings" onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faGear} data-testid={testID}/></Button>
       
         {/* Popup has a trigger option, but passing in a button to trigger did not allow for the popup to be opened and closed
          with a Reactstrap button. We had to use onClick and onClose instead to open and close depending on the state of the popup */}
@@ -54,10 +55,12 @@ TrackSettingsButton.propTypes = {
     setTrackColorSetting: PropTypes.func.isRequired,
     label: PropTypes.string,
     availableColors: PropTypes.array,
+    testID: PropTypes.string
 }
 
 TrackSettingsButton.defaultProps = {
-    availableColors: ["greys", "ygreys", "blues", "reds", "plainColors", "lightColors"]
+    availableColors: ["greys", "ygreys", "blues", "reds", "plainColors", "lightColors"],
+    testID: "settings-button-component"
 }
 
 export default TrackSettingsButton;

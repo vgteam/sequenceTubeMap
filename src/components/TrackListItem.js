@@ -78,6 +78,7 @@ export const TrackListItem = ({
           <Col className="tracklist-dropdown" sm="2">
             <TrackTypeDropdown value={myTrackProps["trackType"]} 
                               onChange={trackTypeOnChange}
+                              testID={"file-type-select-component".concat(trackID)}
                               />
           </Col>
           <Col className="tracklist-dropdown" sm="3">
@@ -86,6 +87,7 @@ export const TrackListItem = ({
                             value={myTrackProps["trackFile"]}
                             pickerType={"dropdown"} 
                             handleInputChange={trackFileOnChange}
+                            testID={"file-select-component".concat(trackID)}
                             />
           </Col>
           <Col className="tracklist-button" sm="1">
@@ -93,8 +95,10 @@ export const TrackListItem = ({
                                 trackColorSettings={myTrackProps["trackColorSettings"]}
                                 setTrackColorSetting={trackSettingsOnChange}
                                 availableColors={availableColors}
+                                testID={"settings-button-component".concat(trackID)}
                                 />
             <TrackDeleteButton onClick={onDelete}
+                               testID={"delete-button-component".concat(trackID)}
                               />
           </Col>
 
@@ -110,7 +114,7 @@ export const TrackListItem = ({
     availableColors: PropTypes.array,
     onChange: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
-    trackID: PropTypes.string.isRequired,
+    trackID: PropTypes.number.isRequired,
   }
     
   

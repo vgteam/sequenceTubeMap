@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor }  from '@testing-library/react';
 import {TrackListItem} from './TrackListItem';
 import '@testing-library/jest-dom'
 
-describe('TrackSettings', () => {
+describe('TrackListItem', () => {
     const trackFile = undefined;
     const trackType = "graph";
     const availableColors = ["greys", "ygreys", "reds", "plainColors", "lightColors"];
@@ -33,6 +33,7 @@ describe('TrackSettings', () => {
               availableTracks = {availableTracks}
               onChange = {fakeOnChange}
               onDelete = {fakeOnDelete}
+              trackID = {1}
              />
         );
 
@@ -61,13 +62,14 @@ describe('TrackSettings', () => {
               availableTracks = {availableTracks}
               onChange = {fakeOnChange}
               onDelete = {fakeOnDelete}
+              trackID = {1}
              />
         );
 
         expect(fakeOnChange).toHaveBeenCalledTimes(0);
 
         // change track type
-        const fileTypeSelectComponent = queryByTestId("file-type-select-component");
+        const fileTypeSelectComponent = queryByTestId("file-type-select-component1");
         fireEvent.keyDown(fileTypeSelectComponent.firstChild, {key: "ArrowDown"});
         await waitFor(() => getByText("haplotype"));
         fireEvent.click(getByText("haplotype"));
@@ -87,17 +89,18 @@ describe('TrackSettings', () => {
               availableTracks = {availableTracks}
               onChange = {fakeOnChange}
               onDelete = {fakeOnDelete}
+              trackID = {1}
              />
         );
 
         // change file name
-        const fileSelectComponent = queryByTestId('file-select-component');
+        const fileSelectComponent = queryByTestId('file-select-component1');
         fireEvent.keyDown(fileSelectComponent.firstChild, {key: "ArrowDown"});
         await waitFor(() => getByText("fileB1.gbwt"));
         fireEvent.click(getByText("fileB1.gbwt"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
-        expect(fakeOnChange).toHaveBeenCalledWith({
+        expect(fakeOnChange).toHaveBeenCalledWith(1, {
             trackFile: {"name": "fileB1.gbwt", "type": "haplotype"},
             trackType: "haplotype",
             trackColorSettings: trackColorSettings
@@ -129,12 +132,13 @@ describe('TrackSettings', () => {
               availableTracks = {availableTracks}
               onChange = {fakeOnChange}
               onDelete = {fakeOnDelete}
+              trackID = {1}
              />
         );
 
         expect(fakeOnDelete).toHaveBeenCalledTimes(0); 
 
-        fireEvent.click(queryByTestId("delete-button"));
+        fireEvent.click(queryByTestId("delete-button-component1"));
         expect(fakeOnDelete).toHaveBeenCalledTimes(1); 
     });
 
