@@ -4,6 +4,7 @@ import {
     Row
   } from "reactstrap";
 import {TrackListItem} from './TrackListItem';
+import React, { useState, useRef, useEffect} from 'react';
 
 
 export const TrackList = ({
@@ -19,25 +20,33 @@ export const TrackList = ({
     onChange, // expects a new tracks object
     onDelete,
   }) => {
+    const [myTracks, setTracks] = useState(tracks);
+    const _onChange = useRef(onChange);
 
     function trackItemOnChange(trackID, trackProps) {
-        let newTracks = {...tracks};
+        let newTracks = {...myTracks};
 
         newTracks[trackID] = trackProps;
-        console.log("old: ", JSON.stringify(tracks));
-        console.log("new: ", JSON.stringify(newTracks));
-        if (JSON.stringify(newTracks) !== JSON.stringify(tracks)) {
-            onChange(newTracks);
+        if (JSON.stringify(newTracks) !== JSON.stringify(myTracks)) {
+            setTracks(newTracks);
         }
 
     }
+
+    useEffect(() => {
+        if (JSON.stringify(myTracks) !== JSON.stringify(tracks)) {
+          _onChange.current(myTracks);
+        }
+        
+      }, [myTracks, _onChange, tracks]);
+  
 
 
     function renderTracks() {
         let trackMarkdown = [];
 
-        Object.keys(tracks).forEach((trackID, index) => {
-            const trackProps = tracks[trackID]
+        Object.keys(myTracks).forEach((trackID, index) => {
+            const trackProps = myTracks[trackID]
             trackMarkdown.push(           
             <Row>
                 <TrackListItem trackProps={trackProps}
