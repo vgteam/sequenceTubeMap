@@ -24,31 +24,37 @@ export const TrackList = ({
         let newTracks = {...tracks};
 
         newTracks[trackID] = trackProps;
+        console.log("old: ", JSON.stringify(tracks));
+        console.log("new: ", JSON.stringify(newTracks));
         if (JSON.stringify(newTracks) !== JSON.stringify(tracks)) {
             onChange(newTracks);
         }
 
     }
 
-    function renderTrackItem(trackID, trackProps) {
-        return (
-            <TrackListItem trackProps={trackProps}
-            availableTracks={availableTracks}
-            availableColors={availableColors}
-            onChange={trackItemOnChange}
-            onDelete={onDelete}
-            trackID={trackID}/>
-        );
-    }
 
     function renderTracks() {
-        return tracks.map(renderTrackItem);
+        let trackMarkdown = [];
+
+        Object.keys(tracks).forEach((trackID, index) => {
+            const trackProps = tracks[trackID]
+            trackMarkdown.push(           
+            <Row>
+                <TrackListItem trackProps={trackProps}
+                availableTracks={availableTracks}
+                availableColors={availableColors}
+                onChange={trackItemOnChange}
+                onDelete={onDelete}
+                trackID={trackID}/>
+            </Row>
+            );
+        })
+
+        return trackMarkdown;
     }
 
     return(<Container>
-            <Row>
               {renderTracks()}
-            </Row>
            </Container>);
     
   }
