@@ -23,6 +23,7 @@ export const TrackListItem = ({
     availableColors,
     onChange, // expects a new trackProps object
     onDelete,
+    trackID,
   }) => {
     const [myTrackProps, dispatch] = useReducer(reducer, trackProps);
     const _onChange = useRef(onChange);
@@ -66,14 +67,14 @@ export const TrackListItem = ({
     // useEffect hook to tell react to call onchange after state changes
     useEffect(() => {
       if (myTrackProps.trackFile !== undefined && JSON.stringify(trackProps) !== JSON.stringify(myTrackProps)) {
-        _onChange.current(myTrackProps);
+        _onChange.current(trackID, myTrackProps);
       }
       
-    }, [myTrackProps.trackFile, myTrackProps.trackType, myTrackProps.trackColorSettings, myTrackProps, _onChange, trackProps]);
+    }, [myTrackProps.trackFile, myTrackProps.trackType, myTrackProps.trackColorSettings, myTrackProps, _onChange, trackProps, trackID]);
 
     return (
       <Container>
-        <Row className="g-0">
+        <Row className="g-0" key={trackID}>
           <Col className="tracklist-dropdown" sm="2">
             <TrackTypeDropdown value={myTrackProps["trackType"]} 
                               onChange={trackTypeOnChange}
@@ -109,6 +110,7 @@ export const TrackListItem = ({
     availableColors: PropTypes.array,
     onChange: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
+    trackID: PropTypes.string.isRequired,
   }
     
   

@@ -22,26 +22,32 @@ class RadioRow extends Component {
 
   };
 
+
   render() {
-    const colorRadios = Array.from(colorMap).map(([keyColor, valueColor]) => {
-      if(this.props.availableColors.includes(valueColor)){
-        return (
-          <Col xs="auto" key={keyColor}>
-            <FormGroup check>
-              <Label check>
-                <Input
-                  type="radio"
-                  value={keyColor}
-                  checked={this.props.color === valueColor}
-                  onChange={this.onChange}
-                />
-                {keyColor}
-              </Label>
-            </FormGroup>
-          </Col>
-        );
+    let currColorMap = new Map(colorMap);
+    for (const [keyColor, valueColor] of colorMap) {
+      if(!this.props.availableColors.includes(valueColor)){
+        currColorMap.delete(keyColor);
       }
-      return <></>;
+    }
+
+    const colorRadios = Array.from(currColorMap).map(([keyColor, valueColor]) => {
+      return (
+        <Col xs="auto" key={keyColor}>
+          <FormGroup check>
+            <Label check>
+              <Input
+                type="radio"
+                value={keyColor}
+                checked={this.props.color === valueColor}
+                onChange={this.onChange}
+                key={keyColor}
+              />
+              {keyColor}
+            </Label>
+          </FormGroup>
+        </Col>
+      );
     });
     return (
       <FormGroup row className="mb-1">
