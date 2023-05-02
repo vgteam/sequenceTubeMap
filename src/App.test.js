@@ -71,3 +71,4 @@ it("allows the start to be changed", async () => {
   await userEvent.type(getRegionInput(), "17:200-300");
   expect(getRegionInput().value).toEqual("17:200-300");
 });
+

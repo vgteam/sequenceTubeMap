@@ -391,8 +391,8 @@ class HeaderForm extends Component {
   handleGoButton = () => {
     console.log("HANDLING GO BUTTON:");
     if (this.props.dataOrigin !== dataOriginTypes.API) {
-      this.props.setColorSetting("haplotypeColors", "ygreys");
-      this.props.setColorSetting("forwardReadColors", "reds");
+      this.props.setColorSetting(0, "haplotypeColors", "ygreys");
+      this.props.setColorSetting(1, "forwardReadColors", "reds");
     }
 
     const nextViewTarget = this.getNextViewTarget();
