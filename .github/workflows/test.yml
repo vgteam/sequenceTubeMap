@@ -35,7 +35,7 @@ jobs:
           curl -sSL "$(curl -sSL https://api.github.com/repos/vgteam/vg/releases/latest | grep 'browser_download_url.*vg"' | cut -d ':' -f 2,3 | tr -d '"' | sed 's/^ *//g')" >bin/vg
           chmod +x bin/vg
       - name: Run tests
-        run: PATH=$PATH:$(pwd)/bin CI=true npm run test
+        run: PATH=$PATH:$(pwd)/bin CI=true npm run ci:test
       - name: Test build
         run: npm run build
 
