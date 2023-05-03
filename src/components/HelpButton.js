@@ -27,6 +27,11 @@ export const HelpButton = ({
       fetch(file)
         .then(res => res.text())
         .then(md => { setContent(md) })
+        // catch - error is link
+        .catch((e) => {
+          setContent("Could not fetch help")
+        })
+        
     }, [file])
 
     return(
