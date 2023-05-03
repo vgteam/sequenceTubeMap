@@ -23,7 +23,5 @@ describe('HelpButton', () => {
         await waitFor(() => expect(screen.getByText('Instructions')).toBeTruthy());
 
         await waitFor(() => expect(screen.queryByText('#')).toBeFalsy());
-
-        // fetch doesn't work so it fails the promise
     });
 });
