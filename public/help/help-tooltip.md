@@ -1,0 +1,1 @@
+Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges (e.g. "node:100-110"), a start position and a distance (e.g. "chr1:1+100"), or a node ID anchor and a distance (e.g. "node:100+10").
