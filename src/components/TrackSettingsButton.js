@@ -8,7 +8,6 @@ import { faGear, faX } from '@fortawesome/free-solid-svg-icons';
 
 import {
   Container,
-  CardHeader,
   CardBody,
   Card,
 } from 'reactstrap';
