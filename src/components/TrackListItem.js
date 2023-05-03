@@ -8,7 +8,7 @@ import {TrackFilePicker} from './TrackFilePicker';
 import {TrackTypeDropdown} from './TrackTypeDropdown';
 import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
-import React, { useEffect, useReducer, useRef } from 'react';
+import React, { useEffect, useState} from 'react';
 
 
 export const TrackListItem = ({
@@ -25,74 +25,73 @@ export const TrackListItem = ({
     onDelete,
     trackID,
   }) => {
-    const [myTrackProps, dispatch] = useReducer(reducer, trackProps);
-    const _onChange = useRef(onChange);
+    // propChanges only store new trackType, trackFile, and trackColorSettings changes
+    // reset after onChange is called
+    const [propChanges, setPropChanges] = useState({});
 
-    // https://overreacted.io/a-complete-guide-to-useeffect/
-    function reducer(state, action) {
-      let newState = {...state};
-      switch (action.type){
-        case "setType":
-          newState["trackFile"] = undefined;
-          newState["trackType"] = action.payload;
-          break;
-        case "setFile":
-          newState["trackFile"] = action.payload;
-          break;
-        case "setColorSettings":
-          newState["trackColorSettings"] = action.payload;
-          break;
-        default:
-          throw new Error();
-      }
-      return newState;
-    }
   
     const trackTypeOnChange = async(newTrackType) => {
       // wait until file change to call onChange
-      dispatch({type: "setType", payload: newTrackType});
+      let newPropChanges = {...propChanges};
+      newPropChanges["trackType"] = newTrackType;
+      newPropChanges["trackFile"] = undefined;
+      setPropChanges(newPropChanges);
     }
 
     const trackFileOnChange = async(newFile) => {
-      dispatch({type: "setFile", payload: newFile});
+      let newPropChanges = {...propChanges};
+      newPropChanges["trackFile"] = newFile;
+      setPropChanges(newPropChanges);
     }
 
     const trackSettingsOnChange = async(key, value) => {
       let newTrackColorSettings = {...trackProps["trackColorSettings"]};
       newTrackColorSettings[key] = value;
-      dispatch({type: "setColorSettings", payload: newTrackColorSettings});
+      let newPropChanges = {...propChanges};
+      newPropChanges["trackColorSettings"] = newTrackColorSettings;
+      setPropChanges(newPropChanges);
     }
 
-    // https://stackoverflow.com/questions/55840294/how-to-fix-missing-dependency-warning-when-using-useeffect-react-hook
     // useEffect hook to tell react to call onchange after state changes
+    // setPropChanges are async, useEffect acts as a callback to setPropChanges
+    // https://stackoverflow.com/questions/54954091/how-to-use-callback-with-usestate-hook-in-react/56394177#56394177
     useEffect(() => {
-      if (myTrackProps.trackFile !== undefined && JSON.stringify(trackProps) !== JSON.stringify(myTrackProps)) {
-        _onChange.current(trackID, myTrackProps);
+      // get an updated version of trackProps
+      let newTrackProps = {...trackProps};
+      for (const key in propChanges) {
+        newTrackProps[key] = propChanges[key];
       }
       
-    }, [myTrackProps.trackFile, myTrackProps.trackType, myTrackProps.trackColorSettings, myTrackProps, _onChange, trackProps, trackID]);
+      // push it if trackFile has been selected and changes are made
+      if (newTrackProps.trackFile !== undefined && JSON.stringify(trackProps) !== JSON.stringify(newTrackProps)) {
+        onChange(trackID, newTrackProps);
+        setPropChanges({});
+      }
+    }, [propChanges, onChange, trackProps, trackID]);
 
+    // displayed elements uses propChanges(local state) first, then uses trackProps
+    const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
     return (
-      <Container>
-        <Row className="g-0" key={trackID}>
+      <Container key={trackID}>
+        <Row className="g-0">
           <Col className="tracklist-dropdown" sm="2">
-            <TrackTypeDropdown value={myTrackProps["trackType"]} 
+            <TrackTypeDropdown value={propChanges["trackType"] || trackProps["trackType"]} 
                               onChange={trackTypeOnChange}
                               testID={"file-type-select-component".concat(trackID)}
                               />
           </Col>
           <Col className="tracklist-dropdown" sm="3">
             <TrackFilePicker tracks={availableTracks} 
-                            fileType={myTrackProps["trackType"]} 
-                            value={myTrackProps["trackFile"]}
+                            fileType={propChanges["trackType"] || trackProps["trackType"]} 
+                            value={displayedFile}
                             pickerType={"dropdown"} 
                             handleInputChange={trackFileOnChange}
                             testID={"file-select-component".concat(trackID)}
                             />
           </Col>
           <Col className="tracklist-button" sm="1">
-            <TrackSettingsButton fileType={myTrackProps["trackType"]}
-                                trackColorSettings={myTrackProps["trackColorSettings"]}
+            <TrackSettingsButton fileType={propChanges["trackType"] || trackProps["trackType"]}
+                                trackColorSettings={propChanges["trackColorSettings"] || trackProps["trackColorSettings"]}
                                 setTrackColorSetting={trackSettingsOnChange}
                                 availableColors={availableColors}
                                 testID={"settings-button-component".concat(trackID)}

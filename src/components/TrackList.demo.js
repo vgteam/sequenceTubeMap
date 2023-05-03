@@ -48,8 +48,8 @@ export default (<Demo
   {
     (props, update) => {
       return <TrackList {...props} 
-        onChange={(newTrack) => {
-          update({tracks: newTrack});
+        onChange={(newTracks) => {
+          update({tracks: newTracks});
         }} 
         onDelete={() => {console.log("track deleted")}}/>
     }

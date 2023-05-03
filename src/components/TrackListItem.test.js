@@ -51,7 +51,7 @@ describe('TrackListItem', () => {
         const fakeOnChange = jest.fn();
         const fakeOnDelete = jest.fn();
         
-        const { getByText, queryByTestId, rerender, getByRole } = render(
+        const { getByText, queryByTestId, rerender } = render(
             <TrackListItem 
             trackProps={{
                 trackFile: trackFile,
@@ -106,9 +106,24 @@ describe('TrackListItem', () => {
             trackColorSettings: trackColorSettings
         });
 
+        rerender(
+            <TrackListItem 
+            trackProps={{
+                trackFile: {"name": "fileB1.gbwt", "type": "haplotype"},
+                trackType: "haplotype",
+                trackColorSettings: trackColorSettings
+              }}
+              availableColors = {availableColors}
+              availableTracks = {availableTracks}
+              onChange = {fakeOnChange}
+              onDelete = {fakeOnDelete}
+              trackID = {1}
+             />
+        );
+
 
         // change color settings
-        fireEvent.click(getByRole("button", {name: /Settings/i}));
+        fireEvent.click(queryByTestId('settings-button-component1'));
         await waitFor(() => getByText("reds"));
         fireEvent.click(getByText("reds"));
         fireEvent.click(document);
