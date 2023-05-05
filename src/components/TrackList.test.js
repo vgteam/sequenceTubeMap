@@ -132,10 +132,37 @@ describe('TrackList', () => {
         newTracks[1].trackColorSettings.mainPallete = "reds";
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
 
-        
+    });
+
+    it('should use a new event handler when passed', async () => {
+        const fakeOnChange1 = jest.fn();
+        const fakeOnChange2 = jest.fn();
+        const fakeOnDelete = jest.fn();
+        const { queryByTestId, getByText, rerender } = render(
+            <TrackList
+                tracks={tracks}
+                availableTracks={availableTracks}
+                availableColors={availableColors}
+                onChange={fakeOnChange1}
+                onDelete={fakeOnDelete}
+            />
+        );
+
+        expect(fakeOnChange1).toHaveBeenCalledTimes(0); 
+
+        let newTracks = {...tracks};
+        newTracks[1].trackType = "graph"
+
+        rerenderTrackList(rerender, newTracks, fakeOnChange2, fakeOnDelete);
 
 
+        const fileSelectComponent = queryByTestId('file-select-component1');
+        fireEvent.keyDown(fileSelectComponent.firstChild, {key: "ArrowDown"});
+        await waitFor(() => getByText("fileA1.vg"));
+        fireEvent.click(getByText("fileA1.vg"));
 
-    })
+        expect(fakeOnChange2).toHaveBeenCalledTimes(1); 
+
+    });
 
 });
