@@ -8,8 +8,8 @@ import {
   faStepForward,
   faSearchPlus,
   faSearchMinus,
-  faQuestionCircle,
 } from "@fortawesome/free-solid-svg-icons";
+import HelpButton from "./HelpButton.js"
 import * as tubeMap from "../util/tubemap";
 
 const ZOOM_FACTOR = 2.0;
@@ -65,15 +65,10 @@ class DataPositionFormRow extends Component {
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
-        <div className="popup" onClick={this.helpPopupFunction}>
-          <FontAwesomeIcon icon={faQuestionCircle} size="xl" />
-          <span className="popuptext" id="helpPopup">
-            Seach for a coordinate range (e.g. "chr1:1-100"), a node ID ranges
-            (e.g. "node:100-110"), a start position and a distance (e.g.
-            "chr1:1+100"), or a node ID anchor and a distance (e.g.
-            "node:100+10").
-          </span>
-        </div>
+
+        {/* Help Button */}
+        <HelpButton file="./help/help-tooltip.md"></HelpButton>
+        
         <Button
           color="primary"
           id="goButton"

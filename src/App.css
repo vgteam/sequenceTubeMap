@@ -202,3 +202,14 @@ input[type="file"] {
 .tracklist-dropdown {
   margin-top: 4px;
 }
+
+/* Close Popup */
+
+.closePopup{
+  align-items: center;
+  scale: 0.7;
+  border-radius: 50%;
+  position: absolute;
+  top: -20px;
+  right: -20px;
+}
