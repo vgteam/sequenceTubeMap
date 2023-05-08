@@ -101,12 +101,6 @@ describe('TrackList', () => {
         // should wait for file to be selected
         expect(fakeOnChange).toHaveBeenCalledTimes(0);
 
-        // simulate dropdown effect
-        let newTracks = {...tracks};
-        newTracks[1].trackType = "haplotype";
-
-        rerenderTrackList(rerender, newTracks, fakeOnChange, fakeOnDelete);
-
         // change file name
         const fileSelectComponent = queryByTestId('file-select-component1');
         fireEvent.keyDown(fileSelectComponent.firstChild, {key: "ArrowDown"});
@@ -114,6 +108,8 @@ describe('TrackList', () => {
         fireEvent.click(getByText("fileB1.gbwt"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
+        let newTracks = JSON.parse(JSON.stringify(tracks));
+        newTracks[1].trackType = "haplotype";
         newTracks[1].trackFile = {"name": "fileB1.gbwt", "type": "haplotype"};
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
 
@@ -150,10 +146,7 @@ describe('TrackList', () => {
 
         expect(fakeOnChange1).toHaveBeenCalledTimes(0); 
 
-        let newTracks = {...tracks};
-        newTracks[1].trackType = "graph"
-
-        rerenderTrackList(rerender, newTracks, fakeOnChange2, fakeOnDelete);
+        rerenderTrackList(rerender, tracks, fakeOnChange2, fakeOnDelete);
 
 
         const fileSelectComponent = queryByTestId('file-select-component1');
@@ -161,6 +154,7 @@ describe('TrackList', () => {
         await waitFor(() => getByText("fileA1.vg"));
         fireEvent.click(getByText("fileA1.vg"));
 
+        expect(fakeOnChange1).toHaveBeenCalledTimes(0); 
         expect(fakeOnChange2).toHaveBeenCalledTimes(1); 
 
     });

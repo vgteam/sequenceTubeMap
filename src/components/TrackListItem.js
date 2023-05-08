@@ -70,6 +70,7 @@ export const TrackListItem = ({
     }, [propChanges, onChange, trackProps, trackID]);
 
     // displayed elements uses propChanges(local state) first, then uses trackProps
+    // Isn't just a || because propChanges can set the trackFile to be undefined
     const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
     return (
       <Container key={trackID}>

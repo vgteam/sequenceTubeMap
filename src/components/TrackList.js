@@ -32,11 +32,11 @@ export const TrackList = ({
 
 
   function renderTracks() {
-      let trackMarkdown = [];
+      let trackHTML = [];
 
       Object.keys(tracks).forEach((trackID, index) => {
           const trackProps = tracks[trackID]
-          trackMarkdown.push(          
+          trackHTML.push(          
           <Row key={trackID}>
               <TrackListItem 
               trackProps={trackProps}
@@ -49,7 +49,7 @@ export const TrackList = ({
           );
       })
 
-      return trackMarkdown;
+      return trackHTML;
   }
 
   return(<Container>
