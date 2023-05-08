@@ -7,6 +7,5 @@ node_modules
 .vscode
 .idea
 build/
-test-reports/
 *.swp
 *~
