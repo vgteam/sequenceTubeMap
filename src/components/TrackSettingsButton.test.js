@@ -12,11 +12,11 @@ describe('TrackSettingsButton', () => {
                 colorReadsByMappingQuality: false}} setTrackColorSetting={function(a, b){}}></TrackSettingsButton>
         );
 
-        await userEvent.click(screen.getByRole('button'));
+        await userEvent.click(screen.getByTestId('settings-button-component'));
 
         expect(screen.getByRole('heading')).toBeTruthy();
 
-        await userEvent.click(screen.getByRole('button'));
+        await userEvent.click(screen.getByTestId('settings-button-component'));
 
         expect(screen.queryByRole('heading')).toBeFalsy();
 
