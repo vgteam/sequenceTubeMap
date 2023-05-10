@@ -52,7 +52,7 @@
   "scripts": {
     "start": "concurrently -n frontend,backend -c red,green 'HOST=${HOST:=127.0.0.1} PORT=${PORT:=3001} react-scripts start' 'npm:serve'",
     "build": "react-scripts build",
-    "test": "react-scripts test --reporters default --reporters jest-compact-reporter",
+    "test": "react-scripts test --reporters default jest-compact-reporter --watchAll=true",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
