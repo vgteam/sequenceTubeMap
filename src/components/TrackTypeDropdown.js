@@ -17,7 +17,7 @@ export function TrackTypeDropdown (props) {
     // dropdown and selections
     // upon selection of a dropdown option, call onChange function 
     let dropdown = (
-      <div data-testid="file-type-select-component">
+      <div data-testid={props.testID}>
         <Select {...props} onChange={o => {
           props.onChange(o.value)}
         }
@@ -44,12 +44,14 @@ TrackTypeDropdown.propTypes = {
   className: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func.isRequired,
+  testID: PropTypes.string
 };
 
 TrackTypeDropdown.defaultProps = {
   id: undefined,
   className: undefined,
   value: undefined,
+  testID: "file-type-select-component"
 };
 
 export default TrackTypeDropdown;

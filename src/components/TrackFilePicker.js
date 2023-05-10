@@ -18,7 +18,8 @@ export const TrackFilePicker = ({
   value, // input file
   handleInputChange,
   pickerType, // either "dropdown or upload" to determine which component we render
-  className 
+  className,
+  testID
 }) => {
 
 
@@ -49,7 +50,7 @@ export const TrackFilePicker = ({
     if (pickerType === "dropdown"){
       return(
       // wrap Select container in div to easily query in tests
-        <div data-testid="file-select-component">
+        <div data-testid={testID}>
             <Select 
               options={dropDownOptions}
               value={{label: value["name"], value: value}}
@@ -86,12 +87,14 @@ TrackFilePicker.propTypes = {
     handleInputChange: PropTypes.func.isRequired,
     pickerType: PropTypes.string,
     className: PropTypes.string,
+    testID: PropTypes.string
 }
   
 TrackFilePicker.defaultProps = {
   value: {"name": "Select a file", "type": undefined},
   pickerType: "dropdown",
-  className: undefined
+  className: undefined,
+  testID: "file-select-component"
 }
 
 export default TrackFilePicker;

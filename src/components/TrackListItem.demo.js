@@ -28,8 +28,7 @@ export default (<Demo
   {
     (props, update) => {
       return <TrackListItem {...props} 
-        onChange={(newTrackProps) => {
-
+        onChange={(trackID, newTrackProps) => {
           update({trackProps: newTrackProps});
         }} 
         onDelete={() => {console.log("track deleted")}}/>
