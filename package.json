@@ -45,7 +45,7 @@
     "reactjs-popup": "^2.0.5",
     "reactstrap": "^9.1.5",
     "uuid": "^9.0.0",
-    "webpack": "5.75.0",
+    "webpack": "^5.76.0",
     "webpack-dev-server": "4.11.1",
     "websocket": "^1.0.34"
   },
