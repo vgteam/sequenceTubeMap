@@ -1064,6 +1064,10 @@ function getBedRegions(bedFile, dataPath) {
   let lines = bed_data.split("\n");
   lines.map(function (line) {
     let records = line.split("\t");
+    if (records.length < 3) {
+      // This is an empty line or otherwise not BED
+      return
+    }
     bed_info["chr"].push(records[0]);
     bed_info["start"].push(records[1]);
     bed_info["end"].push(records[2]);
