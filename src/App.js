@@ -12,7 +12,6 @@ import { urlParamsToViewTarget } from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
 import Footer from "./components/Footer";
 import { dataOriginTypes } from "./enums";
-import * as tubeMap from "./util/tubemap";
 import config from "./config.json";
 
 class App extends Component {
@@ -47,27 +46,6 @@ class App extends Component {
     };
   }
 
-  componentDidUpdate() {
-    const { visOptions } = this.state;
-    visOptions.compressedView
-      ? tubeMap.setNodeWidthOption(1)
-      : tubeMap.setNodeWidthOption(0);
-    tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);
-    tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
-    tubeMap.setShowReadsFlag(visOptions.showReads);
-    tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
-
-    // apply new colorReadsByMappingQuality value to all tracks
-    // to be changed, add options to change colorReadsByMappingQuality individually
-    tubeMap.setColorReadsByMappingQualityFlag(visOptions.colorReadsByMappingQuality);
-
-    for (let i = 0; i < visOptions.colorSchemes.length; i++) {
-      // update tubemap colors 
-      tubeMap.setColorSet(i, visOptions.colorSchemes[i]);
-    }
-    tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
-
-  }
   /*
    * Drop undefined values
    * See https://stackoverflow.com/questions/286141/remove-blank-attributes-from-an-object-in-javascript/38340730#38340730
@@ -163,6 +141,7 @@ class App extends Component {
           viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
+          visOptions={this.state.visOptions}
         />
         <CustomizationAccordion
           visOptions={this.state.visOptions}
