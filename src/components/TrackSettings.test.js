@@ -6,8 +6,8 @@ import '@testing-library/jest-dom'
 describe('TrackSettings', () => {
     const availableColors = ["greys", "ygreys", "blues", "reds", "plainColors", "lightColors"];
     const trackColorSettings = {    
-        mainPallete: "blues",
-        auxPallete: "reds",
+        mainPalette: "blues",
+        auxPalette: "reds",
         colorReadsByMappingQuality: false};
 
     it('should render without errors', async () => {
@@ -45,7 +45,7 @@ describe('TrackSettings', () => {
 
         fireEvent.click(greyLabel);
         expect(fakeOnChange).toHaveBeenCalledTimes(2);
-        expect(fakeOnChange).toHaveBeenCalledWith("mainPallete", "greys");
+        expect(fakeOnChange).toHaveBeenCalledWith("mainPalette", "greys");
     });
 
     it('should update the radio values when an option is selected', async () => {

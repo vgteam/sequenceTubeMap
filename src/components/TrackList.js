@@ -14,7 +14,7 @@ export const TrackList = ({
   tracks,
   // availableTracks: array of tracks(see types.ts)
   availableTracks,
-  // availableColors: array of ColorPalletes
+  // availableColors: array of ColorPalettes
   availableColors,
   onChange, // expects a new tracks object
   onDelete,

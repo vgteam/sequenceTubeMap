@@ -38,10 +38,10 @@ class App extends Component {
         showSoftClips: true,
         colorReadsByMappingQuality: false,
         colorSchemes: [
-                  {...config.defaultHaplotypeColorPallete},
-                  {...config.defaultHaplotypeColorPallete},
-                  {...config.defaultReadColorPallete},
-                  {...config.defaultReadColorPallete}],
+                  {...config.defaultHaplotypeColorPalette},
+                  {...config.defaultHaplotypeColorPalette},
+                  {...config.defaultReadColorPalette},
+                  {...config.defaultReadColorPalette}],
         mappingQualityCutoff: 0,
       },
     };
@@ -123,14 +123,14 @@ class App extends Component {
 
   // Set a color scheme setting for a particular track.
   //
-  // key is the name of the setting to set, and may be "mainPallete", "auxPallete", or "colorByMappingQuality".
+  // key is the name of the setting to set, and may be "mainPalette", "auxPalette", or "colorByMappingQuality".
   //
   // index is the index in the tracks array of the track to operate on. For now,
   // haplotypes and paths are lumped together as track 0 here, with up to two
   // tracks of reads afterward; eventually this will follow the indexing of the real
   // tracks array. 
   //
-  // value is the value to set. For "mainPallete" and "auxPallete" this is the name
+  // value is the value to set. For "mainPalette" and "auxPalette" this is the name
   // of a color palette, such as "reds".
   setColorSetting = (key, index, value) => {
     let newcolors = [...this.state.visOptions.colorSchemes]

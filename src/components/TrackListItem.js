@@ -19,7 +19,7 @@ export const TrackListItem = ({
     trackProps,
     // availableTracks: array of tracks(see types.ts)
     availableTracks,
-    // availableColors: array of ColorPalletes
+    // availableColors: array of ColorPalettes
     availableColors,
     onChange, // expects a new trackProps object
     onDelete,

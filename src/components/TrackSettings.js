@@ -14,7 +14,7 @@ import ColorPicker from "./ColorPicker";
  * fileType expects a string specifying the filetype, e.g "haplotype", "read"
  * 
  * trackColorSettings expects an object in the form of 
- * {mainPallete: string,
+ * {mainPalette: string,
  *  auxPallate: string,
  *  colorReadsByMappingQuality: boolean}
  * 
@@ -46,8 +46,8 @@ export const TrackSettings = ({
                             <Col className="radio-row">
                                 <RadioRow
                                     rowHeading="Haplotypes"
-                                    color={trackColorSettings.mainPallete}
-                                    setting="mainPallete"
+                                    color={trackColorSettings.mainPalette}
+                                    setting="mainPalette"
                                     setColorSetting={setTrackColorSetting}
                                     availableColors={availableColors}
                                 />
@@ -57,7 +57,7 @@ export const TrackSettings = ({
                                     presetColors={presetColors}
                                     onChange={(color) => {
                                         console.log("calling onchange with ", color);
-                                        setTrackColorSetting("mainPallete", color);
+                                        setTrackColorSetting("mainPalette", color);
                                     }}
                                 />
                             </Col>
@@ -71,8 +71,8 @@ export const TrackSettings = ({
                             <Col className="radio-row">
                                 <RadioRow
                                     rowHeading="Forward Reads"
-                                    color={trackColorSettings.mainPallete}
-                                    setting="mainPallete"
+                                    color={trackColorSettings.mainPalette}
+                                    setting="mainPalette"
                                     setColorSetting={setTrackColorSetting}
                                     availableColors={availableColors}
                                 />
@@ -82,7 +82,7 @@ export const TrackSettings = ({
                                     presetColors={presetColors}
                                     onChange={(color) => {
                                         console.log("calling onchange with ", color);
-                                        setTrackColorSetting("mainPallete", color);
+                                        setTrackColorSetting("mainPalette", color);
                                     }}
                                 />
                             </Col>
@@ -91,8 +91,8 @@ export const TrackSettings = ({
                             <Col className="radio-row">
                                 <RadioRow
                                     rowHeading="Reverse Reads"
-                                    color={trackColorSettings.auxPallete}
-                                    setting="auxPallete"
+                                    color={trackColorSettings.auxPalette}
+                                    setting="auxPalette"
                                     setColorSetting={setTrackColorSetting}
                                     availableColors={availableColors}
                                 />
@@ -102,7 +102,7 @@ export const TrackSettings = ({
                                     presetColors={presetColors}
                                     onChange={(color) => {
                                         console.log("calling onchange with ", color);
-                                        setTrackColorSetting("auxPallete", color);
+                                        setTrackColorSetting("auxPalette", color);
                                     }}
                                 />
                             </Col>
