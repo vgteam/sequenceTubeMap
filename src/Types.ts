@@ -60,13 +60,16 @@ enum ColorPallete{
   blues,
   reds,
   plainColors,
-  lightColors
+  lightColors,
 }
+
+// Hex describing a color
+type colorHEX = `#${string}`;
 
 // Describes the coloring information for a track
 type ColorScheme = {
-    mainPallete: ColorPallete,
-    auxPallete: ColorPallete,
+    mainPallete: ColorPallete | colorHEX,
+    auxPallete: ColorPallete | colorHEX,
     colorReadsByMappingQuality: boolean
 }
 

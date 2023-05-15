@@ -213,3 +213,19 @@ input[type="file"] {
   top: -20px;
   right: -20px;
 }
+
+/*
+.col-md-auto{
+  width: 70%;
+}
+
+
+.form {
+  max-width: 100%
+}
+*/
+
+.radio-row {
+  max-width: 52%;
+  margin-top: 10px;
+}

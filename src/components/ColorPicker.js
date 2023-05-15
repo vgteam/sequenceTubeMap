@@ -3,10 +3,11 @@ import React, {useState} from 'react';
 import { PhotoshopPicker, GithubPicker } from 'react-color';
 import { Button } from 'reactstrap'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear, faX } from '@fortawesome/free-solid-svg-icons';
+import { faPalette } from '@fortawesome/free-solid-svg-icons';
 import Popup from 'reactjs-popup';
 import { Row, Container } from 'reactstrap';
 
+// A react-color picker embedded within a button
 export const ColorPicker = ({
     presetColors, // array of hex colors e.g ["#f44336", "#e91e63", "#9c27b0", "#673ab7"]
     onChange, // on change function expecting hex color as an argument
@@ -19,7 +20,7 @@ export const ColorPicker = ({
 
     return (
         <div>
-            <Button aria-label="ColorPicker" onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faGear} data-testid={testID}/></Button>
+            <Button aria-label="ColorPicker" onClick={() => setOpen(!open)} data-testid={testID}><FontAwesomeIcon icon={faPalette} /></Button>
 
             <Popup open={open} closeOnDocumentClick={false} modal>
                 <Container>
