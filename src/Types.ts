@@ -64,19 +64,19 @@ enum ColorPalette{
 }
 
 // Hex describing a color
-type colorHEX = `#${string}`;
+type ColorHex  = `#${string}`;
 
 
 // An object created by the React-Color library, contains infomation on the color selected
-type React_Color = {
-  hex: colorHEX,
+type ReactColor = {
+  hex: ColorHex ,
   //... has additional properties
 }
 
 // Describes the coloring information for a track
 type ColorScheme = {
-    mainPalette: ColorPalette | React_Color,
-    auxPalette: ColorPalette | React_Color,
+    mainPalette: ColorPalette | ColorHex ,
+    auxPalette: ColorPalette | ColorHex ,
     colorReadsByMappingQuality: boolean
 }
 

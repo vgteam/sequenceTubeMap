@@ -1,11 +1,10 @@
 import PropTypes from "prop-types";
 import React, {useState} from 'react';
-import { PhotoshopPicker, GithubPicker } from 'react-color';
+import { SketchPicker } from 'react-color';
 import { Button } from 'reactstrap'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPalette } from '@fortawesome/free-solid-svg-icons';
-import Popup from 'reactjs-popup';
-import { Row, Container } from 'reactstrap';
+import { Container } from 'reactstrap';
 
 // A react-color picker embedded within a button
 export const ColorPicker = ({
@@ -15,41 +14,41 @@ export const ColorPicker = ({
 }) => {
     const [color, setColor] = useState("#fff");
     const [open, setOpen] = useState(false);
-    const close = () => setOpen(false);
 
+    const popover = {
+        position: 'absolute',
+        zIndex: '2',
+    }
+
+    const cover = {
+    position: 'fixed',
+    top: '0px',
+    right: '0px',
+    bottom: '0px',
+    left: '0px',
+    }
 
     return (
         <div>
             <Button aria-label="ColorPicker" onClick={() => setOpen(!open)} data-testid={testID}><FontAwesomeIcon icon={faPalette} /></Button>
 
-            <Popup open={open} closeOnDocumentClick={false} modal>
-                <Container>
-                    <Row>
-                        <PhotoshopPicker 
+            { open ? 
+                <div style={ popover  }>
+                    <div style={ cover } onClick={ () => {setOpen(!open); onChange(color["hex"])} }/>
+                    <Container>
+                        <SketchPicker 
                             color={color}
+                            presetColors={presetColors}
                             onChange={(newColor) => {
-                                setColor(newColor)
+                                    setColor(newColor);
                             }}
-                            onAccept={() => {
-                                onChange(color);
-                                close();
-                            }}
-                            onCancel={close}
+
                         />
-                    </Row>
-                    <Row>
-                        <GithubPicker
-                            width={"100%"}
-                            color={color}
-                            colors={presetColors}
-                            triangle="hide"
-                            onChange={(newColor) => {
-                                setColor(newColor);
-                            }}
-                        />
-                    </Row>
-                </Container>
-            </Popup>
+                    </Container> 
+                </div>
+              : null
+            }
+            
         </div>
     );
 };

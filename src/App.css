@@ -214,18 +214,8 @@ input[type="file"] {
   right: -20px;
 }
 
-/*
-.col-md-auto{
-  width: 70%;
-}
-
-
-.form {
-  max-width: 100%
-}
-*/
-
 .radio-row {
-  max-width: 52%;
+  /*max-width: max-content;  for some reason doesn't work for haplotype settings row */
+  max-width: 680px; /* TODO: would like to make this flexible? */
   margin-top: 10px;
 }

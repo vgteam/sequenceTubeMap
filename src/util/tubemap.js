@@ -2315,13 +2315,12 @@ function calculateTrackWidth() {
 
 
 function getColorSet(colorSetName) {
-  // could be a color object from react-color
-  if(typeof colorSetName == "object") {
-    // use only one color for all strands
-    if (Object.hasOwn(colorSetName, "hex")) {
-      return [colorSetName["hex"]];
-    }
-  } 
+  // single color hex
+  if (colorSetName.startsWith("#")) {
+    return [colorSetName];
+  }
+
+  // set of color hexes
   switch (colorSetName) {
     case "plainColors":
       return plainColors;
