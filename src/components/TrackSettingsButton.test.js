@@ -7,8 +7,8 @@ import userEvent from "@testing-library/user-event";
 describe('TrackSettingsButton', () => {
     it('opens popup', async () => {
         const result = render(
-            <TrackSettingsButton fileType="graph" trackColorSettings={{mainPallete: "blues",
-                auxPallete: "reds",
+            <TrackSettingsButton fileType="graph" trackColorSettings={{mainPalette: "blues",
+                auxPalette: "reds",
                 colorReadsByMappingQuality: false}} setTrackColorSetting={function(a, b){}}></TrackSettingsButton>
         );
 

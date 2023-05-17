@@ -10,8 +10,8 @@ describe('TrackList', () => {
             trackFile: undefined,
             trackType: "graph",
             trackColorSettings: {    
-                mainPallete: "blues",
-                auxPallete: "reds",
+                mainPalette: "blues",
+                auxPalette: "reds",
                 colorReadsByMappingQuality: false
             }
         },
@@ -19,8 +19,8 @@ describe('TrackList', () => {
             trackFile: undefined,
             trackType: "graph",
             trackColorSettings: {    
-                mainPallete: "blues",
-                auxPallete: "reds",
+                mainPalette: "blues",
+                auxPalette: "reds",
                 colorReadsByMappingQuality: false
             }
         },
@@ -28,8 +28,8 @@ describe('TrackList', () => {
             trackFile: undefined,
             trackType: "graph",
             trackColorSettings: {    
-                mainPallete: "blues",
-                auxPallete: "reds",
+                mainPalette: "blues",
+                auxPalette: "reds",
                 colorReadsByMappingQuality: false
             }
         },
@@ -125,7 +125,7 @@ describe('TrackList', () => {
 
         expect(fakeOnChange).toHaveBeenCalledTimes(2); 
 
-        newTracks[1].trackColorSettings.mainPallete = "reds";
+        newTracks[1].trackColorSettings.mainPalette = "reds";
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
 
     });

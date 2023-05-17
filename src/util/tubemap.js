@@ -2315,6 +2315,12 @@ function calculateTrackWidth() {
 
 
 function getColorSet(colorSetName) {
+  // single color hex
+  if (colorSetName.startsWith("#")) {
+    return [colorSetName];
+  }
+
+  // set of color hexes
   switch (colorSetName) {
     case "plainColors":
       return plainColors;
@@ -2340,7 +2346,7 @@ function generateTrackColor(track, highlight) {
   if (track.hasOwnProperty("type") && track.type === "read") {
     const sourceID = track.sourceTrackID;
     if (!config.colorSchemes[sourceID]) {
-      config.colorSchemes[sourceID] = externalConfig.defaultReadColorPallete;
+      config.colorSchemes[sourceID] = externalConfig.defaultReadColorPalette;
     }
     if (config.colorSchemes[sourceID].colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
@@ -2349,23 +2355,23 @@ function generateTrackColor(track, highlight) {
     } else {
       if (track.hasOwnProperty("is_reverse") && track.is_reverse === true) {
         // get the color currently stored for this read source file, and stagger color using modulo
-        const colorSet = getColorSet(config.colorSchemes[sourceID].auxPallete);
+        const colorSet = getColorSet(config.colorSchemes[sourceID].auxPalette);
         trackColor = colorSet[track.id % colorSet.length];
       } else {
-        const colorSet = getColorSet(config.colorSchemes[sourceID].mainPallete);
+        const colorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
         trackColor = colorSet[track.id % colorSet.length];
       }
     }
   } else {
     if (config.showExonsFlag === false || highlight !== "plain") {
       if (!config.colorSchemes[1]) {
-        config.colorSchemes[1] = externalConfig.defaultHaplotypeColorPallete;
+        config.colorSchemes[1] = externalConfig.defaultHaplotypeColorPalette;
       }
       // don't repeat the color of the first track (reference) to highilight is better
       if (track.id === 0) {
-        trackColor = getColorSet(config.colorSchemes[1].mainPallete)[0];
+        trackColor = getColorSet(config.colorSchemes[1].mainPalette)[0];
       } else {
-        const colorSet = getColorSet(config.colorSchemes[1].mainPallete);
+        const colorSet = getColorSet(config.colorSchemes[1].mainPalette);
         trackColor = colorSet[((track.id - 1) % (colorSet.length - 1)) + 1];
       }
     } else {

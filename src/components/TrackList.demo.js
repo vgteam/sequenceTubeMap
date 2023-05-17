@@ -12,8 +12,8 @@ export default (<Demo
             trackFile: undefined,
             trackType: "graph",
             trackColorSettings: {    
-                mainPallete: "blues",
-                auxPallete: "reds",
+                mainPalette: "blues",
+                auxPalette: "reds",
                 colorReadsByMappingQuality: false
             }
         },
@@ -21,8 +21,8 @@ export default (<Demo
             trackFile: undefined,
             trackType: "graph",
             trackColorSettings: {    
-                mainPallete: "blues",
-                auxPallete: "reds",
+                mainPalette: "blues",
+                auxPalette: "reds",
                 colorReadsByMappingQuality: false
             }
         },
@@ -30,8 +30,8 @@ export default (<Demo
             trackFile: undefined,
             trackType: "graph",
             trackColorSettings: {    
-                mainPallete: "blues",
-                auxPallete: "reds",
+                mainPalette: "blues",
+                auxPalette: "reds",
                 colorReadsByMappingQuality: false
             }
         },

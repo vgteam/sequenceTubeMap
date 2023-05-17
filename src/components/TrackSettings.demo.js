@@ -7,8 +7,8 @@ export default (<Demo
     props={{
       fileType: P.choices(["haplotype", "graph", "read"]),
       trackColorSettings: P.json({    
-        mainPallete: "blues",
-        auxPallete: "reds",
+        mainPalette: "blues",
+        auxPalette: "reds",
         colorReadsByMappingQuality: false}),
       availableColors: P.json(["greys", "ygreys", "blues", "reds", "plainColors"])
     }}
