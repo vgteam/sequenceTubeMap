@@ -288,16 +288,13 @@ api.post("/getChunkedData", (req, res, next) => {
       "Wrong query: region doesn't contain a ':'. See ? button above."
     );
   }
-  {/*
-  let region_col = region.split(":");
-  */}
-  console.log("Region: ");
+
   console.log(region);
   region = removeCommas(region);
-  console.log("Region after commas deleted: ");
+  
   console.log(region);
   let region_col = region.split(":");
-  console.log("Region col: ");
+  
   console.log(region_col);
   let start_end = region_col[1].split("-");
   let pos_dist = region_col[1].split("+");

@@ -36,8 +36,6 @@ export const RegionInput = ({
   
   return (
     <>
-      
-
       <Autocomplete
         disablePortal
         freeSolo // Allows custom input outside of the options
