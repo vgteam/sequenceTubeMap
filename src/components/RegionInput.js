@@ -8,20 +8,6 @@ import FormHelperText from "@mui/material/FormHelperText";
 // Responsible for selecting the path/chr and segment of data to look at
 const isEmpty = (obj) => Object.keys(obj).length === 0;
 
-const removeCommas = (input) => {
-  let parts = input.split(":");
-  if (parts.length < 2){
-    return input;
-  }
-  // get coordinate - numerical range on other side of :
-  let coordinates = parts[1];
-  coordinates = coordinates.replace(/,/g, "");
-  // put region input coordinate back together
-  parts[1] = coordinates;
-  let fixedInputValue = parts.join(":");
-  return fixedInputValue;
-};
-
 export const RegionInput = ({
   region,
   regionInfo,
@@ -62,7 +48,7 @@ export const RegionInput = ({
         id="regionInput"      
 
         onInputChange={(event, newInputValue) => {
-          handleRegionChange(removeCommas(newInputValue));
+          handleRegionChange(newInputValue);
         }}
 
         options={displayRegions}

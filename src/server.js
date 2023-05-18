@@ -21,6 +21,21 @@ if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
 
+// function to remove commas from coordinate input
+const removeCommas = (input) => {
+  let parts = input.split(":");
+  if (parts.length < 2){
+    return input;
+  }
+  // get coordinate - numerical range on other side of :
+  let coordinates = parts[1];
+  coordinates = coordinates.replace(/,/g, "");
+  // put region input coordinate back together
+  parts[1] = coordinates;
+  let fixedInputValue = parts.join(":");
+  return fixedInputValue;
+};
+
 const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
@@ -273,7 +288,17 @@ api.post("/getChunkedData", (req, res, next) => {
       "Wrong query: region doesn't contain a ':'. See ? button above."
     );
   }
+  {/*
   let region_col = region.split(":");
+  */}
+  console.log("Region: ");
+  console.log(region);
+  region = removeCommas(region);
+  console.log("Region after commas deleted: ");
+  console.log(region);
+  let region_col = region.split(":");
+  console.log("Region col: ");
+  console.log(region_col);
   let start_end = region_col[1].split("-");
   let pos_dist = region_col[1].split("+");
   let r_start = -1;
