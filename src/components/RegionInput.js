@@ -7,6 +7,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 // RegionInput: The path and region input box component
 // Responsible for selecting the path/chr and segment of data to look at
 const isEmpty = (obj) => Object.keys(obj).length === 0;
+
 export const RegionInput = ({
   region,
   regionInfo,
@@ -32,19 +33,22 @@ export const RegionInput = ({
   // Autocomplete selectable options
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
 
+  
   return (
     <>
       <Autocomplete
         disablePortal
         freeSolo // Allows custom input outside of the options
-        getOptionLabel={(option) => option.title || option}
+        getOptionLabel={(option) => option.title || option.toString()}
         value={region}
         inputValue={region}
         data-testid="autocomplete"
-        id="regionInput"
+        id="regionInput"      
+
         onInputChange={(event, newInputValue) => {
           handleRegionChange(newInputValue);
         }}
+
         options={displayRegions}
         renderInput={(params) => (
           <TextField
