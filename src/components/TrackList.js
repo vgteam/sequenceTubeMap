@@ -21,7 +21,6 @@ export const TrackList = ({
 }) => {
 
   function trackItemOnChange(trackID, trackProps) {
-    (function(callback){ console.log(callback.toString()); })(onChange);
       let newTracks = {...tracks};
       newTracks[trackID] = trackProps;
       if (JSON.stringify(newTracks) !== JSON.stringify(tracks)) {

@@ -97,7 +97,7 @@ export const TrackListItem = ({
                                 availableColors={availableColors}
                                 testID={"settings-button-component".concat(trackID)}
                                 />
-            <TrackDeleteButton onClick={onDelete}
+            <TrackDeleteButton onClick={() => {onDelete(trackID)}}
                                testID={"delete-button-component".concat(trackID)}
                               />
           </Col>

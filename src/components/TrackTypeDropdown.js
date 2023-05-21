@@ -50,7 +50,7 @@ TrackTypeDropdown.propTypes = {
 TrackTypeDropdown.defaultProps = {
   id: undefined,
   className: undefined,
-  value: undefined,
+  value: "graph",
   testID: "file-type-select-component"
 };
 
