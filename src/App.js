@@ -12,7 +12,6 @@ import { urlParamsToViewTarget } from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
 import Footer from "./components/Footer";
 import { dataOriginTypes } from "./enums";
-import * as tubeMap from "./util/tubemap";
 import config from "./config.json";
 
 class App extends Component {
@@ -38,36 +37,15 @@ class App extends Component {
         showSoftClips: true,
         colorReadsByMappingQuality: false,
         colorSchemes: [
-                  {...config.defaultHaplotypeColorPallete},
-                  {...config.defaultHaplotypeColorPallete},
-                  {...config.defaultReadColorPallete},
-                  {...config.defaultReadColorPallete}],
+                  {...config.defaultHaplotypeColorPalette},
+                  {...config.defaultHaplotypeColorPalette},
+                  {...config.defaultReadColorPalette},
+                  {...config.defaultReadColorPalette}],
         mappingQualityCutoff: 0,
       },
     };
   }
 
-  componentDidUpdate() {
-    const { visOptions } = this.state;
-    visOptions.compressedView
-      ? tubeMap.setNodeWidthOption(1)
-      : tubeMap.setNodeWidthOption(0);
-    tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);
-    tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
-    tubeMap.setShowReadsFlag(visOptions.showReads);
-    tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
-
-    // apply new colorReadsByMappingQuality value to all tracks
-    // to be changed, add options to change colorReadsByMappingQuality individually
-    tubeMap.setColorReadsByMappingQualityFlag(visOptions.colorReadsByMappingQuality);
-
-    for (let i = 0; i < visOptions.colorSchemes.length; i++) {
-      // update tubemap colors 
-      tubeMap.setColorSet(i, visOptions.colorSchemes[i]);
-    }
-    tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
-
-  }
   /*
    * Drop undefined values
    * See https://stackoverflow.com/questions/286141/remove-blank-attributes-from-an-object-in-javascript/38340730#38340730
@@ -123,14 +101,14 @@ class App extends Component {
 
   // Set a color scheme setting for a particular track.
   //
-  // key is the name of the setting to set, and may be "mainPallete", "auxPallete", or "colorByMappingQuality".
+  // key is the name of the setting to set, and may be "mainPalette", "auxPalette", or "colorByMappingQuality".
   //
   // index is the index in the tracks array of the track to operate on. For now,
   // haplotypes and paths are lumped together as track 0 here, with up to two
   // tracks of reads afterward; eventually this will follow the indexing of the real
   // tracks array. 
   //
-  // value is the value to set. For "mainPallete" and "auxPallete" this is the name
+  // value is the value to set. For "mainPalette" and "auxPalette" this is the name
   // of a color palette, such as "reds".
   setColorSetting = (key, index, value) => {
     let newcolors = [...this.state.visOptions.colorSchemes]
@@ -163,6 +141,7 @@ class App extends Component {
           viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
+          visOptions={this.state.visOptions}
         />
         <CustomizationAccordion
           visOptions={this.state.visOptions}

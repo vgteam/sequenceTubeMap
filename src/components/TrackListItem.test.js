@@ -13,8 +13,8 @@ describe('TrackListItem', () => {
                                         {"name": "fileB2.gam", "type": "read"}]},
                              {"files": [{"name": "fileC1.xg", "type": "graph"}]}];
     const trackColorSettings = {    
-        mainPallete: "blues",
-        auxPallete: "reds",
+        mainPalette: "blues",
+        auxPalette: "reds",
         colorReadsByMappingQuality: false
     };
 

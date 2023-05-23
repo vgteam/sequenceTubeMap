@@ -54,19 +54,29 @@ type RegionInfo = {
 }
 
 // Available color sets
-enum ColorPallete{
+enum ColorPalette{
   greys,
   ygreys,
   blues,
   reds,
   plainColors,
-  lightColors
+  lightColors,
+}
+
+// Hex describing a color
+type ColorHex  = `#${string}`;
+
+
+// An object created by the React-Color library, contains infomation on the color selected
+type ReactColor = {
+  hex: ColorHex ,
+  //... has additional properties
 }
 
 // Describes the coloring information for a track
 type ColorScheme = {
-    mainPallete: ColorPallete,
-    auxPallete: ColorPallete,
+    mainPalette: ColorPalette | ColorHex ,
+    auxPalette: ColorPalette | ColorHex ,
     colorReadsByMappingQuality: boolean
 }
 
