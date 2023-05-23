@@ -12,6 +12,7 @@ class TubeMapContainer extends Component {
   state = {
     isLoading: true,
     error: null,
+    infoDialogContent: null,
   };
 
   componentDidMount() {
