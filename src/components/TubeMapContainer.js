@@ -7,6 +7,7 @@ import TubeMap from "./TubeMap";
 import * as tubeMap from "../util/tubemap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
+import PopUpTrackText from "./PopUpTrackText";
 
 class TubeMapContainer extends Component {
   state = {
@@ -58,6 +59,9 @@ class TubeMapContainer extends Component {
     // updating visOptions will cause an error if the tubemap is not in place yet.
     if(!this.state.isLoading) {
       this.updateVisOptions();
+      tubeMap.setInfoCallback((text) => {
+        this.setState({infoDialogContent: text});
+      });
     }
   }
 
@@ -81,6 +85,9 @@ class TubeMapContainer extends Component {
     }
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }
+
+  // open flag
+  // close function
 
   render() {
     const { isLoading, error } = this.state;
@@ -112,8 +119,15 @@ class TubeMapContainer extends Component {
       );
     }
 
+    var isOpen = true;
+    const closePopup = () => {
+      isOpen = false;
+    }
+    var text = "hello pleaz work";
+
     return (
       <div id="tubeMapContainer">
+        <PopUpTrackText open={isOpen} text={text} close={closePopup} />
         <div id="tubeMapSVG">
           <TubeMap
             nodes={this.state.nodes}
