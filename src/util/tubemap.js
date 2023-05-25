@@ -2343,11 +2343,19 @@ function generateTrackColor(track, highlight) {
 
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
-  if (track.hasOwnProperty("type") && track.type === "read") {
-    const sourceID = track.sourceTrackID;
-    if (!config.colorSchemes[sourceID]) {
+
+  const sourceID = track.sourceTrackID;
+  if (!config.colorSchemes[sourceID]) {
+    if (track.hasOwnProperty("type") && track.type === "read") {
+      // Default to read colors
       config.colorSchemes[sourceID] = externalConfig.defaultReadColorPalette;
+    } else {
+      // Default to haplotype colors
+      config.colorSchemes[sourceID] = externalConfig.defaultHaplotypeColorPalette;
     }
+  }
+
+  if (track.hasOwnProperty("type") && track.type === "read") {
     if (config.colorSchemes[sourceID].colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
         Math.min(60, track.mapping_quality) / 60
@@ -2364,14 +2372,13 @@ function generateTrackColor(track, highlight) {
     }
   } else {
     if (config.showExonsFlag === false || highlight !== "plain") {
-      if (!config.colorSchemes[1]) {
-        config.colorSchemes[1] = externalConfig.defaultHaplotypeColorPalette;
-      }
-      // don't repeat the color of the first track (reference) to highilight is better
+      // Don't repeat the color of the first track (reference) to highilight is better.
+      // TODO: Allow using color 0 for other schemes not the same as the one for the reference path.
+      // TODO: Stop reads from taking this color?
       if (track.id === 0) {
-        trackColor = getColorSet(config.colorSchemes[1].mainPalette)[0];
+        trackColor = getColorSet(config.colorSchemes[sourceID].mainPalette)[0];
       } else {
-        const colorSet = getColorSet(config.colorSchemes[1].mainPalette);
+        const colorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
         trackColor = colorSet[((track.id - 1) % (colorSet.length - 1)) + 1];
       }
     } else {
@@ -3680,7 +3687,7 @@ function generateNodeWidth() {
 }
 
 // extract track info from vg-json
-export function vgExtractTracks(vg) {
+export function vgExtractTracks(vg, pathSourceTrackId, haplotypeSourceTrackID) {
   const result = [];
   vg.path.forEach((path, index) => {
     const sequence = [];
@@ -3710,7 +3717,14 @@ export function vgExtractTracks(vg) {
     track.id = index;
     track.sequence = sequence;
     track.isCompletelyReverse = isCompletelyReverse;
-    if (path.hasOwnProperty("freq")) track.freq = path.freq;
+    if (path.hasOwnProperty("freq")) {
+      // This is a haplotype
+      track.freq = path.freq;
+      track.sourceTrackID = haplotypeSourceTrackID;
+    } else {
+      // This is a path
+      track.sourceTrackID = pathSourceTrackId;
+    }
     if (path.hasOwnProperty("name")) track.name = path.name;
     if (path.hasOwnProperty("indexOfFirstBase")) {
       track.indexOfFirstBase = Number(path.indexOfFirstBase);
@@ -3799,7 +3813,10 @@ function compareReadsByLeftEnd2(a, b) {
   return 0;
 }
 
-export function vgExtractReads(myNodes, myTracks, myReads, idLength = 0) {
+// Pull out reads from a server response into tube map internal format.
+// Use myTracks, and idOffset to compute IDs for each read.
+// Assign each read the given sourceTrackID.
+export function vgExtractReads(myNodes, myTracks, myReads, idOffset, sourceTrackID) {
   if (DEBUG) {
     console.log("Reads:");
     console.log(myReads);
@@ -3808,7 +3825,7 @@ export function vgExtractReads(myNodes, myTracks, myReads, idLength = 0) {
 
   const nodeNames = [];
   myNodes.forEach((node) => {
-    nodeNames.push(node.name, 10);
+    nodeNames.push(node.name, 10); // TODO: why 10?
   });
 
   for (let i = 0; i < myReads.length; i += 1) {
@@ -3892,7 +3909,8 @@ export function vgExtractReads(myNodes, myTracks, myReads, idLength = 0) {
       }
     } else {
       const track = {};
-      track.id = myTracks.length + extracted.length + idLength;
+      track.id = myTracks.length + extracted.length + idOffset;
+      track.sourceTrackID = sourceTrackID;
       track.sequence = sequence;
       track.sequenceNew = sequenceNew;
       track.type = "read";

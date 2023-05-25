@@ -34,10 +34,6 @@ const CLEAR_STATE = {
   // Select: The file name (or string "none") that is displayed in each
   // dropdown. From the corresponding SelectOptions list.
   // File: The file name actually used (or undefined)
-  graphSelect: "none",
-  gbwtSelect: "none",
-  gamSelect: "none",
-  gam2Select: "none",
   bedSelect: "none",
 
   // This tracks several arrays of BED region data, stored by data type, with
@@ -47,10 +43,6 @@ const CLEAR_STATE = {
   pathNames: ["none"],
 
   tracks: [],
-  graphFile: undefined,
-  gbwtFile: undefined,
-  gamFile: undefined,
-  gamFile2: undefined,
   bedFile: undefined,
   dataPath: undefined,
   region: "",
@@ -95,6 +87,11 @@ function createTrack(file) {
 
 // Checks if all file names in the track are equal
 function tracksEqual(curr, next) {
+  if ((curr === undefined) !== (next === undefined)) {
+    // One is undefined and the other isn't
+    return false;
+  }
+
   if (curr.files.length !== next.files.length) {
     return false;
   }
@@ -110,6 +107,35 @@ function tracksEqual(curr, next) {
     return false;
   }
   return true;
+}
+
+// Checks if two view targets are the same. They are the same if they have the
+// same tracks and the same region.
+function viewTargetsEqual(currViewTarget, nextViewTarget) {
+  // Update if one is undefined and the other isn't
+  if ((currViewTarget === undefined) !== (nextViewTarget === undefined)) {
+    return false;
+  }
+
+  // Update if view target tracks are not equal
+  if (currViewTarget.tracks.length !== nextViewTarget.tracks.length) {
+    // Different lengths so not equal
+    return false;
+  }
+  for (let i = 0; i < currViewTarget.tracks.length; i++) {
+    if (!tracksEqual(currViewTarget.tracks[i], nextViewTarget.tracks[i])){
+      // Different tracks so not equal
+      return false;
+    }
+  }
+
+  // Update if regions are not equal
+  if (currViewTarget.region !== nextViewTarget.region) {
+     return false;
+  }
+
+  return true;
+
 }
 
 class HeaderForm extends Component {
@@ -142,22 +168,21 @@ class HeaderForm extends Component {
   initState = () => {
     // Populate state with either viewTarget or the first example
     let ds = this.props.defaultViewTarget ?? DATA_SOURCES[0];
-    const graphSelect = ds.graphFile ? ds.graphFile : "none";
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
     const dataPath = ds.dataPath;
     if (bedSelect !== "none") {
       this.getBedRegions(bedSelect, dataPath);
     }
-    if (graphSelect !== "none") {
-      this.getPathNames(graphSelect, dataPath);
+    for (const key in ds.tracks) {
+      if (ds.tracks[key].files[0].type === fileTypes.GRAPH) {
+        // Load the paths for any graph tracks
+        console.log("Get path names for track: ", ds.tracks[key]);
+        this.getPathNames(ds.tracks[key].files[0].name, dataPath);
+      }
     }
     this.setState((state) => {
       const stateVals = {
-        graphFile: ds.graphFile,
-        graphSelect: graphSelect,
-        gbwtFile: ds.gbwtFile,
-        gamFile: ds.gamFile,
-        gamFile2: ds.gamFile2,
+        tracks: ds.tracks,
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
         dataPath: dataPath,
@@ -168,6 +193,79 @@ class HeaderForm extends Component {
       return stateVals;
     });
   };
+
+  setTrackFile = (type, index, file) => {
+    // Set the nth track of the given type to the given file.
+    // If there is no nth track of that type, create one.
+    // If the file is "none", remove that track.
+    this.setState((state) => {
+      console.log('Set file ' + type + ' index ' + index + ' to ' + file + ' over ' + JSON.stringify(state.tracks));
+
+      // Make a modified copy of the tracks
+      let newTracks = [];
+
+      // Find the nth track of this type, if any.
+      let seenTracksOfType = 0;
+      let maxKey = -1;
+      for (const key in state.tracks) {
+        let track = state.tracks[key];
+        if (track.files[0].type === type) {
+          console.log("See file " + seenTracksOfType + " of right type");
+          if (seenTracksOfType === index) {
+            if (file !== "none") {
+              // We want to adjust it, so keep a modified copy of it
+              let newTrack = JSON.parse(JSON.stringify(track));
+              newTrack.files[0].name = file;
+              newTracks[key] = newTrack;
+            }
+            // If the file is "none" we drop the track.
+          } else {
+            // We want to keep it as is
+            newTracks[key] = track;
+          }
+          seenTracksOfType++;
+        } else {
+          console.log("See file of other type");
+          // We want to keep all tracks of other types as is
+          newTracks[key] = track;
+        }
+        if (parseInt(key) > maxKey) {
+          maxKey = parseInt(key);
+        }
+      }
+      
+      console.log('Saw ' + seenTracksOfType + ' tracks of type vs index ' + index)
+      if (seenTracksOfType === index && file !== "none") {
+        // We need to add this track
+        console.log('Create track at index ' + (maxKey + 1))
+        newTracks[maxKey + 1] = createTrack({"type": type, "name": file});
+      }
+
+      // Add the new tracks to the state
+      let newState = Object.assign({}, state);
+      newState.tracks = newTracks;
+      console.log('Set result: ' + JSON.stringify(newTracks));
+      return newState;
+    });
+  }
+
+  getTrackFile = (type, index) => {
+    // Get the file used in the nth track of the gicen type, or "none" if no
+    // such track exists.
+    let seenTracksOfType = 0;
+    for (const key in this.state.tracks) {
+      let track = this.state.tracks[key];
+      if (track.files[0].type === type) {
+        if (seenTracksOfType === index) {
+          // This is the one. Return its filename.
+          return track.files[0].name;
+        }
+        seenTracksOfType++;
+      } 
+    }
+    // Not found
+    return "none";
+  }
 
   getMountedFilenames = async () => {
     this.setState({ error: null });
@@ -192,36 +290,25 @@ class HeaderForm extends Component {
 
         if (this.state.dataPath === "mounted") {
           this.setState((state) => {
-            const graphSelect = json.graphFiles.includes(state.graphSelect)
-              ? state.graphSelect
-              : "none";
-            const gbwtSelect = json.gbwtFiles.includes(state.gbwtSelect)
-              ? state.gbwtSelect
-              : "none";
-            const gamSelect = json.gamIndices.includes(state.gamSelect)
-              ? state.gamSelect
-              : "none";
-            const gam2Select = json.gamIndices.includes(state.gam2Select)
-              ? state.gam2Select
-              : "none";
             const bedSelect = json.bedFiles.includes(state.bedSelect)
               ? state.bedSelect
               : "none";
             if (bedSelect !== "none") {
               this.getBedRegions(bedSelect, "mounted");
             }
-            if (graphSelect !== "none") {
-              this.getPathNames(graphSelect, "mounted");
-            }
+            for (const key in state.tracks) {
+              if (state.tracks[key].files[0].type === fileTypes.GRAPH) {
+                // Load the paths for any graph tracks.
+                // TODO: Do we need to do this now?
+                console.log("Get path names for track: ", state.tracks[key]);
+                this.getPathNames(state.tracks[key].files[0].name, "mounted");
+              }
+            } 
             return {
               graphSelectOptions: json.graphFiles,
               gbwtSelectOptions: json.gbwtFiles,
               gamSelectOptions: json.gamIndices,
               bedSelectOptions: json.bedFiles,
-              graphSelect,
-              gbwtSelect,
-              gamSelect,
-              gam2Select,
               bedSelect,
             };
           });
@@ -325,10 +412,6 @@ class HeaderForm extends Component {
       this.setState((state) => {
         return {
           ...CLEAR_STATE,
-          graphFile: state.graphSelect,
-          gbwtFile: state.gbwtSelect,
-          gamFile: state.gamSelect,
-          gamFile2: state.gam2Select,
           bedFile: "none",
           // not sure why we would like to keep the previous selection when changing data sources. What I know is it creates a bug for the regions, where the tubemap tries to read the previous bedFile (e.g. defaulted to example 1), can't find it and raises an error
           // bedFile: state.bedSelect,
@@ -353,13 +436,15 @@ class HeaderForm extends Component {
             // Without bedFile, we have no regions
             this.setState({ regionInfo: {} });
           }
-          this.getPathNames(ds.graphFile, dataPath);
+          for (const key in ds.tracks) {
+            if (ds.tracks[key].files[0].type === fileTypes.GRAPH) {
+              // Load the paths for any graph tracks.
+              console.log("Get path names for track: ", ds.tracks[key]);
+              this.getPathNames(ds.tracks[key].files[0].name, dataPath);
+            }
+          }
           this.setState({
-            graphFile: ds.graphFile,
-            graphSelect: ds.graphFile,
-            gbwtFile: ds.gbwtFile,
-            gamFile: ds.gamFile,
-            gamFile2: ds.gamFile2,
+            tracks: ds.tracks, 
             bedFile: ds.bedFile,
             bedSelect: bedSelect,
             dataPath: dataPath,
@@ -373,14 +458,7 @@ class HeaderForm extends Component {
     }
   };
   getNextViewTarget = () => ({
-
-    tracks: [
-      createTrack({name: this.state.graphFile, type: fileTypes.GRAPH}), 
-      createTrack({name: this.state.gbwtFile, type: fileTypes.HAPLOTYPE}), 
-      createTrack({name: this.state.gamFile, type: fileTypes.READ}),
-      createTrack({name: this.state.gamFile2, type: fileTypes.READ})
-    ],
-
+    tracks: this.state.tracks,
     bedFile: this.state.bedFile,
     name: this.state.name,
     region: this.state.region,
@@ -397,20 +475,13 @@ class HeaderForm extends Component {
 
     const nextViewTarget = this.getNextViewTarget();
     const currViewTarget = this.props.getCurrentViewTarget();
-
-    // Update if view target tracks are not equal
-    for (let i = 0; i < currViewTarget.tracks.length; i++) {
-      if (!tracksEqual(currViewTarget.tracks[i], nextViewTarget.tracks[i])){
-        this.props.setCurrentViewTarget(nextViewTarget);
-        break;
-      }
+    
+    if (!viewTargetsEqual(currViewTarget, nextViewTarget)) {
+      // Update the view if the view target has changed.
+      this.props.setCurrentViewTarget(nextViewTarget);
     }
 
-    // Update if regions are not equal
-    if (currViewTarget.region !== nextViewTarget.region) {
-       this.props.setCurrentViewTarget(nextViewTarget);
-    }
-
+   
   };
 
   getRegionCoords = (desc) => {
@@ -449,14 +520,16 @@ class HeaderForm extends Component {
     const value = event.target.value;
     this.setState({ [id]: value });
     if (id === "graphSelect") {
-      this.getPathNames(value, this.state.dataPath);
-      this.setState({ graphFile: value });
+      if (value && value !== "none") {
+        this.getPathNames(value, this.state.dataPath);
+      }
+      this.setTrackFile(fileTypes.GRAPH, 0, value);
     } else if (id === "gbwtSelect") {
-      this.setState({ gbwtFile: value });
+      this.setTrackFile(fileTypes.HAPLOTYPE, 0, value);
     } else if (id === "gamSelect") {
-      this.setState({ gamFile: value });
+      this.setTrackFile(fileTypes.READ, 0, value);
     } else if (id === "gam2Select") {
-      this.setState({ gamFile2: value });
+      this.setTrackFile(fileTypes.READ, 1, value);
     } else if (id === "bedSelect") {
       if (value !== "none") {
         this.getBedRegions(value, this.state.dataPath);
@@ -498,7 +571,18 @@ class HeaderForm extends Component {
   };
 
   handleFileUpload = (fileType, fileName) => {
-    this.setState({ [fileType]: fileName });
+    /// Apply a file that was uploaded as a track.
+    if (fileType === "graphFile") {
+      this.setTrackFile(fileTypes.GRAPH, 0, fileName);
+    } else if (fileType === "gbwtFile") {
+      this.setTrackFile(fileTypes.HAPLOTYPE, 0, fileName);
+    } else if (fileType === "gamFile") {
+      this.setTrackFile(fileTypes.READ, 0, fileName);
+    } else if (fileType === "gamFile2") {
+      this.setTrackFile(fileTypes.READ, 1, fileName);
+    } else {
+      throw new Error("Unknown file type " + fileType + " uploaded: " + fileName);
+    }
   };
 
   showFileSizeAlert = () => {
@@ -601,12 +685,12 @@ class HeaderForm extends Component {
               &nbsp;
               {mountedFilesFlag && (
                 <MountedDataFormRow
-                  graphSelect={this.state.graphSelect}
+                  graphSelect={this.getTrackFile(fileTypes.GRAPH, 0)}
                   graphSelectOptions={this.state.graphSelectOptions}
-                  gbwtSelect={this.state.gbwtSelect}
+                  gbwtSelect={this.getTrackFile(fileTypes.HAPLOTYPE, 0)}
                   gbwtSelectOptions={this.state.gbwtSelectOptions}
-                  gamSelect={this.state.gamSelect}
-                  gam2Select={this.state.gam2Select}
+                  gamSelect={this.getTrackFile(fileTypes.READ, 0)}
+                  gam2Select={this.getTrackFile(fileTypes.READ, 1)}
                   gamSelectOptions={this.state.gamSelectOptions}
                   bedSelect={this.state.bedSelect}
                   bedSelectOptions={this.state.bedSelectOptions}
