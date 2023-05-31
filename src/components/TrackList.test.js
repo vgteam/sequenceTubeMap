@@ -98,8 +98,10 @@ describe('TrackList', () => {
         await waitFor(() => getByText("haplotype"));
         fireEvent.click(getByText("haplotype"));
 
-        // should wait for file to be selected
-        expect(fakeOnChange).toHaveBeenCalledTimes(0);
+        expect(fakeOnChange).toHaveBeenCalledTimes(1);
+        let newTracks = JSON.parse(JSON.stringify(tracks));
+        newTracks[1].trackType = "haplotype";
+        rerenderTrackList(rerender, newTracks, fakeOnChange, fakeOnDelete);
 
         // change file name
         const fileSelectComponent = queryByTestId('file-select-component1');
@@ -107,9 +109,8 @@ describe('TrackList', () => {
         await waitFor(() => getByText("fileB1.gbwt"));
         fireEvent.click(getByText("fileB1.gbwt"));
 
-        expect(fakeOnChange).toHaveBeenCalledTimes(1);
-        let newTracks = JSON.parse(JSON.stringify(tracks));
-        newTracks[1].trackType = "haplotype";
+        expect(fakeOnChange).toHaveBeenCalledTimes(2);
+        //newTracks[1].trackType = "haplotype";
         newTracks[1].trackFile = {"name": "fileB1.gbwt", "type": "haplotype"};
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
 
@@ -123,7 +124,7 @@ describe('TrackList', () => {
         fireEvent.click(getByText("reds"));
         fireEvent.click(document);
 
-        expect(fakeOnChange).toHaveBeenCalledTimes(2); 
+        expect(fakeOnChange).toHaveBeenCalledTimes(3); 
 
         newTracks[1].trackColorSettings.mainPalette = "reds";
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);

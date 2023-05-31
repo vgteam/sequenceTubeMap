@@ -62,8 +62,8 @@ export const TrackListItem = ({
         newTrackProps[key] = propChanges[key];
       }
       
-      // push it if trackFile has been selected and changes are made
-      if (newTrackProps.trackFile !== undefined && JSON.stringify(trackProps) !== JSON.stringify(newTrackProps)) {
+      // push it if changes are made
+      if (JSON.stringify(trackProps) !== JSON.stringify(newTrackProps)) {
         onChange(trackID, newTrackProps);
         setPropChanges({});
       }

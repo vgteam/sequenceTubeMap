@@ -2,37 +2,14 @@ import React from 'react';
 import { render, fireEvent, waitFor }  from '@testing-library/react';
 import {TrackPickerDisplay} from './TrackPickerDisplay';
 import '@testing-library/jest-dom'
+import config from "./../config.json";
 
 
 describe('TrackPickerDisplay', () => {
     const tracks = {
-        1: {
-            trackFile: undefined,
-            trackType: "graph",
-            trackColorSettings: {    
-                mainPalette: "blues",
-                auxPalette: "reds",
-                colorReadsByMappingQuality: false
-            }
-        },
-        2: {
-            trackFile: undefined,
-            trackType: "graph",
-            trackColorSettings: {    
-                mainPalette: "blues",
-                auxPalette: "reds",
-                colorReadsByMappingQuality: false
-            }
-        },
-        3: {
-            trackFile: undefined,
-            trackType: "graph",
-            trackColorSettings: {    
-                mainPalette: "blues",
-                auxPalette: "reds",
-                colorReadsByMappingQuality: false
-            }
-        },
+        1: config.defaultTrackProps,
+        2: config.defaultTrackProps,
+        3: config.defaultTrackProps,
     }
     const availableColors = ["greys", "ygreys", "reds", "plainColors", "lightColors"];
     const availableTracks = [{"files": [{"name": "fileA1.vg", "type": "graph"},
@@ -100,7 +77,7 @@ describe('TrackPickerDisplay', () => {
 
     it('should call onChange when all files are selected', async () => {
         const fakeOnChange = jest.fn();
-        const { queryByTestId, getByText } = render(
+        const { queryByTestId, getByText, rerender } = render(
             <TrackPickerDisplay
                 tracks={tracks}
                 availableTracks={availableTracks}
@@ -150,6 +127,16 @@ describe('TrackPickerDisplay', () => {
         // add a track item and select a file
         const addButtonComponent = queryByTestId('track-add-button-component');
         fireEvent.click(addButtonComponent);
+
+        newTracks[4] = config.defaultTrackProps;
+        rerender(
+            <TrackPickerDisplay
+                tracks={newTracks}
+                availableTracks={availableTracks}
+                availableColors={availableColors}
+                onChange={fakeOnChange}
+            />
+        )
 
         fireEvent.keyDown(queryByTestId("file-type-select-component4").firstChild, {key: "ArrowDown"});
         await waitFor(() => getByText("read"));
