@@ -162,7 +162,7 @@ describe('TrackPickerDisplay', () => {
     });    
 
 
-    it('should delete a trackitem when the delete button is presesd', async () => {
+    it('should delete a trackitem when the delete button is pressed', async () => {
         const fakeOnChange = jest.fn();
         const { queryByTestId } = render(
             <TrackPickerDisplay

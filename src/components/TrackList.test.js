@@ -110,7 +110,6 @@ describe('TrackList', () => {
         fireEvent.click(getByText("fileB1.gbwt"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(2);
-        //newTracks[1].trackType = "haplotype";
         newTracks[1].trackFile = {"name": "fileB1.gbwt", "type": "haplotype"};
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
 

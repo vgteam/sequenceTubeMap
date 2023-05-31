@@ -9,7 +9,7 @@ import {TrackAddButton} from "./TrackAddButton";
 import config from "./../config.json";
 
 export const TrackPickerDisplay = ({
-    // tracks expects an object mapping an trackID to trackProps, which includes
+    // tracks expects an object mapping a trackID to trackProps, which includes
       // * trackType: string
       // * trackFile: file object / undefined
       // * trackColorSettings: object(aka. colorScheme)
