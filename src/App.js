@@ -23,7 +23,7 @@ const EXAMPLE_TRACKS = [
 
 function addTracksToColorSchemes(tracks, schemes) {
   
-  console.log("Initializing coloring for tracks: ", tracks, "combining with:", scheme);
+  console.log("Initializing coloring for tracks: ", tracks, "combining with:", schemes);
 
   for (const key in tracks) {
     if (schemes[key] === undefined) {
