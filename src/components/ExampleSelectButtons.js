@@ -6,11 +6,11 @@ import { dataOriginTypes } from "../enums";
 class ExampleSelectButtons extends Component {
   handleClick = (dataOrigin, haploColor, readColor) => {
     this.props.setDataOrigin(dataOrigin);
-    //set haplotype color
-    this.props.setColorSetting("forward", 0, haploColor);
+    // Set haplotype color. Examples always have haplotypes as track 0.
+    this.props.setColorSetting("mainPalette", 0, haploColor);
     if (readColor) {
-      //set read color
-      this.props.setColorSetting("forward", 1, readColor);
+      // Set read color. Examples always have reads as track 1.
+      this.props.setColorSetting("mainPalette", 1, readColor);
     }
   };
 

@@ -14,6 +14,31 @@ import Footer from "./components/Footer";
 import { dataOriginTypes } from "./enums";
 import config from "./config.json";
 
+const EXAMPLE_TRACKS = [
+  // Fake tracks for the generated examples.
+  // TODO: Move over there.
+  {"files": [{"type": "graph", "name": "fakeGraph"}]},
+  {"files": [{"type": "read", "name": "fakeReads"}]}
+];
+
+function addTracksToColorSchemes(tracks, schemes) {
+  
+  console.log("Initializing coloring for tracks: ", tracks, "combining with:", schemes);
+
+  for (const key in tracks) {
+    if (schemes[key] === undefined) {
+      // We need to adopt a color scheme
+      if (tracks[key].files[0].type === "read") {
+        schemes[key] = {...config.defaultReadColorPalette};
+      } else {
+        schemes[key] = {...config.defaultHaplotypeColorPalette};
+      }
+    }
+  }
+  
+  return schemes;
+}
+
 class App extends Component {
   constructor(props) {
     super(props);
@@ -36,11 +61,7 @@ class App extends Component {
         showReads: true,
         showSoftClips: true,
         colorReadsByMappingQuality: false,
-        colorSchemes: [
-                  {...config.defaultHaplotypeColorPalette},
-                  {...config.defaultHaplotypeColorPalette},
-                  {...config.defaultReadColorPalette},
-                  {...config.defaultReadColorPalette}],
+        colorSchemes: addTracksToColorSchemes(this.defaultViewTarget.tracks, []),
         mappingQualityCutoff: 0,
       },
     };
@@ -58,9 +79,9 @@ class App extends Component {
 
   /**
    * @param {ViewTarget} viewTarget - The new data that is selected to view
-   *    setCurrentViewTarget updates the current viewTarget to the new viewTarget that's passed in
-   *    before calling setCurrentViewTarget, viewTarget refers to what is currently being displayed
-   *    See types.ts for more info on viewTarget typ
+   *    setCurrentViewTarget updates the current viewTarget to the new viewTarget that's passed in.
+   *    Before calling setCurrentViewTarget, viewTarget refers to what is currently being displayed.
+   *    See types.ts for more info on viewTarget type.
    */
   setCurrentViewTarget = (viewTarget) => {
     // Update the viewTarge
@@ -71,9 +92,25 @@ class App extends Component {
       !isEqual(this.state.viewTarget, newViewTarget) ||
       this.state.dataOrigin !== dataOriginTypes.API
     ) {
-      this.setState({
-        viewTarget: newViewTarget,
-        dataOrigin: dataOriginTypes.API,
+      
+      console.log("Adopting view target: ", newViewTarget)
+
+      this.setState((state) => {
+        // Make sure we have color schemes.
+        let newColorSchemes = state.visOptions.colorSchemes.slice();
+        addTracksToColorSchemes(newViewTarget.tracks, newColorSchemes);
+
+
+        console.log("Adopting color schemes: ", newColorSchemes)
+
+        return {
+          viewTarget: newViewTarget,
+          dataOrigin: dataOriginTypes.API,
+          visOptions: {
+            ...state.visOptions,
+            colorSchemes: newColorSchemes, 
+          }
+        };
       });
     }
   };
@@ -111,18 +148,27 @@ class App extends Component {
   // value is the value to set. For "mainPalette" and "auxPalette" this is the name
   // of a color palette, such as "reds".
   setColorSetting = (key, index, value) => {
-    let newcolors = [...this.state.visOptions.colorSchemes]
-    newcolors[index][key] = value;
-    this.setState((state) => ({
-      visOptions: {
-        ...state.visOptions,
-        colors: newcolors,
-      },
-    }));
+    this.setState((state) => {
+      let newcolors = [...state.visOptions.colorSchemes]
+      if (newcolors[index] === undefined) {
+        // Handle the set call from example data maybe coming before we set up any nonempty real tracks.
+        // TODO: COme up with a better way to do this.
+        newcolors[index] = {...config.defaultReadColorPalette};
+      }
+      newcolors[index][key] = value;
+      console.log('Set index ' + index + ' key ' + key + ' to ' + value);
+      console.log('New colors: ', newcolors);
+      return {
+        visOptions: {
+          ...state.visOptions,
+          colors: newcolors,
+        },
+      };
+    });
   };
 
   setDataOrigin = (dataOrigin) => {
-    this.setState({ dataOrigin });
+    this.setState({dataOrigin});
   };
 
   render() {
@@ -145,6 +191,7 @@ class App extends Component {
         />
         <CustomizationAccordion
           visOptions={this.state.visOptions}
+          tracks={this.state.dataOrigin === dataOriginTypes.API ? this.state.viewTarget.tracks : EXAMPLE_TRACKS}
           toggleFlag={this.toggleVisOptionFlag}
           handleMappingQualityCutoffChange={
             this.handleMappingQualityCutoffChange

@@ -208,16 +208,41 @@ function getFileFromType(track, type) {
   return "none";
 }
 
-// Returns an array of the first gam file of every track
-function getGams(tracks) {
-  let gams = [];
+// Given a collection of tracks (each of which may have a files array with
+// items with a type and a name), generate the filenames for the first file of
+// the given type for each track with such a file.
+//
+// This is a fancy ES6 generator.
+function* eachFileOfType(tracks, type) {
   for (const track of tracks) {
-    const file = getFileFromType(track, fileTypes.READ);
+    const file = getFileFromType(track, type);
     if (file && file !== "none") {
-      gams.push(file);
+      yield file;
     }
   }
-  return gams;
+}
+
+// Get the first files of the given type from all the given tracks.
+function getFilesOfType(tracks, type) {
+  let results = [];
+  for (const file of eachFileOfType(tracks, type)) {
+    results.push(file);
+  }
+  return results;
+}
+
+// Get the first file from the first track with a file of the given type, or
+// undefined if no such track exists.
+function getFirstFileOfType(tracks, type) {
+  for (const file of eachFileOfType(tracks, type)) {
+    return file;
+  }
+  return undefined;
+}
+
+// Returns an array of the first gam file of every track with a gam file
+function getGams(tracks) {
+  return getFilesOfType(tracks, fileTypes.READ);
 }
 
 api.post("/getChunkedData", (req, res, next) => {
@@ -227,6 +252,7 @@ api.post("/getChunkedData", (req, res, next) => {
   console.time("request-duration");
   console.log("http POST getChunkedData received");
   console.log(`region = ${req.body.region}`);
+  console.log(`tracks = ${JSON.stringify(req.body.tracks)}`);
 
   // Assign each request a UUID. v1 UUIDs can be very similar for similar
   // timestamps on the same node, but are still guaranteed to be unique within
@@ -243,11 +269,9 @@ api.post("/getChunkedData", (req, res, next) => {
 
 
   // We always have an graph file
-  const graphFile = getFileFromType(req.body.tracks[0], fileTypes.GRAPH);
+  const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
   // We sometimes have a GBWT with haplotypes that override any in the graph file
-  const gbwtFile = getFileFromType(req.body.tracks[1], fileTypes.HAPLOTYPE);
-  // We sometimes have a GAM file with reads
-  //const gamFile = getFileFromType(req.body.tracks[2], fileTypes.READ);
+  const gbwtFile = getFirstFileOfType(req.body.tracks, fileTypes.HAPLOTYPE);
   // We sometimes have a BED file with regions to look at
   const bedFile = req.bedFile;
 

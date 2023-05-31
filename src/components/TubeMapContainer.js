@@ -141,36 +141,52 @@ class TubeMapContainer extends Component {
         const error = "Fetching remote data returned error";
         throw new Error(error);
       } else {
-        const nodes = tubeMap.vgExtractNodes(json.graph);
-        const tracks = tubeMap.vgExtractTracks(json.graph);
-        // Call vgExtractReads on each individual read and store in readsArr
-        let readsArr = [];
-        for (const gam of Object.values(json.gam)) {
-          // Include readsArr length to prevent duplicate ids
-          readsArr.push(tubeMap.vgExtractReads(nodes, tracks, gam, readsArr.length));
-        }
-        
         // go through viewTarget and create array of read file track numbers
-        let sourceTrackIDs = [];
+        let readTrackIDs = [];
+        // And the graph track number if any
+        let graphTrackID = null;
+        // And the haplotype track number if any
+        let haplotypeTrackID = null;
         for (let i = 0; i < this.props.viewTarget.tracks.length; i++) {
           const track = this.props.viewTarget.tracks[i];
-          //add track index to array if the track contains a gam file
           for (const file of track.files) {
             if (file.type === "read") {
-              sourceTrackIDs.push(i);
+              //add track index to array if the track contains a gam file
+              readTrackIDs.push(i);
+              break;
+            }
+            if (file.type === "graph") {
+              // Or note if it is a graph (one allowed)
+              graphTrackID = i;
+              break;
+            }
+            if (file.type === "haplotype") {
+              // Or a collection of haplotypes (one allowed)
+              haplotypeTrackID = i;
               break;
             }
           }
         }
 
-        console.log(sourceTrackIDs);
-        // Go through every read and assign it a source file number
-        for (let i = 0; i < readsArr.length; i++) {
-          for (let j = 0; j < readsArr[i].length; j++) {
-            readsArr[i][j].sourceTrackID = sourceTrackIDs[i];
-          }
-        }
+        console.log("Graph track: " + graphTrackID + " Haplotype track: " + haplotypeTrackID);
 
+        const nodes = tubeMap.vgExtractNodes(json.graph);
+        // TODO: For now claim haplotypes came from the graph
+        const tracks = tubeMap.vgExtractTracks(json.graph, graphTrackID, graphTrackID);
+
+        // Call vgExtractReads on each file of reads and store in readsArr
+        let readsArr = [];
+        // Count total reads seen so far.
+        let totalReads = 0;
+        for (const gam of Object.values(json.gam)) {
+          // For each returned list of reads from a file, convert all those reads to tube map format.
+          // Include total read count to prevent duplicate ids.
+          // Also include the source track's ID.
+          let newReads = tubeMap.vgExtractReads(nodes, tracks, gam, totalReads, readTrackIDs[readsArr.length]);
+          readsArr.push(newReads);
+          totalReads += newReads.length;
+        }
+        
         // concatenate all reads together
         const reads = readsArr.flat();
 
@@ -220,21 +236,25 @@ class TubeMapContainer extends Component {
       case dataOriginTypes.EXAMPLE_6:
         vg = JSON.parse(data.k3138);
         nodes = tubeMap.vgExtractNodes(vg);
-        tracks = tubeMap.vgExtractTracks(vg);
+        tracks = tubeMap.vgExtractTracks(vg, 0, 0); // Examples have paths and haplotypes as track 0.
         reads = tubeMap.vgExtractReads(
           nodes,
           tracks,
-          this.readsFromStringToArray(data.demoReads)
+          this.readsFromStringToArray(data.demoReads),
+          0,
+          1 // Examples always have reads as track 1
         );
         break;
       case dataOriginTypes.EXAMPLE_7:
         vg = data.reverseAlignmentGraph;
         nodes = tubeMap.vgExtractNodes(vg);
-        tracks = tubeMap.vgExtractTracks(vg);
+        tracks = tubeMap.vgExtractTracks(vg, 0, 0); // Examples have paths and haplotypes as track 0.
         reads = tubeMap.vgExtractReads(
           nodes,
           tracks,
-          data.mixedAlignmentReads
+          data.mixedAlignmentReads,
+          0,
+          1 // Examples always have reads as track 1
         );
         break;
       case dataOriginTypes.NO_DATA:

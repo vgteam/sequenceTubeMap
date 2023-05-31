@@ -50,6 +50,32 @@ class VisualizationOptions extends Component {
         </option>
       );
     });
+
+    let readTrackNumber = 1;
+
+    let trackSettingsList = [];
+    for (let key in this.props.tracks) {
+      // Generate settings controls for each track
+      let track = this.props.tracks[key];
+      let type = track.files[0].type;
+      if (type === "graph") {
+        trackSettingsList.push(
+          <TrackSettings key={key} label="Graph Paths" fileType={type} trackColorSettings={visOptions.colorSchemes[key]} setTrackColorSetting={this.setColorWithIndex(key)} />
+        );
+      } else if (type === "haplotype") {
+        // TODO: Do nothing for now. Haplotypes get assigned to the graph as their source track right now.
+      } else if (type === "read") {
+        if (visOptions.showReads) {
+          trackSettingsList.push(
+            <TrackSettings key={key} label={"Read Track " + readTrackNumber} fileType={type} trackColorSettings={visOptions.colorSchemes[key]} setTrackColorSetting={this.setColorWithIndex(key)} />
+          );
+          readTrackNumber++;
+        }
+      } else {
+        throw new Error("Unknown track type " + type);
+      }
+    }
+
     return (
       <Container>
         <div id="accordion">
@@ -165,13 +191,7 @@ class VisualizationOptions extends Component {
                     </React.Fragment>
                   )}
                 </FormGroup>
-                <TrackSettings label="Haplotype" fileType="haplotype" trackColorSettings={visOptions.colorSchemes[1]} setTrackColorSetting={this.setColorWithIndex(1)} /> 
-                {visOptions.showReads && (
-                    <React.Fragment>
-                      <TrackSettings label="GAM Index 1" fileType="read" trackColorSettings={visOptions.colorSchemes[2]} setTrackColorSetting={this.setColorWithIndex(2)} />
-                      <TrackSettings label="GAM Index 2" fileType="read" trackColorSettings={visOptions.colorSchemes[3]} setTrackColorSetting={this.setColorWithIndex(3)} />
-                    </React.Fragment>
-                  )}
+                {trackSettingsList}
               </CardBody>
             </Collapse>
           </Card>
@@ -184,6 +204,7 @@ class VisualizationOptions extends Component {
 VisualizationOptions.propTypes = {
   handleMappingQualityCutoffChange: PropTypes.func.isRequired,
   setColorSetting: PropTypes.func.isRequired,
+  tracks: PropTypes.array.isRequired,
 };
 
 export default VisualizationOptions;
