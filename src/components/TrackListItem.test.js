@@ -74,8 +74,7 @@ describe('TrackListItem', () => {
         await waitFor(() => getByText("haplotype"));
         fireEvent.click(getByText("haplotype"));
 
-        // should wait for file select to call onChange
-        expect(fakeOnChange).toHaveBeenCalledTimes(0);
+        expect(fakeOnChange).toHaveBeenCalledTimes(1);
 
         // simulate onchange rerendering component
         rerender(
@@ -99,7 +98,7 @@ describe('TrackListItem', () => {
         await waitFor(() => getByText("fileB1.gbwt"));
         fireEvent.click(getByText("fileB1.gbwt"));
 
-        expect(fakeOnChange).toHaveBeenCalledTimes(1);
+        expect(fakeOnChange).toHaveBeenCalledTimes(2);
         expect(fakeOnChange).toHaveBeenCalledWith(1, {
             trackFile: {"name": "fileB1.gbwt", "type": "haplotype"},
             trackType: "haplotype",
@@ -128,7 +127,7 @@ describe('TrackListItem', () => {
         fireEvent.click(getByText("reds"));
         fireEvent.click(document);
 
-        expect(fakeOnChange).toHaveBeenCalledTimes(2); 
+        expect(fakeOnChange).toHaveBeenCalledTimes(3); 
 
 
     });

@@ -82,7 +82,7 @@ export const TrackFilePicker = ({
 
 TrackFilePicker.propTypes = {
     tracks: PropTypes.array.isRequired,
-    fileType: PropTypes.string.isRequired,
+    fileType: PropTypes.string,
     value: PropTypes.object,
     handleInputChange: PropTypes.func.isRequired,
     pickerType: PropTypes.string,
@@ -92,6 +92,7 @@ TrackFilePicker.propTypes = {
   
 TrackFilePicker.defaultProps = {
   value: {"name": "Select a file", "type": undefined},
+  fileType: "graph",
   pickerType: "dropdown",
   className: undefined,
   testID: "file-select-component"

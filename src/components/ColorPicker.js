@@ -59,4 +59,8 @@ ColorPicker.propTypes = {
     testID: PropTypes.string
 }
 
+ColorPicker.defaultProps = {
+    testID: "color-picker-component"
+}
+
 export default ColorPicker;

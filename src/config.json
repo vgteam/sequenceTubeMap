@@ -60,5 +60,15 @@
     "mainPalette": "reds", 
     "auxPalette": "blues", 
     "colorReadsByMappingQuality": false
+  },
+
+  "defaultTrackProps" : {
+    "trackType": "graph",
+    "trackColorSettings": {
+      "mainPalette": "blues",
+      "auxPalette": "reds",
+      "colorReadsByMappingQuality": false
+    }
+
   }
 }
