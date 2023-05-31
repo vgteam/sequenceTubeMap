@@ -56,7 +56,6 @@ export const TrackSettings = ({
                                 <ColorPicker
                                     presetColors={presetColors}
                                     onChange={(color) => {
-                                        console.log("calling onchange with ", color);
                                         setTrackColorSetting("mainPalette", color);
                                     }}
                                 />
@@ -81,7 +80,6 @@ export const TrackSettings = ({
                                 <ColorPicker
                                     presetColors={presetColors}
                                     onChange={(color) => {
-                                        console.log("calling onchange with ", color);
                                         setTrackColorSetting("mainPalette", color);
                                     }}
                                 />
@@ -101,7 +99,6 @@ export const TrackSettings = ({
                                 <ColorPicker
                                     presetColors={presetColors}
                                     onChange={(color) => {
-                                        console.log("calling onchange with ", color);
                                         setTrackColorSetting("auxPalette", color);
                                     }}
                                 />
@@ -124,7 +121,7 @@ export const TrackSettings = ({
 
 TrackSettings.propTypes = {
     fileType: PropTypes.string.isRequired,
-    trackColorSettings: PropTypes.object.isRequired,
+    trackColorSettings: PropTypes.object,
     setTrackColorSetting: PropTypes.func.isRequired,
     label: PropTypes.string,
     availableColors: PropTypes.array,
@@ -134,7 +131,12 @@ TrackSettings.propTypes = {
 TrackSettings.defaultProps = {
     fileType: "haplotype",
     availableColors: ["greys", "ygreys", "blues", "reds", "plainColors", "lightColors"],
-    presetColors: ['#FF6900', '#FCB900', '#7BDCB5', '#00D084', '#8ED1FC', '#0693E3', '#ABB8C3', '#EB144C', '#F78DA7', '#9900EF']
+    presetColors: ['#FF6900', '#FCB900', '#7BDCB5', '#00D084', '#8ED1FC', '#0693E3', '#ABB8C3', '#EB144C', '#F78DA7', '#9900EF'],
+    trackColorSettings: {    
+        mainPalette: "blues",
+        auxPalette: "reds",
+        colorReadsByMappingQuality: false
+    },
 }
 
 export default TrackSettings;
