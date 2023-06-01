@@ -119,11 +119,12 @@ class TubeMapContainer extends Component {
       );
     }
 
-    var isOpen = true;
-    const closePopup = () => {
-      isOpen = false;
-    }
-    var text = "hello pleaz work";
+    // determine if the popup should be open
+    // this.setState({infoDialogContent: text});
+    const [open, openPopup] = this.setState(infoDialogContent);
+    const closePopup = () => openPopup(false);
+
+    var text = "hello";
 
     return (
       <div id="tubeMapContainer">
