@@ -3617,10 +3617,10 @@ function trackDoubleClick() {
 
 function trackSingleClick() {
   /* jshint validthis: true */
-  const trackID = d3.select(this).attr("trackID");
+  const trackName = d3.select(this).attr("trackName");
   console.log("Single Click");
   console.log(config.showInfoCallback)
-  config.showInfoCallback(trackID)
+  config.showInfoCallback(trackName)
   /*
   let index = 0;
   while (

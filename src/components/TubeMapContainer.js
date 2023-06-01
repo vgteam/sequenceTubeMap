@@ -13,7 +13,7 @@ class TubeMapContainer extends Component {
   state = {
     isLoading: true,
     error: null,
-    infoDialogContent: null,
+    infoDialogContent: undefined,
   };
 
   componentDidMount() {
@@ -119,12 +119,17 @@ class TubeMapContainer extends Component {
       );
     }
 
-    // determine if the popup should be open
-    // this.setState({infoDialogContent: text});
-    const [open, openPopup] = this.setState(infoDialogContent);
-    const closePopup = () => openPopup(false);
-
-    var text = "hello";
+    // infoDialogContent's value was initialized to null. Text stores the current value associated
+      // with infoDialogContent given the current tubemap instance
+    let text = this.state.infoDialogContent;
+    let isOpen;
+    if (text === undefined){
+      isOpen = false;
+    } else {
+      isOpen = true;
+    }
+    // resets value of infoDialogContent upon close
+    const closePopup = () => this.setState({infoDialogContent: undefined});
 
     return (
       <div id="tubeMapContainer">
