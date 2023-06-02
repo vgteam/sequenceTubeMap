@@ -69,11 +69,13 @@ export const TrackListItem = ({
       }
     }, [propChanges, onChange, trackProps, trackID]);
 
+
+
     // displayed elements uses propChanges(local state) first, then uses trackProps
     // Isn't just a || because propChanges can set the trackFile to be undefined
     const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
     return (
-      <Container key={trackID}>
+      <Container key={trackID} style={{ width: "fit-content", marginLeft: 0 }}>
         <Row className="g-0">
           <Col className="tracklist-dropdown" sm="2">
             <TrackTypeDropdown value={propChanges["trackType"] || trackProps["trackType"]} 

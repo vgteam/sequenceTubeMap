@@ -1,8 +1,4 @@
 import PropTypes from "prop-types";
-import {
-    Container,
-    Row
-  } from "reactstrap";
 import {TrackListItem} from './TrackListItem';
 
 
@@ -36,7 +32,6 @@ export const TrackList = ({
       Object.keys(tracks).forEach((trackID, index) => {
           const trackProps = tracks[trackID]
           trackHTML.push(          
-          <Row key={trackID}>
               <TrackListItem 
               trackProps={trackProps}
               availableTracks={availableTracks}
@@ -44,16 +39,15 @@ export const TrackList = ({
               onChange={trackItemOnChange}
               onDelete={onDelete}
               trackID={trackID}/>
-          </Row>
           );
       })
 
       return trackHTML;
   }
 
-  return(<Container>
+  return(<div>
             {renderTracks()}
-         </Container>);
+         </div>);
   
 }
 
