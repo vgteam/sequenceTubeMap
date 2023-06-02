@@ -86,9 +86,6 @@ class TubeMapContainer extends Component {
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }
 
-  // open flag
-  // close function
-
   render() {
     const { isLoading, error } = this.state;
 
@@ -119,8 +116,10 @@ class TubeMapContainer extends Component {
       );
     }
 
-    // infoDialogContent's value was initialized to null. Text stores the current value associated
-      // with infoDialogContent given the current tubemap instance
+    // infoDialogContent's value was initialized to undefined, representing a closed dialog,
+    // and will be set to text to display to represent an open dialog.
+    // text stores the current value associated with infoDialogContent for this
+    // TubeMapContainer instance, so we can have a shorter name for it.
     let text = this.state.infoDialogContent;
     let isOpen;
     if (text === undefined){

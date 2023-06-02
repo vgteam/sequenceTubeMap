@@ -3248,8 +3248,6 @@ function filterObjectByAttribute(attribute, value) {
   return (item) => item[attribute] === value;
 }
 
-// draw clicks
-
 function drawTrackRectangles(rectangles, type) {
   if (typeof type === "undefined") type = "haplo";
   rectangles = rectangles.filter(filterObjectByAttribute("type", type));
@@ -3621,19 +3619,6 @@ function trackSingleClick() {
   console.log("Single Click");
   console.log(config.showInfoCallback)
   config.showInfoCallback(trackName)
-  /*
-  let index = 0;
-  while (
-    index < inputTracks.length &&
-    inputTracks[index].id !== Number(trackID)
-  ) {
-    index += 1;
-  }
-  if (index >= inputTracks.length) return;
-  if (DEBUG) console.log(`moving index: ${index}`);
-  moveTrackToFirstPosition(index);
-  createTubeMap();
-  */
 }
 
 // show track name when hovering mouse

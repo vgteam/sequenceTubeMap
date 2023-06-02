@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Popup from 'reactjs-popup';
 import PropTypes from "prop-types";
 import { Button } from 'reactstrap'
@@ -42,10 +42,5 @@ export default PopUpTrackText;
 PopUpTrackText.propTypes = {
   open: PropTypes.bool.isRequired,
   text: PropTypes.string.isRequired,
-  close: PropTypes.func.isRequired,
-}
-
-PopUpTrackText.defaultProps = {
-  open: PropTypes.string.isRequired,
   close: PropTypes.func.isRequired,
 }
