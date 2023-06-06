@@ -54,6 +54,7 @@ export const RegionInput = ({
           <TextField
             {...params}
             label="Region"
+            style={{zIndex:'-100'}}
             name="Region Input"
             inputProps={{
               ...params.inputProps,
