@@ -111,6 +111,7 @@ let extraLeft = []; // info whether nodes have to be moved further apart because
 let extraRight = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let maxOrder; // horizontal order of the rightmost node
 
+
 const config = {
   mergeNodesFlag: true,
   transparentNodesFlag: false,
@@ -130,6 +131,7 @@ const config = {
   hideLegendFlag: false,
   colorReadsByMappingQuality: false,
   mappingQualityCutoff: 0,
+  showInfoCallback: function(info) {alert(info)},
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -360,6 +362,12 @@ export function setNodeWidthOption(value) {
       }
     }
   }
+}
+
+// sets callback function that would generate React popup of track information. The callback would 
+// accept a string argument to be displayed.
+export function setInfoCallback(newCallback) {
+  config.showInfoCallback = newCallback;
 }
 
 export function setColorReadsByMappingQualityFlag(value) {
@@ -3262,11 +3270,13 @@ function drawTrackRectangles(rectangles, type) {
     .attr("height", (d) => d.yEnd - d.yStart + 1)
     .style("fill", (d) => d.color)
     .attr("trackID", (d) => d.id)
+    .attr("trackName", (d) => d.name)
     .attr("class", (d) => `track${d.id}`)
     .attr("color", (d) => d.color)
     .on("mouseover", trackMouseOver)
     .on("mouseout", trackMouseOut)
     .on("dblclick", trackDoubleClick)
+    .on("click", trackSingleClick)
     .append("svg:title")
     .text((d) => getPopUpTrackText(d.name));
 }
@@ -3493,11 +3503,13 @@ function drawTrackCurves(type) {
     .attr("d", (d) => d.path)
     .style("fill", (d) => d.color)
     .attr("trackID", (d) => d.id)
+    .attr("trackName", (d) => d.name)
     .attr("class", (d) => `track${d.id}`)
     .attr("color", (d) => d.color)
     .on("mouseover", trackMouseOver)
     .on("mouseout", trackMouseOut)
     .on("dblclick", trackDoubleClick)
+    .on("click", trackSingleClick)
     .append("svg:title")
     .text((d) => getPopUpTrackText(d.name));
 }
@@ -3514,11 +3526,13 @@ function drawTrackCorners(corners, type) {
     .attr("d", (d) => d.path)
     .style("fill", (d) => d.color)
     .attr("trackID", (d) => d.id)
+    .attr("trackName", (d) => d.name)
     .attr("class", (d) => `track${d.id}`)
     .attr("color", (d) => d.color)
     .on("mouseover", trackMouseOver)
     .on("mouseout", trackMouseOut)
     .on("dblclick", trackDoubleClick)
+    .on("click", trackSingleClick)
     .append("svg:title")
     .text((d) => getPopUpTrackText(d.name));
 }
@@ -3604,6 +3618,14 @@ function trackDoubleClick() {
   if (DEBUG) console.log(`moving index: ${index}`);
   moveTrackToFirstPosition(index);
   createTubeMap();
+}
+
+function trackSingleClick() {
+  /* jshint validthis: true */
+  const trackName = d3.select(this).attr("trackName");
+  console.log("Single Click");
+  console.log(config.showInfoCallback)
+  config.showInfoCallback(trackName)
 }
 
 // show track name when hovering mouse

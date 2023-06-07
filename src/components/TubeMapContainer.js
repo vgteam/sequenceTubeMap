@@ -7,11 +7,13 @@ import TubeMap from "./TubeMap";
 import * as tubeMap from "../util/tubemap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
+import PopUpTrackText from "./PopUpTrackText";
 
 class TubeMapContainer extends Component {
   state = {
     isLoading: true,
     error: null,
+    infoDialogContent: undefined,
   };
 
   componentDidMount() {
@@ -57,6 +59,9 @@ class TubeMapContainer extends Component {
     // updating visOptions will cause an error if the tubemap is not in place yet.
     if(!this.state.isLoading) {
       this.updateVisOptions();
+      tubeMap.setInfoCallback((text) => {
+        this.setState({infoDialogContent: text});
+      });
     }
   }
 
@@ -111,8 +116,23 @@ class TubeMapContainer extends Component {
       );
     }
 
+    // infoDialogContent's value was initialized to undefined, representing a closed dialog,
+    // and will be set to text to display to represent an open dialog.
+    // text stores the current value associated with infoDialogContent for this
+    // TubeMapContainer instance, so we can have a shorter name for it.
+    let text = this.state.infoDialogContent;
+    let isOpen;
+    if (text === undefined){
+      isOpen = false;
+    } else {
+      isOpen = true;
+    }
+    // resets value of infoDialogContent upon close
+    const closePopup = () => this.setState({infoDialogContent: undefined});
+
     return (
       <div id="tubeMapContainer">
+        <PopUpTrackText open={isOpen} text={text} close={closePopup} />
         <div id="tubeMapSVG">
           <TubeMap
             nodes={this.state.nodes}
