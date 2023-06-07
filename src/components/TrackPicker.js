@@ -26,10 +26,10 @@ export const TrackPicker = ({
         
         <Button aria-label="TrackPicker" data-testid={"TrackPickerButton"} onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faList} /></Button>
 
-        <Popup open={open} closeOnDocumentClick={false} style={{width: "1000px"}} modal>
+        <Popup open={open} closeOnDocumentClick={false} style={{ width: "100%" }} modal>
             <Card>
                 <CardBody>
-                    <Button className="closePopup" onClick={close}><FontAwesomeIcon icon={faX}/></Button>
+                    <Button className="closePopup" onClick={close}><FontAwesomeIcon icon={faX} data-testid={"TrackPickerExitButton"} /></Button>
                     <TrackPickerDisplay
                         tracks={tracks}
                         availableTracks={availableTracks}

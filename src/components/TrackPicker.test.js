@@ -169,10 +169,9 @@ describe('TrackPicker', () => {
 
     });    
 
-
-    it('should delete a trackitem when the delete button is pressed', async () => {
+    it('should close when the exit button is pressed', async () => {
         const fakeOnChange = jest.fn();
-        const { queryByTestId } = render(
+        const { queryByTestId, getByText, rerender } = render(
             <TrackPicker
                 tracks={tracks}
                 availableTracks={availableTracks}
@@ -181,16 +180,26 @@ describe('TrackPicker', () => {
             />
         );
 
+        // open popup
         fireEvent.click(queryByTestId("TrackPickerButton"));
 
-        // pressing the delete button should delete that row
-        fireEvent.click(queryByTestId('delete-button-component1'));
-        expect(queryByTestId('file-type-select-component1')).toBeFalsy();
-        expect(queryByTestId('file-select-component1')).toBeFalsy();
+        expect(queryByTestId("file-type-select-component1")).toBeTruthy();
 
-        fireEvent.click(queryByTestId('delete-button-component3'));
-        expect(queryByTestId('file-type-select-component3')).toBeFalsy();
-        expect(queryByTestId('file-select-component3')).toBeFalsy();
+        expect(queryByTestId("file-select-component1")).toBeTruthy();
+
+        expect(queryByTestId("settings-button-component1")).toBeTruthy();
+
+        // close popup
+        fireEvent.click(queryByTestId("TrackPickerExitButton"));
+
+        expect(queryByTestId("file-type-select-component1")).toBeFalsy();
+
+        expect(queryByTestId("file-select-component1")).toBeFalsy();
+
+        expect(queryByTestId("settings-button-component1")).toBeFalsy();
+
+
+
     });
 
 });

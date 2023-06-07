@@ -75,15 +75,15 @@ export const TrackListItem = ({
     // Isn't just a || because propChanges can set the trackFile to be undefined
     const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
     return (
-      <Container key={trackID} style={{ width: "fit-content", marginLeft: 0 }}>
+      <Container key={trackID} style={{ width: "800px", marginLeft: 0 }}>
         <Row className="g-0">
-          <Col className="tracklist-dropdown" sm="2">
+          <Col className="tracklist-dropdown" lg="5">
             <TrackTypeDropdown value={propChanges["trackType"] || trackProps["trackType"]} 
                               onChange={trackTypeOnChange}
                               testID={"file-type-select-component".concat(trackID)}
                               />
           </Col>
-          <Col className="tracklist-dropdown" sm="3">
+          <Col className="tracklist-dropdown" lg="5">
             <TrackFilePicker tracks={availableTracks} 
                             fileType={propChanges["trackType"] || trackProps["trackType"]} 
                             value={displayedFile}
@@ -92,7 +92,7 @@ export const TrackListItem = ({
                             testID={"file-select-component".concat(trackID)}
                             />
           </Col>
-          <Col className="tracklist-button" sm="1">
+          <Col className="tracklist-button" lg="1">
             <TrackSettingsButton fileType={propChanges["trackType"] || trackProps["trackType"]}
                                 trackColorSettings={propChanges["trackColorSettings"] || trackProps["trackColorSettings"]}
                                 setTrackColorSetting={trackSettingsOnChange}
