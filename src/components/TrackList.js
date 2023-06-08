@@ -51,7 +51,7 @@ export const TrackList = ({
   
 }
 
-TrackListItem.propTypes = {
+TrackList.propTypes = {
   tracks: PropTypes.object.isRequired,
   availableTracks: PropTypes.array.isRequired,
   availableColors: PropTypes.array,
