@@ -46,8 +46,13 @@ export const TrackPicker = ({
 TrackPicker.propTypes = {
     tracks: PropTypes.object.isRequired,
     availableTracks: PropTypes.array.isRequired,
-    availableColors: PropTypes.func.isRequired,
-    onChange: PropTypes.func.isRequired
+    availableColors: PropTypes.array,
+    onChange: PropTypes.func
+}
+
+TrackPicker.defaultProps = {
+    availableColors: [],
+    onChange: () => {}
 }
 
 

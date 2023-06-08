@@ -27,7 +27,7 @@ export const TrackPickerDisplay = ({
             return t1;
         }
         return t2;
-    })) + 1;
+    }, 0)) + 1;
 
     // returns an updated track list combining the 2 inputs, with trackChanges taking priority
     const applyTrackListChanges = (tracks, trackChanges) => {
@@ -113,8 +113,13 @@ export const TrackPickerDisplay = ({
 TrackPickerDisplay.propTypes = {
     tracks: PropTypes.object.isRequired,
     availableTracks: PropTypes.array.isRequired,
-    availableColors: PropTypes.func.isRequired,
-    onChange: PropTypes.func.isRequired
+    availableColors: PropTypes.array,
+    onChange: PropTypes.func
+}
+
+TrackPickerDisplay.defaultProps = {
+    availableColors: [],
+    onChange: () => {}
 }
 
 export default TrackPickerDisplay;
