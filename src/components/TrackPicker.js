@@ -3,13 +3,8 @@ import PropTypes from "prop-types";
 import TrackPickerDisplay from "./TrackPickerDisplay.js";
 import { Button } from 'reactstrap'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faList, faX } from '@fortawesome/free-solid-svg-icons';
+import { faList } from '@fortawesome/free-solid-svg-icons';
 import PopupDialog from './PopupDialog.js';
-
-import {
-  CardBody,
-  Card,
-} from 'reactstrap';
 
 export const TrackPicker = ({
     tracks, // expects a trackList, same as trackListDisplay
@@ -28,7 +23,7 @@ export const TrackPicker = ({
         {
           // Need to set width to null because the default fixed width is too small for the track lits items.
         }
-        <PopupDialog open={open} close={() => setOpen(!open)} closeOnDocumentClick={false} width={null} testID="TrackPicker">
+        <PopupDialog open={open} close={close} closeOnDocumentClick={false} width={null} testID="TrackPicker">
           <TrackPickerDisplay
               tracks={tracks}
               availableTracks={availableTracks}
