@@ -34,13 +34,13 @@ export const ColorPicker = ({
 
             { open ? 
                 <div style={ popover  }>
-                    <div style={ cover } onClick={ () => {setOpen(!open); onChange(color["hex"])} }/>
+                    <div style={ cover } onClick={ () => {setOpen(!open); onChange(color)} }/>
                     <Container>
                         <SketchPicker 
                             color={color}
                             presetColors={presetColors}
                             onChange={(newColor) => {
-                                    setColor(newColor);
+                                    setColor(newColor["hex"]);
                             }}
 
                         />
