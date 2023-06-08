@@ -54,6 +54,7 @@ export const TrackSettings = ({
                             </Col>
                             <Col className="tracklist-button" md="1">
                                 <ColorPicker
+                                    color={trackColorSettings.mainPalette}
                                     presetColors={presetColors}
                                     onChange={(color) => {
                                         setTrackColorSetting("mainPalette", color);
@@ -78,6 +79,7 @@ export const TrackSettings = ({
                             </Col>
                             <Col className="tracklist-button" md="1">
                                 <ColorPicker
+                                    color={trackColorSettings.mainPalette}
                                     presetColors={presetColors}
                                     onChange={(color) => {
                                         setTrackColorSetting("mainPalette", color);
@@ -97,6 +99,7 @@ export const TrackSettings = ({
                             </Col>
                             <Col className="tracklist-button" md="1">
                                 <ColorPicker
+                                    color={trackColorSettings.auxPalette}
                                     presetColors={presetColors}
                                     onChange={(color) => {
                                         setTrackColorSetting("auxPalette", color);
