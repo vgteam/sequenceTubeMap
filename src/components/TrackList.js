@@ -38,7 +38,8 @@ export const TrackList = ({
               availableColors={availableColors}
               onChange={trackItemOnChange}
               onDelete={onDelete}
-              trackID={trackID}/>
+              trackID={parseInt(trackID)}
+              key={trackID} />
           );
       })
 
