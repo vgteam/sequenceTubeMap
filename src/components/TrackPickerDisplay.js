@@ -23,6 +23,8 @@ export const TrackPickerDisplay = ({
 
     // gets the highest trackID bewteen pending changes and tracks + 1
     let nextTrackID = parseInt(Object.keys({...tracks, ...trackListChanges}).reduce((t1, t2) => {
+        t1 = parseInt(t1);
+        t2 = parseInt(t2);
         if (t1 > t2) {
             return t1;
         }
