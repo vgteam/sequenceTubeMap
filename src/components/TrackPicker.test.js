@@ -190,7 +190,7 @@ describe('TrackPicker', () => {
         expect(queryByTestId("settings-button-component1")).toBeTruthy();
 
         // close popup
-        fireEvent.click(queryByTestId("TrackPickerExitButton"));
+        fireEvent.click(queryByTestId("TrackPickerCloseButton"));
 
         expect(queryByTestId("file-type-select-component1")).toBeFalsy();
 

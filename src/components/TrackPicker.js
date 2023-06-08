@@ -28,7 +28,7 @@ export const TrackPicker = ({
         {
           // Need to set width to null because the default fixed width is too small for the track lits items.
         }
-        <PopupDialog open={open} close={() => setOpen(!open)} closeOnDocumentClick={false} width={null}>
+        <PopupDialog open={open} close={() => setOpen(!open)} closeOnDocumentClick={false} width={null} testID="TrackPicker">
           <TrackPickerDisplay
               tracks={tracks}
               availableTracks={availableTracks}
