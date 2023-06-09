@@ -23,9 +23,6 @@ import userEvent from "@testing-library/user-event";
 import selectEvent from "react-select-event";
 import App from "./App";
 
-
-console.log("Loading server:", server);
-
 const getRegionInput = () => {
   // Helper function to select the Region input box
   return screen.getByRole("combobox", { name: /Region/i });
