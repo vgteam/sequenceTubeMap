@@ -16,8 +16,10 @@ import pathIsInside from "path-is-inside";
 import rl from "readline";
 import compression from "compression";
 import { server as WebSocketServer } from "websocket";
+import dotenv from "dotenv";
+import dirname from "es-dirname";
+import { readFileSync } from 'fs';
 import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
-//import esMain from 'es-main';
 
 // Now we want to load config.json.
 //
@@ -38,26 +40,17 @@ import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringif
 //
 // So we try a filesystem load.
 // See <https://stackoverflow.com/a/75705665>
-// But we can't use top-level await.
+// But we can't use top-level await, so it has to be synchronous.
 //
 // We also can't say "__dirname" or "import.meta" even to poll if those exist,
-// or node and babel (respectively) will yell at us.
-// Luckily this module exists which can find *our* directory by looking at the stack.
-// See https://github.com/vdegenne/es-dirname/blob/master/es-dirname.js
-import dirname from 'es-dirname'
-
-import { readFileSync } from 'fs';
+// or node and Babel (respectively) will yell at us.
+// Luckily the es-dirname module exists which can find *our* directory by
+// looking at the stack. See
+// https://github.com/vdegenne/es-dirname/blob/master/es-dirname.js
 const config = JSON.parse(readFileSync(dirname() + '/config.json'));
 
-
-// So we will go back to require for this JSON specifically.
-// See <https://stackoverflow.com/a/75705665>
-//import { createRequire } from "module";
-//const require = createRequire(import.meta.url);
-//const config = require("./config.json");
-
-import dotenv from "dotenv";
 if (process.env.NODE_ENV !== "production") {
+  // Load any .env file config
   dotenv.config();
 }
 
