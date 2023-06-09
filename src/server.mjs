@@ -4,37 +4,62 @@
 
 "use strict";
 
-const assert = require("assert");
-const spawn = require("child_process").spawn;
-const express = require("express");
-const bodyParser = require("body-parser");
-const multer = require("multer");
-const { v1: uuid } = require("uuid");
-const fs = require("fs-extra");
-const path = require("path");
-const pathIsInside = require("path-is-inside");
-const rl = require("readline");
-const compression = require("compression");
-const WebSocketServer = require("websocket").server;
-const config = require("./config.json");
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config();
-}
+import assert from "assert";
+import { spawn } from "child_process";
+import express from "express";
+import bodyParser from "body-parser";
+import multer from "multer";
+import { v1 as uuid } from "uuid";
+import fs from "fs-extra";
+import path from "path";
+import pathIsInside from "path-is-inside";
+import rl from "readline";
+import compression from "compression";
+import { server as WebSocketServer } from "websocket";
+import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
+//import esMain from 'es-main';
 
-// function to remove commas from coordinate input
-const removeCommas = (input) => {
-  let parts = input.split(":");
-  if (parts.length < 2){
-    return input;
-  }
-  // get coordinate - numerical range on other side of :
-  let coordinates = parts[1];
-  coordinates = coordinates.replace(/,/g, "");
-  // put region input coordinate back together
-  parts[1] = coordinates;
-  let fixedInputValue = parts.join(":");
-  return fixedInputValue;
-};
+// Now we want to load config.json.
+//
+// We *should* be able to import it, but that is not allowed by Node without
+// 'assert { type: "json" }' at the end.
+//
+// But that syntax is in turn prohibited by Babel unless you add a flag to tell
+// it to turn on its own ability to parse that "experimental" syntax.
+//
+// And the React setup prohibits you from setting the flag (unless you eject
+// and take on the maintainance burden of all changes to react-scripts, or else
+// you install one of the modules dedicated to hacking around this).
+//
+// We could go back to require for this, but then we'd have to say import.meta
+// to get ahold of it, and we aren't allowed to say that with Jest's parser;
+// it's a syntax error because React's Babel (?) turns all our code into
+// non-module JS for Jest but doesn't handle that.
+//
+// So we try a filesystem load.
+// See <https://stackoverflow.com/a/75705665>
+// But we can't use top-level await.
+//
+// We also can't say "__dirname" or "import.meta" even to poll if those exist,
+// or node and babel (respectively) will yell at us.
+// Luckily this module exists which can find *our* directory by looking at the stack.
+// See https://github.com/vdegenne/es-dirname/blob/master/es-dirname.js
+import dirname from 'es-dirname'
+
+import { readFileSync } from 'fs';
+const config = JSON.parse(readFileSync(dirname() + '/config.json'));
+
+
+// So we will go back to require for this JSON specifically.
+// See <https://stackoverflow.com/a/75705665>
+//import { createRequire } from "module";
+//const require = createRequire(import.meta.url);
+//const config = require("./config.json");
+
+import dotenv from "dotenv";
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 const VG_PATH = config.vgPath;
 const MOUNTED_DATA_PATH = config.dataPath;
@@ -298,43 +323,13 @@ api.post("/getChunkedData", (req, res, next) => {
   let dataPath = pickDataPath(req.body.dataPath);
   console.log(`dataPath = ${dataPath}`);
 
-  // parse region
-  // either a range -> seq:start-end
-  // or a position and distance -> seq:post+distance
-  let region = req.body.region;
-  if (!region || region === "none") {
-    throw new BadRequestError(
-      "Wrong query: Missing region field. See ? button above."
-    );
-  }
-  if (!region.includes(":")) {
-    throw new BadRequestError(
-      "Wrong query: region doesn't contain a ':'. See ? button above."
-    );
-  }
-
-  console.log(region);
-  region = removeCommas(region);
-  
-  console.log(region);
-  let region_col = region.split(":");
-  
-  console.log(region_col);
-  let start_end = region_col[1].split("-");
-  let pos_dist = region_col[1].split("+");
-  let r_start = -1;
-  let r_end = -1;
-  let distance = -1;
-  if (start_end.length === 2) {
-    r_start = Number(start_end[0]);
-    r_end = Number(start_end[1]);
-  } else if (pos_dist.length === 2) {
-    r_start = Number(pos_dist[0]);
-    distance = Number(pos_dist[1]);
-  } else {
-    throw new BadRequestError(
-      "Wrong query: coordinates must be in the form 'X:Y-Z' or 'X:Y+Y'. See ? button above."
-    );
+  // This will have a conitg, start, end, or a contig, start, distance
+  let parsedRegion;
+  try {
+    parsedRegion = parseRegion(req.body.region);
+  } catch (e) {
+    // Whatever went wrong in the parsing, it makes the request bad.
+    throw new BadRequestError("Wrong query: " + e.message + " See ? button above.");
   }
 
   // check the bed file if this region has been pre-fetched
@@ -346,10 +341,12 @@ api.post("/getChunkedData", (req, res, next) => {
     let regionInfo = getBedRegions(bedFile, dataPath);
 
     for (let i = 0; i < regionInfo["desc"].length; i++) {
-      let region_chr = regionInfo["chr"][i];
-      let region_start = regionInfo["start"][i];
-      let region_end = regionInfo["end"][i];
-      if (region_chr.concat(":", region_start, "-", region_end) === region) {
+      let entryRegion = {
+        contig: regionInfo["chr"][i],
+        start: regionInfo["start"][i],
+        end: regionInfo["end"][i]
+      }
+      if (stringifyRegion(entryRegion) === stringifyRegion(parsedRegion)) {
         // A BED entry is defined for this region exactly
         if (regionInfo["chunk"][i] !== "") {
           // And a chunk file is stored for it, so use that.
@@ -375,6 +372,10 @@ api.post("/getChunkedData", (req, res, next) => {
       chunkPath = "";
     }
   }
+  
+  // We always need a range-version of the region, to fill in req.region, to
+  // generate the region part of the response with the range.
+  let rangeRegion = convertRegionToRangeRegion(parsedRegion);
 
   if (chunkPath === "") {
     // call 'vg chunk' to generate graph
@@ -441,19 +442,17 @@ api.post("/getChunkedData", (req, res, next) => {
     
 
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
-    if (region_col[0] === "node") {
-      if (distance > -1) {
-        vgChunkParams.push("-r", r_start, "-c", distance);
+    if (parsedRegion.contig === "node") {
+      if (parsedRegion.distance !== undefined) {
+        // Start and distance of node IDs, so send that idiomatically.
+        vgChunkParams.push("-r", parsedRegion.start, "-c", parsedRegion.distance);
       } else {
-        vgChunkParams.push("-r", "".concat(r_start, ":", r_end), "-c", 20);
+        // Start and end of node IDs
+        vgChunkParams.push("-r", "".concat(parsedRegion.start, ":",  parsedRegion.end), "-c", 20);
       }
     } else {
-      // reformat pos+dist into start-end range
-      if (distance > -1) {
-        r_end = r_start + distance;
-        region = region_col[0].concat(":", r_start, "-", r_end);
-      }
-      vgChunkParams.push("-c", "20", "-p", `${region}`);
+      // Ask for the whole region by start - end range.
+      vgChunkParams.push("-c", "20", "-p", stringifyRangeRegion(rangeRegion));
     }
     vgChunkParams.push(
       "-T",
@@ -545,14 +544,14 @@ api.post("/getChunkedData", (req, res, next) => {
         return;
       }
       req.graph = JSON.parse(graphAsString);
-      req.region = [r_start, r_end];
+      req.region = [rangeRegion.start, rangeRegion.end];
       if (!sentResponse) {
         sentResponse = true;
         processAnnotationFile(req, res, next);
       }
     });
   } else {
-    // chunk has already been pre-fecthed and is saved in chunkPath
+    // chunk has already been pre-fetched and is saved in chunkPath
     req.chunkDir = chunkPath;
     // We're using a shared directory for this request, so leave it in place
     // when the request finishes.
@@ -601,7 +600,7 @@ api.post("/getChunkedData", (req, res, next) => {
         return;
       }
       req.graph = JSON.parse(graphAsString);
-      req.region = [r_start, r_end];
+      req.region = [rangeRegion.start, rangeRegion.end];
       if (!sentResponse) {
         sentResponse = true;
         processAnnotationFile(req, res, next);
@@ -1149,7 +1148,7 @@ function getServerURL(server) {
 // Start the server. Returns a promise that resolves when the server is ready.
 // To stop the server, close() the result. Server base URL can be obtained with
 // getUrl().
-function start() {
+export function start() {
   return new Promise((resolve, reject) => {
     // This holds the top-level state of the server and lets us close things up.
     // TODO: use a real class.
@@ -1273,9 +1272,14 @@ function start() {
   });
 }
 
-module.exports = { start };
+// Now we have to guess if we are the main module without being able to say or even poll for import.meta (or Jest explodes) or require.main (or Node explodes). Also when we are main, process.mainModule is empty because there's no CJS module to put there.
 
-if (require.main === module) {
-  // We are running on the command line. Start the server.
-  start();
+if (process) {
+  // We assume we are named server.mjs
+  let ourFilename = dirname() + '/server.mjs';
+  let mainFilename = process.argv[1];
+  if (ourFilename === mainFilename) {
+    // If we are passed as the first argument we are probably being run.
+    start();
+  }
 }
