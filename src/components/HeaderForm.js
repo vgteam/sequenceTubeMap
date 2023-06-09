@@ -10,6 +10,7 @@ import MountedDataFormRow from "./MountedDataFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
+import { parseRegion, stringifyRegion } from "../common.mjs";
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
@@ -538,36 +539,38 @@ class HeaderForm extends Component {
     }
   };
 
-  handleGoRight = () => {
-    let region_col = this.state.region.split(":");
-    let start_end = region_col[1].split("-");
-    let r_start = Number(start_end[0]);
-    let r_end = Number(start_end[1]);
-    let shift = (r_end - r_start) / 2;
-    r_start = Math.round(r_start + shift);
-    r_end = Math.round(r_end + shift);
+  // Budge the region left or right by the given negative or positive fraction
+  // of its width.
+  budgeRegion(fraction) {
+    let parsedRegion = parseRegion(this.state.region);
+
+    if (parsedRegion.distance !== undefined) {
+      // This is a start + distance region
+      let shift = parsedRegion.distance * fraction;
+      // So just shift the start
+      parsedRegion.start = Math.max(0, Math.round(parsedRegion.start + shift));
+    } else {
+      // This is a start - end region
+      let shift = (parsedRegion.end - parsedRegion.start) * fraction;
+      // So shift the whole window
+      parsedRegion.start = Math.max(0, Math.round(parsedRegion.start + shift));
+      parsedRegion.end = Math.max(0, Math.round(parsedRegion.end + shift));
+    }
+   
     this.setState(
       (state) => ({
-        region: region_col[0].concat(":", r_start, "-", r_end),
+        region: stringifyRegion(parsedRegion),
       }),
       () => this.handleGoButton()
     );
+  }
+
+  handleGoRight = () => {
+    this.budgeRegion(0.5);
   };
 
   handleGoLeft = () => {
-    let region_col = this.state.region.split(":");
-    let start_end = region_col[1].split("-");
-    let r_start = Number(start_end[0]);
-    let r_end = Number(start_end[1]);
-    let shift = (r_end - r_start) / 2;
-    r_start = Math.max(0, Math.round(r_start - shift));
-    r_end = Math.max(0, Math.round(r_end - shift));
-    this.setState(
-      (state) => ({
-        region: region_col[0].concat(":", r_start, "-", r_end),
-      }),
-      () => this.handleGoButton()
-    );
+    this.budgeRegion(-0.5);
   };
 
   handleFileUpload = (fileType, fileName) => {

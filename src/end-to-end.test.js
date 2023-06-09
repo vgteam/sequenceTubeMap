@@ -1,6 +1,11 @@
 // End to end tests that test the frontend against a backend over HTTP
 
-import server from "./server";
+// Normal import doesn't work here; something to do with the multiple
+// not-really-standard implementations of JS modules in play. So we import the
+// server's start function and put it in an object pretendign to be a module.
+import { start } from "./server.mjs";
+const server = { start };
+
 import React from "react";
 // testing-library provides a render() that auto-cleans-up from the global DOM.
 import {
