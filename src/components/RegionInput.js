@@ -16,6 +16,7 @@ export const RegionInput = ({
 }) => {
   // Generate autocomplete options for regions from regionInfo
   // Add : to pathNames
+  console.log("rendering with pathnames: ", pathNames);
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
 

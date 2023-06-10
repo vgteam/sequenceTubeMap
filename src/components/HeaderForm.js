@@ -10,6 +10,8 @@ import MountedDataFormRow from "./MountedDataFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
+import TrackPicker from "./TrackPicker";
+import SelectionDropdown from "./SelectionDropdown";
 import { parseRegion, stringifyRegion } from "../common.mjs";
 // See src/Types.ts
 
@@ -65,10 +67,7 @@ const EMPTY_STATE = {
 
   // These ones are for selecting entire files and need to be preserved when
   // switching dataType.
-  graphSelectOptions: ["none"],
-  gbwtSelectOptions: ["none"],
-  gamSelectOptions: ["none"],
-  bedSelectOptions: ["none"],
+  fileSelectOptions: [],
 };
 
 // Creates track to be stored in ViewTarget
@@ -138,6 +137,7 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
   return true;
 
 }
+
 
 class HeaderForm extends Component {
   state = EMPTY_STATE;
@@ -250,16 +250,19 @@ class HeaderForm extends Component {
     });
   }
 
-  getTrackFile = (type, index) => {
+  getTrackFile = (tracks, type, index) => {
     // Get the file used in the nth track of the gicen type, or "none" if no
     // such track exists.
     let seenTracksOfType = 0;
-    for (const key in this.state.tracks) {
-      let track = this.state.tracks[key];
-      if (track.files[0].type === type) {
+    for (const key in tracks) {
+      let track = tracks[key];
+      if (track === -1) {
+        continue;
+      }
+      if (track.trackFile.type === type) {
         if (seenTracksOfType === index) {
           // This is the one. Return its filename.
-          return track.files[0].name;
+          return track.trackFile.name;
         }
         seenTracksOfType++;
       } 
@@ -278,15 +281,12 @@ class HeaderForm extends Component {
           "Content-Type": "application/json",
         },
       });
-      if (json.graphFiles === undefined) {
+      if (json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
           json.error || "Server did not return a list of mounted filenames.";
         this.setState({ error: error });
       } else {
-        json.graphFiles.unshift("none");
-        json.gbwtFiles.unshift("none");
-        json.gamIndices.unshift("none");
         json.bedFiles.unshift("none");
 
         if (this.state.dataPath === "mounted") {
@@ -306,9 +306,7 @@ class HeaderForm extends Component {
               }
             } 
             return {
-              graphSelectOptions: json.graphFiles,
-              gbwtSelectOptions: json.gbwtFiles,
-              gamSelectOptions: json.gamIndices,
+              fileSelectOptions: json.files,
               bedSelectOptions: json.bedFiles,
               bedSelect,
             };
@@ -316,9 +314,7 @@ class HeaderForm extends Component {
         } else {
           this.setState((state) => {
             return {
-              graphSelectOptions: json.graphFiles,
-              gbwtSelectOptions: json.gbwtFiles,
-              gamSelectOptions: json.gamIndices,
+              fileSelectOptions: json.files,
               bedSelectOptions: json.bedFiles,
             };
           });
@@ -370,6 +366,7 @@ class HeaderForm extends Component {
   };
 
   getPathNames = async (graphFile, dataPath) => {
+    console.log("getting path names for ", graphFile, dataPath);
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
@@ -386,6 +383,7 @@ class HeaderForm extends Component {
         throw new Error("Server did not send back an array of path names");
       }
       this.setState((state) => {
+        console.log("setting path name", pathNames);
         return {
           pathNames: pathNames,
         };
@@ -516,28 +514,33 @@ class HeaderForm extends Component {
     }
     this.setState({ region: coords });
   };
-  handleInputChange = (event) => {
+
+  handleInputChange = (newTracks) => {
+    this.setState((state) => {
+      let newState = Object.assign({}, state);
+      newState.tracks = newTracks;
+      console.log('Set result: ' + JSON.stringify(newTracks));
+      return newState;
+    });
+
+    // update path names
+    const graphFile = this.getTrackFile(newTracks, fileTypes.GRAPH, 0);
+    if (graphFile && graphFile !== "none"){
+      this.getPathNames(graphFile, this.state.dataPath);
+    }
+  };
+
+  handleBedChange = (event) => {
     const id = event.target.id;
     const value = event.target.value;
     this.setState({ [id]: value });
-    if (id === "graphSelect") {
-      if (value && value !== "none") {
-        this.getPathNames(value, this.state.dataPath);
-      }
-      this.setTrackFile(fileTypes.GRAPH, 0, value);
-    } else if (id === "gbwtSelect") {
-      this.setTrackFile(fileTypes.HAPLOTYPE, 0, value);
-    } else if (id === "gamSelect") {
-      this.setTrackFile(fileTypes.READ, 0, value);
-    } else if (id === "gam2Select") {
-      this.setTrackFile(fileTypes.READ, 1, value);
-    } else if (id === "bedSelect") {
-      if (value !== "none") {
-        this.getBedRegions(value, this.state.dataPath);
-      }
-      this.setState({ bedFile: value });
+
+    if (value !== "none") {
+      this.getBedRegions(value, this.state.dataPath);
     }
-  };
+    this.setState({ bedFile: value });
+
+  }
 
   // Budge the region left or right by the given negative or positive fraction
   // of its width.
@@ -652,8 +655,8 @@ class HeaderForm extends Component {
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
 
     console.log(
-      "Rendering header form with graphSelectOptions: ",
-      this.state.graphSelectOptions
+      "Rendering header form with fileSelectOptions: ",
+      this.state.fileSelectOptions
     );
 
     return (
@@ -687,18 +690,31 @@ class HeaderForm extends Component {
               </select>
               &nbsp;
               {mountedFilesFlag && (
-                <MountedDataFormRow
-                  graphSelect={this.getTrackFile(fileTypes.GRAPH, 0)}
-                  graphSelectOptions={this.state.graphSelectOptions}
-                  gbwtSelect={this.getTrackFile(fileTypes.HAPLOTYPE, 0)}
-                  gbwtSelectOptions={this.state.gbwtSelectOptions}
-                  gamSelect={this.getTrackFile(fileTypes.READ, 0)}
-                  gam2Select={this.getTrackFile(fileTypes.READ, 1)}
-                  gamSelectOptions={this.state.gamSelectOptions}
-                  bedSelect={this.state.bedSelect}
-                  bedSelectOptions={this.state.bedSelectOptions}
-                  handleInputChange={this.handleInputChange}
-                />
+                <React.Fragment>
+                  <TrackPicker
+                    tracks={this.state.tracks}
+                    availableTracks={[{"files": this.state.fileSelectOptions}]}
+                    onChange={this.handleInputChange}
+                  />
+
+                  <Label
+                    for="bedSelectInput"
+                    className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
+                  >
+                    BED file:
+                  </Label>
+                  
+                  <SelectionDropdown
+                    className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
+                    id="bedSelect"
+                    inputId="bedSelectInput"
+                    value={this.state.bedSelect}
+                    onChange={this.handleBedChange}
+                    options={this.state.bedSelectOptions}
+                  />
+                  &nbsp;
+                </React.Fragment>
+
               )}
               {!examplesFlag && (
                 <RegionInput

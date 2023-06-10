@@ -956,9 +956,7 @@ function pickDataPath(reqDataPath) {
 api.get("/getFilenames", (req, res) => {
   console.log("received request for filenames");
   const result = {
-    graphFiles: [],
-    gbwtFiles: [],
-    gamIndices: [],
+    files: [], // store a list of file object, excluding bed files, {  name: string; type: filetype;}
     bedFiles: [],
   };
 
@@ -966,13 +964,13 @@ api.get("/getFilenames", (req, res) => {
     // list files in folder
     fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
       if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
-        result.graphFiles.push(file);
+        result.files.push({"name": file, "type": "graph"});
       }
       if (endsWithExtensions(file, HAPLOTYPE_EXTENSIONS)) {
-        result.gbwtFiles.push(file);
+        result.files.push({"name": file, "type": "haplotype"});
       }
       if (file.endsWith(".sorted.gam")) {
-        result.gamIndices.push(file);
+        result.files.push({"name": file, "type": "read"});
       }
       if (file.endsWith(".bed")) {
         result.bedFiles.push(file);
