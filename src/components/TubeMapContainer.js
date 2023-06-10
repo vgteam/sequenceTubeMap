@@ -168,24 +168,21 @@ class TubeMapContainer extends Component {
         // And the haplotype track number if any
         let haplotypeTrackID = null;
 
-        console.log("getting track ids");
+        console.log("getting viewTarget ", this.props.viewTarget);
         for (const i in this.props.viewTarget.tracks) {
           const track = this.props.viewTarget.tracks[i];
           console.log(track);
           if (track.trackFile.type === "read") {
             //add track index to array if the track contains a gam file
             readTrackIDs.push(i);
-            break;
           }
           if (track.trackFile.type === "graph") {
             // Or note if it is a graph (one allowed)
             graphTrackID = i;
-            break;
           }
           if (track.trackFile.type === "haplotype") {
             // Or a collection of haplotypes (one allowed)
             haplotypeTrackID = i;
-            break;
           }
         }
 
