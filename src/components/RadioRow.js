@@ -51,7 +51,7 @@ class RadioRow extends Component {
     });
     return (
       <FormGroup row className="mb-1">
-        <Col sm="2">{this.props.rowHeading}:</Col>
+        {this.props.rowHeading}:
         {colorRadios}
       </FormGroup>
     );

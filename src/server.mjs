@@ -218,10 +218,8 @@ function endsWithExtensions(file, extensions) {
 // returns the file name of the specified type in that track
 // returns falsy value if file type is not found
 function getFileFromType(track, type) {
-  for (const file of track.files) {
-    if (file.type == type) {
-      return file.name;
-    }
+  if (track.trackFile.type == type) {
+    return track.trackFile.name;
   }
   return "none";
 }
@@ -232,8 +230,8 @@ function getFileFromType(track, type) {
 //
 // This is a fancy ES6 generator.
 function* eachFileOfType(tracks, type) {
-  for (const track of tracks) {
-    const file = getFileFromType(track, type);
+  for (const key in tracks) {
+    const file = getFileFromType(tracks[key], type);
     if (file && file !== "none") {
       yield file;
     }
@@ -294,6 +292,11 @@ api.post("/getChunkedData", (req, res, next) => {
   const bedFile = req.bedFile;
 
   let gamFiles = getGams(req.body.tracks);
+
+  console.log("graphFile ", graphFile);
+  console.log("gbwtFile ", gbwtFile);
+  console.log("bedFile ", bedFile);
+  console.log("gamFiles ", gamFiles);
 
   req.withGam = true;
   if (!gamFiles || !gamFiles.length) {

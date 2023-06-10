@@ -2349,6 +2349,9 @@ function getColorSet(colorSetName) {
 
 function generateTrackColor(track, highlight) {
 
+  //console.log("color schemes", config.colorSchemes);
+  //console.log("source ID", track.sourceTrackID);
+
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
 

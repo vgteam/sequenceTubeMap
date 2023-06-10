@@ -4,8 +4,8 @@
     {
       "name": "snp1kg-BRCA1",
       "tracks": [
-        {"files": [{"type": "graph", "name": "snp1kg-BRCA1.vg.xg"}]},
-        {"files": [{"type": "read", "name": "NA12878-BRCA1.sorted.gam"}]}
+        {"trackFile": {"type": "graph", "name": "snp1kg-BRCA1.vg.xg"}},
+        {"trackFile": {"type": "read", "name": "NA12878-BRCA1.sorted.gam"}}
       ],
       "dataPath": "default",
       "region": "17:1-100",
@@ -15,8 +15,8 @@
     {
       "name": "vg \"small\" example",
       "tracks": [
-        {"files": [{"type": "graph", "name": "x.vg.xg"}]},
-        {"files": [{"type": "haplotype", "name": "x.vg.gbwt"}]}
+        {"trackFile": {"type": "graph", "name": "x.vg.xg"}},
+        {"trackFile": {"type": "haplotype", "name": "x.vg.gbwt"}}
       ],
       "dataPath": "mounted",
       "dataType": "built-in",
@@ -25,8 +25,8 @@
     {
       "name": "cactus",
       "tracks": [
-        {"files": [{"type": "graph", "name": "cactus.vg.xg"}]},
-        {"files": [{"type": "read", "name": "cactus-NA12879.sorted.gam"}]}
+        {"trackFile": {"type": "graph", "name": "cactus.vg.xg"}},
+        {"trackFile": {"type": "read", "name": "cactus-NA12879.sorted.gam"}}
       ],
       "dataPath": "mounted",
       "bedFile": "cactus.bed",
@@ -36,9 +36,9 @@
     {
       "name": "cactus multiple reads",
       "tracks": [
-        {"files": [{"type": "graph", "name": "cactus.vg.xg"}]},
-        {"files": [{"type": "read", "name": "cactus0_10.sorted.gam"}]},
-        {"files": [{"type": "read", "name": "cactus10_20.sorted.gam"}]}
+        {"trackFile": {"type": "graph", "name": "cactus.vg.xg"}},
+        {"trackFile": {"type": "read", "name": "cactus0_10.sorted.gam"}},
+        {"trackFile": {"type": "read", "name": "cactus10_20.sorted.gam"}}
       ],
       "dataPath": "mounted",
       "bedFile": "cactus.bed",

@@ -21,14 +21,16 @@ const EXAMPLE_TRACKS = [
   {"files": [{"type": "read", "name": "fakeReads"}]}
 ];
 
-function addTracksToColorSchemes(tracks, schemes) {
+function getColorSchemesFromTrack(tracks) {
   
-  console.log("Initializing coloring for tracks: ", tracks, "combining with:", schemes);
+  let schemes = [];
 
   for (const key in tracks) {
     if (schemes[key] === undefined) {
       // We need to adopt a color scheme
-      if (tracks[key].files[0].type === "read") {
+      if (tracks[key].trackColorSettings !== undefined) {
+        schemes[key] = tracks[key].trackColorSettings;
+      } else if (tracks[key].trackFile.type === "read") {
         schemes[key] = {...config.defaultReadColorPalette};
       } else {
         schemes[key] = {...config.defaultHaplotypeColorPalette};
@@ -61,7 +63,7 @@ class App extends Component {
         showReads: true,
         showSoftClips: true,
         colorReadsByMappingQuality: false,
-        colorSchemes: addTracksToColorSchemes(this.defaultViewTarget.tracks, []),
+        colorSchemes: getColorSchemesFromTrack(this.defaultViewTarget.tracks),
         mappingQualityCutoff: 0,
       },
     };
@@ -97,8 +99,7 @@ class App extends Component {
 
       this.setState((state) => {
         // Make sure we have color schemes.
-        let newColorSchemes = state.visOptions.colorSchemes.slice();
-        addTracksToColorSchemes(newViewTarget.tracks, newColorSchemes);
+        let newColorSchemes = getColorSchemesFromTrack(newViewTarget.tracks);
 
 
         console.log("Adopting color schemes: ", newColorSchemes)

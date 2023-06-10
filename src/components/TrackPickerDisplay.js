@@ -80,8 +80,6 @@ export const TrackPickerDisplay = ({
 
         // call onChange if the track list is valid and changes have been made        
         if (validTrackList && JSON.stringify(newTrackList) !== JSON.stringify(tracks)) {
-            console.log("tracks", tracks);
-            console.log("trackChanges", trackListChanges);
             console.log("calling Track Picker Display onChange with ", newTrackList);
             onChange(newTrackList);
             // clear out pending changes
@@ -120,7 +118,6 @@ TrackPickerDisplay.propTypes = {
 }
 
 TrackPickerDisplay.defaultProps = {
-    availableColors: [],
     onChange: () => {}
 }
 

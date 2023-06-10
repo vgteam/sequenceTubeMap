@@ -22,7 +22,13 @@ type file = {
 
 // Contains information necessary to make a track
 type track = {
-  files: Array<file>
+  trackFile: file;
+  trackType: filetype;
+  trackColorSettings: ColorScheme;
+}
+
+type tracks = {
+  trackID: track;
 }
 
 // Describes something the Tube Map can look at, specifically a region and the files the region is in.
@@ -82,4 +88,6 @@ type ColorScheme = {
 
 // Stores the assigned colorschemes of all tracks
 // Entries correspond to their track counterpart, e.g colorSchemes[0] corresponds to tracks[0]
-type colorSchemes = Array<ColorScheme>;
+type colorSchemes = {
+  trackID: ColorScheme;
+}

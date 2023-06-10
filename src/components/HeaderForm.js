@@ -92,9 +92,30 @@ function tracksEqual(curr, next) {
     return false;
   }
 
-  if (curr.files.length !== next.files.length) {
-    return false;
+
+
+  const curr_file = curr.trackFile.name;
+  const next_file = next.trackFile.name;
+
+  const curr_settings = curr.trackColorSettings;
+  const next_settings = curr.trackColorSettings;
+  
+  // check if color settings are equal
+  if (curr_settings.mainPalette !== next_settings.mainPalette || 
+      curr_settings.auxPalette !== next_settings.auxPalette ||
+      curr_settings.colorReadsByMappingQuality !== next_settings.colorReadsByMappingQuality) {
+        
+      console.log("tracks have differnt color settings");
+      return false;
   }
+
+  //count falsy file names as the same
+  if ((!curr_file && !next_file) || curr_file === next_file) {
+    return true;
+  }
+  return false;
+
+  /*
   //loop through file names to see if they're equal
   for (let i = 0; i < curr.files.length; i++) {
     const curr_file = curr.files[i].name;
@@ -106,24 +127,36 @@ function tracksEqual(curr, next) {
     }
     return false;
   }
+  
   return true;
+  */
 }
 
 // Checks if two view targets are the same. They are the same if they have the
 // same tracks and the same region.
 function viewTargetsEqual(currViewTarget, nextViewTarget) {
+
   // Update if one is undefined and the other isn't
   if ((currViewTarget === undefined) !== (nextViewTarget === undefined)) {
     return false;
   }
 
   // Update if view target tracks are not equal
-  if (currViewTarget.tracks.length !== nextViewTarget.tracks.length) {
+  if (Object.keys(currViewTarget.tracks).length !== Object.keys(nextViewTarget.tracks).length) {
     // Different lengths so not equal
     return false;
   }
-  for (let i = 0; i < currViewTarget.tracks.length; i++) {
-    if (!tracksEqual(currViewTarget.tracks[i], nextViewTarget.tracks[i])){
+
+  for (const key in currViewTarget.tracks) {
+    const currTrack = currViewTarget.tracks[key];
+    const nextTrack = nextViewTarget.tracks[key];
+
+    // if the key doesn't exist in the other track
+    if (!currTrack || !nextTrack) {
+      return false;
+    }
+
+    if (!tracksEqual(currTrack, nextTrack)) {
       // Different tracks so not equal
       return false;
     }
@@ -175,10 +208,10 @@ class HeaderForm extends Component {
       this.getBedRegions(bedSelect, dataPath);
     }
     for (const key in ds.tracks) {
-      if (ds.tracks[key].files[0].type === fileTypes.GRAPH) {
+      if (ds.tracks[key].trackFile.type === fileTypes.GRAPH) {
         // Load the paths for any graph tracks
         console.log("Get path names for track: ", ds.tracks[key]);
-        this.getPathNames(ds.tracks[key].files[0].name, dataPath);
+        this.getPathNames(ds.tracks[key].trackFile.name, dataPath);
       }
     }
     this.setState((state) => {
@@ -210,13 +243,13 @@ class HeaderForm extends Component {
       let maxKey = -1;
       for (const key in state.tracks) {
         let track = state.tracks[key];
-        if (track.files[0].type === type) {
+        if (track.trackFile.type === type) {
           console.log("See file " + seenTracksOfType + " of right type");
           if (seenTracksOfType === index) {
             if (file !== "none") {
               // We want to adjust it, so keep a modified copy of it
               let newTrack = JSON.parse(JSON.stringify(track));
-              newTrack.files[0].name = file;
+              newTrack.trackFile.name = file;
               newTracks[key] = newTrack;
             }
             // If the file is "none" we drop the track.
@@ -298,11 +331,11 @@ class HeaderForm extends Component {
               this.getBedRegions(bedSelect, "mounted");
             }
             for (const key in state.tracks) {
-              if (state.tracks[key].files[0].type === fileTypes.GRAPH) {
+              if (state.tracks[key].trackFile.type === fileTypes.GRAPH) {
                 // Load the paths for any graph tracks.
                 // TODO: Do we need to do this now?
                 console.log("Get path names for track: ", state.tracks[key]);
-                this.getPathNames(state.tracks[key].files[0].name, "mounted");
+                this.getPathNames(state.tracks[key].trackFile.name, "mounted");
               }
             } 
             return {
@@ -366,7 +399,6 @@ class HeaderForm extends Component {
   };
 
   getPathNames = async (graphFile, dataPath) => {
-    console.log("getting path names for ", graphFile, dataPath);
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
@@ -383,7 +415,6 @@ class HeaderForm extends Component {
         throw new Error("Server did not send back an array of path names");
       }
       this.setState((state) => {
-        console.log("setting path name", pathNames);
         return {
           pathNames: pathNames,
         };
@@ -436,10 +467,10 @@ class HeaderForm extends Component {
             this.setState({ regionInfo: {} });
           }
           for (const key in ds.tracks) {
-            if (ds.tracks[key].files[0].type === fileTypes.GRAPH) {
+            if (ds.tracks[key].trackFile.type === fileTypes.GRAPH) {
               // Load the paths for any graph tracks.
               console.log("Get path names for track: ", ds.tracks[key]);
-              this.getPathNames(ds.tracks[key].files[0].name, dataPath);
+              this.getPathNames(ds.tracks[key].trackFile.name, dataPath);
             }
           }
           this.setState({

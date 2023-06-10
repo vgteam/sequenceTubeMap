@@ -79,10 +79,10 @@ class TubeMapContainer extends Component {
     // to be changed, add options to change colorReadsByMappingQuality individually
     tubeMap.setColorReadsByMappingQualityFlag(visOptions.colorReadsByMappingQuality);
 
-    for (let i = 0; i < visOptions.colorSchemes.length; i++) {
-      // update tubemap colors
-      tubeMap.setColorSet(i, visOptions.colorSchemes[i]);
+    for (const trackID in visOptions.colorSchemes) {
+      tubeMap.setColorSet(trackID, visOptions.colorSchemes[trackID]);
     }
+
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }
 
@@ -167,24 +167,25 @@ class TubeMapContainer extends Component {
         let graphTrackID = null;
         // And the haplotype track number if any
         let haplotypeTrackID = null;
-        for (let i = 0; i < this.props.viewTarget.tracks.length; i++) {
+
+        console.log("getting track ids");
+        for (const i in this.props.viewTarget.tracks) {
           const track = this.props.viewTarget.tracks[i];
-          for (const file of track.files) {
-            if (file.type === "read") {
-              //add track index to array if the track contains a gam file
-              readTrackIDs.push(i);
-              break;
-            }
-            if (file.type === "graph") {
-              // Or note if it is a graph (one allowed)
-              graphTrackID = i;
-              break;
-            }
-            if (file.type === "haplotype") {
-              // Or a collection of haplotypes (one allowed)
-              haplotypeTrackID = i;
-              break;
-            }
+          console.log(track);
+          if (track.trackFile.type === "read") {
+            //add track index to array if the track contains a gam file
+            readTrackIDs.push(i);
+            break;
+          }
+          if (track.trackFile.type === "graph") {
+            // Or note if it is a graph (one allowed)
+            graphTrackID = i;
+            break;
+          }
+          if (track.trackFile.type === "haplotype") {
+            // Or a collection of haplotypes (one allowed)
+            haplotypeTrackID = i;
+            break;
           }
         }
 
@@ -202,6 +203,7 @@ class TubeMapContainer extends Component {
           // For each returned list of reads from a file, convert all those reads to tube map format.
           // Include total read count to prevent duplicate ids.
           // Also include the source track's ID.
+          console.log("readTrackIDs", readTrackIDs);
           let newReads = tubeMap.vgExtractReads(nodes, tracks, gam, totalReads, readTrackIDs[readsArr.length]);
           readsArr.push(newReads);
           totalReads += newReads.length;

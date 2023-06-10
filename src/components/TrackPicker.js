@@ -45,7 +45,6 @@ TrackPicker.propTypes = {
 
 TrackPicker.defaultProps = {
     tracks: {1: config.defaultTrackProps},
-    availableColors: [],
     onChange: () => {}
 }
 
