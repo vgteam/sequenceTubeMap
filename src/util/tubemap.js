@@ -395,6 +395,7 @@ export function setMappingQualityCutoff(value) {
 
 // main
 function createTubeMap() {
+  console.log('Recreating tube map in', svgID);
   trackRectangles = [];
   trackCurves = [];
   trackCorners = [];

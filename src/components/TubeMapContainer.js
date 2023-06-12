@@ -58,32 +58,11 @@ class TubeMapContainer extends Component {
     }
     // updating visOptions will cause an error if the tubemap is not in place yet.
     if(!this.state.isLoading) {
-      this.updateVisOptions();
+      // Hook into item clicks form the tube map
       tubeMap.setInfoCallback((text) => {
         this.setState({infoDialogContent: text});
       });
     }
-  }
-
-  updateVisOptions() {
-    const visOptions = this.props.visOptions;
-    visOptions.compressedView
-      ? tubeMap.setNodeWidthOption(1)
-      : tubeMap.setNodeWidthOption(0);
-    tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);
-    tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
-    tubeMap.setShowReadsFlag(visOptions.showReads);
-    tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
-
-    // apply new colorReadsByMappingQuality value to all tracks
-    // to be changed, add options to change colorReadsByMappingQuality individually
-    tubeMap.setColorReadsByMappingQualityFlag(visOptions.colorReadsByMappingQuality);
-
-    for (let i = 0; i < visOptions.colorSchemes.length; i++) {
-      // update tubemap colors
-      tubeMap.setColorSet(i, visOptions.colorSchemes[i]);
-    }
-    tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }
 
   render() {
@@ -139,6 +118,7 @@ class TubeMapContainer extends Component {
             tracks={this.state.tracks}
             reads={this.state.reads}
             region={this.state.region}
+            visOptions={this.props.visOptions}
           />
         </div>
       </div>
