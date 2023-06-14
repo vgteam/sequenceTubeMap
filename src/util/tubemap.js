@@ -2296,18 +2296,21 @@ function calculateTrackWidth() {
   // flag: if vg returns freq of 0 for all tracks, we will increase width manually
   let allAreFour = true;
 
+  const NARROW_WIDTH = 4;
+  const WIDE_WIDTH = 15;
+
   tracks.forEach((track) => {
     if (track.hasOwnProperty("freq")) {
       // custom track width
-      track.width = Math.round((Math.log(track.freq) + 1) * 4);
+      track.width = Math.round((Math.log(track.freq) + 1) * NARROW_WIDTH);
     } else {
       // default track width
-      track.width = 15;
+      track.width = WIDE_WIDTH;
       if (track.hasOwnProperty("type") && track.type === "read") {
-        track.width = 4;
+        track.width = NARROW_WIDTH;
       }
     }
-    if (track.width !== 4) {
+    if (track.width !== NARROW_WIDTH) {
       allAreFour = false;
     }
   });
@@ -2315,7 +2318,7 @@ function calculateTrackWidth() {
   if (allAreFour) {
     tracks.forEach((track) => {
       if (track.hasOwnProperty("freq")) {
-        track.width = 15;
+        track.width = WIDE_WIDTH;
       }
     });
   }
