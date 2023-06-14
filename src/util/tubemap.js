@@ -587,6 +587,8 @@ function setMapToMax(map, key, value) {
   }
 }
 
+const READ_WIDTH = 7;
+
 // add info about reads to nodes (incoming, outgoing and internal reads)
 function assignReadsToNodes() {
   nodes.forEach((node) => {
@@ -595,7 +597,7 @@ function assignReadsToNodes() {
     node.internalReads = [];
   });
   reads.forEach((read, idx) => {
-    read.width = 7;
+    read.width = i7;
     if (read.path.length === 1) {
       nodes[read.path[0].node].internalReads.push(idx);
     } else {
@@ -647,7 +649,7 @@ function placeReads() {
         currentY,
         node
       );
-      currentY += 7;
+      currentY += READ_WIDTH;
     });
     let maxY = currentY;
 
@@ -666,7 +668,7 @@ function placeReads() {
         !occupiedUntil.has(currentY) ||
         occupiedUntil.get(currentY) + 1 < reads[readElement[0]].firstNodeOffset
       ) {
-        currentY += 7;
+        currentY += READ_WIDTH;
         maxY = Math.max(maxY, currentY);
       } else {
         // otherwise push down incoming reads to make place for outgoing Read
@@ -675,7 +677,7 @@ function placeReads() {
           const incRead = reads[incReadElementIndices[0]];
           const incReadPathElement = incRead.path[incReadElementIndices[1]];
           if (incReadPathElement.y >= currentY) {
-            incReadPathElement.y += 7;
+            incReadPathElement.y += READ_WIDTH;
             setOccupiedUntil(
               occupiedUntil,
               incRead,
@@ -685,8 +687,8 @@ function placeReads() {
             );
           }
         });
-        currentY += 7;
-        maxY += 7;
+        currentY += READ_WIDTH;
+        maxY += READ_WIDTH;
       }
     });
 
@@ -701,7 +703,7 @@ function placeReads() {
         currentRead.firstNodeOffset < occupiedUntil.get(currentY) + 2 ||
         currentRead.finalNodeCoverLength > occupiedFrom.get(currentY) - 3
       ) {
-        currentY += 7;
+        currentY += READ_WIDTH;
       }
       currentRead.path[0].y = currentY;
       occupiedUntil.set(currentY, currentRead.finalNodeCoverLength);
@@ -2841,6 +2843,8 @@ function createFeatureRectangle(
   return { xStart: rectXStart, highlight: currentHighlight };
 }
 
+const MIN_BEND_WIDTH = 7;
+
 function generateForwardToReverse(
   x,
   yStart,
@@ -2855,7 +2859,7 @@ function generateForwardToReverse(
   x += 10 * extraRight[order];
   const yTop = Math.min(yStart, yEnd);
   const yBottom = Math.max(yStart, yEnd);
-  const radius = 7;
+  const radius = MIN_BEND_WIDTH;
 
   trackVerticalRectangles.push({
     // elongate incoming rectangle a bit to the right
@@ -2872,7 +2876,7 @@ function generateForwardToReverse(
     // vertical rectangle
     xStart: x + 5 + radius,
     yStart: yTop + trackWidth + radius - 1,
-    xEnd: x + 5 + radius + Math.min(7, trackWidth) - 1,
+    xEnd: x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth) - 1,
     yEnd: yBottom - radius + 1,
     color: trackColor,
     id: trackID,
@@ -2892,16 +2896,16 @@ function generateForwardToReverse(
 
   let d = `M ${x + 5} ${yBottom}`;
   d += ` Q ${x + 5 + radius} ${yBottom} ${x + 5 + radius} ${yBottom - radius}`;
-  d += ` H ${x + 5 + radius + Math.min(7, trackWidth)}`;
-  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${
+  d += ` H ${x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth)}`;
+  d += ` Q ${x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth)} ${
     yBottom + trackWidth
   } ${x + 5} ${yBottom + trackWidth}`;
   d += " Z ";
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
 
   d = `M ${x + 5} ${yTop}`;
-  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${yTop} ${
-    x + 5 + radius + Math.min(7, trackWidth)
+  d += ` Q ${x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth)} ${yTop} ${
+    x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth)
   } ${yTop + trackWidth + radius}`;
   d += ` H ${x + 5 + radius}`;
   d += ` Q ${x + 5 + radius} ${yTop + trackWidth} ${x + 5} ${
@@ -2925,7 +2929,7 @@ function generateReverseToForward(
 ) {
   const yTop = Math.min(yStart, yEnd);
   const yBottom = Math.max(yStart, yEnd);
-  const radius = 7;
+  const radius = MIN_BEND_WIDTH;
   x -= 10 * extraLeft[order];
 
   trackVerticalRectangles.push({
@@ -2939,7 +2943,7 @@ function generateReverseToForward(
     type,
   }); // elongate incoming rectangle a bit to the left
   trackVerticalRectangles.push({
-    xStart: x - 5 - radius - Math.min(7, trackWidth),
+    xStart: x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth),
     yStart: yTop + trackWidth + radius - 1,
     xEnd: x - 5 - radius - 1,
     yEnd: yBottom - radius + 1,
@@ -2962,8 +2966,8 @@ function generateReverseToForward(
   // Path for bottom 90 degree bend
   let d = `M ${x - 5} ${yBottom}`;
   d += ` Q ${x - 5 - radius} ${yBottom} ${x - 5 - radius} ${yBottom - radius}`;
-  d += ` H ${x - 5 - radius - Math.min(7, trackWidth)}`;
-  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${
+  d += ` H ${x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth)}`;
+  d += ` Q ${x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth)} ${
     yBottom + trackWidth
   } ${x - 5} ${yBottom + trackWidth}`;
   d += " Z ";
@@ -2971,8 +2975,8 @@ function generateReverseToForward(
 
   // Path for top 90 degree bend
   d = `M ${x - 5} ${yTop}`;
-  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${yTop} ${
-    x - 5 - radius - Math.min(7, trackWidth)
+  d += ` Q ${x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth)} ${yTop} ${
+    x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth)
   } ${yTop + trackWidth + radius}`;
   d += ` H ${x - 5 - radius}`;
   d += ` Q ${x - 5 - radius} ${yTop + trackWidth} ${x - 5} ${
@@ -4240,7 +4244,7 @@ function drawMismatches() {
                 (mm.pos !== read.finalNodeCoverLength ||
                   i !== read.sequenceNew.length - 1))
             ) {
-              drawInsertion(x - 3, y + 7, mm.seq, node.y);
+              drawInsertion(x - 3, y + READ_WIDTH, mm.seq, node.y);
             }
           } else if (mm.type === "deletion") {
             const x2 = getXCoordinateOfBaseWithinNode(node, mm.pos + mm.length);
@@ -4250,7 +4254,7 @@ function drawMismatches() {
               node,
               mm.pos + mm.seq.length
             );
-            drawSubstitution(x + 1, x2, y + 7, node.y, mm.seq);
+            drawSubstitution(x + 1, x2, y + READ_WIDTH, node.y, mm.seq);
           }
         });
       });
@@ -4297,7 +4301,7 @@ function drawDeletion(x1, x2, y, nodeY) {
     .attr("y1", y - 1)
     .attr("x2", x2)
     .attr("y2", y - 1)
-    .attr("stroke-width", 7)
+    .attr("stroke-width", READ_WIDTH)
     .attr("stroke", "grey")
     .attr("nodeY", nodeY)
     .on("mouseover", deletionMouseOver)
@@ -4359,7 +4363,7 @@ function substitutionMouseOver() {
     .append("line")
     .attr("class", "substitutionHighlight")
     .attr("x1", x1 - 1)
-    .attr("y1", y - 7)
+    .attr("y1", y - READ_WIDTH)
     .attr("x2", x1 - 1)
     .attr("y2", yTop + 5)
     .attr("stroke-width", 1)
@@ -4368,7 +4372,7 @@ function substitutionMouseOver() {
     .append("line")
     .attr("class", "substitutionHighlight")
     .attr("x1", x2 + 1)
-    .attr("y1", y - 7)
+    .attr("y1", y - READ_WIDTH)
     .attr("x2", x2 + 1)
     .attr("y2", yTop + 5)
     .attr("stroke-width", 1)
