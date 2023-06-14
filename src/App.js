@@ -153,16 +153,16 @@ class App extends Component {
       let newcolors = [...state.visOptions.colorSchemes]
       if (newcolors[index] === undefined) {
         // Handle the set call from example data maybe coming before we set up any nonempty real tracks.
-        // TODO: COme up with a better way to do this.
+        // TODO: Come up with a better way to do this.
         newcolors[index] = {...config.defaultReadColorPalette};
       }
-      newcolors[index][key] = value;
+      newcolors[index] = {...newcolors[index], [key]: value};
       console.log('Set index ' + index + ' key ' + key + ' to ' + value);
       console.log('New colors: ', newcolors);
       return {
         visOptions: {
           ...state.visOptions,
-          colors: newcolors,
+          colorSchemes: newcolors,
         },
       };
     });

@@ -124,9 +124,8 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  colorSchemes: [], 
+  colorSchemes: {}, 
            // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
-           // stores haplotype color in the first slot
   exonColors: "lightColors",
   hideLegendFlag: false,
   colorReadsByMappingQuality: false,
@@ -395,6 +394,7 @@ export function setMappingQualityCutoff(value) {
 
 // main
 function createTubeMap() {
+  console.log('Recreating tube map in', svgID);
   trackRectangles = [];
   trackCurves = [];
   trackCorners = [];
@@ -2349,6 +2349,7 @@ function getColorSet(colorSetName) {
 
 function generateTrackColor(track, highlight) {
 
+    
   //console.log("color schemes", config.colorSchemes);
   //console.log("source ID", track.sourceTrackID);
 
@@ -2367,6 +2368,7 @@ function generateTrackColor(track, highlight) {
   }
 
   if (track.hasOwnProperty("type") && track.type === "read") {
+    console.log("generating read color, sourceID: ", sourceID, "color set: ", getColorSet(config.colorSchemes[sourceID].mainPalette));
     if (config.colorSchemes[sourceID].colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
         Math.min(60, track.mapping_quality) / 60

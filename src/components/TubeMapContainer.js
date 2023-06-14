@@ -58,7 +58,7 @@ class TubeMapContainer extends Component {
     }
     // updating visOptions will cause an error if the tubemap is not in place yet.
     if(!this.state.isLoading) {
-      this.updateVisOptions();
+      // Hook into item clicks form the tube map
       tubeMap.setInfoCallback((text) => {
         this.setState({infoDialogContent: text});
       });
@@ -80,6 +80,7 @@ class TubeMapContainer extends Component {
     tubeMap.setColorReadsByMappingQualityFlag(visOptions.colorReadsByMappingQuality);
 
     for (const trackID in visOptions.colorSchemes) {
+      console.log("setting color: ", trackID, visOptions.colorSchemes[trackID]);
       tubeMap.setColorSet(trackID, visOptions.colorSchemes[trackID]);
     }
 
@@ -139,6 +140,7 @@ class TubeMapContainer extends Component {
             tracks={this.state.tracks}
             reads={this.state.reads}
             region={this.state.region}
+            visOptions={this.props.visOptions}
           />
         </div>
       </div>

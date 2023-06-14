@@ -191,7 +191,6 @@ class VisualizationOptions extends Component {
                     </React.Fragment>
                   )}
                 </FormGroup>
-                {trackSettingsList}
               </CardBody>
             </Collapse>
           </Card>
