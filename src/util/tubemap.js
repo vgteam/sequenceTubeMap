@@ -100,13 +100,36 @@ let inputTracks = [];
 let inputReads = [];
 let inputRegion = [];
 let nodes;
+// Each track has a `path`, which is an array of objects describing pieces of the path that need to be drawn, in order along the path. The objects in the path are Segment objects and have fields:
+//
+// * order: horizontal order number at which this piece of the track's path should be drawn.
+// * lane: vertical lane that this piece of the track's path should be drawn at, or null if not yet assigned.
+// * isForward: true if the track is running left to right here, false if it is running right to left.
+// * node: the node being visited, or null if this piece of the track is outside nodes.
 let tracks;
+// Each read also has a `path` list of objects (here Elements) with `order`, `isForward`, and `node` fields, but there is no `lane` field; reads are organized vertically using a completely different system than non-read tracks.
 let reads;
 let numberOfNodes;
 let numberOfTracks;
 let nodeMap; // maps node names to node indices
 let nodesPerOrder;
-let assignments = []; // contains info about lane assignments sorted by order
+// Contains info about lane assignments for tracks, in one list for each horizontal "order" slot.
+// Each entry is an Assignment, which is a list of NodeAssignment objects.
+// A NodeAssignment object is:
+//
+// * type: can be "single" (if only one track visits the node) or "multiple" (if multiple tracks visit the node)
+// * node: the node index in nodes that the Assignment belongs to, or null if the Assignment is for a region outside of any node.
+// * tracks: a list of SegmentAssignment objects
+//
+// A SegmentAssignment object contains:
+//
+// * trackID: the number of the track that the SegmentAssignment represents a piece of.
+// * segmentID: the number along all that track's Segments in the track's `path` that is assigned here.
+// * compareToFromSame: any earlier SegmentAssignment for this track in this order slot, or null. TODO: This is never used. 
+// 
+// This is all duplicative with the tracks' `path` lists, but is organized by order slot instead of by track.
+// This is NOT used for reads! Reads use their own system.
+let assignments = []; 
 let extraLeft = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let extraRight = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let maxOrder; // horizontal order of the rightmost node
@@ -842,6 +865,7 @@ function calculateBottomY() {
 
 // generate path-info for each read
 // containing order, node and orientation, but no concrete coordinates
+// TODO: Duplicates a lot of the same work as generateLaneAssignment() does for non-read tracks.
 function generateBasicPathsForReads() {
   let currentNodeIndex;
   let currentNodeIsForward;
@@ -1736,6 +1760,10 @@ function generateLaneAssignment() {
   let currentNode;
   let previousNode;
   let previousNodeIsForward;
+  // For each horizontal order slot, for each track number, holds the
+  // SegmentAssignment object for the visit of that track to that order slot.
+  // When an order slot is visited multiple times, holds whatever
+  // SegmentAssignment was created most recently.
   const prevSegmentPerOrderPerTrack = [];
   const isPositive = (n) => ((n = +n) || 1 / n) >= 0;
 
@@ -1749,6 +1777,13 @@ function generateLaneAssignment() {
   }
 
   tracks.forEach((track, trackNo) => {
+    // Trace along each track and create Segment objects in the track's path
+    // field, and SegmentAssignment objects in NodeAssignment objects in all
+    // the order slots that are visited by the track. Set up all the
+    // cross-reverencing indexes and work out when we need segments to let
+    // tracks pass nodes and turn around, but leave all the assigned lane
+    // values empty for now.
+
     // add info for start of track
     currentNodeIndex = Math.abs(track.indexSequence[0]);
     currentNodeIsForward = isPositive(track.indexSequence[0]);
@@ -1991,7 +2026,8 @@ function generateLaneAssignment() {
       }
     }
   });
-
+  
+  // Now sweep left to right across order slots and assign vertical lanes to all the segments.
   for (let i = 0; i <= maxOrder; i += 1) {
     generateSingleLaneAssignment(assignments[i], i); // this is where the lanes get assigned
   }
