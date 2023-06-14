@@ -6,7 +6,6 @@ import { fetchAndParse } from "../fetchAndParse";
 // import defaultConfig from '../config.default.json';
 import config from "../config.json";
 import DataPositionFormRow from "./DataPositionFormRow";
-import MountedDataFormRow from "./MountedDataFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
@@ -98,17 +97,18 @@ function tracksEqual(curr, next) {
   const next_file = next.trackFile.name;
 
   const curr_settings = curr.trackColorSettings;
-  const next_settings = curr.trackColorSettings;
+  const next_settings = next.trackColorSettings;
   
   // check if color settings are equal
-  if (curr_settings.mainPalette !== next_settings.mainPalette || 
-      curr_settings.auxPalette !== next_settings.auxPalette ||
-      curr_settings.colorReadsByMappingQuality !== next_settings.colorReadsByMappingQuality) {
-        
-      console.log("tracks have differnt color settings");
-      return false;
+  if (curr_settings && next_settings){
+    if (curr_settings.mainPalette !== next_settings.mainPalette || 
+        curr_settings.auxPalette !== next_settings.auxPalette ||
+        curr_settings.colorReadsByMappingQuality !== next_settings.colorReadsByMappingQuality) {
+          
+        console.log("tracks have differnt color settings");
+        return false;
+    }
   }
-
   //count falsy file names as the same
   if ((!curr_file && !next_file) || curr_file === next_file) {
     return true;
