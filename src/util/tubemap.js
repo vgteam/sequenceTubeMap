@@ -597,7 +597,7 @@ function assignReadsToNodes() {
     node.internalReads = [];
   });
   reads.forEach((read, idx) => {
-    read.width = i7;
+    read.width = READ_WIDTH;
     if (read.path.length === 1) {
       nodes[read.path[0].node].internalReads.push(idx);
     } else {
@@ -632,88 +632,15 @@ function placeReads() {
   const sortedNodes = nodes.slice();
   sortedNodes.sort(compareNodesByOrder);
 
+  // Make a list of all read indexes
+  let allReadIDs = [];
+  for (let i = 0; i < reads.length; i++) {
+    allReadIDs.push(i);
+  }
+
   // iterate over all nodes
   sortedNodes.forEach((node) => {
-    // sort incoming reads
-    node.incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
-
-    // place incoming reads
-    let currentY = node.y + node.contentHeight;
-    const occupiedUntil = new Map();
-    node.incomingReads.forEach((readElement) => {
-      reads[readElement[0]].path[readElement[1]].y = currentY;
-      setOccupiedUntil(
-        occupiedUntil,
-        reads[readElement[0]],
-        readElement[1],
-        currentY,
-        node
-      );
-      currentY += READ_WIDTH;
-    });
-    let maxY = currentY;
-
-    // sort outgoing reads
-    node.outgoingReads.sort(compareReadOutgoingSegmentsByGoingTo);
-
-    // place outgoing reads
-    const occupiedFrom = new Map();
-    currentY = node.y + node.contentHeight;
-    node.outgoingReads.forEach((readElement) => {
-      // place in next lane
-      reads[readElement[0]].path[readElement[1]].y = currentY;
-      occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
-      // if no conflicts
-      if (
-        !occupiedUntil.has(currentY) ||
-        occupiedUntil.get(currentY) + 1 < reads[readElement[0]].firstNodeOffset
-      ) {
-        currentY += READ_WIDTH;
-        maxY = Math.max(maxY, currentY);
-      } else {
-        // otherwise push down incoming reads to make place for outgoing Read
-        occupiedUntil.set(currentY, 0);
-        node.incomingReads.forEach((incReadElementIndices) => {
-          const incRead = reads[incReadElementIndices[0]];
-          const incReadPathElement = incRead.path[incReadElementIndices[1]];
-          if (incReadPathElement.y >= currentY) {
-            incReadPathElement.y += READ_WIDTH;
-            setOccupiedUntil(
-              occupiedUntil,
-              incRead,
-              incReadElementIndices[1],
-              incReadPathElement.y,
-              node
-            );
-          }
-        });
-        currentY += READ_WIDTH;
-        maxY += READ_WIDTH;
-      }
-    });
-
-    // sort internal reads
-    node.internalReads.sort(compareInternalReads);
-
-    // place internal reads
-    node.internalReads.forEach((readIdx) => {
-      const currentRead = reads[readIdx];
-      currentY = node.y + node.contentHeight;
-      while (
-        currentRead.firstNodeOffset < occupiedUntil.get(currentY) + 2 ||
-        currentRead.finalNodeCoverLength > occupiedFrom.get(currentY) - 3
-      ) {
-        currentY += READ_WIDTH;
-      }
-      currentRead.path[0].y = currentY;
-      occupiedUntil.set(currentY, currentRead.finalNodeCoverLength);
-      maxY = Math.max(maxY, currentY);
-    });
-
-    // adjust node height and move other nodes vertically down
-    const heightIncrease = maxY - node.y - node.contentHeight;
-    node.contentHeight += heightIncrease;
-    adjustVertically3(node, heightIncrease);
+    placeReadSet(allReadIDs, node);
   });
 
   // place read segments which are without node
@@ -741,6 +668,103 @@ function placeReads() {
     console.log("Reads:");
     console.log(reads);
   }
+}
+
+// Place a particular collection of reads, identified by a list of read
+// numbers, into the given node at the right Y coordinates. All reads in all
+// nodes above it, and no reads in any nodes below it, are already placed.
+// Makes the given node bigger if needed and moves other nodes down if needed.
+function placeReadSet(readIDs, node) {
+  
+  // Turn the read IDs into a set
+  let toPlace = new Set(readIDs);
+
+  // Get arrays of the read entry/exit/internal-ness records we want to work on
+  let incomingReads = node.incomingReads.filter(([readID, pathIndex]) => toPlace.has(readID));
+  let outgoingReads = node.outgoingReads.filter(([readID, pathIndex]) => toPlace.has(readID));
+  let internalReads = node.internalReads.filter((readID) => toPlace.has(readID));
+  
+
+  // sort incoming reads
+  incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
+
+  // place incoming reads
+  let currentY = node.y + node.contentHeight;
+  const occupiedUntil = new Map();
+  incomingReads.forEach((readElement) => {
+    reads[readElement[0]].path[readElement[1]].y = currentY;
+    setOccupiedUntil(
+      occupiedUntil,
+      reads[readElement[0]],
+      readElement[1],
+      currentY,
+      node
+    );
+    currentY += READ_WIDTH;
+  });
+  let maxY = currentY;
+
+  // sort outgoing reads
+  outgoingReads.sort(compareReadOutgoingSegmentsByGoingTo);
+
+  // place outgoing reads
+  const occupiedFrom = new Map();
+  currentY = node.y + node.contentHeight;
+  outgoingReads.forEach((readElement) => {
+    // place in next lane
+    reads[readElement[0]].path[readElement[1]].y = currentY;
+    occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
+    // if no conflicts
+    if (
+      !occupiedUntil.has(currentY) ||
+      occupiedUntil.get(currentY) + 1 < reads[readElement[0]].firstNodeOffset
+    ) {
+      currentY += READ_WIDTH;
+      maxY = Math.max(maxY, currentY);
+    } else {
+      // otherwise push down incoming reads to make place for outgoing Read
+      occupiedUntil.set(currentY, 0);
+      incomingReads.forEach((incReadElementIndices) => {
+        const incRead = reads[incReadElementIndices[0]];
+        const incReadPathElement = incRead.path[incReadElementIndices[1]];
+        if (incReadPathElement.y >= currentY) {
+          incReadPathElement.y += READ_WIDTH;
+          setOccupiedUntil(
+            occupiedUntil,
+            incRead,
+            incReadElementIndices[1],
+            incReadPathElement.y,
+            node
+          );
+        }
+      });
+      currentY += READ_WIDTH;
+      maxY += READ_WIDTH;
+    }
+  });
+
+  // sort internal reads
+  internalReads.sort(compareInternalReads);
+
+  // place internal reads
+  internalReads.forEach((readIdx) => {
+    const currentRead = reads[readIdx];
+    currentY = node.y + node.contentHeight;
+    while (
+      currentRead.firstNodeOffset < occupiedUntil.get(currentY) + 2 ||
+      currentRead.finalNodeCoverLength > occupiedFrom.get(currentY) - 3
+    ) {
+      currentY += READ_WIDTH;
+    }
+    currentRead.path[0].y = currentY;
+    occupiedUntil.set(currentY, currentRead.finalNodeCoverLength);
+    maxY = Math.max(maxY, currentY);
+  });
+
+  // adjust node height and move other nodes vertically down
+  const heightIncrease = maxY - node.y - node.contentHeight;
+  node.contentHeight += heightIncrease;
+  adjustVertically3(node, heightIncrease);
 }
 
 // keeps track of where reads end within nodes
@@ -2199,6 +2223,7 @@ function adjustVertically(assignment, potentialAdjustmentValues) {
   });
 }
 
+// Budge down all nodes and out-of-node tracks below this node by this amount
 function adjustVertically3(node, adjustBy) {
   if (node.hasOwnProperty("order")) {
     assignments[node.order].forEach((assignmentNode) => {
