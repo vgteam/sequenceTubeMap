@@ -130,6 +130,8 @@ const config = {
   hideLegendFlag: false,
   colorReadsByMappingQuality: false,
   mappingQualityCutoff: 0,
+  // Should different source tracks be separated vertically?
+  collateTracks: true,
   showInfoCallback: function(info) {alert(info)},
 };
 
