@@ -10,6 +10,7 @@ const CLICKED_TEXT = " Copied link!";
 
 // uses Clipboard API to write text to clipboard
 export const writeToClipboard = (text) => {
+  throw new Error("boom");
   navigator.clipboard.writeText(text);
 };
 // For testing purposes
@@ -25,6 +26,7 @@ export function CopyLink(props) {
 
 
   const handleCopyLink = () => {
+    setOpen(!open);
     // Turn viewTarget into a URL query string
     const viewTarget = props.getCurrentViewTarget();
     // Don't stringify objects for readability
@@ -33,19 +35,19 @@ export function CopyLink(props) {
     // complete url
     const full = window.location.origin + "?" + params;
     console.log(full);
-    
+
     try{
       // copy full to clipboard
       copyCallback(full);
       // change text
       setText(CLICKED_TEXT);
     }
-    catch(error){
+    catch(err){
       setText(UNCLICKED_TEXT);
       setDialogLink(full);
-      console.log("copy error: ", error)
+      console.log("copy error")
     }
-  
+
   };
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
@@ -56,9 +58,10 @@ export function CopyLink(props) {
         {text}
       </Button>
       {/* conditional rendering information from: https://legacy.reactjs.org/docs/conditional-rendering.html */}
-      {(dialogLink != null) && 
-        <PopupDialog open={open} close={close}>{dialogLink}</PopupDialog>
-      }
+      {(dialogLink != null) && <PopupDialog open={open} close={close}>
+        <h4>Link to Data</h4>
+        {dialogLink}
+      </PopupDialog> }
     </>
     
   );
