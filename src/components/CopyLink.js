@@ -10,7 +10,6 @@ const CLICKED_TEXT = " Copied link!";
 
 // uses Clipboard API to write text to clipboard
 export const writeToClipboard = (text) => {
-  throw new Error("boom");
   navigator.clipboard.writeText(text);
 };
 // For testing purposes
@@ -63,7 +62,6 @@ export function CopyLink(props) {
         {dialogLink}
       </PopupDialog> }
     </>
-    
   );
 }
 
