@@ -12,6 +12,7 @@ const CLICKED_TEXT = " Copied link!";
 export const writeToClipboard = (text) => {
   navigator.clipboard.writeText(text);
 };
+
 // For testing purposes
 let copyCallback = writeToClipboard;
 
@@ -23,8 +24,8 @@ export function CopyLink(props) {
   const [text, setText] = useState(UNCLICKED_TEXT);
   const [dialogLink, setDialogLink] = useState(undefined);
 
-
   const handleCopyLink = () => {
+    // open popup
     setOpen(!open);
     // Turn viewTarget into a URL query string
     const viewTarget = props.getCurrentViewTarget();
@@ -48,8 +49,10 @@ export function CopyLink(props) {
     }
 
   };
+
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+
   return (
     <>
       <Button id="copyLinkButton" color="primary" onClick={handleCopyLink}>
@@ -58,8 +61,8 @@ export function CopyLink(props) {
       </Button>
       {/* conditional rendering information from: https://legacy.reactjs.org/docs/conditional-rendering.html */}
       {(dialogLink != null) && <PopupDialog open={open} close={close}>
-        <h4><a href = {dialogLink} target = "_blank">Link to Data</a></h4>
-        <p>Use this link to return to this view. Right click link to copy this view location.</p>
+        <h5>Link to Data</h5>
+        <p><a href = {dialogLink} target = "_blank" rel="noopener noreferrer">Data</a><br/>Click this link to return to this view. Right click link to copy this view location.</p>
       </PopupDialog> }
     </>
   );
