@@ -58,8 +58,8 @@ export function CopyLink(props) {
       </Button>
       {/* conditional rendering information from: https://legacy.reactjs.org/docs/conditional-rendering.html */}
       {(dialogLink != null) && <PopupDialog open={open} close={close}>
-        <h4>Link to Data</h4>
-        {dialogLink}
+        <h4><a href = {dialogLink} target = "_blank">Link to Data</a></h4>
+        <p>Use this link to return to this view. Right click link to copy this view location.</p>
       </PopupDialog> }
     </>
   );
