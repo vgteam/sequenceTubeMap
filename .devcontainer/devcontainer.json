@@ -2,7 +2,8 @@
   "image": "quay.io/vgteam/vg:v1.49.0",
   "forwardPorts": [3000],
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {}
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/git:1": {}
   },
   "postCreateCommand": ". ${NVM_DIR}/nvm.sh && nvm install"
 }
