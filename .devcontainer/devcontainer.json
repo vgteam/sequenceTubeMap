@@ -1,6 +1,6 @@
 {
   "image": "quay.io/vgteam/vg:v1.49.0",
-  "forwardPorts": [3001],
+  "forwardPorts": [3000, 3001],
   "features": {
     "ghcr.io/devcontainers/features/node:1": {},
     "ghcr.io/devcontainers/features/git:1": {},
@@ -9,6 +9,16 @@
       "command": "echo aWYgW1sgISAteiAiJHtHSVRIVUJfQ09ERVNQQUNFU19QT1JUX0ZPUldBUkRJTkdfRE9NQUlOfSIgXV0gOyB0aGVuIGV4cG9ydCBXRFNfU09DS0VUX0hPU1Q9IiR7Q09ERVNQQUNFX05BTUV9LTMwMDEuJHtHSVRIVUJfQ09ERVNQQUNFU19QT1JUX0ZPUldBUkRJTkdfRE9NQUlOfSI7IGV4cG9ydCBXRFNfU09DS0VUX1BPUlQ9NDQzOyBleHBvcnQgSE9TVD0wLjAuMC4wOyBleHBvcnQgSFRUUFM9dHJ1ZTsgZmkK | base64 --decode >>/etc/bash.bashrc # Line to tell Webpack dev server to ignore HOST and use the Github Codespace port forward if we are in a Codespace. Need to base64 here because double quotes cannot be escaped through the devcontainer build process."
     }
   },
-  "postCreateCommand": ". ${NVM_DIR}/nvm.sh && nvm install"
+"postCreateCommand": ". ${NVM_DIR}/nvm.sh && nvm install",
+"portsAttributes": {
+	"3001": {
+		"label": "devserver",
+    "protocol": "https"
+	},
+  "3000": {
+    "label": "api",
+    "onAutoForward": "silent"
+  }
+}
 }
 
