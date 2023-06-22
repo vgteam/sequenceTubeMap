@@ -1,12 +1,12 @@
 {
   "image": "quay.io/vgteam/vg:v1.49.0",
-  "forwardPorts": [3000],
+  "forwardPorts": [3001],
   "features": {
     "ghcr.io/devcontainers/features/node:1": {},
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers-contrib/features/apt-get-packages:1": {"packages": "nano"},
     "ghcr.io/devcontainers-contrib/features/bash-command:1": {
-      "command": "echo aWYgW1sgISAteiAiJHtHSVRIVUJfQ09ERVNQQUNFU19QT1JUX0ZPUldBUkRJTkdfRE9NQUlOfSIgXV0gOyB0aGVuIGV4cG9ydCBXRFNfU09DS0VUX0hPU1Q9IiR7Q09ERVNQQUNFX05BTUV9LTMwMDAuJHtHSVRIVUJfQ09ERVNQQUNFU19QT1JUX0ZPUldBUkRJTkdfRE9NQUlOfSI7IGV4cG9ydCBXRFNfU09DS0VUX1BPUlQ9NDQzOyBmaQo= | base64 --decode >>/etc/bash.bashrc # Line to tell Webpack dev server to ignore HOST and use the Github Codespace port forward if we are in a Codespace. Need to base64 here because double quotes cannot be escaped through the devcontainer build process."
+      "command": "echo aWYgW1sgISAteiAiJHtHSVRIVUJfQ09ERVNQQUNFU19QT1JUX0ZPUldBUkRJTkdfRE9NQUlOfSIgXV0gOyB0aGVuIGV4cG9ydCBXRFNfU09DS0VUX0hPU1Q9IiR7Q09ERVNQQUNFX05BTUV9LTMwMDEuJHtHSVRIVUJfQ09ERVNQQUNFU19QT1JUX0ZPUldBUkRJTkdfRE9NQUlOfSI7IGV4cG9ydCBXRFNfU09DS0VUX1BPUlQ9NDQzOyBmaQo= | base64 --decode >>/etc/bash.bashrc # Line to tell Webpack dev server to ignore HOST and use the Github Codespace port forward if we are in a Codespace. Need to base64 here because double quotes cannot be escaped through the devcontainer build process."
     }
   },
   "postCreateCommand": ". ${NVM_DIR}/nvm.sh && nvm install"
