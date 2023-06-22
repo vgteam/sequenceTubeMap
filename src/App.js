@@ -43,6 +43,8 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+    console.log('Tube map statting up with API URL: ' + props.apiUrl)
+
     // Set defaultViewTarget to either URL params (if present) or the first example
     this.defaultViewTarget =
       urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
@@ -213,7 +215,7 @@ App.defaultProps = {
   // the config or the browser, but needs to be swapped out in the fake
   // browser testing environment to point to a real testing backend.
   // Note that host includes the port.
-  apiUrl: (config.BACKEND_URL || `http://${window.location.host}`) + "/api/v0",
+  apiUrl: (config.BACKEND_URL || `${window.location.origin}`) + "/api/v0",
 };
 
 export default App;
