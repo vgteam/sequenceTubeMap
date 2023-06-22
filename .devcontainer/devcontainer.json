@@ -1,6 +1,6 @@
 {
   "image": "quay.io/vgteam/vg:v1.49.0",
-  "forwardPorts": [3000, 3001],
+  "forwardPorts": [3000],
   "features": {
     "ghcr.io/devcontainers/features/node:1": {}
   },
