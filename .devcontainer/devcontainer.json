@@ -3,7 +3,10 @@
   "forwardPorts": [3000],
   "features": {
     "ghcr.io/devcontainers/features/node:1": {},
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers-contrib/features/bash-command:1": {
+      "command": "echo 'if [[ ! -z \"$GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN\" ]] ; then export WDS_SOCKET_HOST=\"${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}\"; export WDS_SOCKET_PORT=443; fi' >>/etc/bash.bashrc"
+    }
   },
   "postCreateCommand": ". ${NVM_DIR}/nvm.sh && nvm install"
 }
