@@ -31,7 +31,7 @@ export function CopyLink(props) {
     const viewTarget = props.getCurrentViewTarget();
     // Don't stringify objects for readability
     // https://github.com/ljharb/qs#stringifying
-    const params = qs.stringify(viewTarget, { encode: false });
+    const params = qs.stringify(viewTarget, { encodeValuesOnly: true });
     // complete url
     const full = window.location.origin + "?" + params;
     console.log(full);
