@@ -28,7 +28,7 @@ type track = {
 }
 
 type tracks = {
-  trackID: track;
+  [key: number]: track;
 }
 
 // Describes something the Tube Map can look at, specifically a region and the files the region is in.

@@ -314,7 +314,7 @@ class HeaderForm extends Component {
           "Content-Type": "application/json",
         },
       });
-      if (json.files.length === 0) {
+      if (!json.files || json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
           json.error || "Server did not return a list of mounted filenames.";
