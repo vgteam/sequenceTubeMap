@@ -2349,10 +2349,6 @@ function getColorSet(colorSetName) {
 
 function generateTrackColor(track, highlight) {
 
-    
-  //console.log("color schemes", config.colorSchemes);
-  //console.log("source ID", track.sourceTrackID);
-
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
 
@@ -2368,6 +2364,7 @@ function generateTrackColor(track, highlight) {
   }
 
   if (track.hasOwnProperty("type") && track.type === "read") {
+    console.log("track", track);
     console.log("generating read color, sourceID: ", sourceID, "color set: ", getColorSet(config.colorSchemes[sourceID].mainPalette));
     if (config.colorSchemes[sourceID].colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
@@ -2399,6 +2396,7 @@ function generateTrackColor(track, highlight) {
       trackColor = colorSet[track.id % colorSet.length];
     }
   }
+  console.log("returning track color", trackColor);
   return trackColor;
 }
 

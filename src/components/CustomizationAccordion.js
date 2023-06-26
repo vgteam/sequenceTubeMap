@@ -57,10 +57,11 @@ class VisualizationOptions extends Component {
     for (let key in this.props.tracks) {
       // Generate settings controls for each track
       let track = this.props.tracks[key];
+      console.log(track);
       if (!track.trackFile) {
         continue;
       }
-      let type = track.trackFile.type;
+      let type = track.trackType;
       if (type === "graph") {
         trackSettingsList.push(
           <TrackSettings key={key} label="Graph Paths" fileType={type} trackColorSettings={visOptions.colorSchemes[key]} setTrackColorSetting={this.setColorWithIndex(key)} />

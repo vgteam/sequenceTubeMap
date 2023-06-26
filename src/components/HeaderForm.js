@@ -93,8 +93,8 @@ function tracksEqual(curr, next) {
 
 
 
-  const curr_file = curr.trackFile.name;
-  const next_file = next.trackFile.name;
+  const curr_file = curr.trackFile;
+  const next_file = next.trackFile;
 
   const curr_settings = curr.trackColorSettings;
   const next_settings = next.trackColorSettings;
@@ -208,10 +208,10 @@ class HeaderForm extends Component {
       this.getBedRegions(bedSelect, dataPath);
     }
     for (const key in ds.tracks) {
-      if (ds.tracks[key].trackFile.type === fileTypes.GRAPH) {
+      if (ds.tracks[key].trackType === fileTypes.GRAPH) {
         // Load the paths for any graph tracks
         console.log("Get path names for track: ", ds.tracks[key]);
-        this.getPathNames(ds.tracks[key].trackFile.name, dataPath);
+        this.getPathNames(ds.tracks[key].trackFile, dataPath);
       }
     }
     this.setState((state) => {
@@ -243,13 +243,13 @@ class HeaderForm extends Component {
       let maxKey = -1;
       for (const key in state.tracks) {
         let track = state.tracks[key];
-        if (track.trackFile.type === type) {
+        if (track.trackType === type) {
           console.log("See file " + seenTracksOfType + " of right type");
           if (seenTracksOfType === index) {
             if (file !== "none") {
               // We want to adjust it, so keep a modified copy of it
               let newTrack = JSON.parse(JSON.stringify(track));
-              newTrack.trackFile.name = file;
+              newTrack.trackFile = file;
               newTracks[key] = newTrack;
             }
             // If the file is "none" we drop the track.
@@ -292,10 +292,10 @@ class HeaderForm extends Component {
       if (track === -1) {
         continue;
       }
-      if (track.trackFile.type === type) {
+      if (track.trackType === type) {
         if (seenTracksOfType === index) {
           // This is the one. Return its filename.
-          return track.trackFile.name;
+          return track.trackFile;
         }
         seenTracksOfType++;
       } 
@@ -331,11 +331,11 @@ class HeaderForm extends Component {
               this.getBedRegions(bedSelect, "mounted");
             }
             for (const key in state.tracks) {
-              if (state.tracks[key].trackFile.type === fileTypes.GRAPH) {
+              if (state.tracks[key].trackType === fileTypes.GRAPH) {
                 // Load the paths for any graph tracks.
                 // TODO: Do we need to do this now?
                 console.log("Get path names for track: ", state.tracks[key]);
-                this.getPathNames(state.tracks[key].trackFile.name, "mounted");
+                this.getPathNames(state.tracks[key].trackFile, "mounted");
               }
             } 
             return {
@@ -467,10 +467,10 @@ class HeaderForm extends Component {
             this.setState({ regionInfo: {} });
           }
           for (const key in ds.tracks) {
-            if (ds.tracks[key].trackFile.type === fileTypes.GRAPH) {
+            if (ds.tracks[key].trackType === fileTypes.GRAPH) {
               // Load the paths for any graph tracks.
               console.log("Get path names for track: ", ds.tracks[key]);
-              this.getPathNames(ds.tracks[key].trackFile.name, dataPath);
+              this.getPathNames(ds.tracks[key].trackFile, dataPath);
             }
           }
           this.setState({
@@ -724,7 +724,7 @@ class HeaderForm extends Component {
                 <React.Fragment>
                   <TrackPicker
                     tracks={this.state.tracks}
-                    availableTracks={[{"files": this.state.fileSelectOptions}]}
+                    availableTracks={this.state.fileSelectOptions}
                     onChange={this.handleInputChange}
                   />
 

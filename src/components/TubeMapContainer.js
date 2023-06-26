@@ -173,16 +173,15 @@ class TubeMapContainer extends Component {
         console.log("getting viewTarget ", this.props.viewTarget);
         for (const i in this.props.viewTarget.tracks) {
           const track = this.props.viewTarget.tracks[i];
-          console.log(track);
-          if (track.trackFile.type === "read") {
+          if (track.trackType === "read") {
             //add track index to array if the track contains a gam file
             readTrackIDs.push(i);
           }
-          if (track.trackFile.type === "graph") {
+          if (track.trackType === "graph") {
             // Or note if it is a graph (one allowed)
             graphTrackID = i;
           }
-          if (track.trackFile.type === "haplotype") {
+          if (track.trackType === "haplotype") {
             // Or a collection of haplotypes (one allowed)
             haplotypeTrackID = i;
           }
@@ -198,6 +197,7 @@ class TubeMapContainer extends Component {
         let readsArr = [];
         // Count total reads seen so far.
         let totalReads = 0;
+        console.log("json gams", Object.values(json.gam));
         for (const gam of Object.values(json.gam)) {
           // For each returned list of reads from a file, convert all those reads to tube map format.
           // Include total read count to prevent duplicate ids.

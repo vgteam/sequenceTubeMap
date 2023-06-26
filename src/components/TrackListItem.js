@@ -74,6 +74,7 @@ export const TrackListItem = ({
     // displayed elements uses propChanges(local state) first, then uses trackProps
     // Isn't just a || because propChanges can set the trackFile to be undefined
     const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
+    console.log(displayedFile);
     return (
       <Container key={trackID} style={{ width: "800px", marginLeft: 0 }}>
         <Row className="g-0">

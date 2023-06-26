@@ -13,16 +13,10 @@ type DataType = "built-in" | "file-upload" | "mounted files" | "examples";
 // Files like GBZ contains graph and maybe haplotype and so can be either
 type filetype = "graph" | "haplotype" | "read" | "bed";
 
-// Describes a file via name and type(graph, haplotype)
-// e.g name: cactus.xg, type: graph
-type file = {
-  name: string;
-  type: filetype;
-};
 
 // Contains information necessary to make a track
 type track = {
-  trackFile: file;
+  trackFile: string; // Name of file
   trackType: filetype;
   trackColorSettings: ColorScheme;
 }

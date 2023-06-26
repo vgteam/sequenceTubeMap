@@ -218,8 +218,8 @@ function endsWithExtensions(file, extensions) {
 // returns the file name of the specified type in that track
 // returns falsy value if file type is not found
 function getFileFromType(track, type) {
-  if (track.trackFile.type == type) {
-    return track.trackFile.name;
+  if (track.trackType === type) {
+    return track.trackFile;
   }
   return "none";
 }
@@ -967,13 +967,13 @@ api.get("/getFilenames", (req, res) => {
     // list files in folder
     fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
       if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
-        result.files.push({"name": file, "type": "graph"});
+        result.files.push({"trackFile": file, "trackType": "graph"});
       }
       if (endsWithExtensions(file, HAPLOTYPE_EXTENSIONS)) {
-        result.files.push({"name": file, "type": "haplotype"});
+        result.files.push({"trackFile": file, "trackType": "haplotype"});
       }
       if (file.endsWith(".sorted.gam")) {
-        result.files.push({"name": file, "type": "read"});
+        result.files.push({"trackFile": file, "trackType": "read"});
       }
       if (file.endsWith(".bed")) {
         result.bedFiles.push(file);

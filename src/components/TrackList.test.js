@@ -110,7 +110,8 @@ describe('TrackList', () => {
         fireEvent.click(getByText("fileB1.gbwt"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(2);
-        newTracks[1].trackFile = {"name": "fileB1.gbwt", "type": "haplotype"};
+        newTracks[1].trackFile = "fileB1.gbwt";
+        newTracks[1].trackType = "haplotype";
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
 
         // rerender file select effect
