@@ -149,7 +149,7 @@ describe('TrackPickerDisplay', () => {
         fireEvent.click(getByText("fileB2.gam"));
 
         newTracks[4] = {
-            trackFile: {"name": "fileB2.gam", "type": "read"},
+            trackFile: "fileB2.gam",
             trackType: "read",
             trackColorSettings: {    
                 mainPalette: "blues",
