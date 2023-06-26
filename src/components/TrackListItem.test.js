@@ -100,7 +100,7 @@ describe('TrackListItem', () => {
 
         expect(fakeOnChange).toHaveBeenCalledTimes(2);
         expect(fakeOnChange).toHaveBeenCalledWith(1, {
-            trackFile: {"name": "fileB1.gbwt", "type": "haplotype"},
+            trackFile: "fileB1.gbwt",
             trackType: "haplotype",
             trackColorSettings: trackColorSettings
         });
@@ -108,7 +108,7 @@ describe('TrackListItem', () => {
         rerender(
             <TrackListItem 
             trackProps={{
-                trackFile: {"name": "fileB1.gbwt", "type": "haplotype"},
+                trackFile: "fileB1.gbwt",
                 trackType: "haplotype",
                 trackColorSettings: trackColorSettings
               }}

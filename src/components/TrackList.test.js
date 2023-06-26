@@ -35,11 +35,11 @@ describe('TrackList', () => {
         },
     }
     const availableColors = ["greys", "ygreys", "reds", "plainColors", "lightColors"];
-    const availableTracks = [{"files": [{"name": "fileA1.vg", "type": "graph"},
-                                        {"name": "fileA2.gbwt", "type": "haplotype"}]},
-                             {"files": [{"name": "fileB1.gbwt", "type": "haplotype"},
-                                        {"name": "fileB2.gam", "type": "read"}]},
-                             {"files": [{"name": "fileC1.xg", "type": "graph"}]}];
+    const availableTracks = [{"trackFile": "fileA1.vg", "trackType": "graph"},
+                            {"trackFile": "fileA2.gbwt", "trackType": "haplotype"},
+                            {"trackFile": "fileB1.gbwt", "trackType": "haplotype"},
+                            {"trackFile": "fileB2.gam", "trackType": "read"},
+                            {"trackFile": "fileC1.xg", "trackType": "graph"}];
 
     function rerenderTrackList(rerender, newTracks, fakeOnChange, fakeOnDelete) {
         rerender(

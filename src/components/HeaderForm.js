@@ -105,7 +105,6 @@ function tracksEqual(curr, next) {
         curr_settings.auxPalette !== next_settings.auxPalette ||
         curr_settings.colorReadsByMappingQuality !== next_settings.colorReadsByMappingQuality) {
           
-        console.log("tracks have differnt color settings");
         return false;
     }
   }
@@ -244,7 +243,6 @@ class HeaderForm extends Component {
       for (const key in state.tracks) {
         let track = state.tracks[key];
         if (track.trackType === type) {
-          console.log("See file " + seenTracksOfType + " of right type");
           if (seenTracksOfType === index) {
             if (file !== "none") {
               // We want to adjust it, so keep a modified copy of it
@@ -259,7 +257,6 @@ class HeaderForm extends Component {
           }
           seenTracksOfType++;
         } else {
-          console.log("See file of other type");
           // We want to keep all tracks of other types as is
           newTracks[key] = track;
         }

@@ -2364,8 +2364,6 @@ function generateTrackColor(track, highlight) {
   }
 
   if (track.hasOwnProperty("type") && track.type === "read") {
-    console.log("track", track);
-    console.log("generating read color, sourceID: ", sourceID, "color set: ", getColorSet(config.colorSchemes[sourceID].mainPalette));
     if (config.colorSchemes[sourceID].colorReadsByMappingQuality) {
       trackColor = d3.interpolateRdYlGn(
         Math.min(60, track.mapping_quality) / 60
