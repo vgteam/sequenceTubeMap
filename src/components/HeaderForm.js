@@ -180,6 +180,9 @@ class HeaderForm extends Component {
     this.getMountedFilenames();
     this.setUpWebsocket();
   }
+  componentDidUpdate() {
+    handleGoButton();
+  }
   componentWillUnmount() {
     // Cancel the requests since we may have long running requests pending.
     this.fetchCanceler.abort();
@@ -556,6 +559,7 @@ class HeaderForm extends Component {
     if (graphFile && graphFile !== "none"){
       this.getPathNames(graphFile, this.state.dataPath);
     }
+
   };
 
   handleBedChange = (event) => {
