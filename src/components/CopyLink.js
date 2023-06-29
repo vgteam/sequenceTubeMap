@@ -25,8 +25,6 @@ export function CopyLink(props) {
   const [dialogLink, setDialogLink] = useState(undefined);
 
   const handleCopyLink = () => {
-    // open popup
-    setOpen(!open);
     // Turn viewTarget into a URL query string
     const viewTarget = props.getCurrentViewTarget();
     // Don't stringify objects for readability
@@ -50,8 +48,7 @@ export function CopyLink(props) {
 
   };
 
-  const [open, setOpen] = useState(false);
-  const close = () => setOpen(false);
+  const close = () => setDialogLink(undefined);
 
   return (
     <>
@@ -59,11 +56,12 @@ export function CopyLink(props) {
         <FontAwesomeIcon icon={faLink} size="lg" />
         {text}
       </Button>
-      {/* conditional rendering information from: https://legacy.reactjs.org/docs/conditional-rendering.html */}
-      {(dialogLink != null) && <PopupDialog open={open} close={close}>
+      <PopupDialog open={dialogLink != null} close={close}>
         <h5>Link to Data</h5>
+        {/* Received warning on build that simply using target="_blank" is a security risk in older browsers, so included rel="noopener noreferrer" as per this post: 
+         https://stackoverflow.com/questions/57628890/why-people-use-rel-noopener-noreferrer-instead-of-just-rel-noreferrer */}
         <p><a href = {dialogLink} target = "_blank" rel="noopener noreferrer">Data</a><br/>Click this link to return to this view. Right click link to copy this view location.</p>
-      </PopupDialog> }
+      </PopupDialog>
     </>
   );
 }
