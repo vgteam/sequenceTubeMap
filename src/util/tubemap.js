@@ -365,7 +365,8 @@ export function setNodeWidthOption(value) {
 }
 
 // sets callback function that would generate React popup of track information. The callback would 
-// accept a string argument to be displayed.
+// accept an array argument of track attribute pairs containing attribute name as a string and attribute value
+// as a string or number, to be displayed.
 export function setInfoCallback(newCallback) {
   config.showInfoCallback = newCallback;
 }
@@ -3623,10 +3624,20 @@ function trackDoubleClick() {
 
 function trackSingleClick() {
   /* jshint validthis: true */
-  const trackName = d3.select(this).attr("trackName");
+  const trackID = d3.select(this).attr("trackID");
+  let current_track = tracks[trackID];
+  let track_attributes = [];
+  track_attributes.push(["Name", current_track.name])
+  track_attributes.push(["Sample Name", current_track.sample_name])
+  track_attributes.push(["Primary Alignment?", current_track.is_secondary ? "Secondary" : "Primary"])
+  track_attributes.push(["Read Group", current_track.read_group])
+  track_attributes.push(["Score", current_track.score])
+  track_attributes.push(["CIGAR string", current_track.cigar_string])
+  track_attributes.push(["Mapping Quality", current_track.mapping_quality])
+ 
   console.log("Single Click");
   console.log(config.showInfoCallback)
-  config.showInfoCallback(trackName)
+  config.showInfoCallback(track_attributes)
 }
 
 // show track name when hovering mouse
@@ -3836,6 +3847,11 @@ function compareReadsByLeftEnd2(a, b) {
   return 0;
 }
 
+export function cigar_string (readPath) {
+  return "string"
+
+}
+
 // Pull out reads from a server response into tube map internal format.
 // Use myTracks, and idOffset to compute IDs for each read.
 // Assign each read the given sourceTrackID.
@@ -3961,6 +3977,10 @@ export function vgExtractReads(myNodes, myTracks, myReads, idOffset, sourceTrack
 
       track.mapping_quality = read.mapping_quality || 0;
       track.is_secondary = read.is_secondary || false;
+      track.sample_name = read.sample_name || null;
+      track.read_group = read.read_group || null;
+      track.cigar_string = cigar_string(read.path);
+      track.score = read.score || 0;
 
       extracted.push(track);
     }

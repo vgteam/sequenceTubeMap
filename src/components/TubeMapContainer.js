@@ -7,7 +7,7 @@ import TubeMap from "./TubeMap";
 import * as tubeMap from "../util/tubemap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
-import PopUpTrackText from "./PopUpTrackText";
+import PopUpTrackInfo from "./PopUpTrackInfo";
 
 class TubeMapContainer extends Component {
   state = {
@@ -99,9 +99,9 @@ class TubeMapContainer extends Component {
     // and will be set to text to display to represent an open dialog.
     // text stores the current value associated with infoDialogContent for this
     // TubeMapContainer instance, so we can have a shorter name for it.
-    let text = this.state.infoDialogContent;
+    let attributes = this.state.infoDialogContent;
     let isOpen;
-    if (text === undefined){
+    if (attributes === undefined){
       isOpen = false;
     } else {
       isOpen = true;
@@ -111,7 +111,7 @@ class TubeMapContainer extends Component {
 
     return (
       <div id="tubeMapContainer">
-        <PopUpTrackText open={isOpen} text={text} close={closePopup} />
+        <PopUpTrackInfo open={isOpen} attributes={attributes} close={closePopup} />
         <div id="tubeMapSVG">
           <TubeMap
             nodes={this.state.nodes}
