@@ -3628,13 +3628,14 @@ function trackSingleClick() {
   let current_track = tracks[trackID];
   let track_attributes = [];
   track_attributes.push(["Name", current_track.name])
-  track_attributes.push(["Sample Name", current_track.sample_name])
-  track_attributes.push(["Primary Alignment?", current_track.is_secondary ? "Secondary" : "Primary"])
-  track_attributes.push(["Read Group", current_track.read_group])
-  track_attributes.push(["Score", current_track.score])
-  track_attributes.push(["CIGAR string", current_track.cigar_string])
-  track_attributes.push(["Mapping Quality", current_track.mapping_quality])
- 
+  if (current_track.type === "read") {
+    track_attributes.push(["Sample Name", current_track.sample_name])
+    track_attributes.push(["Primary Alignment?", current_track.is_secondary ? "Secondary" : "Primary"])
+    track_attributes.push(["Read Group", current_track.read_group])
+    track_attributes.push(["Score", current_track.score])
+    track_attributes.push(["CIGAR string", current_track.cigar_string])
+    track_attributes.push(["Mapping Quality", current_track.mapping_quality])
+  }
   console.log("Single Click");
   console.log(config.showInfoCallback)
   config.showInfoCallback(track_attributes)
@@ -3847,9 +3848,40 @@ function compareReadsByLeftEnd2(a, b) {
   return 0;
 }
 
+// converts readPath to a CIGAR string
 export function cigar_string (readPath) {
-  return "string"
-
+  let cigar_string = "";
+  for (let i = 0; i < readPath.mapping.length; i += 1) {
+    let mapping = readPath.mapping[i]
+    for (let j = 0; j < mapping.edit.length; j += 1) {
+      let edit = mapping.edit[j]
+      if (edit.from_length && edit.from_length === edit.to_length){
+        cigar_string = cigar_string.concat(edit.from_length + "M");
+      }
+      else {
+        if (edit.from_length === edit.to_length){
+          cigar_string = cigar_string.concat(edit.from_length + "M");
+        } 
+        else if (edit.from_length > edit.to_length){
+          let del = edit.from_length - edit.to_length;
+          let eq = edit.to_length;
+          if (eq){
+            cigar_string = cigar_string.concat(eq + "M");
+          }
+          cigar_string = cigar_string.concat(del + "D");
+        } 
+        else if (edit.from_length < edit.to_length){
+          let ins = edit.to_length - edit.from_length;
+          let eq = edit.from_length;
+          if (eq){
+            cigar_string = cigar_string.concat(eq + "M");
+          }
+          cigar_string = cigar_string.concat(ins + "I");
+        }
+      }
+    }
+  }
+  return cigar_string;
 }
 
 // Pull out reads from a server response into tube map internal format.
