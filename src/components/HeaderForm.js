@@ -91,8 +91,6 @@ function tracksEqual(curr, next) {
     return false;
   }
 
-
-
   const curr_file = curr.trackFile;
   const next_file = next.trackFile;
 
@@ -114,21 +112,6 @@ function tracksEqual(curr, next) {
   }
   return false;
 
-  /*
-  //loop through file names to see if they're equal
-  for (let i = 0; i < curr.files.length; i++) {
-    const curr_file = curr.files[i].name;
-    const next_file = next.files[i].name;
-    
-    //count falsy file names as the same
-    if ((!curr_file && !next_file) || curr_file === next_file) {
-      continue;
-    }
-    return false;
-  }
-  
-  return true;
-  */
 }
 
 // Checks if two view targets are the same. They are the same if they have the
@@ -179,9 +162,6 @@ class HeaderForm extends Component {
     this.initState();
     this.getMountedFilenames();
     this.setUpWebsocket();
-  }
-  componentDidUpdate() {
-    handleGoButton();
   }
   componentWillUnmount() {
     // Cancel the requests since we may have long running requests pending.
@@ -511,7 +491,6 @@ class HeaderForm extends Component {
       this.props.setCurrentViewTarget(nextViewTarget);
     }
 
-   
   };
 
   getRegionCoords = (desc) => {
@@ -685,6 +664,7 @@ class HeaderForm extends Component {
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
+    const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
 
     console.log(
       "Rendering header form with fileSelectOptions: ",
@@ -790,6 +770,7 @@ class HeaderForm extends Component {
                   handleGoButton={this.handleGoButton}
                   uploadInProgress={this.state.uploadInProgress}
                   getCurrentViewTarget={this.props.getCurrentViewTarget}
+                  viewTargetHasChange={viewTargetHasChange}
                 />
               )}
             </Col>

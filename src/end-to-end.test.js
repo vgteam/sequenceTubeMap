@@ -36,14 +36,11 @@ let root = undefined;
 // Mock clipboard (string)
 let fakeClipboard = undefined;
 
-let dom;
-
 // This needs to be called by global and per-scope beforeEach
 async function setUp() {
   setCopyCallback((value) => (fakeClipboard = value));
-
   // Create the application.
-  dom = render(<App apiUrl={serverState.getApiUrl()} />);
+  render(<App apiUrl={serverState.getApiUrl()} />);
 }
 
 // This needs to be called by global and per-scope afterEach

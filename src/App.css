@@ -114,6 +114,17 @@ input[type="file"] {
   top: 5px;
 }
 
+.btn-alert {
+  background-color: #e01010;
+  border-color: #e01010;
+}
+
+.btn-alert:hover {
+  background-color: #b61515;
+  border-color: #b61515;
+}
+
+
 .btn-secondary {
   background-color: #868e96;
   border-color: #868e96;

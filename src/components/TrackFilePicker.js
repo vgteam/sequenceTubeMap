@@ -81,7 +81,7 @@ export const TrackFilePicker = ({
 TrackFilePicker.propTypes = {
     tracks: PropTypes.array.isRequired,
     fileType: PropTypes.string,
-    value: PropTypes.object,
+    value: PropTypes.string,
     handleInputChange: PropTypes.func.isRequired,
     pickerType: PropTypes.string,
     className: PropTypes.string,
