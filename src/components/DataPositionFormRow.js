@@ -71,6 +71,7 @@ class DataPositionFormRow extends Component {
         
         <Button
           color={this.props.viewTargetHasChange ? "alert" : "primary"}
+          title={this.props.viewTargetHasChange ? "Click to apply pending changes." : "No changes to apply; view is up to date."}
           id="goButton"
           onClick={this.props.handleGoButton}
           disabled={this.props.uploadInProgress}
