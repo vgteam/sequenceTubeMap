@@ -21,14 +21,16 @@ const EXAMPLE_TRACKS = [
   {"files": [{"type": "read", "name": "fakeReads"}]}
 ];
 
-function addTracksToColorSchemes(tracks, schemes) {
+function getColorSchemesFromTracks(tracks) {
   
-  console.log("Initializing coloring for tracks: ", tracks, "combining with:", schemes);
+  let schemes = [];
 
   for (const key in tracks) {
     if (schemes[key] === undefined) {
       // We need to adopt a color scheme
-      if (tracks[key].files[0].type === "read") {
+      if (tracks[key].trackColorSettings !== undefined) {
+        schemes[key] = tracks[key].trackColorSettings;
+      } else if (tracks[key].trackType === "read") {
         schemes[key] = {...config.defaultReadColorPalette};
       } else {
         schemes[key] = {...config.defaultHaplotypeColorPalette};
@@ -42,6 +44,8 @@ function addTracksToColorSchemes(tracks, schemes) {
 class App extends Component {
   constructor(props) {
     super(props);
+
+    console.log('Tube map statting up with API URL: ' + props.apiUrl)
 
     // Set defaultViewTarget to either URL params (if present) or the first example
     this.defaultViewTarget =
@@ -61,7 +65,7 @@ class App extends Component {
         showReads: true,
         showSoftClips: true,
         colorReadsByMappingQuality: false,
-        colorSchemes: addTracksToColorSchemes(this.defaultViewTarget.tracks, []),
+        colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
         mappingQualityCutoff: 0,
       },
     };
@@ -97,8 +101,7 @@ class App extends Component {
 
       this.setState((state) => {
         // Make sure we have color schemes.
-        let newColorSchemes = state.visOptions.colorSchemes.slice();
-        addTracksToColorSchemes(newViewTarget.tracks, newColorSchemes);
+        let newColorSchemes = getColorSchemesFromTracks(newViewTarget.tracks);
 
 
         console.log("Adopting color schemes: ", newColorSchemes)
@@ -213,7 +216,7 @@ App.defaultProps = {
   // the config or the browser, but needs to be swapped out in the fake
   // browser testing environment to point to a real testing backend.
   // Note that host includes the port.
-  apiUrl: (config.BACKEND_URL || `http://${window.location.host}`) + "/api/v0",
+  apiUrl: (config.BACKEND_URL || `${window.location.origin}`) + "/api/v0",
 };
 
 export default App;

@@ -13,16 +13,16 @@ type DataType = "built-in" | "file-upload" | "mounted files" | "examples";
 // Files like GBZ contains graph and maybe haplotype and so can be either
 type filetype = "graph" | "haplotype" | "read" | "bed";
 
-// Describes a file via name and type(graph, haplotype)
-// e.g name: cactus.xg, type: graph
-type file = {
-  name: string;
-  type: filetype;
-};
 
 // Contains information necessary to make a track
 type track = {
-  files: Array<file>
+  trackFile: string; // Name of file
+  trackType: filetype;
+  trackColorSettings: ColorScheme;
+}
+
+type tracks = {
+  [key: number]: track;
 }
 
 // Describes something the Tube Map can look at, specifically a region and the files the region is in.
@@ -82,4 +82,6 @@ type ColorScheme = {
 
 // Stores the assigned colorschemes of all tracks
 // Entries correspond to their track counterpart, e.g colorSchemes[0] corresponds to tracks[0]
-type colorSchemes = Array<ColorScheme>;
+type colorSchemes = {
+  trackID: ColorScheme;
+}
