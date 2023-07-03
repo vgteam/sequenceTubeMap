@@ -124,9 +124,8 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  colorSchemes: [], 
+  colorSchemes: {}, 
            // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
-           // stores haplotype color in the first slot
   exonColors: "lightColors",
   hideLegendFlag: false,
   colorReadsByMappingQuality: false,
@@ -2384,10 +2383,11 @@ function generateTrackColor(track, highlight) {
       // Don't repeat the color of the first track (reference) to highilight is better.
       // TODO: Allow using color 0 for other schemes not the same as the one for the reference path.
       // TODO: Stop reads from taking this color?
-      if (track.id === 0) {
-        trackColor = getColorSet(config.colorSchemes[sourceID].mainPalette)[0];
+
+      const colorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
+      if (track.id === 0 || colorSet.length === 1) {
+        trackColor = colorSet[0];
       } else {
-        const colorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
         trackColor = colorSet[((track.id - 1) % (colorSet.length - 1)) + 1];
       }
     } else {
@@ -3740,9 +3740,13 @@ export function vgExtractTracks(vg, pathSourceTrackId, haplotypeSourceTrackID) {
     track.id = index;
     track.sequence = sequence;
     track.isCompletelyReverse = isCompletelyReverse;
-    if (path.hasOwnProperty("freq")) {
+    // Even non-haplotype paths will be assigned a "freq" field by vg. See
+    // <https://github.com/vgteam/vg/blob/6b34cd50e851eb9a91be3a605e040c9be1d4b78e/src/haplotype_extracter.cpp#L52-L55>.
+    // We want to copy those through so that non-haplotype paths have a normal width.
+    track.freq = path.freq;
+    // But haplotypes will have names starting with "thread_".
+    if (path.name && path.name.startsWith("thread_")) {
       // This is a haplotype
-      track.freq = path.freq;
       track.sourceTrackID = haplotypeSourceTrackID;
     } else {
       // This is a path

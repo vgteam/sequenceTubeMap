@@ -39,7 +39,6 @@ let fakeClipboard = undefined;
 // This needs to be called by global and per-scope beforeEach
 async function setUp() {
   setCopyCallback((value) => (fakeClipboard = value));
-
   // Create the application.
   render(<App apiUrl={serverState.getApiUrl()} />);
 }
@@ -309,7 +308,7 @@ describe("When we wait for it to load", () => {
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
   const expectedLinkBRCA1 =
-    "http://localhost?name=snp1kg-BRCA1&tracks[0][files][0][type]=graph&tracks[0][files][0][name]=snp1kg-BRCA1.vg.xg&tracks[1][files][0][type]=read&tracks[1][files][0][name]=NA12878-BRCA1.sorted.gam&dataPath=default&region=17:1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in";
+    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=snp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=NA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17:1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in";
   // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -343,7 +342,7 @@ it("produces correct link for view before & after go is pressed", async () => {
   await clickCopyLink();
 
   const expectedLinkCactus =
-    "http://localhost?tracks[0][files][0][type]=graph&tracks[0][files][0][name]=cactus.vg.xg&tracks[1][files][0][type]=read&tracks[1][files][0][name]=cactus-NA12879.sorted.gam&bedFile=cactus.bed&name=cactus&region=ref:1-100&dataPath=mounted&dataType=built-in";
+    "http://localhost?tracks[0][trackFile]=cactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=cactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=cactus.bed&name=cactus&region=ref:1-100&dataPath=mounted&dataType=built-in";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
 });
@@ -362,17 +361,32 @@ it("can retrieve the list of mounted graph files", async () => {
   });
 
   // Find the select box's input
-  let graphSelectInput = screen.getByLabelText(/graph file:/i);
-  expect(graphSelectInput).toBeTruthy();
+  let trackSelectButton = screen.queryByTestId("TrackPickerButton");
+  expect(trackSelectButton).toBeTruthy();
+
+  // open track selection
+  await act(async () => {
+    //fireEvent.click(trackSelectButton);
+    userEvent.click(trackSelectButton);
+  });
+
+
+  // add a new track
+  await waitFor(() => {
+    fireEvent.click(screen.queryByTestId("track-add-button-component"));
+  });
+
 
   // We shouldn't see the option before we open the dropdown
   expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
 
+
   // Make sure the right entry eventually shows up (since we could be racing
   // the initial load from the component mounting)
   await waitFor(() => {
-    // Open the selector and see if it is there
-    selectEvent.openMenu(graphSelectInput);
-    expect(screen.getByText("cactus.vg.xg")).toBeInTheDocument();
+    // try to select a graph file
+    fireEvent.keyDown(screen.queryByTestId('file-select-component1').firstChild, {key: "ArrowDown"});
   });
+
+  expect(screen.queryByText("cactus.vg.xg")).toBeTruthy();
 });

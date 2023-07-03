@@ -6,10 +6,11 @@ import { fetchAndParse } from "../fetchAndParse";
 // import defaultConfig from '../config.default.json';
 import config from "../config.json";
 import DataPositionFormRow from "./DataPositionFormRow";
-import MountedDataFormRow from "./MountedDataFormRow";
 import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
+import TrackPicker from "./TrackPicker";
+import SelectionDropdown from "./SelectionDropdown";
 import { parseRegion, stringifyRegion } from "../common.mjs";
 // See src/Types.ts
 
@@ -65,10 +66,7 @@ const EMPTY_STATE = {
 
   // These ones are for selecting entire files and need to be preserved when
   // switching dataType.
-  graphSelectOptions: ["none"],
-  gbwtSelectOptions: ["none"],
-  gamSelectOptions: ["none"],
-  bedSelectOptions: ["none"],
+  fileSelectOptions: [],
 };
 
 // Creates track to be stored in ViewTarget
@@ -93,38 +91,54 @@ function tracksEqual(curr, next) {
     return false;
   }
 
-  if (curr.files.length !== next.files.length) {
-    return false;
-  }
-  //loop through file names to see if they're equal
-  for (let i = 0; i < curr.files.length; i++) {
-    const curr_file = curr.files[i].name;
-    const next_file = next.files[i].name;
-    
-    //count falsy file names as the same
-    if ((!curr_file && !next_file) || curr_file === next_file) {
-      continue;
+  const curr_file = curr.trackFile;
+  const next_file = next.trackFile;
+
+  const curr_settings = curr.trackColorSettings;
+  const next_settings = next.trackColorSettings;
+  
+  // check if color settings are equal
+  if (curr_settings && next_settings){
+    if (curr_settings.mainPalette !== next_settings.mainPalette || 
+        curr_settings.auxPalette !== next_settings.auxPalette ||
+        curr_settings.colorReadsByMappingQuality !== next_settings.colorReadsByMappingQuality) {
+          
+        return false;
     }
-    return false;
   }
-  return true;
+  //count falsy file names as the same
+  if ((!curr_file && !next_file) || curr_file === next_file) {
+    return true;
+  }
+  return false;
+
 }
 
 // Checks if two view targets are the same. They are the same if they have the
 // same tracks and the same region.
 function viewTargetsEqual(currViewTarget, nextViewTarget) {
+
   // Update if one is undefined and the other isn't
   if ((currViewTarget === undefined) !== (nextViewTarget === undefined)) {
     return false;
   }
 
   // Update if view target tracks are not equal
-  if (currViewTarget.tracks.length !== nextViewTarget.tracks.length) {
+  if (Object.keys(currViewTarget.tracks).length !== Object.keys(nextViewTarget.tracks).length) {
     // Different lengths so not equal
     return false;
   }
-  for (let i = 0; i < currViewTarget.tracks.length; i++) {
-    if (!tracksEqual(currViewTarget.tracks[i], nextViewTarget.tracks[i])){
+
+  for (const key in currViewTarget.tracks) {
+    const currTrack = currViewTarget.tracks[key];
+    const nextTrack = nextViewTarget.tracks[key];
+
+    // if the key doesn't exist in the other track
+    if (!currTrack || !nextTrack) {
+      return false;
+    }
+
+    if (!tracksEqual(currTrack, nextTrack)) {
       // Different tracks so not equal
       return false;
     }
@@ -138,6 +152,7 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
   return true;
 
 }
+
 
 class HeaderForm extends Component {
   state = EMPTY_STATE;
@@ -175,10 +190,10 @@ class HeaderForm extends Component {
       this.getBedRegions(bedSelect, dataPath);
     }
     for (const key in ds.tracks) {
-      if (ds.tracks[key].files[0].type === fileTypes.GRAPH) {
+      if (ds.tracks[key].trackType === fileTypes.GRAPH) {
         // Load the paths for any graph tracks
         console.log("Get path names for track: ", ds.tracks[key]);
-        this.getPathNames(ds.tracks[key].files[0].name, dataPath);
+        this.getPathNames(ds.tracks[key].trackFile, dataPath);
       }
     }
     this.setState((state) => {
@@ -210,13 +225,12 @@ class HeaderForm extends Component {
       let maxKey = -1;
       for (const key in state.tracks) {
         let track = state.tracks[key];
-        if (track.files[0].type === type) {
-          console.log("See file " + seenTracksOfType + " of right type");
+        if (track.trackType === type) {
           if (seenTracksOfType === index) {
             if (file !== "none") {
               // We want to adjust it, so keep a modified copy of it
               let newTrack = JSON.parse(JSON.stringify(track));
-              newTrack.files[0].name = file;
+              newTrack.trackFile = file;
               newTracks[key] = newTrack;
             }
             // If the file is "none" we drop the track.
@@ -226,7 +240,6 @@ class HeaderForm extends Component {
           }
           seenTracksOfType++;
         } else {
-          console.log("See file of other type");
           // We want to keep all tracks of other types as is
           newTracks[key] = track;
         }
@@ -250,16 +263,19 @@ class HeaderForm extends Component {
     });
   }
 
-  getTrackFile = (type, index) => {
+  getTrackFile = (tracks, type, index) => {
     // Get the file used in the nth track of the gicen type, or "none" if no
     // such track exists.
     let seenTracksOfType = 0;
-    for (const key in this.state.tracks) {
-      let track = this.state.tracks[key];
-      if (track.files[0].type === type) {
+    for (const key in tracks) {
+      let track = tracks[key];
+      if (track === -1) {
+        continue;
+      }
+      if (track.trackType === type) {
         if (seenTracksOfType === index) {
           // This is the one. Return its filename.
-          return track.files[0].name;
+          return track.trackFile;
         }
         seenTracksOfType++;
       } 
@@ -278,15 +294,12 @@ class HeaderForm extends Component {
           "Content-Type": "application/json",
         },
       });
-      if (json.graphFiles === undefined) {
+      if (!json.files || json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
           json.error || "Server did not return a list of mounted filenames.";
         this.setState({ error: error });
       } else {
-        json.graphFiles.unshift("none");
-        json.gbwtFiles.unshift("none");
-        json.gamIndices.unshift("none");
         json.bedFiles.unshift("none");
 
         if (this.state.dataPath === "mounted") {
@@ -298,17 +311,15 @@ class HeaderForm extends Component {
               this.getBedRegions(bedSelect, "mounted");
             }
             for (const key in state.tracks) {
-              if (state.tracks[key].files[0].type === fileTypes.GRAPH) {
+              if (state.tracks[key].trackType === fileTypes.GRAPH) {
                 // Load the paths for any graph tracks.
                 // TODO: Do we need to do this now?
                 console.log("Get path names for track: ", state.tracks[key]);
-                this.getPathNames(state.tracks[key].files[0].name, "mounted");
+                this.getPathNames(state.tracks[key].trackFile, "mounted");
               }
             } 
             return {
-              graphSelectOptions: json.graphFiles,
-              gbwtSelectOptions: json.gbwtFiles,
-              gamSelectOptions: json.gamIndices,
+              fileSelectOptions: json.files,
               bedSelectOptions: json.bedFiles,
               bedSelect,
             };
@@ -316,9 +327,7 @@ class HeaderForm extends Component {
         } else {
           this.setState((state) => {
             return {
-              graphSelectOptions: json.graphFiles,
-              gbwtSelectOptions: json.gbwtFiles,
-              gamSelectOptions: json.gamIndices,
+              fileSelectOptions: json.files,
               bedSelectOptions: json.bedFiles,
             };
           });
@@ -438,10 +447,10 @@ class HeaderForm extends Component {
             this.setState({ regionInfo: {} });
           }
           for (const key in ds.tracks) {
-            if (ds.tracks[key].files[0].type === fileTypes.GRAPH) {
+            if (ds.tracks[key].trackType === fileTypes.GRAPH) {
               // Load the paths for any graph tracks.
               console.log("Get path names for track: ", ds.tracks[key]);
-              this.getPathNames(ds.tracks[key].files[0].name, dataPath);
+              this.getPathNames(ds.tracks[key].trackFile, dataPath);
             }
           }
           this.setState({
@@ -482,7 +491,6 @@ class HeaderForm extends Component {
       this.props.setCurrentViewTarget(nextViewTarget);
     }
 
-   
   };
 
   getRegionCoords = (desc) => {
@@ -516,28 +524,34 @@ class HeaderForm extends Component {
     }
     this.setState({ region: coords });
   };
-  handleInputChange = (event) => {
+
+  handleInputChange = (newTracks) => {
+    this.setState((state) => {
+      let newState = Object.assign({}, state);
+      newState.tracks = newTracks;
+      console.log('Set result: ' + JSON.stringify(newTracks));
+      return newState;
+    });
+
+    // update path names
+    const graphFile = this.getTrackFile(newTracks, fileTypes.GRAPH, 0);
+    if (graphFile && graphFile !== "none"){
+      this.getPathNames(graphFile, this.state.dataPath);
+    }
+
+  };
+
+  handleBedChange = (event) => {
     const id = event.target.id;
     const value = event.target.value;
     this.setState({ [id]: value });
-    if (id === "graphSelect") {
-      if (value && value !== "none") {
-        this.getPathNames(value, this.state.dataPath);
-      }
-      this.setTrackFile(fileTypes.GRAPH, 0, value);
-    } else if (id === "gbwtSelect") {
-      this.setTrackFile(fileTypes.HAPLOTYPE, 0, value);
-    } else if (id === "gamSelect") {
-      this.setTrackFile(fileTypes.READ, 0, value);
-    } else if (id === "gam2Select") {
-      this.setTrackFile(fileTypes.READ, 1, value);
-    } else if (id === "bedSelect") {
-      if (value !== "none") {
-        this.getBedRegions(value, this.state.dataPath);
-      }
-      this.setState({ bedFile: value });
+
+    if (value !== "none") {
+      this.getBedRegions(value, this.state.dataPath);
     }
-  };
+    this.setState({ bedFile: value });
+
+  }
 
   // Budge the region left or right by the given negative or positive fraction
   // of its width.
@@ -650,10 +664,11 @@ class HeaderForm extends Component {
     const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
     const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
+    const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
 
     console.log(
-      "Rendering header form with graphSelectOptions: ",
-      this.state.graphSelectOptions
+      "Rendering header form with fileSelectOptions: ",
+      this.state.fileSelectOptions
     );
 
     return (
@@ -687,18 +702,31 @@ class HeaderForm extends Component {
               </select>
               &nbsp;
               {mountedFilesFlag && (
-                <MountedDataFormRow
-                  graphSelect={this.getTrackFile(fileTypes.GRAPH, 0)}
-                  graphSelectOptions={this.state.graphSelectOptions}
-                  gbwtSelect={this.getTrackFile(fileTypes.HAPLOTYPE, 0)}
-                  gbwtSelectOptions={this.state.gbwtSelectOptions}
-                  gamSelect={this.getTrackFile(fileTypes.READ, 0)}
-                  gam2Select={this.getTrackFile(fileTypes.READ, 1)}
-                  gamSelectOptions={this.state.gamSelectOptions}
-                  bedSelect={this.state.bedSelect}
-                  bedSelectOptions={this.state.bedSelectOptions}
-                  handleInputChange={this.handleInputChange}
-                />
+                <React.Fragment>
+                  <TrackPicker
+                    tracks={this.state.tracks}
+                    availableTracks={this.state.fileSelectOptions}
+                    onChange={this.handleInputChange}
+                  />
+
+                  <Label
+                    for="bedSelectInput"
+                    className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
+                  >
+                    BED file:
+                  </Label>
+                  
+                  <SelectionDropdown
+                    className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
+                    id="bedSelect"
+                    inputId="bedSelectInput"
+                    value={this.state.bedSelect}
+                    onChange={this.handleBedChange}
+                    options={this.state.bedSelectOptions}
+                  />
+                  &nbsp;
+                </React.Fragment>
+
               )}
               {!examplesFlag && (
                 <RegionInput
@@ -742,6 +770,7 @@ class HeaderForm extends Component {
                   handleGoButton={this.handleGoButton}
                   uploadInProgress={this.state.uploadInProgress}
                   getCurrentViewTarget={this.props.getCurrentViewTarget}
+                  viewTargetHasChange={viewTargetHasChange}
                 />
               )}
             </Col>
