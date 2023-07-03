@@ -65,28 +65,6 @@ class TubeMapContainer extends Component {
     }
   }
 
-  updateVisOptions() {
-    const visOptions = this.props.visOptions;
-    visOptions.compressedView
-      ? tubeMap.setNodeWidthOption(1)
-      : tubeMap.setNodeWidthOption(0);
-    tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);
-    tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
-    tubeMap.setShowReadsFlag(visOptions.showReads);
-    tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
-
-    // apply new colorReadsByMappingQuality value to all tracks
-    // to be changed, add options to change colorReadsByMappingQuality individually
-    tubeMap.setColorReadsByMappingQualityFlag(visOptions.colorReadsByMappingQuality);
-
-    for (const trackID in visOptions.colorSchemes) {
-      console.log("setting color: ", trackID, visOptions.colorSchemes[trackID]);
-      tubeMap.setColorSet(trackID, visOptions.colorSchemes[trackID]);
-    }
-
-    tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
-  }
-
   render() {
     const { isLoading, error } = this.state;
 
