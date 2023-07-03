@@ -190,8 +190,7 @@ class TubeMapContainer extends Component {
         console.log("Graph track: " + graphTrackID + " Haplotype track: " + haplotypeTrackID);
 
         const nodes = tubeMap.vgExtractNodes(json.graph);
-        // TODO: For now claim haplotypes came from the graph
-        const tracks = tubeMap.vgExtractTracks(json.graph, graphTrackID, graphTrackID);
+        const tracks = tubeMap.vgExtractTracks(json.graph, graphTrackID, haplotypeTrackID);
 
         // Call vgExtractReads on each file of reads and store in readsArr
         let readsArr = [];
