@@ -3740,9 +3740,13 @@ export function vgExtractTracks(vg, pathSourceTrackId, haplotypeSourceTrackID) {
     track.id = index;
     track.sequence = sequence;
     track.isCompletelyReverse = isCompletelyReverse;
-    if (path.hasOwnProperty("freq")) {
+    // Even non-haplotype paths will be assigned a "freq" field by vg. See
+    // <https://github.com/vgteam/vg/blob/6b34cd50e851eb9a91be3a605e040c9be1d4b78e/src/haplotype_extracter.cpp#L52-L55>.
+    // We want to copy those through so that non-haplotype paths have a normal width.
+    track.freq = path.freq;
+    // But haplotypes will have names starting with "thread_".
+    if (path.name && path.name.startsWith("thread_")) {
       // This is a haplotype
-      track.freq = path.freq;
       track.sourceTrackID = haplotypeSourceTrackID;
     } else {
       // This is a path
