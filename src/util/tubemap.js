@@ -3850,38 +3850,63 @@ function compareReadsByLeftEnd2(a, b) {
 
 // converts readPath to a CIGAR string
 export function cigar_string (readPath) {
+  console.log("readPath:", readPath)
   let cigar_string = "";
   for (let i = 0; i < readPath.mapping.length; i += 1) {
     let mapping = readPath.mapping[i]
     for (let j = 0; j < mapping.edit.length; j += 1) {
       let edit = mapping.edit[j]
       if (edit.from_length && edit.from_length === edit.to_length){
-        cigar_string = cigar_string.concat(edit.from_length + "M");
+        cigar_string = append_cigar_operation(edit.from_length, 'M', cigar_string);
       }
       else {
         if (edit.from_length === edit.to_length){
-          cigar_string = cigar_string.concat(edit.from_length + "M");
+          cigar_string = append_cigar_operation(edit.from_length, 'M', cigar_string);
         } 
         else if (edit.from_length > edit.to_length){
-          let del = edit.from_length - edit.to_length;
-          let eq = edit.to_length;
+          const del = edit.from_length - edit.to_length;
+          const eq = edit.to_length;
           if (eq){
-            cigar_string = cigar_string.concat(eq + "M");
+            cigar_string = append_cigar_operation(eq, 'M', cigar_string);
           }
-          cigar_string = cigar_string.concat(del + "D");
+          cigar_string = append_cigar_operation(del, 'D', cigar_string);
         } 
         else if (edit.from_length < edit.to_length){
-          let ins = edit.to_length - edit.from_length;
-          let eq = edit.from_length;
+          const ins = edit.to_length - edit.from_length;
+          const eq = edit.from_length;
           if (eq){
-            cigar_string = cigar_string.concat(eq + "M");
+            cigar_string = append_cigar_operation(eq, 'M', cigar_string);
           }
-          cigar_string = cigar_string.concat(ins + "I");
+          cigar_string = append_cigar_operation(ins, 'I', cigar_string);
+        }
+        else if (edit.to_length == undefined && edit.from_length){
+          const del = edit.from_length;
+          cigar_string = append_cigar_operation(del, 'D', cigar_string);
+        }
+        else if (edit.to_length && edit.from_length == undefined){
+          const ins = edit.to_length;
+          cigar_string = append_cigar_operation(ins, 'I', cigar_string);
         }
       }
     }
   }
+  console.log("cigar string::", cigar_string)
   return cigar_string;
+}
+
+function append_cigar_operation (number, operator, string){
+  let operation = (number + operator);
+  let prev2 = string.slice(-2);
+  //console.log(prev2)
+  if (prev2.substr(-1) == operation.substr(-1)){
+    let newVal = Number(prev2.charAt(prev2.length - 2)) + Number(operation.charAt(operation.length - 2));
+    let newOperation = (newVal.toString() + prev2.substr(-1));
+    string = string.slice(0, -2) + newOperation;
+  } 
+  else {
+    string += operation;
+  }
+  return string;
 }
 
 // Pull out reads from a server response into tube map internal format.
@@ -4013,7 +4038,6 @@ export function vgExtractReads(myNodes, myTracks, myReads, idOffset, sourceTrack
       track.read_group = read.read_group || null;
       track.cigar_string = cigar_string(read.path);
       track.score = read.score || 0;
-
       extracted.push(track);
     }
   }
