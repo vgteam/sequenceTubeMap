@@ -3637,6 +3637,7 @@ function trackSingleClick() {
     track_attributes.push(["Mapping Quality", current_track.mapping_quality])
   }
   console.log("Single Click");
+  console.log("read path", );
   console.log(config.showInfoCallback)
   config.showInfoCallback(track_attributes)
 }
@@ -3850,63 +3851,69 @@ function compareReadsByLeftEnd2(a, b) {
 
 // converts readPath to a CIGAR string
 export function cigar_string (readPath) {
-  console.log("readPath:", readPath)
-  let cigar_string = "";
+  console.log("readPath mapping:", readPath.mapping)
+  let cigar = [];
   for (let i = 0; i < readPath.mapping.length; i += 1) {
     let mapping = readPath.mapping[i]
     for (let j = 0; j < mapping.edit.length; j += 1) {
       let edit = mapping.edit[j]
+      // from_length is not 0, and from_length = to_length, this indicates a match
       if (edit.from_length && edit.from_length === edit.to_length){
-        cigar_string = append_cigar_operation(edit.from_length, 'M', cigar_string);
+        cigar = append_cigar_operation(edit.from_length, 'M', cigar);
       }
       else {
+        // from_length can be 0, and from_length = to_length, this indicates a match
         if (edit.from_length === edit.to_length){
-          cigar_string = append_cigar_operation(edit.from_length, 'M', cigar_string);
+          cigar = append_cigar_operation(edit.from_length, 'M', cigar);
         } 
+        // if from_length > to_length, this indicates a deletion
         else if (edit.from_length > edit.to_length){
           const del = edit.from_length - edit.to_length;
           const eq = edit.to_length;
           if (eq){
-            cigar_string = append_cigar_operation(eq, 'M', cigar_string);
+            cigar = append_cigar_operation(eq, 'M', cigar);
           }
-          cigar_string = append_cigar_operation(del, 'D', cigar_string);
+          cigar = append_cigar_operation(del, 'D', cigar);
         } 
+        // if from_length < to_length, this indicates an insertion
         else if (edit.from_length < edit.to_length){
           const ins = edit.to_length - edit.from_length;
           const eq = edit.from_length;
           if (eq){
-            cigar_string = append_cigar_operation(eq, 'M', cigar_string);
+            cigar = append_cigar_operation(eq, 'M', cigar);
           }
-          cigar_string = append_cigar_operation(ins, 'I', cigar_string);
+          cigar = append_cigar_operation(ins, 'I', cigar);
         }
-        else if (edit.to_length == undefined && edit.from_length){
+        // if to_length is undefined, this indicates a deletion
+        else if (edit.from_length && edit.to_length == undefined){
           const del = edit.from_length;
-          cigar_string = append_cigar_operation(del, 'D', cigar_string);
+          cigar = append_cigar_operation(del, 'D', cigar);
         }
-        else if (edit.to_length && edit.from_length == undefined){
+        // if from_length is undefined, this indicates an insertion
+        else if (edit.from_length == undefined && edit.to_length){
           const ins = edit.to_length;
-          cigar_string = append_cigar_operation(ins, 'I', cigar_string);
+          cigar = append_cigar_operation(ins, 'I', cigar);
         }
       }
     }
   }
-  console.log("cigar string::", cigar_string)
-  return cigar_string;
+  console.log("cigar string:", cigar.join(""));
+  return cigar.join("");
 }
 
-function append_cigar_operation (number, operator, string){
-  let operation = (number + operator);
-  let prev2 = string.slice(-2);
-  //console.log(prev2)
-  if (prev2.substr(-1) == operation.substr(-1)){
-    let newVal = Number(prev2.charAt(prev2.length - 2)) + Number(operation.charAt(operation.length - 2));
-    let newOperation = (newVal.toString() + prev2.substr(-1));
-    string = string.slice(0, -2) + newOperation;
+function append_cigar_operation (length, operator, cigar){
+  let last_operation = cigar[cigar.length - 1];
+  let last_length = cigar[cigar.length - 2];
+  // if duplicate operations, add the two operations and replace the most recent operation with this
+  if (last_operation == operator){
+    let newLength = last_length + length;
+    cigar[cigar.length - 2] = newLength;
   } 
   else {
-    string += operation;
+    cigar.push(length);
+    cigar.push(operator);
   }
-  return string;
+  return cigar;
 }
 
 // Pull out reads from a server response into tube map internal format.
