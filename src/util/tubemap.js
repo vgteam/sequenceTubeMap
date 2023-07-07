@@ -633,7 +633,6 @@ function placeReads() {
   allSources.sort();
   for (let source of allSources) {
     // Go through all source tracks in order
-    console.log("Lay out read track", source);
     sortedNodes.forEach((node) => {
       // And for each node, place these reads in it.
       // Use a margin to separate multiple read tracks if we have them.
@@ -691,8 +690,6 @@ function placeReadSet(readIDs, node, topMargin) {
   if (incomingReads.length === 0 && outgoingReads.length === 0 && internalReads.length === 0) {
     topMargin = 0;
   }
-
-  console.log("Top margin node " + node.name + ": ", topMargin);
 
   // Determine where we start vertically in the node. 
   let startY = node.y + node.contentHeight + topMargin;
