@@ -151,7 +151,6 @@ const config = {
            // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
   exonColors: "lightColors",
   hideLegendFlag: false,
-  colorReadsByMappingQuality: false,
   mappingQualityCutoff: 0,
   // Should different source tracks be separated vertically?
   collateTracks: true,
@@ -367,7 +366,7 @@ export function setShowReadsFlag(value) {
 
 export function setColorSet(fileID, newColor) {
   const currColor = config.colorSchemes[fileID];
-  // update if forward or backward color is different
+  // update if any coloring parameter is different
   if (!currColor || !deepEqual(currColor, newColor)) {
     config.colorSchemes[fileID] = newColor;
     const tr = createTubeMap();
@@ -392,19 +391,6 @@ export function setNodeWidthOption(value) {
 // accept a string argument to be displayed.
 export function setInfoCallback(newCallback) {
   config.showInfoCallback = newCallback;
-}
-
-export function setColorReadsByMappingQualityFlag(value) {
-  // TODO: add options to change colorReadsByMappingQuality individually
-  if (config.colorReadsByMappingQuality !== value) {
-    config.colorReadsByMappingQuality = value;
-    // update all values
-    for (let i = 0; i < config.colorSchemes.length; i++) {
-      config.colorSchemes[i].colorReadsByMappingQuality = value;
-    }
-    svg = d3.select(svgID);
-    createTubeMap();
-  }
 }
 
 export function setMappingQualityCutoff(value) {
