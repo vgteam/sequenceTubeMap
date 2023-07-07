@@ -33,16 +33,14 @@ export const TrackFilePicker = ({
     const fileOptions = []
     // find all file options matching the specified file type
     for (const track of tracks) {
-        for (const file of track["files"]) {
-          if (file["type"] === fileType) {
-            fileOptions.push(file);
-          }
+        if (track.trackType === fileType) {
+          fileOptions.push(track.trackFile)
         }
     }
 
     // takes in an array of options and maps them into a format <Select> takes
     const dropDownOptions = fileOptions.map((option) => ({
-      label: option["name"],
+      label: option,
       value: option,
     }));
     
@@ -53,7 +51,7 @@ export const TrackFilePicker = ({
         <div data-testid={testID}>
             <Select 
               options={dropDownOptions}
-              value={{label: value["name"], value: value}}
+              value={{label: value, value: value}}
               // Identical-looking object literals will compare unequal, so we
               // need to provide a way to turn them into strings so that
               // `value` can be matched up with the corresponding item in
@@ -83,7 +81,7 @@ export const TrackFilePicker = ({
 TrackFilePicker.propTypes = {
     tracks: PropTypes.array.isRequired,
     fileType: PropTypes.string,
-    value: PropTypes.object,
+    value: PropTypes.string,
     handleInputChange: PropTypes.func.isRequired,
     pickerType: PropTypes.string,
     className: PropTypes.string,
@@ -91,7 +89,7 @@ TrackFilePicker.propTypes = {
 }
   
 TrackFilePicker.defaultProps = {
-  value: {"name": "Select a file", "type": undefined},
+  value: "Select a file",
   fileType: "graph",
   pickerType: "dropdown",
   className: undefined,

@@ -218,10 +218,8 @@ function endsWithExtensions(file, extensions) {
 // returns the file name of the specified type in that track
 // returns falsy value if file type is not found
 function getFileFromType(track, type) {
-  for (const file of track.files) {
-    if (file.type == type) {
-      return file.name;
-    }
+  if (track.trackType === type) {
+    return track.trackFile;
   }
   return "none";
 }
@@ -232,8 +230,8 @@ function getFileFromType(track, type) {
 //
 // This is a fancy ES6 generator.
 function* eachFileOfType(tracks, type) {
-  for (const track of tracks) {
-    const file = getFileFromType(track, type);
+  for (const key in tracks) {
+    const file = getFileFromType(tracks[key], type);
     if (file && file !== "none") {
       yield file;
     }
@@ -294,6 +292,11 @@ api.post("/getChunkedData", (req, res, next) => {
   const bedFile = req.bedFile;
 
   let gamFiles = getGams(req.body.tracks);
+
+  console.log("graphFile ", graphFile);
+  console.log("gbwtFile ", gbwtFile);
+  console.log("bedFile ", bedFile);
+  console.log("gamFiles ", gamFiles);
 
   req.withGam = true;
   if (!gamFiles || !gamFiles.length) {
@@ -956,9 +959,7 @@ function pickDataPath(reqDataPath) {
 api.get("/getFilenames", (req, res) => {
   console.log("received request for filenames");
   const result = {
-    graphFiles: [],
-    gbwtFiles: [],
-    gamIndices: [],
+    files: [], // store a list of file object, excluding bed files, {  name: string; type: filetype;}
     bedFiles: [],
   };
 
@@ -966,13 +967,13 @@ api.get("/getFilenames", (req, res) => {
     // list files in folder
     fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
       if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
-        result.graphFiles.push(file);
+        result.files.push({"trackFile": file, "trackType": "graph"});
       }
       if (endsWithExtensions(file, HAPLOTYPE_EXTENSIONS)) {
-        result.gbwtFiles.push(file);
+        result.files.push({"trackFile": file, "trackType": "haplotype"});
       }
       if (file.endsWith(".sorted.gam")) {
-        result.gamIndices.push(file);
+        result.files.push({"trackFile": file, "trackType": "read"});
       }
       if (file.endsWith(".bed")) {
         result.bedFiles.push(file);

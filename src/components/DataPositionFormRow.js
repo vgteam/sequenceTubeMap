@@ -70,7 +70,8 @@ class DataPositionFormRow extends Component {
         <HelpButton file="./help/help-tooltip.md"></HelpButton>
         
         <Button
-          color="primary"
+          color={this.props.viewTargetHasChange ? "alert" : "primary"}
+          title={this.props.viewTargetHasChange ? "Click to apply pending changes." : "No changes to apply; view is up to date."}
           id="goButton"
           onClick={this.props.handleGoButton}
           disabled={this.props.uploadInProgress}
@@ -121,6 +122,7 @@ DataPositionFormRow.propTypes = {
   handleGoRight: PropTypes.func.isRequired,
   uploadInProgress: PropTypes.bool.isRequired,
   getCurrentViewTarget: PropTypes.func.isRequired,
+  viewTargetHasChange: PropTypes.bool.isRequired,
 };
 
 export default DataPositionFormRow;

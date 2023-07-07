@@ -5,6 +5,7 @@ import { Button } from 'reactstrap'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faList } from '@fortawesome/free-solid-svg-icons';
 import PopupDialog from './PopupDialog.js';
+import config from "./../config.json";
 
 export const TrackPicker = ({
     tracks, // expects a trackList, same as trackListDisplay
@@ -43,7 +44,7 @@ TrackPicker.propTypes = {
 }
 
 TrackPicker.defaultProps = {
-    availableColors: [],
+    tracks: {1: config.defaultTrackProps},
     onChange: () => {}
 }
 

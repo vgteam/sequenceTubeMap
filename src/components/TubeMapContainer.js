@@ -147,41 +147,39 @@ class TubeMapContainer extends Component {
         let graphTrackID = null;
         // And the haplotype track number if any
         let haplotypeTrackID = null;
-        for (let i = 0; i < this.props.viewTarget.tracks.length; i++) {
+
+        console.log("getting viewTarget ", this.props.viewTarget);
+        for (const i in this.props.viewTarget.tracks) {
           const track = this.props.viewTarget.tracks[i];
-          for (const file of track.files) {
-            if (file.type === "read") {
-              //add track index to array if the track contains a gam file
-              readTrackIDs.push(i);
-              break;
-            }
-            if (file.type === "graph") {
-              // Or note if it is a graph (one allowed)
-              graphTrackID = i;
-              break;
-            }
-            if (file.type === "haplotype") {
-              // Or a collection of haplotypes (one allowed)
-              haplotypeTrackID = i;
-              break;
-            }
+          if (track.trackType === "read") {
+            //add track index to array if the track contains a gam file
+            readTrackIDs.push(i);
+          }
+          if (track.trackType === "graph") {
+            // Or note if it is a graph (one allowed)
+            graphTrackID = i;
+          }
+          if (track.trackType === "haplotype") {
+            // Or a collection of haplotypes (one allowed)
+            haplotypeTrackID = i;
           }
         }
 
         console.log("Graph track: " + graphTrackID + " Haplotype track: " + haplotypeTrackID);
 
         const nodes = tubeMap.vgExtractNodes(json.graph);
-        // TODO: For now claim haplotypes came from the graph
-        const tracks = tubeMap.vgExtractTracks(json.graph, graphTrackID, graphTrackID);
+        const tracks = tubeMap.vgExtractTracks(json.graph, graphTrackID, haplotypeTrackID);
 
         // Call vgExtractReads on each file of reads and store in readsArr
         let readsArr = [];
         // Count total reads seen so far.
         let totalReads = 0;
+        console.log("json gams", Object.values(json.gam));
         for (const gam of Object.values(json.gam)) {
           // For each returned list of reads from a file, convert all those reads to tube map format.
           // Include total read count to prevent duplicate ids.
           // Also include the source track's ID.
+          console.log("readTrackIDs", readTrackIDs);
           let newReads = tubeMap.vgExtractReads(nodes, tracks, gam, totalReads, readTrackIDs[readsArr.length]);
           readsArr.push(newReads);
           totalReads += newReads.length;

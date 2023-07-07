@@ -57,7 +57,11 @@ class VisualizationOptions extends Component {
     for (let key in this.props.tracks) {
       // Generate settings controls for each track
       let track = this.props.tracks[key];
-      let type = track.files[0].type;
+      console.log(track);
+      if (!track.trackFile) {
+        continue;
+      }
+      let type = track.trackType;
       if (type === "graph") {
         trackSettingsList.push(
           <TrackSettings key={key} label="Graph Paths" fileType={type} trackColorSettings={visOptions.colorSchemes[key]} setTrackColorSetting={this.setColorWithIndex(key)} />
@@ -191,7 +195,6 @@ class VisualizationOptions extends Component {
                     </React.Fragment>
                   )}
                 </FormGroup>
-                {trackSettingsList}
               </CardBody>
             </Collapse>
           </Card>

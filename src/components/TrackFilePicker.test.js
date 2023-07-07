@@ -5,11 +5,11 @@ import {TrackFilePicker} from './TrackFilePicker';
 
 
 describe('TrackFilePicker', () => {
-    const testTracks = [{"files": [{"name": "fileA1.vg", "type": "graph"},
-                                   {"name": "fileA2.gbwt", "type": "haplotype"}]},
-                        {"files": [{"name": "fileB1.gbwt", "type": "haplotype"},
-                                   {"name": "fileB2.gam", "type": "read"}]},
-                        {"files": [{"name": "fileC1.xg", "type": "graph"}]}];
+    const testTracks = [{"trackFile": "fileA1.vg", "trackType": "graph"},
+                        {"trackFile": "fileA2.gbwt", "trackType": "haplotype"},
+                        {"trackFile": "fileB1.gbwt", "trackType": "haplotype"},
+                        {"trackFile": "fileB2.gam", "trackType": "read"},
+                        {"trackFile": "fileC1.xg", "trackType": "graph"}];
 
     it('should render without errors', async () => {
         const fakeOnChange = jest.fn();
@@ -33,7 +33,7 @@ describe('TrackFilePicker', () => {
             tracks={testTracks}
             fileType={"graph"}
             pickerType={"dropdown"}
-            value={{"name": "fileA1.vg", "type": "graph"}}
+            value={"fileA1.vg"}
             handleInputChange={fakeOnChange}/>
         );
 
@@ -47,7 +47,7 @@ describe('TrackFilePicker', () => {
             tracks={testTracks}
             fileType={"graph"}
             pickerType={"dropdown"}
-            value={{"name": "fileC1.xg", "type": "graph"}}
+            value={"fileC1.xg"}
             handleInputChange={fakeOnChange}/>
         );
         
@@ -79,7 +79,7 @@ describe('TrackFilePicker', () => {
         fireEvent.click(getByText("fileB1.gbwt"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
-        expect(fakeOnChange).toHaveBeenCalledWith({"name": "fileB1.gbwt", "type": "haplotype"});
+        expect(fakeOnChange).toHaveBeenCalledWith("fileB1.gbwt");
 
         // make sure we can repeat the process
         fireEvent.keyDown(fileSelectComponent.firstChild, {key: "ArrowDown"});
@@ -87,7 +87,7 @@ describe('TrackFilePicker', () => {
         fireEvent.click(getByText("fileA2.gbwt"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(2);
-        expect(fakeOnChange).toHaveBeenCalledWith({"name": "fileA2.gbwt", "type": "haplotype"});
+        expect(fakeOnChange).toHaveBeenCalledWith("fileA2.gbwt");
 
     });
 
@@ -113,7 +113,7 @@ describe('TrackFilePicker', () => {
         fireEvent.click(getByText("fileC1.xg"));
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
-        expect(fakeOnChange).toHaveBeenCalledWith({"name": "fileC1.xg", "type": "graph"});
+        expect(fakeOnChange).toHaveBeenCalledWith("fileC1.xg");
     })
     
 });

@@ -12,11 +12,11 @@ describe('TrackPicker', () => {
         3: config.defaultTrackProps,
     }
     const availableColors = ["greys", "ygreys", "reds", "plainColors", "lightColors"];
-    const availableTracks = [{"files": [{"name": "fileA1.vg", "type": "graph"},
-                                        {"name": "fileA2.gbwt", "type": "haplotype"}]},
-                             {"files": [{"name": "fileB1.gbwt", "type": "haplotype"},
-                                        {"name": "fileB2.gam", "type": "read"}]},
-                             {"files": [{"name": "fileC1.xg", "type": "graph"}]}];
+    const availableTracks = [{"trackFile": "fileA1.vg", "trackType": "graph"},
+                            {"trackFile": "fileA2.gbwt", "trackType": "haplotype"},
+                            {"trackFile": "fileB1.gbwt", "trackType": "haplotype"},
+                            {"trackFile": "fileB2.gam", "trackType": "read"},
+                            {"trackFile": "fileC1.xg", "trackType": "graph"}];
 
     it('should render without errors', async () => {
         const fakeOnChange = jest.fn();
@@ -124,10 +124,12 @@ describe('TrackPicker', () => {
 
         let newTracks = JSON.parse(JSON.stringify(tracks));
 
-        newTracks[1].trackFile = {"name": "fileA1.vg", "type": "graph"};
+        newTracks[1].trackFile = "fileA1.vg";
+        newTracks[1].trackType = "graph";
+        newTracks[2].trackFile = "fileB1.gbwt"
         newTracks[2].trackType = "haplotype";
-        newTracks[2].trackFile = {"name": "fileB1.gbwt", "type": "haplotype"};
-        newTracks[3].trackFile = {"name": "fileC1.xg", "type": "graph"};
+        newTracks[3].trackFile = "fileC1.xg";
+        newTracks[3].trackType = "graph";
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
@@ -155,7 +157,7 @@ describe('TrackPicker', () => {
         fireEvent.click(getByText("fileB2.gam"));
 
         newTracks[4] = {
-            trackFile: {"name": "fileB2.gam", "type": "read"},
+            trackFile: "fileB2.gam",
             trackType: "read",
             trackColorSettings: {    
                 mainPalette: "blues",
