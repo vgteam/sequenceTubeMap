@@ -632,16 +632,29 @@ function placeReads() {
   const sortedNodes = nodes.slice();
   sortedNodes.sort(compareNodesByOrder);
 
-  // Make a list of all read indexes
-  let allReadIDs = [];
+  // Organize read IDs by source track
+  let readsBySource = {};
   for (let i = 0; i < reads.length; i++) {
-    allReadIDs.push(i);
+    let source = reads[i].sourceTrackID;
+    if (readsBySource[source] === undefined) {
+      // First read from this source
+      readsBySource[source] = [i];
+    } else {
+      // Put it with the others from this source
+      readsBySource[source].push(i);
+    }
   }
 
-  // iterate over all nodes
-  sortedNodes.forEach((node) => {
-    placeReadSet(allReadIDs, node);
-  });
+  let allSources = Object.keys(readsBySource);
+  allSources.sort();
+  for (let source of allSources) {
+    // Go through all source tracks in order
+    console.log("Lay out read track", source);
+    sortedNodes.forEach((node) => {
+      // And for each node, place these reads in it.
+      placeReadSet(readsBySource[source], node);
+    });
+  }
 
   // place read segments which are without node
   const bottomY = calculateBottomY();

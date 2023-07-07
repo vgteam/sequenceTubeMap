@@ -79,6 +79,6 @@ export const urlParamsToViewTarget = (url) => {
   if (s[1]) {
     result = qs.parse(s[1]);
   }
- 
+
   return result;
 };

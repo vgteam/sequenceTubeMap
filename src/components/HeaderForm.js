@@ -67,6 +67,9 @@ const EMPTY_STATE = {
   // These ones are for selecting entire files and need to be preserved when
   // switching dataType.
   fileSelectOptions: [],
+  // This one is for the BED files. It needs to exist when we start up or we
+  // will try and draw the BED dropdown without an array of options.
+  bedSelectOptions: []
 };
 
 // Creates track to be stored in ViewTarget
