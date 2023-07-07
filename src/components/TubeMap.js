@@ -41,12 +41,12 @@ class TubeMap extends Component {
     tubeMap.setShowReadsFlag(visOptions.showReads);
     tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
 
-    for (let i = 0; i < visOptions.colorSchemes.length; i++) {
+    for (let key of Object.keys(visOptions.colorSchemes)) {
       // Apply color-by-mapping-quality parameter to all the schemes.
       // TODO: When we get individual controls, pass through individual track options.
-      let colorScheme = {...visOptions.colorSchemes[i], colorReadsByMappingQuality: visOptions.colorReadsByMappingQuality};
+      let colorScheme = {...visOptions.colorSchemes[key], colorReadsByMappingQuality: visOptions.colorReadsByMappingQuality};
       // update tubemap colors
-      tubeMap.setColorSet(i, colorScheme);
+      tubeMap.setColorSet(key, colorScheme);
     }
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
   }  

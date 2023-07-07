@@ -152,8 +152,6 @@ const config = {
   exonColors: "lightColors",
   hideLegendFlag: false,
   mappingQualityCutoff: 0,
-  // Should different source tracks be separated vertically?
-  collateTracks: true,
   showInfoCallback: function(info) {alert(info)},
 };
 
@@ -638,7 +636,8 @@ function placeReads() {
     console.log("Lay out read track", source);
     sortedNodes.forEach((node) => {
       // And for each node, place these reads in it.
-      placeReadSet(readsBySource[source], node);
+      // Use a margin to separate multiple read tracks if we have them.
+      placeReadSet(readsBySource[source], node, allSources.length > 0 ? READ_WIDTH : 0);
     });
   }
 
@@ -673,8 +672,13 @@ function placeReads() {
 // numbers, into the given node at the right Y coordinates. All reads in all
 // nodes above it, and no reads in any nodes below it, are already placed.
 // Makes the given node bigger if needed and moves other nodes down if needed.
-function placeReadSet(readIDs, node) {
-  
+// If topMargin is set, applies that amount of spacing down from whatever is above the reads.
+function placeReadSet(readIDs, node, topMargin) {
+  // Parse arguments
+  if (!topMargin) {
+    topMargin = 0;
+  }
+
   // Turn the read IDs into a set
   let toPlace = new Set(readIDs);
 
@@ -682,13 +686,22 @@ function placeReadSet(readIDs, node) {
   let incomingReads = node.incomingReads.filter(([readID, pathIndex]) => toPlace.has(readID));
   let outgoingReads = node.outgoingReads.filter(([readID, pathIndex]) => toPlace.has(readID));
   let internalReads = node.internalReads.filter((readID) => toPlace.has(readID));
-  
+
+  // Only actually use the top margin if we have any reads on the node.
+  if (incomingReads.length === 0 && outgoingReads.length === 0 && internalReads.length === 0) {
+    topMargin = 0;
+  }
+
+  console.log("Top margin node " + node.name + ": ", topMargin);
+
+  // Determine where we start vertically in the node. 
+  let startY = node.y + node.contentHeight + topMargin;
 
   // sort incoming reads
   incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
 
   // place incoming reads
-  let currentY = node.y + node.contentHeight;
+  let currentY = startY;
   const occupiedUntil = new Map();
   incomingReads.forEach((readElement) => {
     reads[readElement[0]].path[readElement[1]].y = currentY;
@@ -708,7 +721,7 @@ function placeReadSet(readIDs, node) {
 
   // place outgoing reads
   const occupiedFrom = new Map();
-  currentY = node.y + node.contentHeight;
+  currentY = startY;
   outgoingReads.forEach((readElement) => {
     // place in next lane
     reads[readElement[0]].path[readElement[1]].y = currentY;
@@ -748,7 +761,7 @@ function placeReadSet(readIDs, node) {
   // place internal reads
   internalReads.forEach((readIdx) => {
     const currentRead = reads[readIdx];
-    currentY = node.y + node.contentHeight;
+    currentY = startY;
     while (
       currentRead.firstNodeOffset < occupiedUntil.get(currentY) + 2 ||
       currentRead.finalNodeCoverLength > occupiedFrom.get(currentY) - 3
