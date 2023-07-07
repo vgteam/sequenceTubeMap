@@ -144,6 +144,10 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
     }
   }
 
+  if (currViewTarget.bedFile !== nextViewTarget.bedFile) {
+    return false;
+  }
+
   // Update if regions are not equal
   if (currViewTarget.region !== nextViewTarget.region) {
      return false;
