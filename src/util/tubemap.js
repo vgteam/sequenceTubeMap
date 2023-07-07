@@ -2597,6 +2597,7 @@ function generateSVGShapesFromPath() {
             xEnd: Math.max(xStart, xEnd),
             yEnd: yStart + track.width - 1,
             color: trackColor,
+            // TODO: This is not actually the index of the track!
             id: track.id,
             name: track.name,
             type: track.type,
@@ -3655,6 +3656,33 @@ function drawLegend() {
     .addEventListener("click", () => changeAllTracksVisibility(false), false);
 }
 
+// Get a non-read input track index by the ID stored in ther d3 objects.
+function getInputTrackIndexByID(trackID) {
+  let index = 0;
+  while (
+    index < inputTracks.length &&
+    inputTracks[index].id !== Number(trackID)
+  ) {
+    index += 1;
+  }
+  // There might not be a track
+  if (index >= inputTracks.length) return;
+  return index;
+}
+
+// Get any track object by ID.
+// Because of reordering of input tracks, the ID doesn't always match the index.
+function getTrackByID(trackID) {
+  // We just do a scan.
+  // TODO: index!
+  for (let i = 0; i < tracks.length; i++) {
+    if (tracks[i].id == trackID) {
+      console.log("Found track with ID ", trackID, " at index ", i);
+      return tracks[i];
+    }
+  }
+}
+
 // Highlight track on mouseover
 function trackMouseOver() {
   /* jshint validthis: true */
@@ -3688,14 +3716,11 @@ function nodeMouseOut() {
 function trackDoubleClick() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
-  let index = 0;
-  while (
-    index < inputTracks.length &&
-    inputTracks[index].id !== Number(trackID)
-  ) {
-    index += 1;
+  const index = getInputTrackIndexByID(trackID);
+  if (index === undefined) {
+    // Must be a read. Skip it.
+    return;
   }
-  if (index >= inputTracks.length) return;
   if (DEBUG) console.log(`moving index: ${index}`);
   moveTrackToFirstPosition(index);
   createTubeMap();
@@ -3704,7 +3729,12 @@ function trackDoubleClick() {
 function trackSingleClick() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
-  let current_track = tracks[trackID];
+  let current_track = getTrackByID(trackID);
+  console.log("Track ", trackID, " is ", current_track);
+  if (current_track === undefined) {
+    console.error("Missing track: ", trackID);
+    return;
+  }
   let track_attributes = [];
   track_attributes.push(["Name", current_track.name])
   if (current_track.type === "read") {
@@ -3968,12 +3998,12 @@ export function cigar_string (readPath) {
           cigar = append_cigar_operation(ins, 'I', cigar);
         }
         // if to_length is undefined, this indicates a deletion
-        else if (edit.from_length && edit.to_length == undefined){
+        else if (edit.from_length && edit.to_length === undefined){
           const del = edit.from_length;
           cigar = append_cigar_operation(del, 'D', cigar);
         }
         // if from_length is undefined, this indicates an insertion
-        else if (edit.from_length == undefined && edit.to_length){
+        else if (edit.from_length === undefined && edit.to_length){
           const ins = edit.to_length;
           cigar = append_cigar_operation(ins, 'I', cigar);
         }
@@ -3988,7 +4018,7 @@ function append_cigar_operation (length, operator, cigar){
   let last_operation = cigar[cigar.length - 1];
   let last_length = cigar[cigar.length - 2];
   // if duplicate operations, add the two operations and replace the most recent operation with this
-  if (last_operation == operator){
+  if (last_operation === operator){
     let newLength = last_length + length;
     cigar[cigar.length - 2] = newLength;
   } 
