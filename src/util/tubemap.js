@@ -3676,7 +3676,7 @@ function getTrackByID(trackID) {
   // We just do a scan.
   // TODO: index!
   for (let i = 0; i < tracks.length; i++) {
-    if (tracks[i].id == trackID) {
+    if (tracks[i].id === trackID) {
       console.log("Found track with ID ", trackID, " at index ", i);
       return tracks[i];
     }
