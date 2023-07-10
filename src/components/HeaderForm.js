@@ -288,6 +288,33 @@ class HeaderForm extends Component {
     return "none";
   }
 
+  getChunkPath = async (bedFile, dataPath) => {
+    this.setState({ error: null });
+    try {
+      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkPath`, {
+        signal: this.cancelSignal,
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bedFile, dataPath }),
+      });
+
+      if (!json.chunkPath) {
+        const error = json.error || "Server did not send back chunkPath"
+        this.setState({ error: error });
+      } else {
+        return json.chunkPath;
+      }
+
+    } catch (error) {
+      this.handleFetchError(
+        error,
+        `GET to ${this.props.apiUrl}/getChunkPath failed:`
+      );
+    }
+  }
+
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {

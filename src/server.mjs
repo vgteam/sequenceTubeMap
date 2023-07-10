@@ -334,39 +334,7 @@ api.post("/getChunkedData", (req, res, next) => {
     // We need to parse the BED file we have been referred to so we can look up
     // the pre-parsed chunk. We don't want the client re-uploading the BED to
     // us on every request.
-    let regionInfo = getBedRegions(bedFile, dataPath);
-
-    for (let i = 0; i < regionInfo["desc"].length; i++) {
-      let entryRegion = {
-        contig: regionInfo["chr"][i],
-        start: regionInfo["start"][i],
-        end: regionInfo["end"][i]
-      }
-      if (stringifyRegion(entryRegion) === stringifyRegion(parsedRegion)) {
-        // A BED entry is defined for this region exactly
-        if (regionInfo["chunk"][i] !== "") {
-          // And a chunk file is stored for it, so use that.
-          chunkPath = regionInfo["chunk"][i];
-          break;
-        }
-      }
-    }
-    // check that the 'chunk.vg' file exists in the chunk folder
-    chunkPath = `${dataPath}${chunkPath}`;
-    if (chunkPath.endsWith("/")) {
-      chunkPath = chunkPath.substring(0, chunkPath.length - 1);
-    }
-    let chunk_file = `${chunkPath}/chunk.vg`;
-    if (!isAllowedPath(chunk_file)) {
-      // We need to check allowed-ness before we check existence.
-      throw new BadRequestError("Path to chunk not allowed: " + chunkPath);
-    }
-    if (fs.existsSync(chunk_file)) {
-      console.log(`found pre-fetched chunk at ${chunk_file}`);
-    } else {
-      console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
-      chunkPath = "";
-    }
+    getChunkPath(bedFile, dataPath);
   }
   
   // We always need a range-version of the region, to fill in req.region, to
@@ -684,6 +652,44 @@ function returnErrorMiddleware(err, req, res, next) {
 
 // Hook up the error handling middleware.
 app.use(returnErrorMiddleware);
+
+function getChunkPath(bedFile, dataPath) {
+  let chunkPath = "";
+  let regionInfo = getBedRegions(bedFile, dataPath);
+
+  for (let i = 0; i < regionInfo["desc"].length; i++) {
+    let entryRegion = {
+      contig: regionInfo["chr"][i],
+      start: regionInfo["start"][i],
+      end: regionInfo["end"][i]
+    }
+    if (stringifyRegion(entryRegion) === stringifyRegion(parsedRegion)) {
+      // A BED entry is defined for this region exactly
+      if (regionInfo["chunk"][i] !== "") {
+        // And a chunk file is stored for it, so use that.
+        chunkPath = regionInfo["chunk"][i];
+        break;
+      }
+    }
+  }
+  // check that the 'chunk.vg' file exists in the chunk folder
+  chunkPath = `${dataPath}${chunkPath}`;
+  if (chunkPath.endsWith("/")) {
+    chunkPath = chunkPath.substring(0, chunkPath.length - 1);
+  }
+  let chunk_file = `${chunkPath}/chunk.vg`;
+  if (!isAllowedPath(chunk_file)) {
+    // We need to check allowed-ness before we check existence.
+    throw new BadRequestError("Path to chunk not allowed: " + chunkPath);
+  }
+  if (fs.existsSync(chunk_file)) {
+    console.log(`found pre-fetched chunk at ${chunk_file}`);
+  } else {
+    console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
+    chunkPath = "";
+  }
+  return chunkPath;
+}
 
 function processAnnotationFile(req, res, next) {
   try {
@@ -1076,6 +1082,24 @@ api.post("/getBedRegions", (req, res) => {
     res.json(result);
   } else {
     throw new BadRequestError("No BED file specified");
+  }
+});
+
+// request for getting the chunk path of the specified bed file
+api.post("/getChunkPath", (req, res) => {
+  console.log("received request for getChunkPath");
+  const result = {
+    chunkPath: ""
+  }
+
+  if (!req.body.bedFile) {
+    throw new BadRequestError("No BED file specified");
+  } else if (!req.body.dataPath) {
+    throw new BadRequestError("No data path specified");
+  } else {
+    dataPath = pickDataPath(req.body.dataPath);
+    result.chunkPath = getChunkPath(req.body.bedFile, dataPath);
+    res.json(result);
   }
 });
 
