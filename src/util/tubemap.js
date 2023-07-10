@@ -3962,7 +3962,7 @@ function compareReadsByLeftEnd2(a, b) {
   return 0;
 }
 
-// converts readPath to a CIGAR string
+// converts readPath, a vg Path object expressed as a JS object, to a CIGAR string
 export function cigar_string (readPath) {
   console.log("readPath mapping:", readPath.mapping)
   let cigar = [];

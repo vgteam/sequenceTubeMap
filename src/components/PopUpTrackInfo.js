@@ -14,10 +14,12 @@ export const PopUpTrackInfo = ({
             <table>
               {/* Node info here */}
               {(attributes || []).map(function(attribute){
-                return <tr key={attribute[0]} style={{border: '1px solid black'}}>
-                  <td style={{border: '1px solid black', fontWeight: 'bold'}}>{attribute[0]}</td>
-                  <td>{attribute[1]}</td>
-                </tr>;
+                return <tbody style={{border: '1px solid black'}}>
+                  <tr key={attribute[0]}>
+                    <td style={{fontWeight: 'bold', border: '1px solid black'}}>{attribute[0]}</td>
+                    <td>{attribute[1]}</td>
+                  </tr>
+                </tbody>
               })}
             </table>
         </PopupDialog>
