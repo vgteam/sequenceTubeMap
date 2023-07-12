@@ -631,13 +631,18 @@ function placeReads() {
   }
 
   let allSources = Object.keys(readsBySource);
-  allSources.sort();
+  allSources.sort((a, b) => (Number(a) - Number(b)));
+
+  console.log("All sources: ", allSources);
+
+  // Space out read tracks if multiple exist
+  let topMargin = allSources.length > 1 ? READ_WIDTH : 0;
   for (let source of allSources) {
     // Go through all source tracks in order
     sortedNodes.forEach((node) => {
       // And for each node, place these reads in it.
       // Use a margin to separate multiple read tracks if we have them.
-      placeReadSet(readsBySource[source], node, allSources.length > 0 ? READ_WIDTH : 0);
+      placeReadSet(readsBySource[source], node, topMargin);
     });
   }
 
@@ -674,6 +679,7 @@ function placeReads() {
 // Makes the given node bigger if needed and moves other nodes down if needed.
 // If topMargin is set, applies that amount of spacing down from whatever is above the reads.
 function placeReadSet(readIDs, node, topMargin) {
+
   // Parse arguments
   if (!topMargin) {
     topMargin = 0;
@@ -692,8 +698,9 @@ function placeReadSet(readIDs, node, topMargin) {
     topMargin = 0;
   }
 
-  // Determine where we start vertically in the node. 
-  let startY = node.y + node.contentHeight + topMargin;
+  // Determine where we start vertically in the node.
+  // TODO: Why do we have to double this to keep reads out of adjacent lanes???
+  let startY = node.y + node.contentHeight + topMargin * 2;
 
   // sort incoming reads
   incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
@@ -2429,7 +2436,7 @@ function generateTrackColor(track, highlight) {
 
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
-
+  
   const sourceID = track.sourceTrackID;
   if (!config.colorSchemes[sourceID]) {
     if (track.hasOwnProperty("type") && track.type === "read") {
@@ -3968,7 +3975,9 @@ function compareReadsByLeftEnd2(a, b) {
 
 // converts readPath, a vg Path object expressed as a JS object, to a CIGAR string
 export function cigar_string (readPath) {
-  console.log("readPath mapping:", readPath.mapping)
+  if (DEBUG) {
+    console.log("readPath mapping:", readPath.mapping);
+  }
   let cigar = [];
   for (let i = 0; i < readPath.mapping.length; i += 1) {
     let mapping = readPath.mapping[i]
@@ -4014,7 +4023,9 @@ export function cigar_string (readPath) {
       }
     }
   }
-  console.log("cigar string:", cigar.join(""));
+  if (DEBUG) {
+    console.log("cigar string:", cigar.join(""));
+  }
   return cigar.join("");
 }
 
