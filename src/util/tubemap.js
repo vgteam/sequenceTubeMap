@@ -3673,6 +3673,9 @@ function getInputTrackIndexByID(trackID) {
 // Get any track object by ID.
 // Because of reordering of input tracks, the ID doesn't always match the index.
 function getTrackByID(trackID) {
+  if (typeof trackID !== "number") {
+    throw new Error("Track IDs must be numbers");
+  }
   // We just do a scan.
   // TODO: index!
   for (let i = 0; i < tracks.length; i++) {
@@ -3728,7 +3731,8 @@ function trackDoubleClick() {
 
 function trackSingleClick() {
   /* jshint validthis: true */
-  const trackID = d3.select(this).attr("trackID");
+  // Get the track ID as a number
+  const trackID = Number(d3.select(this).attr("trackID"));
   let current_track = getTrackByID(trackID);
   console.log("Track ", trackID, " is ", current_track);
   if (current_track === undefined) {
