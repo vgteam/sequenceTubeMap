@@ -386,7 +386,8 @@ export function setNodeWidthOption(value) {
 }
 
 // sets callback function that would generate React popup of track information. The callback would 
-// accept a string argument to be displayed.
+// accept an array argument of track attribute pairs containing attribute name as a string and attribute value
+// as a string or number, to be displayed.
 export function setInfoCallback(newCallback) {
   config.showInfoCallback = newCallback;
 }
@@ -630,13 +631,18 @@ function placeReads() {
   }
 
   let allSources = Object.keys(readsBySource);
-  allSources.sort();
+  allSources.sort((a, b) => (Number(a) - Number(b)));
+
+  console.log("All sources: ", allSources);
+
+  // Space out read tracks if multiple exist
+  let topMargin = allSources.length > 1 ? READ_WIDTH : 0;
   for (let source of allSources) {
     // Go through all source tracks in order
     sortedNodes.forEach((node) => {
       // And for each node, place these reads in it.
       // Use a margin to separate multiple read tracks if we have them.
-      placeReadSet(readsBySource[source], node, allSources.length > 0 ? READ_WIDTH : 0);
+      placeReadSet(readsBySource[source], node, topMargin);
     });
   }
 
@@ -673,6 +679,7 @@ function placeReads() {
 // Makes the given node bigger if needed and moves other nodes down if needed.
 // If topMargin is set, applies that amount of spacing down from whatever is above the reads.
 function placeReadSet(readIDs, node, topMargin) {
+
   // Parse arguments
   if (!topMargin) {
     topMargin = 0;
@@ -691,8 +698,9 @@ function placeReadSet(readIDs, node, topMargin) {
     topMargin = 0;
   }
 
-  // Determine where we start vertically in the node. 
-  let startY = node.y + node.contentHeight + topMargin;
+  // Determine where we start vertically in the node.
+  // TODO: Why do we have to double this to keep reads out of adjacent lanes???
+  let startY = node.y + node.contentHeight + topMargin * 2;
 
   // sort incoming reads
   incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
@@ -2428,7 +2436,7 @@ function generateTrackColor(track, highlight) {
 
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
-
+  
   const sourceID = track.sourceTrackID;
   if (!config.colorSchemes[sourceID]) {
     if (track.hasOwnProperty("type") && track.type === "read") {
@@ -2596,6 +2604,7 @@ function generateSVGShapesFromPath() {
             xEnd: Math.max(xStart, xEnd),
             yEnd: yStart + track.width - 1,
             color: trackColor,
+            // TODO: This is not actually the index of the track!
             id: track.id,
             name: track.name,
             type: track.type,
@@ -3654,6 +3663,36 @@ function drawLegend() {
     .addEventListener("click", () => changeAllTracksVisibility(false), false);
 }
 
+// Get a non-read input track index by the ID stored in ther d3 objects.
+function getInputTrackIndexByID(trackID) {
+  let index = 0;
+  while (
+    index < inputTracks.length &&
+    inputTracks[index].id !== Number(trackID)
+  ) {
+    index += 1;
+  }
+  // There might not be a track
+  if (index >= inputTracks.length) return;
+  return index;
+}
+
+// Get any track object by ID.
+// Because of reordering of input tracks, the ID doesn't always match the index.
+function getTrackByID(trackID) {
+  if (typeof trackID !== "number") {
+    throw new Error("Track IDs must be numbers");
+  }
+  // We just do a scan.
+  // TODO: index!
+  for (let i = 0; i < tracks.length; i++) {
+    if (tracks[i].id === trackID) {
+      console.log("Found track with ID ", trackID, " at index ", i);
+      return tracks[i];
+    }
+  }
+}
+
 // Highlight track on mouseover
 function trackMouseOver() {
   /* jshint validthis: true */
@@ -3687,14 +3726,11 @@ function nodeMouseOut() {
 function trackDoubleClick() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
-  let index = 0;
-  while (
-    index < inputTracks.length &&
-    inputTracks[index].id !== Number(trackID)
-  ) {
-    index += 1;
+  const index = getInputTrackIndexByID(trackID);
+  if (index === undefined) {
+    // Must be a read. Skip it.
+    return;
   }
-  if (index >= inputTracks.length) return;
   if (DEBUG) console.log(`moving index: ${index}`);
   moveTrackToFirstPosition(index);
   createTubeMap();
@@ -3702,10 +3738,28 @@ function trackDoubleClick() {
 
 function trackSingleClick() {
   /* jshint validthis: true */
-  const trackName = d3.select(this).attr("trackName");
+  // Get the track ID as a number
+  const trackID = Number(d3.select(this).attr("trackID"));
+  let current_track = getTrackByID(trackID);
+  console.log("Track ", trackID, " is ", current_track);
+  if (current_track === undefined) {
+    console.error("Missing track: ", trackID);
+    return;
+  }
+  let track_attributes = [];
+  track_attributes.push(["Name", current_track.name])
+  if (current_track.type === "read") {
+    track_attributes.push(["Sample Name", current_track.sample_name])
+    track_attributes.push(["Primary Alignment?", current_track.is_secondary ? "Secondary" : "Primary"])
+    track_attributes.push(["Read Group", current_track.read_group])
+    track_attributes.push(["Score", current_track.score])
+    track_attributes.push(["CIGAR string", current_track.cigar_string])
+    track_attributes.push(["Mapping Quality", current_track.mapping_quality])
+  }
   console.log("Single Click");
+  console.log("read path", );
   console.log(config.showInfoCallback)
-  config.showInfoCallback(trackName)
+  config.showInfoCallback(track_attributes)
 }
 
 // show track name when hovering mouse
@@ -3919,6 +3973,77 @@ function compareReadsByLeftEnd2(a, b) {
   return 0;
 }
 
+// converts readPath, a vg Path object expressed as a JS object, to a CIGAR string
+export function cigar_string (readPath) {
+  if (DEBUG) {
+    console.log("readPath mapping:", readPath.mapping);
+  }
+  let cigar = [];
+  for (let i = 0; i < readPath.mapping.length; i += 1) {
+    let mapping = readPath.mapping[i]
+    for (let j = 0; j < mapping.edit.length; j += 1) {
+      let edit = mapping.edit[j]
+      // from_length is not 0, and from_length = to_length, this indicates a match
+      if (edit.from_length && edit.from_length === edit.to_length){
+        cigar = append_cigar_operation(edit.from_length, 'M', cigar);
+      }
+      else {
+        // from_length can be 0, and from_length = to_length, this indicates a match
+        if (edit.from_length === edit.to_length){
+          cigar = append_cigar_operation(edit.from_length, 'M', cigar);
+        } 
+        // if from_length > to_length, this indicates a deletion
+        else if (edit.from_length > edit.to_length){
+          const del = edit.from_length - edit.to_length;
+          const eq = edit.to_length;
+          if (eq){
+            cigar = append_cigar_operation(eq, 'M', cigar);
+          }
+          cigar = append_cigar_operation(del, 'D', cigar);
+        } 
+        // if from_length < to_length, this indicates an insertion
+        else if (edit.from_length < edit.to_length){
+          const ins = edit.to_length - edit.from_length;
+          const eq = edit.from_length;
+          if (eq){
+            cigar = append_cigar_operation(eq, 'M', cigar);
+          }
+          cigar = append_cigar_operation(ins, 'I', cigar);
+        }
+        // if to_length is undefined, this indicates a deletion
+        else if (edit.from_length && edit.to_length === undefined){
+          const del = edit.from_length;
+          cigar = append_cigar_operation(del, 'D', cigar);
+        }
+        // if from_length is undefined, this indicates an insertion
+        else if (edit.from_length === undefined && edit.to_length){
+          const ins = edit.to_length;
+          cigar = append_cigar_operation(ins, 'I', cigar);
+        }
+      }
+    }
+  }
+  if (DEBUG) {
+    console.log("cigar string:", cigar.join(""));
+  }
+  return cigar.join("");
+}
+
+function append_cigar_operation (length, operator, cigar){
+  let last_operation = cigar[cigar.length - 1];
+  let last_length = cigar[cigar.length - 2];
+  // if duplicate operations, add the two operations and replace the most recent operation with this
+  if (last_operation === operator){
+    let newLength = last_length + length;
+    cigar[cigar.length - 2] = newLength;
+  } 
+  else {
+    cigar.push(length);
+    cigar.push(operator);
+  }
+  return cigar;
+}
+
 // Pull out reads from a server response into tube map internal format.
 // Use myTracks, and idOffset to compute IDs for each read.
 // Assign each read the given sourceTrackID.
@@ -4044,7 +4169,10 @@ export function vgExtractReads(myNodes, myTracks, myReads, idOffset, sourceTrack
 
       track.mapping_quality = read.mapping_quality || 0;
       track.is_secondary = read.is_secondary || false;
-
+      track.sample_name = read.sample_name || null;
+      track.read_group = read.read_group || null;
+      track.cigar_string = cigar_string(read.path);
+      track.score = read.score || 0;
       extracted.push(track);
     }
   }
