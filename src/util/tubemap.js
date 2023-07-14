@@ -3109,26 +3109,58 @@ function drawNodes(dNodes) {
     .on("mouseover", nodeMouseOver)
     .on("mouseout", nodeMouseOut)
     .on("dblclick", nodeDoubleClick)
+    .on("click", nodeSingleClick)
     .style("fill", config.transparentNodesFlag ? "none" : "#fff")
     .style("fill-opacity", config.showExonsFlag ? "0.4" : "0.6")
     .style("stroke", "black")
     .style("stroke-width", "2px")
     .append("svg:title")
-    .text((d) => getPopUpText(d));
+    .text((d) => getPopUpNodeText(d));
 }
 
-function getPopUpText(node) {
+function getPopUpNodeText(node) {
 
   return (
-    `Node ID: ${node.name}` + (node.switched ? ` (reversed)` : ``) + `\n` +
-    `Node Length: ${node.sequenceLength} bases\n` +
-    `Haplotypes: ${node.degree}\n` +
-    `Aligned Reads: ${
-      node.incomingReads.length +
-      node.internalReads.length +
-      node.outgoingReads.length
-    }`
+    `Node ID: ${node.name}` + (node.switched ? ` (reversed)` : ``) + `\n`
   );
+}
+
+// Get any track object by ID.
+// Because of reordering of input tracks, the ID doesn't always match the index.
+function getNodeByName(nodeName) {
+  if (typeof nodeName !== "number") {
+    throw new Error("Node Names must be numbers");
+  }
+  // We just do a scan.
+  // TODO: index!
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].name === nodeName) {
+      console.log("Found node with name ", nodeName, " at index ", i);
+      return nodes[i];
+    }
+  }
+}
+
+
+function nodeSingleClick() {
+  /* jshint validthis: true */
+  // Get the node name 
+  const nodeName = Number(d3.select(this).attr("name"));
+  let currentNode = getNodeByName(nodeName);
+  console.log("Node ", nodeName, " is ", currentNode);
+  if (currentNode === undefined) {
+    console.error("Missing node: ", nodeName);
+    return;
+  }
+  let nodeAttributes = [];
+  nodeAttributes.push(["Node ID:", currentNode.name + currentNode.switched ? " (reversed)" : ""])
+  nodeAttributes.push(["Node Length:", currentNode.sequenceLength + " bases"])
+  nodeAttributes.push(["Haplotypes:", currentNode.degree])
+  nodeAttributes.push(["Aligned Reads:", currentNode.incomingReads.length + currentNode.internalReads.length + currentNode.outgoingReads.length]);
+
+  console.log("Single Click");
+  console.log(config.showInfoCallback)
+  config.showInfoCallback(nodeAttributes)
 }
 
 // draw seqence labels for nodes
