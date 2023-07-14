@@ -675,6 +675,15 @@ class HeaderForm extends Component {
       this.state.fileSelectOptions
     );
 
+    const DataPositionFormRowComponent = <DataPositionFormRow
+      handleGoLeft={this.handleGoLeft}
+      handleGoRight={this.handleGoRight}
+      handleGoButton={this.handleGoButton}
+      uploadInProgress={this.state.uploadInProgress}
+      getCurrentViewTarget={this.props.getCurrentViewTarget}
+      viewTargetHasChange={viewTargetHasChange}
+    />
+
     return (
       <div>
         {errorDiv}
@@ -739,14 +748,7 @@ class HeaderForm extends Component {
 
               {mountedFilesFlag && 
                 <div style={{display: "flex"}}>
-                  <DataPositionFormRow
-                    handleGoLeft={this.handleGoLeft}
-                    handleGoRight={this.handleGoRight}
-                    handleGoButton={this.handleGoButton}
-                    uploadInProgress={this.state.uploadInProgress}
-                    getCurrentViewTarget={this.props.getCurrentViewTarget}
-                    viewTargetHasChange={viewTargetHasChange}
-                  />
+                  {DataPositionFormRowComponent}
                   <TrackPicker
                     tracks={this.state.tracks}
                     availableTracks={this.state.fileSelectOptions}
@@ -785,15 +787,7 @@ class HeaderForm extends Component {
                   setColorSetting={this.props.setColorSetting}
                 />
               ) : (
-                !mountedFilesFlag && 
-                <DataPositionFormRow
-                  handleGoLeft={this.handleGoLeft}
-                  handleGoRight={this.handleGoRight}
-                  handleGoButton={this.handleGoButton}
-                  uploadInProgress={this.state.uploadInProgress}
-                  getCurrentViewTarget={this.props.getCurrentViewTarget}
-                  viewTargetHasChange={viewTargetHasChange}
-                />
+                !mountedFilesFlag && DataPositionFormRowComponent 
               )}
             </Col>
           </Row>
