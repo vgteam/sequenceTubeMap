@@ -34,7 +34,7 @@ export const RegionInput = ({
   // Autocomplete selectable options
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
 
-  
+  console.log("region info", regionInfo);
   return (
     <>
       <Autocomplete
@@ -81,6 +81,7 @@ RegionInput.propTypes = {
     // Path
     chr: PropTypes.array,
     chunk: PropTypes.array,
+    chunk_path: PropTypes.array,
     // Description of region from BED
     desc: PropTypes.array,
     end: PropTypes.array,

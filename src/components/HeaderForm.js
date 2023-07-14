@@ -291,7 +291,7 @@ class HeaderForm extends Component {
     return "none";
   }
 
-  getChunkPath = async (bedFile, dataPath) => {
+  getChunkPath = async (bedFile, dataPath, parsedRegion) => {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getChunkPath`, {
@@ -300,7 +300,7 @@ class HeaderForm extends Component {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bedFile, dataPath }),
+        body: JSON.stringify({ bedFile, dataPath, parsedRegion }),
       });
 
       if (!json.chunkPath) {

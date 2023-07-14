@@ -334,7 +334,7 @@ api.post("/getChunkedData", (req, res, next) => {
     // We need to parse the BED file we have been referred to so we can look up
     // the pre-parsed chunk. We don't want the client re-uploading the BED to
     // us on every request.
-    getChunkPath(bedFile, dataPath);
+    chunkPath = getChunkPath(bedFile, dataPath, parsedRegion);
   }
   
   // We always need a range-version of the region, to fill in req.region, to
@@ -653,7 +653,8 @@ function returnErrorMiddleware(err, req, res, next) {
 // Hook up the error handling middleware.
 app.use(returnErrorMiddleware);
 
-function getChunkPath(bedFile, dataPath) {
+// Gets the chunk path from a region specified in a bedfile 
+function getChunkPath(bedFile, dataPath, parsedRegion) {
   let chunkPath = "";
   let regionInfo = getBedRegions(bedFile, dataPath);
 
@@ -665,15 +666,14 @@ function getChunkPath(bedFile, dataPath) {
     }
     if (stringifyRegion(entryRegion) === stringifyRegion(parsedRegion)) {
       // A BED entry is defined for this region exactly
-      if (regionInfo["chunk"][i] !== "") {
+      if (regionInfo["chunk_path"][i] !== "") {
         // And a chunk file is stored for it, so use that.
-        chunkPath = regionInfo["chunk"][i];
+        chunkPath = regionInfo["chunk_path"][i];
         break;
       }
     }
   }
   // check that the 'chunk.vg' file exists in the chunk folder
-  chunkPath = `${dataPath}${chunkPath}`;
   if (chunkPath.endsWith("/")) {
     chunkPath = chunkPath.substring(0, chunkPath.length - 1);
   }
@@ -1098,7 +1098,7 @@ api.post("/getChunkPath", (req, res) => {
     throw new BadRequestError("No data path specified");
   } else {
     dataPath = pickDataPath(req.body.dataPath);
-    result.chunkPath = getChunkPath(req.body.bedFile, dataPath);
+    result.chunkPath = getChunkPath(req.body.bedFile, dataPath, req.body.parsedRegion);
     res.json(result);
   }
 });
@@ -1120,7 +1120,7 @@ function getBedRegions(bedFile, dataPath) {
     throw new BadRequestError("BED file not found: " + bedFile);
   }
 
-  let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [] };
+  let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [], chunk_path: [], tracks: []};
 
   // Load and parse the BED file
   let bed_data = fs.readFileSync(bed_path).toString();
@@ -1144,6 +1144,46 @@ function getBedRegions(bedFile, dataPath) {
       chunk = records[4];
     }
     bed_info["chunk"].push(chunk);
+    const chunk_path = `${dataPath}${chunk}`;
+    bed_info["chunk_path"].push(chunk_path);
+
+
+    let tracks = {};
+    let trackID = 1;
+
+    const track_json = path.join(chunk_path, "tracks.json");
+    // if json file specifying the tracks exists
+    if (fs.existsSync(track_json)) {
+      const json_data = JSON.parse(fs.readFileSync(track_json));
+      
+      if (json_data["graph_file"] !== "") {
+        tracks[trackID] = {...config.defaultTrackProps};
+        tracks[trackID]["trackFile"] = json_data["graph_file"];
+        tracks[trackID]["trackType"] = fileTypes["GRAPH"];
+        trackID += 1;
+      }
+
+      if (json_data["haplotype_file"] !== "") {
+        tracks[trackID] = {...config.defaultTrackProps};
+        tracks[trackID]["trackFile"] = json_data["haplotype_file"];
+        tracks[trackID]["trackType"] = fileTypes["HAPLOTYPE"];
+        tracks[trackID]["trackColorSettings"] = {...config.defaultHaplotypeColorPalette};
+        trackID += 1;
+      }
+
+      for (const gam_file of json_data["gam_files"]) {
+        tracks[trackID] = {...config.defaultTrackProps};
+        tracks[trackID]["trackFile"] = gam_file;
+        tracks[trackID]["trackType"] = fileTypes["READ"];
+        tracks[trackID]["trackColorSettings"] = {...config.defaultReadColorPalette};
+        trackID += 1;
+      }
+
+    }
+
+    bed_info["tracks"].push(tracks);
+
+
   });
 
   return bed_info;
