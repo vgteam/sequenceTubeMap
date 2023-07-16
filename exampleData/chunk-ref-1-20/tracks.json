@@ -1,0 +1,8 @@
+{
+  "graph_file": "cactus.vg",
+  "haplotype_file": "",
+  "gam_files": [
+    "cactus0_10.sorted.gam",
+    "cactus10_20.sorted.gam"
+  ]
+}

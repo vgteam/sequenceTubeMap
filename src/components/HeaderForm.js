@@ -44,7 +44,7 @@ const CLEAR_STATE = {
 
   pathNames: ["none"],
 
-  tracks: [],
+  tracks: {},
   bedFile: undefined,
   dataPath: undefined,
   region: "",
@@ -291,33 +291,6 @@ class HeaderForm extends Component {
     return "none";
   }
 
-  getChunkPath = async (bedFile, dataPath, parsedRegion) => {
-    this.setState({ error: null });
-    try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkPath`, {
-        signal: this.cancelSignal,
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bedFile, dataPath, parsedRegion }),
-      });
-
-      if (!json.chunkPath) {
-        const error = json.error || "Server did not send back chunkPath"
-        this.setState({ error: error });
-      } else {
-        return json.chunkPath;
-      }
-
-    } catch (error) {
-      this.handleFetchError(
-        error,
-        `GET to ${this.props.apiUrl}/getChunkPath failed:`
-      );
-    }
-  }
-
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
@@ -544,7 +517,7 @@ class HeaderForm extends Component {
     const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
     return regionString;
   };
-  handleRegionChange = (value) => {
+  handleRegionChange = (value, tracks) => {
     // After user selects a region name or coordinates,
     // update path and region
     let coords = value;
@@ -557,6 +530,12 @@ class HeaderForm extends Component {
       coords = this.getRegionCoords(value);
     }
     this.setState({ region: coords });
+
+    // Override current tracks with new tracks from chunk dir
+    if (tracks) {
+      this.setState({ tracks: tracks });
+      console.log("New tracks have been population");
+    }
   };
 
   handleInputChange = (newTracks) => {

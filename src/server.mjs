@@ -1085,24 +1085,6 @@ api.post("/getBedRegions", (req, res) => {
   }
 });
 
-// request for getting the chunk path of the specified bed file
-api.post("/getChunkPath", (req, res) => {
-  console.log("received request for getChunkPath");
-  const result = {
-    chunkPath: ""
-  }
-
-  if (!req.body.bedFile) {
-    throw new BadRequestError("No BED file specified");
-  } else if (!req.body.dataPath) {
-    throw new BadRequestError("No data path specified");
-  } else {
-    dataPath = pickDataPath(req.body.dataPath);
-    result.chunkPath = getChunkPath(req.body.bedFile, dataPath, req.body.parsedRegion);
-    res.json(result);
-  }
-});
-
 // Load up the given BED file, relative to the given pre-resolved dataPath, and
 // return a data structure decribing all the pre-cached regions it defines.
 // Validates file paths for user-accessibility. May throw.
@@ -1120,7 +1102,7 @@ function getBedRegions(bedFile, dataPath) {
     throw new BadRequestError("BED file not found: " + bedFile);
   }
 
-  let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [], chunk_path: [], tracks: []};
+  let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [], tracks: []};
 
   // Load and parse the BED file
   let bed_data = fs.readFileSync(bed_path).toString();
@@ -1144,16 +1126,17 @@ function getBedRegions(bedFile, dataPath) {
       chunk = records[4];
     }
     bed_info["chunk"].push(chunk);
-    const chunk_path = `${dataPath}${chunk}`;
-    bed_info["chunk_path"].push(chunk_path);
+
 
 
     let tracks = {};
     let trackID = 1;
 
+    const chunk_path = `${dataPath}${chunk}`;
     const track_json = path.join(chunk_path, "tracks.json");
-    // if json file specifying the tracks exists
+    // If json file specifying the tracks exists
     if (fs.existsSync(track_json)) {
+      // Read json file and create a tracks object from it 
       const json_data = JSON.parse(fs.readFileSync(track_json));
       
       if (json_data["graph_file"] !== "") {
