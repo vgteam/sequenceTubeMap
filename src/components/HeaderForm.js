@@ -12,6 +12,7 @@ import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import SelectionDropdown from "./SelectionDropdown";
 import { parseRegion, stringifyRegion } from "../common.mjs";
+
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
@@ -674,6 +675,15 @@ class HeaderForm extends Component {
       this.state.fileSelectOptions
     );
 
+    const DataPositionFormRowComponent = <DataPositionFormRow
+      handleGoLeft={this.handleGoLeft}
+      handleGoRight={this.handleGoRight}
+      handleGoButton={this.handleGoButton}
+      uploadInProgress={this.state.uploadInProgress}
+      getCurrentViewTarget={this.props.getCurrentViewTarget}
+      viewTargetHasChange={viewTargetHasChange}
+    />
+
     return (
       <div>
         {errorDiv}
@@ -689,6 +699,7 @@ class HeaderForm extends Component {
               >
                 Data:
               </Label>
+
               <select
                 type="select"
                 value={
@@ -706,19 +717,13 @@ class HeaderForm extends Component {
               &nbsp;
               {mountedFilesFlag && (
                 <React.Fragment>
-                  <TrackPicker
-                    tracks={this.state.tracks}
-                    availableTracks={this.state.fileSelectOptions}
-                    onChange={this.handleInputChange}
-                  />
-
                   <Label
                     for="bedSelectInput"
                     className="customData tight-label mb-2 mr-sm-2 mb-sm-0 ml-2"
                   >
                     BED file:
                   </Label>
-                  
+                  &nbsp;
                   <SelectionDropdown
                     className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
                     id="bedSelect"
@@ -731,6 +736,7 @@ class HeaderForm extends Component {
                 </React.Fragment>
 
               )}
+
               {!examplesFlag && (
                 <RegionInput
                   pathNames={this.state.pathNames}
@@ -739,6 +745,18 @@ class HeaderForm extends Component {
                   region={this.state.region}
                 />
               )}
+
+              {mountedFilesFlag && 
+                <div style={{display: "flex"}}>
+                  {DataPositionFormRowComponent}
+                  <TrackPicker
+                    tracks={this.state.tracks}
+                    availableTracks={this.state.fileSelectOptions}
+                    onChange={this.handleInputChange}
+                  ></TrackPicker>
+                </div>
+              }
+
               {uploadFilesFlag && (
                 <FileUploadFormRow
                   apiUrl={this.props.apiUrl}
@@ -749,6 +767,7 @@ class HeaderForm extends Component {
                   setUploadInProgress={this.setUploadInProgress}
                 />
               )}
+
               <Alert
                 color="danger"
                 isOpen={this.state.fileSizeAlert}
@@ -761,20 +780,14 @@ class HeaderForm extends Component {
                 You may only upload files with a maximum size of{" "}
                 {MAX_UPLOAD_SIZE_DESCRIPTION}.
               </Alert>
+
               {examplesFlag ? (
                 <ExampleSelectButtons
                   setDataOrigin={this.props.setDataOrigin}
                   setColorSetting={this.props.setColorSetting}
                 />
               ) : (
-                <DataPositionFormRow
-                  handleGoLeft={this.handleGoLeft}
-                  handleGoRight={this.handleGoRight}
-                  handleGoButton={this.handleGoButton}
-                  uploadInProgress={this.state.uploadInProgress}
-                  getCurrentViewTarget={this.props.getCurrentViewTarget}
-                  viewTargetHasChange={viewTargetHasChange}
-                />
+                !mountedFilesFlag && DataPositionFormRowComponent 
               )}
             </Col>
           </Row>

@@ -20,7 +20,7 @@ export const TrackPicker = ({
     return(
       <div>
         
-        <Button aria-label="TrackPicker" data-testid={"TrackPickerButton"} onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faList} /></Button>
+        <Button aria-label="TrackPicker" data-testid={"TrackPickerButton"} onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faList} /> Configure Tracks</Button>
         {
           // Need to set width to null because the default fixed width is too small for the track lits items.
         }
