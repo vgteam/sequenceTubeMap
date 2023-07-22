@@ -131,18 +131,27 @@ That can sometimes up to 10-20 seconds.
 If you already know of regions/subgraphs that you will be looking at, you can pre-fetch the data in advance. 
 This will save some time during the interactive visualization, especially if there are a lot of regions to visualize.
 
+This is a 2 step process that involves creating the chunk and linking it to a bed file
+
+1. 
 The subgraphs need to be pre-fetched using `vg chunk` like shown in [`prepare_chunks.sh`](scripts/prepare_chunks.sh). For example:
 
 ```
 ./prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam
 ```
 
+2.
 Then compile those regions in a BED file with two additional columns: 
 
 - a description of the region (column 4)
 - the path to the output directory of the chunk, `chunk-chr1-1-100` in the example above, (column 5). 
 
-See an example in [`cactus.bed`](exampleData/cactus.bed). 
+```
+ref	1	10	region one to ten	chunk-ref-1-20
+ref	10	20	region ten to twenty	chunk-ref-1-20
+```
+Note each column is seperated by tabs
+
 This BED file will be read if placed in the `dataPath` directory, like for other files to mount (see above).
 
 #### Development Mode
