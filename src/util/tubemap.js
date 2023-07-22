@@ -100,13 +100,36 @@ let inputTracks = [];
 let inputReads = [];
 let inputRegion = [];
 let nodes;
+// Each track has a `path`, which is an array of objects describing pieces of the path that need to be drawn, in order along the path. The objects in the path are Segment objects and have fields:
+//
+// * order: horizontal order number at which this piece of the track's path should be drawn.
+// * lane: vertical lane that this piece of the track's path should be drawn at, or null if not yet assigned.
+// * isForward: true if the track is running left to right here, false if it is running right to left.
+// * node: the node being visited, or null if this piece of the track is outside nodes.
 let tracks;
+// Each read also has a `path` list of objects (here Elements) with `order`, `isForward`, and `node` fields, but there is no `lane` field; reads are organized vertically using a completely different system than non-read tracks.
 let reads;
 let numberOfNodes;
 let numberOfTracks;
 let nodeMap; // maps node names to node indices
 let nodesPerOrder;
-let assignments = []; // contains info about lane assignments sorted by order
+// Contains info about lane assignments for tracks, in one list for each horizontal "order" slot.
+// Each entry is an Assignment, which is a list of NodeAssignment objects.
+// A NodeAssignment object is:
+//
+// * type: can be "single" (if only one track visits the node) or "multiple" (if multiple tracks visit the node)
+// * node: the node index in nodes that the Assignment belongs to, or null if the Assignment is for a region outside of any node.
+// * tracks: a list of SegmentAssignment objects
+//
+// A SegmentAssignment object contains:
+//
+// * trackID: the number of the track that the SegmentAssignment represents a piece of.
+// * segmentID: the number along all that track's Segments in the track's `path` that is assigned here.
+// * compareToFromSame: any earlier SegmentAssignment for this track in this order slot, or null. TODO: This is never used. 
+// 
+// This is all duplicative with the tracks' `path` lists, but is organized by order slot instead of by track.
+// This is NOT used for reads! Reads use their own system.
+let assignments = []; 
 let extraLeft = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let extraRight = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let maxOrder; // horizontal order of the rightmost node
@@ -128,7 +151,6 @@ const config = {
            // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
   exonColors: "lightColors",
   hideLegendFlag: false,
-  colorReadsByMappingQuality: false,
   mappingQualityCutoff: 0,
   showInfoCallback: function(info) {alert(info)},
 };
@@ -342,7 +364,7 @@ export function setShowReadsFlag(value) {
 
 export function setColorSet(fileID, newColor) {
   const currColor = config.colorSchemes[fileID];
-  // update if forward or backward color is different
+  // update if any coloring parameter is different
   if (!currColor || !deepEqual(currColor, newColor)) {
     config.colorSchemes[fileID] = newColor;
     const tr = createTubeMap();
@@ -364,22 +386,10 @@ export function setNodeWidthOption(value) {
 }
 
 // sets callback function that would generate React popup of track information. The callback would 
-// accept a string argument to be displayed.
+// accept an array argument of track attribute pairs containing attribute name as a string and attribute value
+// as a string or number, to be displayed.
 export function setInfoCallback(newCallback) {
   config.showInfoCallback = newCallback;
-}
-
-export function setColorReadsByMappingQualityFlag(value) {
-  // TODO: add options to change colorReadsByMappingQuality individually
-  if (config.colorReadsByMappingQuality !== value) {
-    config.colorReadsByMappingQuality = value;
-    // update all values
-    for (let i = 0; i < config.colorSchemes.length; i++) {
-      config.colorSchemes[i].colorReadsByMappingQuality = value;
-    }
-    svg = d3.select(svgID);
-    createTubeMap();
-  }
 }
 
 export function setMappingQualityCutoff(value) {
@@ -562,6 +572,8 @@ function setMapToMax(map, key, value) {
   }
 }
 
+const READ_WIDTH = 7;
+
 // add info about reads to nodes (incoming, outgoing and internal reads)
 function assignReadsToNodes() {
   nodes.forEach((node) => {
@@ -570,7 +582,7 @@ function assignReadsToNodes() {
     node.internalReads = [];
   });
   reads.forEach((read, idx) => {
-    read.width = 7;
+    read.width = READ_WIDTH;
     if (read.path.length === 1) {
       nodes[read.path[0].node].internalReads.push(idx);
     } else {
@@ -605,89 +617,34 @@ function placeReads() {
   const sortedNodes = nodes.slice();
   sortedNodes.sort(compareNodesByOrder);
 
-  // iterate over all nodes
-  sortedNodes.forEach((node) => {
-    // sort incoming reads
-    node.incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
+  // Organize read IDs by source track
+  let readsBySource = {};
+  for (let i = 0; i < reads.length; i++) {
+    let source = reads[i].sourceTrackID;
+    if (readsBySource[source] === undefined) {
+      // First read from this source
+      readsBySource[source] = [i];
+    } else {
+      // Put it with the others from this source
+      readsBySource[source].push(i);
+    }
+  }
 
-    // place incoming reads
-    let currentY = node.y + node.contentHeight;
-    const occupiedUntil = new Map();
-    node.incomingReads.forEach((readElement) => {
-      reads[readElement[0]].path[readElement[1]].y = currentY;
-      setOccupiedUntil(
-        occupiedUntil,
-        reads[readElement[0]],
-        readElement[1],
-        currentY,
-        node
-      );
-      currentY += 7;
+  let allSources = Object.keys(readsBySource);
+  allSources.sort((a, b) => (Number(a) - Number(b)));
+
+  console.log("All sources: ", allSources);
+
+  // Space out read tracks if multiple exist
+  let topMargin = allSources.length > 1 ? READ_WIDTH : 0;
+  for (let source of allSources) {
+    // Go through all source tracks in order
+    sortedNodes.forEach((node) => {
+      // And for each node, place these reads in it.
+      // Use a margin to separate multiple read tracks if we have them.
+      placeReadSet(readsBySource[source], node, topMargin);
     });
-    let maxY = currentY;
-
-    // sort outgoing reads
-    node.outgoingReads.sort(compareReadOutgoingSegmentsByGoingTo);
-
-    // place outgoing reads
-    const occupiedFrom = new Map();
-    currentY = node.y + node.contentHeight;
-    node.outgoingReads.forEach((readElement) => {
-      // place in next lane
-      reads[readElement[0]].path[readElement[1]].y = currentY;
-      occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
-      // if no conflicts
-      if (
-        !occupiedUntil.has(currentY) ||
-        occupiedUntil.get(currentY) + 1 < reads[readElement[0]].firstNodeOffset
-      ) {
-        currentY += 7;
-        maxY = Math.max(maxY, currentY);
-      } else {
-        // otherwise push down incoming reads to make place for outgoing Read
-        occupiedUntil.set(currentY, 0);
-        node.incomingReads.forEach((incReadElementIndices) => {
-          const incRead = reads[incReadElementIndices[0]];
-          const incReadPathElement = incRead.path[incReadElementIndices[1]];
-          if (incReadPathElement.y >= currentY) {
-            incReadPathElement.y += 7;
-            setOccupiedUntil(
-              occupiedUntil,
-              incRead,
-              incReadElementIndices[1],
-              incReadPathElement.y,
-              node
-            );
-          }
-        });
-        currentY += 7;
-        maxY += 7;
-      }
-    });
-
-    // sort internal reads
-    node.internalReads.sort(compareInternalReads);
-
-    // place internal reads
-    node.internalReads.forEach((readIdx) => {
-      const currentRead = reads[readIdx];
-      currentY = node.y + node.contentHeight;
-      while (
-        currentRead.firstNodeOffset < occupiedUntil.get(currentY) + 2 ||
-        currentRead.finalNodeCoverLength > occupiedFrom.get(currentY) - 3
-      ) {
-        currentY += 7;
-      }
-      currentRead.path[0].y = currentY;
-      occupiedUntil.set(currentY, currentRead.finalNodeCoverLength);
-      maxY = Math.max(maxY, currentY);
-    });
-
-    // adjust node height and move other nodes vertically down
-    const heightIncrease = maxY - node.y - node.contentHeight;
-    node.contentHeight += heightIncrease;
-    adjustVertically3(node, heightIncrease);
-  });
+  }
 
   // place read segments which are without node
   const bottomY = calculateBottomY();
@@ -714,6 +671,117 @@ function placeReads() {
     console.log("Reads:");
     console.log(reads);
   }
+}
+
+// Place a particular collection of reads, identified by a list of read
+// numbers, into the given node at the right Y coordinates. All reads in all
+// nodes above it, and no reads in any nodes below it, are already placed.
+// Makes the given node bigger if needed and moves other nodes down if needed.
+// If topMargin is set, applies that amount of spacing down from whatever is above the reads.
+function placeReadSet(readIDs, node, topMargin) {
+
+  // Parse arguments
+  if (!topMargin) {
+    topMargin = 0;
+  }
+
+  // Turn the read IDs into a set
+  let toPlace = new Set(readIDs);
+
+  // Get arrays of the read entry/exit/internal-ness records we want to work on
+  let incomingReads = node.incomingReads.filter(([readID, pathIndex]) => toPlace.has(readID));
+  let outgoingReads = node.outgoingReads.filter(([readID, pathIndex]) => toPlace.has(readID));
+  let internalReads = node.internalReads.filter((readID) => toPlace.has(readID));
+
+  // Only actually use the top margin if we have any reads on the node.
+  if (incomingReads.length === 0 && outgoingReads.length === 0 && internalReads.length === 0) {
+    topMargin = 0;
+  }
+
+  // Determine where we start vertically in the node.
+  // TODO: Why do we have to double this to keep reads out of adjacent lanes???
+  let startY = node.y + node.contentHeight + topMargin * 2;
+
+  // sort incoming reads
+  incomingReads.sort(compareReadIncomingSegmentsByComingFrom);
+
+  // place incoming reads
+  let currentY = startY;
+  const occupiedUntil = new Map();
+  incomingReads.forEach((readElement) => {
+    reads[readElement[0]].path[readElement[1]].y = currentY;
+    setOccupiedUntil(
+      occupiedUntil,
+      reads[readElement[0]],
+      readElement[1],
+      currentY,
+      node
+    );
+    currentY += READ_WIDTH;
+  });
+  let maxY = currentY;
+
+  // sort outgoing reads
+  outgoingReads.sort(compareReadOutgoingSegmentsByGoingTo);
+
+  // place outgoing reads
+  const occupiedFrom = new Map();
+  currentY = startY;
+  outgoingReads.forEach((readElement) => {
+    // place in next lane
+    reads[readElement[0]].path[readElement[1]].y = currentY;
+    occupiedFrom.set(currentY, reads[readElement[0]].firstNodeOffset);
+    // if no conflicts
+    if (
+      !occupiedUntil.has(currentY) ||
+      occupiedUntil.get(currentY) + 1 < reads[readElement[0]].firstNodeOffset
+    ) {
+      currentY += READ_WIDTH;
+      maxY = Math.max(maxY, currentY);
+    } else {
+      // otherwise push down incoming reads to make place for outgoing Read
+      occupiedUntil.set(currentY, 0);
+      incomingReads.forEach((incReadElementIndices) => {
+        const incRead = reads[incReadElementIndices[0]];
+        const incReadPathElement = incRead.path[incReadElementIndices[1]];
+        if (incReadPathElement.y >= currentY) {
+          incReadPathElement.y += READ_WIDTH;
+          setOccupiedUntil(
+            occupiedUntil,
+            incRead,
+            incReadElementIndices[1],
+            incReadPathElement.y,
+            node
+          );
+        }
+      });
+      currentY += READ_WIDTH;
+      maxY += READ_WIDTH;
+    }
+  });
+
+  // sort internal reads
+  internalReads.sort(compareInternalReads);
+
+  // place internal reads
+  internalReads.forEach((readIdx) => {
+    const currentRead = reads[readIdx];
+    currentY = startY;
+    while (
+      currentRead.firstNodeOffset < occupiedUntil.get(currentY) + 2 ||
+      currentRead.finalNodeCoverLength > occupiedFrom.get(currentY) - 3
+    ) {
+      currentY += READ_WIDTH;
+    }
+    currentRead.path[0].y = currentY;
+    occupiedUntil.set(currentY, currentRead.finalNodeCoverLength);
+    maxY = Math.max(maxY, currentY);
+  });
+
+  // adjust node height and move other nodes vertically down
+  const heightIncrease = maxY - node.y - node.contentHeight;
+  node.contentHeight += heightIncrease;
+  adjustVertically3(node, heightIncrease);
 }
 
 // keeps track of where reads end within nodes
@@ -840,6 +908,7 @@ function calculateBottomY() {
 
 // generate path-info for each read
 // containing order, node and orientation, but no concrete coordinates
+// TODO: Duplicates a lot of the same work as generateLaneAssignment() does for non-read tracks.
 function generateBasicPathsForReads() {
   let currentNodeIndex;
   let currentNodeIsForward;
@@ -1734,6 +1803,10 @@ function generateLaneAssignment() {
   let currentNode;
   let previousNode;
   let previousNodeIsForward;
+  // For each horizontal order slot, for each track number, holds the
+  // SegmentAssignment object for the visit of that track to that order slot.
+  // When an order slot is visited multiple times, holds whatever
+  // SegmentAssignment was created most recently.
   const prevSegmentPerOrderPerTrack = [];
   const isPositive = (n) => ((n = +n) || 1 / n) >= 0;
 
@@ -1747,6 +1820,13 @@ function generateLaneAssignment() {
   }
 
   tracks.forEach((track, trackNo) => {
+    // Trace along each track and create Segment objects in the track's path
+    // field, and SegmentAssignment objects in NodeAssignment objects in all
+    // the order slots that are visited by the track. Set up all the
+    // cross-reverencing indexes and work out when we need segments to let
+    // tracks pass nodes and turn around, but leave all the assigned lane
+    // values empty for now.
+
     // add info for start of track
     currentNodeIndex = Math.abs(track.indexSequence[0]);
     currentNodeIsForward = isPositive(track.indexSequence[0]);
@@ -1989,7 +2069,8 @@ function generateLaneAssignment() {
       }
     }
   });
-
+  
+  // Now sweep left to right across order slots and assign vertical lanes to all the segments.
   for (let i = 0; i <= maxOrder; i += 1) {
     generateSingleLaneAssignment(assignments[i], i); // this is where the lanes get assigned
   }
@@ -2159,6 +2240,7 @@ function adjustVertically(assignment, potentialAdjustmentValues) {
   });
 }
 
+// Budge down all nodes and out-of-node tracks below this node by this amount
 function adjustVertically3(node, adjustBy) {
   if (node.hasOwnProperty("order")) {
     assignments[node.order].forEach((assignmentNode) => {
@@ -2294,18 +2376,21 @@ function calculateTrackWidth() {
   // flag: if vg returns freq of 0 for all tracks, we will increase width manually
   let allAreFour = true;
 
+  const NARROW_WIDTH = 4;
+  const WIDE_WIDTH = 15;
+
   tracks.forEach((track) => {
     if (track.hasOwnProperty("freq")) {
       // custom track width
-      track.width = Math.round((Math.log(track.freq) + 1) * 4);
+      track.width = Math.round((Math.log(track.freq) + 1) * NARROW_WIDTH);
     } else {
       // default track width
-      track.width = 15;
+      track.width = WIDE_WIDTH;
       if (track.hasOwnProperty("type") && track.type === "read") {
-        track.width = 4;
+        track.width = NARROW_WIDTH;
       }
     }
-    if (track.width !== 4) {
+    if (track.width !== NARROW_WIDTH) {
       allAreFour = false;
     }
   });
@@ -2313,7 +2398,7 @@ function calculateTrackWidth() {
   if (allAreFour) {
     tracks.forEach((track) => {
       if (track.hasOwnProperty("freq")) {
-        track.width = 15;
+        track.width = WIDE_WIDTH;
       }
     });
   }
@@ -2351,7 +2436,7 @@ function generateTrackColor(track, highlight) {
 
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
-
+  
   const sourceID = track.sourceTrackID;
   if (!config.colorSchemes[sourceID]) {
     if (track.hasOwnProperty("type") && track.type === "read") {
@@ -2519,6 +2604,7 @@ function generateSVGShapesFromPath() {
             xEnd: Math.max(xStart, xEnd),
             yEnd: yStart + track.width - 1,
             color: trackColor,
+            // TODO: This is not actually the index of the track!
             id: track.id,
             name: track.name,
             type: track.type,
@@ -2800,6 +2886,8 @@ function createFeatureRectangle(
   return { xStart: rectXStart, highlight: currentHighlight };
 }
 
+const MIN_BEND_WIDTH = 7;
+
 function generateForwardToReverse(
   x,
   yStart,
@@ -2814,7 +2902,7 @@ function generateForwardToReverse(
   x += 10 * extraRight[order];
   const yTop = Math.min(yStart, yEnd);
   const yBottom = Math.max(yStart, yEnd);
-  const radius = 7;
+  const radius = MIN_BEND_WIDTH;
 
   trackVerticalRectangles.push({
     // elongate incoming rectangle a bit to the right
@@ -2831,7 +2919,7 @@ function generateForwardToReverse(
     // vertical rectangle
     xStart: x + 5 + radius,
     yStart: yTop + trackWidth + radius - 1,
-    xEnd: x + 5 + radius + Math.min(7, trackWidth) - 1,
+    xEnd: x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth) - 1,
     yEnd: yBottom - radius + 1,
     color: trackColor,
     id: trackID,
@@ -2851,16 +2939,16 @@ function generateForwardToReverse(
 
   let d = `M ${x + 5} ${yBottom}`;
   d += ` Q ${x + 5 + radius} ${yBottom} ${x + 5 + radius} ${yBottom - radius}`;
-  d += ` H ${x + 5 + radius + Math.min(7, trackWidth)}`;
-  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${
+  d += ` H ${x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth)}`;
+  d += ` Q ${x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth)} ${
     yBottom + trackWidth
   } ${x + 5} ${yBottom + trackWidth}`;
   d += " Z ";
   trackCorners.push({ path: d, color: trackColor, id: trackID, type });
 
   d = `M ${x + 5} ${yTop}`;
-  d += ` Q ${x + 5 + radius + Math.min(7, trackWidth)} ${yTop} ${
-    x + 5 + radius + Math.min(7, trackWidth)
+  d += ` Q ${x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth)} ${yTop} ${
+    x + 5 + radius + Math.min(MIN_BEND_WIDTH, trackWidth)
   } ${yTop + trackWidth + radius}`;
   d += ` H ${x + 5 + radius}`;
   d += ` Q ${x + 5 + radius} ${yTop + trackWidth} ${x + 5} ${
@@ -2884,7 +2972,7 @@ function generateReverseToForward(
 ) {
   const yTop = Math.min(yStart, yEnd);
   const yBottom = Math.max(yStart, yEnd);
-  const radius = 7;
+  const radius = MIN_BEND_WIDTH;
   x -= 10 * extraLeft[order];
 
   trackVerticalRectangles.push({
@@ -2898,7 +2986,7 @@ function generateReverseToForward(
     type,
   }); // elongate incoming rectangle a bit to the left
   trackVerticalRectangles.push({
-    xStart: x - 5 - radius - Math.min(7, trackWidth),
+    xStart: x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth),
     yStart: yTop + trackWidth + radius - 1,
     xEnd: x - 5 - radius - 1,
     yEnd: yBottom - radius + 1,
@@ -2921,8 +3009,8 @@ function generateReverseToForward(
   // Path for bottom 90 degree bend
   let d = `M ${x - 5} ${yBottom}`;
   d += ` Q ${x - 5 - radius} ${yBottom} ${x - 5 - radius} ${yBottom - radius}`;
-  d += ` H ${x - 5 - radius - Math.min(7, trackWidth)}`;
-  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${
+  d += ` H ${x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth)}`;
+  d += ` Q ${x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth)} ${
     yBottom + trackWidth
   } ${x - 5} ${yBottom + trackWidth}`;
   d += " Z ";
@@ -2930,8 +3018,8 @@ function generateReverseToForward(
 
   // Path for top 90 degree bend
   d = `M ${x - 5} ${yTop}`;
-  d += ` Q ${x - 5 - radius - Math.min(7, trackWidth)} ${yTop} ${
-    x - 5 - radius - Math.min(7, trackWidth)
+  d += ` Q ${x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth)} ${yTop} ${
+    x - 5 - radius - Math.min(MIN_BEND_WIDTH, trackWidth)
   } ${yTop + trackWidth + radius}`;
   d += ` H ${x - 5 - radius}`;
   d += ` Q ${x - 5 - radius} ${yTop + trackWidth} ${x - 5} ${
@@ -3575,6 +3663,36 @@ function drawLegend() {
     .addEventListener("click", () => changeAllTracksVisibility(false), false);
 }
 
+// Get a non-read input track index by the ID stored in ther d3 objects.
+function getInputTrackIndexByID(trackID) {
+  let index = 0;
+  while (
+    index < inputTracks.length &&
+    inputTracks[index].id !== Number(trackID)
+  ) {
+    index += 1;
+  }
+  // There might not be a track
+  if (index >= inputTracks.length) return;
+  return index;
+}
+
+// Get any track object by ID.
+// Because of reordering of input tracks, the ID doesn't always match the index.
+function getTrackByID(trackID) {
+  if (typeof trackID !== "number") {
+    throw new Error("Track IDs must be numbers");
+  }
+  // We just do a scan.
+  // TODO: index!
+  for (let i = 0; i < tracks.length; i++) {
+    if (tracks[i].id === trackID) {
+      console.log("Found track with ID ", trackID, " at index ", i);
+      return tracks[i];
+    }
+  }
+}
+
 // Highlight track on mouseover
 function trackMouseOver() {
   /* jshint validthis: true */
@@ -3608,14 +3726,11 @@ function nodeMouseOut() {
 function trackDoubleClick() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
-  let index = 0;
-  while (
-    index < inputTracks.length &&
-    inputTracks[index].id !== Number(trackID)
-  ) {
-    index += 1;
+  const index = getInputTrackIndexByID(trackID);
+  if (index === undefined) {
+    // Must be a read. Skip it.
+    return;
   }
-  if (index >= inputTracks.length) return;
   if (DEBUG) console.log(`moving index: ${index}`);
   moveTrackToFirstPosition(index);
   createTubeMap();
@@ -3623,10 +3738,28 @@ function trackDoubleClick() {
 
 function trackSingleClick() {
   /* jshint validthis: true */
-  const trackName = d3.select(this).attr("trackName");
+  // Get the track ID as a number
+  const trackID = Number(d3.select(this).attr("trackID"));
+  let current_track = getTrackByID(trackID);
+  console.log("Track ", trackID, " is ", current_track);
+  if (current_track === undefined) {
+    console.error("Missing track: ", trackID);
+    return;
+  }
+  let track_attributes = [];
+  track_attributes.push(["Name", current_track.name])
+  if (current_track.type === "read") {
+    track_attributes.push(["Sample Name", current_track.sample_name])
+    track_attributes.push(["Primary Alignment?", current_track.is_secondary ? "Secondary" : "Primary"])
+    track_attributes.push(["Read Group", current_track.read_group])
+    track_attributes.push(["Score", current_track.score])
+    track_attributes.push(["CIGAR string", current_track.cigar_string])
+    track_attributes.push(["Mapping Quality", current_track.mapping_quality])
+  }
   console.log("Single Click");
+  console.log("read path", );
   console.log(config.showInfoCallback)
-  config.showInfoCallback(trackName)
+  config.showInfoCallback(track_attributes)
 }
 
 // show track name when hovering mouse
@@ -3840,6 +3973,77 @@ function compareReadsByLeftEnd2(a, b) {
   return 0;
 }
 
+// converts readPath, a vg Path object expressed as a JS object, to a CIGAR string
+export function cigar_string (readPath) {
+  if (DEBUG) {
+    console.log("readPath mapping:", readPath.mapping);
+  }
+  let cigar = [];
+  for (let i = 0; i < readPath.mapping.length; i += 1) {
+    let mapping = readPath.mapping[i]
+    for (let j = 0; j < mapping.edit.length; j += 1) {
+      let edit = mapping.edit[j]
+      // from_length is not 0, and from_length = to_length, this indicates a match
+      if (edit.from_length && edit.from_length === edit.to_length){
+        cigar = append_cigar_operation(edit.from_length, 'M', cigar);
+      }
+      else {
+        // from_length can be 0, and from_length = to_length, this indicates a match
+        if (edit.from_length === edit.to_length){
+          cigar = append_cigar_operation(edit.from_length, 'M', cigar);
+        } 
+        // if from_length > to_length, this indicates a deletion
+        else if (edit.from_length > edit.to_length){
+          const del = edit.from_length - edit.to_length;
+          const eq = edit.to_length;
+          if (eq){
+            cigar = append_cigar_operation(eq, 'M', cigar);
+          }
+          cigar = append_cigar_operation(del, 'D', cigar);
+        } 
+        // if from_length < to_length, this indicates an insertion
+        else if (edit.from_length < edit.to_length){
+          const ins = edit.to_length - edit.from_length;
+          const eq = edit.from_length;
+          if (eq){
+            cigar = append_cigar_operation(eq, 'M', cigar);
+          }
+          cigar = append_cigar_operation(ins, 'I', cigar);
+        }
+        // if to_length is undefined, this indicates a deletion
+        else if (edit.from_length && edit.to_length === undefined){
+          const del = edit.from_length;
+          cigar = append_cigar_operation(del, 'D', cigar);
+        }
+        // if from_length is undefined, this indicates an insertion
+        else if (edit.from_length === undefined && edit.to_length){
+          const ins = edit.to_length;
+          cigar = append_cigar_operation(ins, 'I', cigar);
+        }
+      }
+    }
+  }
+  if (DEBUG) {
+    console.log("cigar string:", cigar.join(""));
+  }
+  return cigar.join("");
+}
+
+function append_cigar_operation (length, operator, cigar){
+  let last_operation = cigar[cigar.length - 1];
+  let last_length = cigar[cigar.length - 2];
+  // if duplicate operations, add the two operations and replace the most recent operation with this
+  if (last_operation === operator){
+    let newLength = last_length + length;
+    cigar[cigar.length - 2] = newLength;
+  } 
+  else {
+    cigar.push(length);
+    cigar.push(operator);
+  }
+  return cigar;
+}
+
 // Pull out reads from a server response into tube map internal format.
 // Use myTracks, and idOffset to compute IDs for each read.
 // Assign each read the given sourceTrackID.
@@ -3965,7 +4169,10 @@ export function vgExtractReads(myNodes, myTracks, myReads, idOffset, sourceTrack
 
       track.mapping_quality = read.mapping_quality || 0;
       track.is_secondary = read.is_secondary || false;
-
+      track.sample_name = read.sample_name || null;
+      track.read_group = read.read_group || null;
+      track.cigar_string = cigar_string(read.path);
+      track.score = read.score || 0;
       extracted.push(track);
     }
   }
@@ -4199,7 +4406,7 @@ function drawMismatches() {
                 (mm.pos !== read.finalNodeCoverLength ||
                   i !== read.sequenceNew.length - 1))
             ) {
-              drawInsertion(x - 3, y + 7, mm.seq, node.y);
+              drawInsertion(x - 3, y + READ_WIDTH, mm.seq, node.y);
             }
           } else if (mm.type === "deletion") {
             const x2 = getXCoordinateOfBaseWithinNode(node, mm.pos + mm.length);
@@ -4209,7 +4416,7 @@ function drawMismatches() {
               node,
               mm.pos + mm.seq.length
             );
-            drawSubstitution(x + 1, x2, y + 7, node.y, mm.seq);
+            drawSubstitution(x + 1, x2, y + READ_WIDTH, node.y, mm.seq);
           }
         });
       });
@@ -4256,7 +4463,7 @@ function drawDeletion(x1, x2, y, nodeY) {
     .attr("y1", y - 1)
     .attr("x2", x2)
     .attr("y2", y - 1)
-    .attr("stroke-width", 7)
+    .attr("stroke-width", READ_WIDTH)
     .attr("stroke", "grey")
     .attr("nodeY", nodeY)
     .on("mouseover", deletionMouseOver)
@@ -4318,7 +4525,7 @@ function substitutionMouseOver() {
     .append("line")
     .attr("class", "substitutionHighlight")
     .attr("x1", x1 - 1)
-    .attr("y1", y - 7)
+    .attr("y1", y - READ_WIDTH)
     .attr("x2", x1 - 1)
     .attr("y2", yTop + 5)
     .attr("stroke-width", 1)
@@ -4327,7 +4534,7 @@ function substitutionMouseOver() {
     .append("line")
     .attr("class", "substitutionHighlight")
     .attr("x1", x2 + 1)
-    .attr("y1", y - 7)
+    .attr("y1", y - READ_WIDTH)
     .attr("x2", x2 + 1)
     .attr("y2", yTop + 5)
     .attr("stroke-width", 1)

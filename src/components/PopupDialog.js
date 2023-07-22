@@ -16,7 +16,7 @@ export const PopupDialog = ({
 }) => {
     // based off of https://react-popup.elazizi.com/controlled-popup/#using-open-prop
     return(
-      <div>
+      <>
         <Popup open={open} closeOnDocumentClick={closeOnDocumentClick} contentStyle={width !== null ? {width: width} : {}} modal>
           <Container>
             <Card>
@@ -28,7 +28,7 @@ export const PopupDialog = ({
             </Card>
           </Container>
         </Popup>
-      </div>
+      </>
     )
 }
 
