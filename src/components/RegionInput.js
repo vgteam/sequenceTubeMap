@@ -44,14 +44,12 @@ export const RegionInput = ({
   // Autocomplete selectable options
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
 
-  console.log("displayRegions", displayRegions);
   return (
     <>
       <Autocomplete
         disablePortal
         freeSolo // Allows custom input outside of the options
-        autoHighlight
-        getOptionLabel={(option) => option.label || option.toString()}
+        getOptionLabel={(option) => option.title || option.toString()}
         value={region}
         inputValue={region}
         data-testid="autocomplete"
@@ -72,11 +70,10 @@ export const RegionInput = ({
           <TextField
             {...params}
             label="Region"
-            //style={{zIndex:'-100'}}
+            style={{zIndex:'-100'}}
             name="Region Input"
             inputProps={{
               ...params.inputProps,
-              autoComplete: null, // disable TextField's autocomplete and autofill
             }}
           />
         )}
