@@ -134,7 +134,7 @@ This will save some time during the interactive visualization, especially if the
 The subgraphs need to be pre-fetched using `vg chunk` like shown in [`prepare_chunks.sh`](scripts/prepare_chunks.sh). For example:
 
 ```
-./prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam
+XG=mygraph.xg GAM=mygam.gam GBWT=mygraph.gbwt REGION=chr1:1-100 OUTDIR=chunk-chr1-1-100 ./prepare_chunks.sh
 ```
 
 Then compile those regions in a BED file with two additional columns: 
