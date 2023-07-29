@@ -44,7 +44,7 @@ export const RegionInput = ({
         value={region}
         inputValue={region}
         data-testid="autocomplete"
-        id="regionInput"      
+        id="regionInput"    
 
         onInputChange={(event, newInputValue) => {
           handleRegionChange(newInputValue);
@@ -55,7 +55,7 @@ export const RegionInput = ({
           <TextField
             {...params}
             label="Region"
-            style={{zIndex:'-100'}}
+            //style={{zIndex:'-100'}}
             name="Region Input"
             inputProps={{
               ...params.inputProps,
