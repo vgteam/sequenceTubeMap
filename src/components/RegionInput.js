@@ -53,7 +53,7 @@ export const RegionInput = ({
         value={region}
         inputValue={region}
         data-testid="autocomplete"
-        id="regionInput"      
+        id="regionInput"    
 
         onInputChange={(event, newInputValue) => {
           // If an option is selected, should have a match in optionToTrack
@@ -70,7 +70,6 @@ export const RegionInput = ({
           <TextField
             {...params}
             label="Region"
-            style={{zIndex:'-100'}}
             name="Region Input"
             inputProps={{
               ...params.inputProps,

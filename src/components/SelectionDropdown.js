@@ -44,6 +44,7 @@ export class SelectionDropdown extends Component {
         ...base,
         width: "max-content",
         minWidth: "100%",
+        zIndex: 999,
       }),
     };
 
