@@ -45,7 +45,7 @@ const CLEAR_STATE = {
 
   pathNames: ["none"],
 
-  tracks: [],
+  tracks: {},
   bedFile: undefined,
   dataPath: undefined,
   region: "",
@@ -146,6 +146,10 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
       // Different tracks so not equal
       return false;
     }
+  }
+
+  if (currViewTarget.bedFile !== nextViewTarget.bedFile) {
+    return false;
   }
 
   // Update if regions are not equal
@@ -514,7 +518,7 @@ class HeaderForm extends Component {
     const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
     return regionString;
   };
-  handleRegionChange = (value) => {
+  handleRegionChange = (value, tracks) => {
     // After user selects a region name or coordinates,
     // update path and region
     let coords = value;
@@ -527,6 +531,12 @@ class HeaderForm extends Component {
       coords = this.getRegionCoords(value);
     }
     this.setState({ region: coords });
+
+    // Override current tracks with new tracks from chunk dir
+    if (tracks) {
+      this.setState({ tracks: tracks });
+      console.log("New tracks have been population");
+    }
   };
 
   handleInputChange = (newTracks) => {

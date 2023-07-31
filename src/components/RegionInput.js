@@ -20,6 +20,9 @@ export const RegionInput = ({
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
 
+  // Store possible options from bed file and match them with their respective tracks
+  let optionToTrack = {};
+
   if (regionInfo && !isEmpty(regionInfo)) {
     // Stitch path name + region start and end
     for (const [index, path] of regionInfo["chr"].entries()) {
@@ -27,14 +30,20 @@ export const RegionInput = ({
         path + ":" + regionInfo.start[index] + "-" + regionInfo.end[index]
       );
     }
+
+    // populate optionToTrack with paths with region
+    pathsWithRegion.forEach((path, i) => optionToTrack[path] = regionInfo.tracks[i]);
+
     // Add descriptions
     pathsWithRegion.push(...regionInfo["desc"]);
+
+    // populate optionToTrack with paths with description as keys
+    regionInfo.desc.forEach((desc, i) => optionToTrack[desc] = regionInfo.tracks[i]);
   }
 
   // Autocomplete selectable options
   const displayRegions = [...pathsWithRegion, ...pathNamesColon];
 
-  
   return (
     <>
       <Autocomplete
@@ -47,7 +56,13 @@ export const RegionInput = ({
         id="regionInput"      
 
         onInputChange={(event, newInputValue) => {
-          handleRegionChange(newInputValue);
+          // If an option is selected, should have a match in optionToTrack
+          if (event.target.textContent in optionToTrack) {
+            // also pass tracks associated with the option
+            handleRegionChange(newInputValue, optionToTrack[event.target.textContent]);
+          } else {
+            handleRegionChange(newInputValue, null);
+          }
         }}
 
         options={displayRegions}
@@ -81,6 +96,7 @@ RegionInput.propTypes = {
     // Path
     chr: PropTypes.array,
     chunk: PropTypes.array,
+    chunk_path: PropTypes.array,
     // Description of region from BED
     desc: PropTypes.array,
     end: PropTypes.array,

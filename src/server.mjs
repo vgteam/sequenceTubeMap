@@ -334,39 +334,7 @@ api.post("/getChunkedData", (req, res, next) => {
     // We need to parse the BED file we have been referred to so we can look up
     // the pre-parsed chunk. We don't want the client re-uploading the BED to
     // us on every request.
-    let regionInfo = getBedRegions(bedFile, dataPath);
-
-    for (let i = 0; i < regionInfo["desc"].length; i++) {
-      let entryRegion = {
-        contig: regionInfo["chr"][i],
-        start: regionInfo["start"][i],
-        end: regionInfo["end"][i]
-      }
-      if (stringifyRegion(entryRegion) === stringifyRegion(parsedRegion)) {
-        // A BED entry is defined for this region exactly
-        if (regionInfo["chunk"][i] !== "") {
-          // And a chunk file is stored for it, so use that.
-          chunkPath = regionInfo["chunk"][i];
-          break;
-        }
-      }
-    }
-    // check that the 'chunk.vg' file exists in the chunk folder
-    chunkPath = `${dataPath}${chunkPath}`;
-    if (chunkPath.endsWith("/")) {
-      chunkPath = chunkPath.substring(0, chunkPath.length - 1);
-    }
-    let chunk_file = `${chunkPath}/chunk.vg`;
-    if (!isAllowedPath(chunk_file)) {
-      // We need to check allowed-ness before we check existence.
-      throw new BadRequestError("Path to chunk not allowed: " + chunkPath);
-    }
-    if (fs.existsSync(chunk_file)) {
-      console.log(`found pre-fetched chunk at ${chunk_file}`);
-    } else {
-      console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
-      chunkPath = "";
-    }
+    chunkPath = getChunkPath(bedFile, dataPath, parsedRegion);
   }
   
   // We always need a range-version of the region, to fill in req.region, to
@@ -684,6 +652,44 @@ function returnErrorMiddleware(err, req, res, next) {
 
 // Hook up the error handling middleware.
 app.use(returnErrorMiddleware);
+
+// Gets the chunk path from a region specified in a bedfile 
+function getChunkPath(bedFile, dataPath, parsedRegion) {
+  let chunkPath = "";
+  let regionInfo = getBedRegions(bedFile, dataPath);
+
+  for (let i = 0; i < regionInfo["desc"].length; i++) {
+    let entryRegion = {
+      contig: regionInfo["chr"][i],
+      start: regionInfo["start"][i],
+      end: regionInfo["end"][i]
+    }
+    if (stringifyRegion(entryRegion) === stringifyRegion(parsedRegion)) {
+      // A BED entry is defined for this region exactly
+      if (regionInfo["chunk_path"][i] !== "") {
+        // And a chunk file is stored for it, so use that.
+        chunkPath = regionInfo["chunk_path"][i];
+        break;
+      }
+    }
+  }
+  // check that the 'chunk.vg' file exists in the chunk folder
+  if (chunkPath.endsWith("/")) {
+    chunkPath = chunkPath.substring(0, chunkPath.length - 1);
+  }
+  let chunk_file = `${chunkPath}/chunk.vg`;
+  if (!isAllowedPath(chunk_file)) {
+    // We need to check allowed-ness before we check existence.
+    throw new BadRequestError("Path to chunk not allowed: " + chunkPath);
+  }
+  if (fs.existsSync(chunk_file)) {
+    console.log(`found pre-fetched chunk at ${chunk_file}`);
+  } else {
+    console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
+    chunkPath = "";
+  }
+  return chunkPath;
+}
 
 function processAnnotationFile(req, res, next) {
   try {
@@ -1096,7 +1102,7 @@ function getBedRegions(bedFile, dataPath) {
     throw new BadRequestError("BED file not found: " + bedFile);
   }
 
-  let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [] };
+  let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [], tracks: []};
 
   // Load and parse the BED file
   let bed_data = fs.readFileSync(bed_path).toString();
@@ -1120,6 +1126,47 @@ function getBedRegions(bedFile, dataPath) {
       chunk = records[4];
     }
     bed_info["chunk"].push(chunk);
+
+
+
+    let tracks = {};
+    let trackID = 1;
+
+    const chunk_path = `${dataPath}${chunk}`;
+    const track_json = path.join(chunk_path, "tracks.json");
+    // If json file specifying the tracks exists
+    if (fs.existsSync(track_json)) {
+      // Read json file and create a tracks object from it 
+      const json_data = JSON.parse(fs.readFileSync(track_json));
+      
+      if (json_data["graph_file"] !== "") {
+        tracks[trackID] = {...config.defaultTrackProps};
+        tracks[trackID]["trackFile"] = json_data["graph_file"];
+        tracks[trackID]["trackType"] = fileTypes["GRAPH"];
+        trackID += 1;
+      }
+
+      if (json_data["haplotype_file"] !== "") {
+        tracks[trackID] = {...config.defaultTrackProps};
+        tracks[trackID]["trackFile"] = json_data["haplotype_file"];
+        tracks[trackID]["trackType"] = fileTypes["HAPLOTYPE"];
+        tracks[trackID]["trackColorSettings"] = {...config.defaultHaplotypeColorPalette};
+        trackID += 1;
+      }
+
+      for (const gam_file of json_data["gam_files"]) {
+        tracks[trackID] = {...config.defaultTrackProps};
+        tracks[trackID]["trackFile"] = gam_file;
+        tracks[trackID]["trackType"] = fileTypes["READ"];
+        tracks[trackID]["trackColorSettings"] = {...config.defaultReadColorPalette};
+        trackID += 1;
+      }
+
+    }
+
+    bed_info["tracks"].push(tracks);
+
+
   });
 
   return bed_info;
