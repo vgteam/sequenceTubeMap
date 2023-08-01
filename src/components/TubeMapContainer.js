@@ -7,7 +7,8 @@ import TubeMap from "./TubeMap";
 import * as tubeMap from "../util/tubemap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
-import PopUpTrackInfo from "./PopUpTrackInfo";
+import PopUpInfoDialog from "./PopUpInfoDialog";
+
 
 class TubeMapContainer extends Component {
   state = {
@@ -111,7 +112,7 @@ class TubeMapContainer extends Component {
 
     return (
       <div id="tubeMapContainer">
-        <PopUpTrackInfo open={isOpen} attributes={attributes} close={closePopup} />
+        <PopUpInfoDialog open={isOpen} attributes={attributes} close={closePopup} />
         <div id="tubeMapSVG">
           <TubeMap
             nodes={this.state.nodes}
