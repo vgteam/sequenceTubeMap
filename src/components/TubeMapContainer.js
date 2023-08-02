@@ -174,8 +174,8 @@ class TubeMapContainer extends Component {
         let readsArr = [];
         // Count total reads seen so far.
         let totalReads = 0;
-        console.log("json gams", Object.values(json.gam));
-        for (const gam of Object.values(json.gam)) {
+        console.log("json gams", json.gam);
+        for (const gam of json.gam) {
           // For each returned list of reads from a file, convert all those reads to tube map format.
           // Include total read count to prevent duplicate ids.
           // Also include the source track's ID.

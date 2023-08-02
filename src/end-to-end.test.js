@@ -298,7 +298,7 @@ describe("When we wait for it to load", () => {
     // See if correct svg rendered
     let svg = document.getElementById("svg");
     expect(svg).toBeTruthy();
-    expect(svg.getElementsByTagName("title").length).toEqual(20);
+    expect(svg.getElementsByTagName("title").length).toEqual(23);
   });
 
 });

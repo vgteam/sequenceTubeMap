@@ -742,7 +742,7 @@ function processAnnotationFile(req, res, next) {
   }
 }
 
-function processGamFile(req, res, next, gamFile) {
+function processGamFile(req, res, next, gamFile, gamFileNumber) {
   try{
     if (!isAllowedPath(gamFile)) {
       // This is probably under SCRATCH_DATA_PATH
@@ -774,7 +774,8 @@ function processGamFile(req, res, next, gamFile) {
         .map(function (a) {
           return JSON.parse(a);
         });
-        req.gamObj[gamFile] = gamArr;
+        // Organize the results by number
+        req.gamResults[gamFileNumber] = gamArr;
         req.gamRemaining -= 1;
         if (req.gamRemaining == 0) {
           processRegionFile(req, res, next);
@@ -799,10 +800,36 @@ function processGamFiles(req, res, next) {
       }
     });
 
-    req.gamObj = {};
+    // Parse a GAM chunk name and get the GAM number from it
+    // Names are like:
+    // */chunk_*.gam for 0
+    // */chunk-1_*.gam for 1, 2, 3, etc.
+    let gamNameToNumber = (gamName) => {
+      const pattern = /.*\/chunk(-([0-9])+)?_.*\.gam/
+      let matches = gamName.match(pattern)
+      if (!matches) {
+        throw new InternalServerError("Bad GAM name " + gamName) 
+      }
+      if (matches[2] !== undefined) {
+        // We have a number
+        return parseInt(matches[2])
+      }
+      // If there's no number we are chunk 0
+      return 0
+    }
+
+    // Sort all the GAM files we found in order of their chunk number,
+    // ascending. This will also be the order of the GAM files passed to chunk,
+    // and so the order we got the tracks in, and thus the order we want the
+    // results in.
+    gamFiles.sort((a, b) => {
+      return gamNameToNumber(a) - gamNameToNumber(b)
+    })
+
+    req.gamResults = [];
     req.gamRemaining = gamFiles.length;
-    for (const gamFile of gamFiles){
-      processGamFile(req, res, next, gamFile);
+    for (let i = 0; i < gamFiles.length; i++){
+      processGamFile(req, res, next, gamFiles[i], i);
     }
     console.timeEnd("processing gam files");
 
@@ -864,7 +891,7 @@ function cleanUpAndSendResult(req, res, next) {
     // TODO: Any standard error output will make an error response.
     result.error = req.error.toString("utf-8");
     result.graph = req.graph;
-    result.gam = req.withGam === true ? req.gamObj : [];
+    result.gam = req.withGam === true ? req.gamResults : [];
     result.region = req.region;
     res.json(result);
     console.timeEnd("request-duration");
