@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import Select from "react-select";
+//import Select from "react-select";
+import CreatableSelect from 'react-select/creatable';
 
 /**
  * A searchable selection dropdown component.
@@ -63,13 +64,16 @@ export class SelectionDropdown extends Component {
     };
 
     return (
-      <Select
+      <CreatableSelect
+        getNewOptionData={(inputValue, optionLabel) => ({
+          label: optionLabel,
+          value: inputValue,
+        })}
         id={this.props.id}
         inputId={this.props.inputId}
         className={this.props.className}
         value={
-          dropdownOptions.find((option) => option.value === this.props.value) ||
-          {}
+          dropdownOptions.find((option) => option.value === this.props.value) || {label: this.props.value , value: this.props.value}
         }
         styles={styles}
         isSearchable={true}

@@ -1094,6 +1094,53 @@ api.post("/getPathNames", (req, res, next) => {
   });
 });
 
+// returns whether or not a string is a valid http url
+function isValidURL(string) {
+  if (!string) {
+    return False;
+  }
+
+  let url;
+
+  try {
+    url = new URL(string)
+  } catch(error) {
+    return false;
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
+const processBedURL = async(url) => {
+  const options = {
+    method: "GET",
+    credentials: "omit",
+  };
+
+  let response;
+  try{
+    response = await fetch(url, options);
+  } catch (error) {
+    throw new BadRequestError(error);
+  }
+
+  console.log(response);
+  console.log(response.data);
+
+  const contentType = response.headers.get("Content-Type");
+  const contentLength = response.headers.get("Content-Length");
+
+  console.log("content type", contentType);
+  console.log("content length", contentLength);
+
+  if (!contentType) {
+    
+  }
+
+  return response.data;
+
+} 
+
 api.post("/getBedRegions", (req, res) => {
   console.log("received request for bedRegions");
   const result = {
@@ -1101,7 +1148,7 @@ api.post("/getBedRegions", (req, res) => {
     error: null,
   };
 
-  if (req.body.bedFile !== "none") {
+  if (req.body.bedFile) {
     let dataPath = pickDataPath(req.body.dataPath);
     let bed_info = getBedRegions(req.body.bedFile, dataPath);
     console.log("bed reading done");
@@ -1116,23 +1163,37 @@ api.post("/getBedRegions", (req, res) => {
 // return a data structure decribing all the pre-cached regions it defines.
 // Validates file paths for user-accessibility. May throw.
 function getBedRegions(bedFile, dataPath) {
-  if (!bedFile.endsWith(".bed")) {
-    throw new BadRequestError("BED file path does not end in .bed: " + bedFile);
-  }
-
-  // Work out what file we're talking about
-  let bed_path = path.join(dataPath, bedFile);
-  if (!isAllowedPath(bed_path)) {
-    throw new BadRequestError("BED file path not allowed: " + bedFile);
-  }
-  if (!fs.existsSync(bed_path)) {
-    throw new BadRequestError("BED file not found: " + bedFile);
-  }
-
   let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [], tracks: []};
+  let bed_data;
+  console.log("bed file recieved ", bedFile);
+  if (isValidURL(bedFile)) {
+    console.log("valid url");
 
-  // Load and parse the BED file
-  let bed_data = fs.readFileSync(bed_path).toString();
+    bed_data = processBedURL(bedFile);
+    console.log(bed_data);
+
+    return bed_info;
+
+  } else {
+    if (!bedFile.endsWith(".bed")) {
+      throw new BadRequestError("BED file path does not end in .bed: " + bedFile);
+    }
+  
+    // Work out what file we're talking about
+    let bed_path = path.join(dataPath, bedFile);
+    if (!isAllowedPath(bed_path)) {
+      throw new BadRequestError("BED file path not allowed: " + bedFile);
+    }
+    if (!fs.existsSync(bed_path)) {
+      throw new BadRequestError("BED file not found: " + bedFile);
+    }
+  
+    // Load and parse the BED file
+    bed_data = fs.readFileSync(bed_path).toString();
+  }
+
+
+
   let lines = bed_data.split("\n");
   lines.map(function (line) {
     let records = line.split("\t");
@@ -1196,6 +1257,7 @@ function getBedRegions(bedFile, dataPath) {
 
   });
 
+  console.log("returning bed_info, ", bed_info);
   return bed_info;
 }
 
