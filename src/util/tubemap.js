@@ -3164,12 +3164,6 @@ function nodeSingleClick() {
   nodeAttributes.push(["Node Length:", currentNode.sequenceLength + " bases"]);
   nodeAttributes.push(["Haplotypes:", currentNode.degree]);
   nodeAttributes.push([
-    "Aligned Reads:",
-    currentNode.incomingReads.length +
-      currentNode.internalReads.length +
-      currentNode.outgoingReads.length,
-  ]);
-  nodeAttributes.push([
     "Number of Reads Visiting Node:",
     numReadsVisitNode(currentNode),
   ]);
@@ -3807,7 +3801,8 @@ function getTrackByID(trackID) {
 function trackMouseOver() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
-  d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)");
+  d3.selectAll(`.track${trackID}`).raise().style("fill", "url(#patternA)");
+  // raise / lower: https://stackoverflow.com/questions/24045673/reorder-elements-of-svg-z-index-in-d3-js
 }
 
 // Highlight node on mouseover
@@ -3823,6 +3818,7 @@ function trackMouseOut() {
   d3.selectAll(`.track${trackID}`).each(function clearTrackHighlight() {
     const c = d3.select(this).attr("color");
     d3.select(this).style("fill", c);
+    d3.select(this).lower();
   });
 }
 
