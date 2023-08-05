@@ -3229,7 +3229,12 @@ export function coverage(node, allReads) {
     let currRead = allReads[readNum];
     // coverage of outgoing read would be the the distance between the end of the node and the
     //  starting point of the read within the node
-    countBases += node.sequenceLength - currRead.firstNodeOffset;
+    //  ensure read is not an incoming read and outgoing read
+    if (readNum in node.incomingReads && node.outgoingReads){
+      continue;
+    } else {
+      countBases += node.sequenceLength - currRead.firstNodeOffset;
+    }
   }
   // average coverage is total number of bases traversed by all reads divided by sequence length (width of node in bases)
   return Math.round((countBases / node.sequenceLength) * 100) / 100;
