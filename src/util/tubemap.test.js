@@ -216,6 +216,86 @@ describe('cigar_string', () => {
     });
   });
 
+// Make sure that a node and a set of reads make sense together.
+function checkNodeExample(node, reads) {
+
+  let nodeName = null
+
+  // Set or check node name for the given visit of the given read
+  function checkNodeName(read, visitIndex) {
+    let visit = read.sequenceNew[visitIndex]
+    if (nodeName) {
+      if (nodeName !== visit.nodeName) {
+        throw new Error("Different visits to this node have different node names! " + nodeName + " vs. " + visit.nodeName)
+      }
+    } else {
+      // See if we can pick up a node name
+      nodeName = visit.nodeName
+    }
+  }
+
+  for (let [readNum, visitIndex] of node.incomingReads) {
+    if (readNum >= reads.length) {
+      throw new Error("Incoming read " + readNum + " doesn't exist")
+    }
+    let read = reads[readNum]
+    if (visitIndex >= read.sequenceNew.length) {
+      throw new Error("Incoming read " + readNum + " visit " + visitIndex + " doesn't exist")
+    }
+
+    if (visitIndex == 0) {
+      // This shouldn't happen a lot because it means the read started before the first node in the region.
+      if (read.firstNodeOffset !== undefined && read.firstNodeOffset !== 0) {
+        // This shouldn't happen ever; we can't enter this first node anywhere but the start.
+        throw new Error("Read is entering a node first but has a nonzero first node offset!")
+      }
+    }
+
+    checkNodeName(read, visitIndex)
+
+    if (visitIndex == read.sequenceNew.length - 1) {
+      // Read ends here
+      if (read.finalNodeCoverLength > node.sequenceLength) {
+        throw new Error("Final node cover length too long")
+      }
+    }
+  }
+
+  for (let readNum of node.internalReads) {
+    if (readNum >= reads.length) {
+      throw new Error("Internal read " + readNum + " doesn't exist")
+    }
+
+    let read = reads[readNum]
+    
+    // Internal reads can only have one visit
+    let visitIndex = 0
+    if (read.sequenceNew.length !== 1) {
+      throw new Error("Internal reads can only visit one node, but read" + readNum + " doesn't")
+    }
+    
+    checkNodeName(read, visitIndex)
+  }
+
+  for (let [readNum, visitIndex] of node.outgoingReads) {
+    if (readNum >= reads.length) {
+      throw new Error("Outgoing read " + readNum + " doesn't exist")
+    }
+    let read = reads[readNum]
+    if (visitIndex >= read.sequenceNew.length) {
+      throw new Error("Outgoing read " + readNum + " visit " + visitIndex + " doesn't exist")
+    }
+
+    checkNodeName(read, visitIndex)
+
+    if (visitIndex == read.sequenceNew.length - 1) {
+      // Read starts here
+      if (read.firstNodeOffset > node.sequenceLength) {
+        throw new Error("First node offset too long")
+      }
+    }
+  }
+}
   
 // Node coverage test
 describe('coverage', () => {
@@ -228,6 +308,7 @@ describe('coverage', () => {
       outgoingReads: [],
     }
     const reads = [];
+    checkNodeExample(node, reads);
     expect(coverage(node, reads)).toBe(0.00);
   })
   // TEST #2
@@ -280,6 +361,7 @@ describe('coverage', () => {
         "finalNodeCoverLength": 1,
       }
     ];
+    checkNodeExample(node, reads);
     expect(coverage(node, reads)).toBe(1.00);
   })
   // TEST #3
@@ -370,6 +452,7 @@ describe('coverage', () => {
         "finalNodeCoverLength": 6,
       }
     ];
+    checkNodeExample(node, reads);
     expect(coverage(node, reads)).toBe(2.17);
   })
   // TEST #4
@@ -503,6 +586,7 @@ describe('coverage', () => {
         "finalNodeCoverLength": 29,
       },
     ];
+    checkNodeExample(node, reads);
     expect(coverage(node, reads)).toBe(6.57);
   })
 })
