@@ -3164,6 +3164,12 @@ function nodeSingleClick() {
   nodeAttributes.push(["Node Length:", currentNode.sequenceLength + " bases"]);
   nodeAttributes.push(["Haplotypes:", currentNode.degree]);
   nodeAttributes.push([
+    "Aligned Reads:",
+    currentNode.incomingReads.length +
+      currentNode.internalReads.length +
+      currentNode.outgoingReads.length,
+  ]);
+  nodeAttributes.push([
     "Number of Reads Visiting Node:",
     numReadsVisitNode(currentNode),
   ]);
@@ -3229,12 +3235,7 @@ export function coverage(node, allReads) {
     let currRead = allReads[readNum];
     // coverage of outgoing read would be the the distance between the end of the node and the
     //  starting point of the read within the node
-    //  ensure read is not an incoming read and outgoing read
-    if (readNum in node.incomingReads && node.outgoingReads){
-      continue;
-    } else {
-      countBases += node.sequenceLength - currRead.firstNodeOffset;
-    }
+    countBases += node.sequenceLength - currRead.firstNodeOffset;
   }
   // average coverage is total number of bases traversed by all reads divided by sequence length (width of node in bases)
   return Math.round((countBases / node.sequenceLength) * 100) / 100;
@@ -3806,8 +3807,7 @@ function getTrackByID(trackID) {
 function trackMouseOver() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
-  d3.selectAll(`.track${trackID}`).raise().style("fill", "url(#patternA)");
-  // raise / lower: https://stackoverflow.com/questions/24045673/reorder-elements-of-svg-z-index-in-d3-js
+  d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)");
 }
 
 // Highlight node on mouseover
@@ -3823,7 +3823,6 @@ function trackMouseOut() {
   d3.selectAll(`.track${trackID}`).each(function clearTrackHighlight() {
     const c = d3.select(this).attr("color");
     d3.select(this).style("fill", c);
-    d3.select(this).lower();
   });
 }
 
