@@ -13,7 +13,7 @@ export const PopUpInfoDialog = ({
             <h5>Object Information</h5>
             <table>
               <tbody>
-                {/* Node info here */}
+                {/* Track or Node info here */}
                 {(attributes || []).map(function(attribute){
                   return <tr key={attribute[0]}>
                       <td style={{fontWeight: 'bold', border: '1px solid black'}}>{attribute[0]}</td>
@@ -32,7 +32,7 @@ export default PopUpInfoDialog;
 
 PopUpInfoDialog.propTypes = {
   open: PropTypes.bool.isRequired,
-  /* array argument of track attribute pairs containing attribute name as a string and attribute value
+  /* array argument of track or node attribute pairs containing attribute name as a string and attribute value
   as a string or number */
   attributes: PropTypes.arrayOf(
     PropTypes.arrayOf(
