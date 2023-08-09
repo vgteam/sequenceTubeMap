@@ -1111,37 +1111,50 @@ function isValidURL(string) {
   return url.protocol === "http:" || url.protocol === "https:";
 }
 
+// aborts fetch request after certain amount of time
+const timeoutController = (seconds) => {
+  let controller = new AbortController();
+  setTimeout(() => controller.abort(), seconds * 1000);
+  return controller;
+}
+
 const processBedURL = async(url) => {
+
   const options = {
     method: "GET",
     credentials: "omit",
+    cache: "default",
+    signal: timeoutController(15).signal // pass in abort controller for timeout
   };
 
   let response;
   try{
     response = await fetch(url, options);
-  } catch (error) {
-    throw new BadRequestError(error);
-  }
 
-  console.log(response);
-  console.log(response.data);
+    if (!response.ok) {
+      throw new BadRequestError("BED url request failed");
+    }
+  } catch (error) {
+    console.error("There has been a problem with your fetch operation:", error);
+  }
 
   const contentType = response.headers.get("Content-Type");
   const contentLength = response.headers.get("Content-Length");
 
-  console.log("content type", contentType);
-  console.log("content length", contentLength);
-
-  if (!contentType) {
-    
+  if (!contentType.startsWith("text")) {
+    throw new BadRequestError("BED File contain incorrect content type");
   }
 
-  return response.data;
+  if (contentLength > 5000) {
+    throw new BadRequestError("Content Length too large");
+  }
+
+  const data = await response.text();
+  return data;
 
 } 
 
-api.post("/getBedRegions", (req, res) => {
+api.post("/getBedRegions", async (req, res) => {
   console.log("received request for bedRegions");
   const result = {
     bedRegions: [],
@@ -1150,8 +1163,7 @@ api.post("/getBedRegions", (req, res) => {
 
   if (req.body.bedFile) {
     let dataPath = pickDataPath(req.body.dataPath);
-    let bed_info = getBedRegions(req.body.bedFile, dataPath);
-    console.log("bed reading done");
+    let bed_info = await getBedRegions(req.body.bedFile, dataPath);
     result.bedRegions = bed_info;
     res.json(result);
   } else {
@@ -1162,19 +1174,14 @@ api.post("/getBedRegions", (req, res) => {
 // Load up the given BED file, relative to the given pre-resolved dataPath, and
 // return a data structure decribing all the pre-cached regions it defines.
 // Validates file paths for user-accessibility. May throw.
-function getBedRegions(bedFile, dataPath) {
+async function getBedRegions(bedFile, dataPath) {
   let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [], tracks: []};
   let bed_data;
+  let lines;
   console.log("bed file recieved ", bedFile);
   if (isValidURL(bedFile)) {
-    console.log("valid url");
-
-    bed_data = processBedURL(bedFile);
-    console.log(bed_data);
-
-    return bed_info;
-
-  } else {
+    bed_data = await processBedURL(bedFile);
+  } else {  // otherwise search for bed file in dataPath
     if (!bedFile.endsWith(".bed")) {
       throw new BadRequestError("BED file path does not end in .bed: " + bedFile);
     }
@@ -1192,9 +1199,7 @@ function getBedRegions(bedFile, dataPath) {
     bed_data = fs.readFileSync(bed_path).toString();
   }
 
-
-
-  let lines = bed_data.split("\n");
+  lines = bed_data.split("\n");
   lines.map(function (line) {
     let records = line.split("\t");
     if (records.length < 3) {
