@@ -85,7 +85,6 @@ const lightColors = [
   "#A8E7ED",
 ];
 
-
 // Font stack we will use in the SVG
 // We start with Courier New because it exists a lot more places than
 // "Courier", and because tools like Inkscape can't interpret the text properly
@@ -125,15 +124,14 @@ let nodesPerOrder;
 //
 // * trackID: the number of the track that the SegmentAssignment represents a piece of.
 // * segmentID: the number along all that track's Segments in the track's `path` that is assigned here.
-// * compareToFromSame: any earlier SegmentAssignment for this track in this order slot, or null. TODO: This is never used. 
-// 
+// * compareToFromSame: any earlier SegmentAssignment for this track in this order slot, or null. TODO: This is never used.
+//
 // This is all duplicative with the tracks' `path` lists, but is organized by order slot instead of by track.
 // This is NOT used for reads! Reads use their own system.
-let assignments = []; 
+let assignments = [];
 let extraLeft = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let extraRight = []; // info whether nodes have to be moved further apart because of multiple 180° directional changes at the same horizontal order
 let maxOrder; // horizontal order of the rightmost node
-
 
 const config = {
   mergeNodesFlag: true,
@@ -147,12 +145,14 @@ const config = {
   nodeWidthOption: 0,
   showReads: true,
   showSoftClips: true,
-  colorSchemes: {}, 
-           // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
+  colorSchemes: {},
+  // colors corresponds with tracks(input files), [haplotype, read1, read2, ...]
   exonColors: "lightColors",
   hideLegendFlag: false,
   mappingQualityCutoff: 0,
-  showInfoCallback: function(info) {alert(info)},
+  showInfoCallback: function (info) {
+    alert(info);
+  },
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -251,7 +251,7 @@ function moveTrackToFirstPosition(index) {
 
 // straighten track given by index by inverting inverted nodes
 // only keep them inverted if this single track runs thrugh them in both directions
-// TODO: This operates on `inputNodes`, etc. when it probably ought to operate on `nodes` 
+// TODO: This operates on `inputNodes`, etc. when it probably ought to operate on `nodes`
 function straightenTrack(index) {
   let i;
   let j;
@@ -385,7 +385,7 @@ export function setNodeWidthOption(value) {
   }
 }
 
-// sets callback function that would generate React popup of track information. The callback would 
+// sets callback function that would generate React popup of track information. The callback would
 // accept an array argument of track attribute pairs containing attribute name as a string and attribute value
 // as a string or number, to be displayed.
 export function setInfoCallback(newCallback) {
@@ -404,7 +404,7 @@ export function setMappingQualityCutoff(value) {
 
 // main
 function createTubeMap() {
-  console.log('Recreating tube map in', svgID);
+  console.log("Recreating tube map in", svgID);
   trackRectangles = [];
   trackCurves = [];
   trackCorners = [];
@@ -631,7 +631,7 @@ function placeReads() {
   }
 
   let allSources = Object.keys(readsBySource);
-  allSources.sort((a, b) => (Number(a) - Number(b)));
+  allSources.sort((a, b) => Number(a) - Number(b));
 
   console.log("All sources: ", allSources);
 
@@ -679,7 +679,6 @@ function placeReads() {
 // Makes the given node bigger if needed and moves other nodes down if needed.
 // If topMargin is set, applies that amount of spacing down from whatever is above the reads.
 function placeReadSet(readIDs, node, topMargin) {
-
   // Parse arguments
   if (!topMargin) {
     topMargin = 0;
@@ -689,12 +688,22 @@ function placeReadSet(readIDs, node, topMargin) {
   let toPlace = new Set(readIDs);
 
   // Get arrays of the read entry/exit/internal-ness records we want to work on
-  let incomingReads = node.incomingReads.filter(([readID, pathIndex]) => toPlace.has(readID));
-  let outgoingReads = node.outgoingReads.filter(([readID, pathIndex]) => toPlace.has(readID));
-  let internalReads = node.internalReads.filter((readID) => toPlace.has(readID));
+  let incomingReads = node.incomingReads.filter(([readID, pathIndex]) =>
+    toPlace.has(readID)
+  );
+  let outgoingReads = node.outgoingReads.filter(([readID, pathIndex]) =>
+    toPlace.has(readID)
+  );
+  let internalReads = node.internalReads.filter((readID) =>
+    toPlace.has(readID)
+  );
 
   // Only actually use the top margin if we have any reads on the node.
-  if (incomingReads.length === 0 && outgoingReads.length === 0 && internalReads.length === 0) {
+  if (
+    incomingReads.length === 0 &&
+    outgoingReads.length === 0 &&
+    internalReads.length === 0
+  ) {
     topMargin = 0;
   }
 
@@ -1117,7 +1126,9 @@ function generateTrackIndexSequences(tracksOrReads) {
       let nodeIndex = nodeMap.get(forward(nodeName));
       if (nodeIndex === 0) {
         // If a node index is ever 0, we can't visit it in reverse, so we don't allow that to happen.
-        throw new Error('Node ' + forward(nodeName) + ' has prohibited index 0'); 
+        throw new Error(
+          "Node " + forward(nodeName) + " has prohibited index 0"
+        );
       }
       if (isReverse(nodeName) !== switched) {
         // If we visit the node in reverse XOR the node is switched, go through
@@ -1126,7 +1137,7 @@ function generateTrackIndexSequences(tracksOrReads) {
       } else {
         // If either the node isn't switched and we go through it forward, or
         // the node is switched *and* we go through it backward, go through it
-        // left to right as displayed. 
+        // left to right as displayed.
         track.indexSequence.push(nodeIndex);
       }
     });
@@ -1638,7 +1649,7 @@ function generateNodeDegree() {
 
 // Optimize the orientations for nodes in the global `nodes` for displaying the
 // paths in the global `tracks` and the read paths, if applicable, in the
-// global `reads` 
+// global `reads`
 function switchNodeOrientation() {
   let pivotPath = tracks[0];
   let countPaths = tracks.slice(1, tracks.length);
@@ -1662,7 +1673,6 @@ function switchNodeOrientation() {
 // orientation, pass it as pivotPath.
 // References and modifies the global nodes variable.
 function switchNodeOrientationForPaths(paths, pivotPath) {
-
   const toSwitch = new Map();
   let nodeName;
   let prevNode;
@@ -2069,7 +2079,7 @@ function generateLaneAssignment() {
       }
     }
   });
-  
+
   // Now sweep left to right across order slots and assign vertical lanes to all the segments.
   for (let i = 0; i <= maxOrder; i += 1) {
     generateSingleLaneAssignment(assignments[i], i); // this is where the lanes get assigned
@@ -2404,9 +2414,6 @@ function calculateTrackWidth() {
   }
 }
 
-
-
-
 function getColorSet(colorSetName) {
   // single color hex
   if (colorSetName.startsWith("#")) {
@@ -2433,10 +2440,9 @@ function getColorSet(colorSetName) {
 }
 
 function generateTrackColor(track, highlight) {
-
   if (typeof highlight === "undefined") highlight = "plain";
   let trackColor;
-  
+
   const sourceID = track.sourceTrackID;
   if (!config.colorSchemes[sourceID]) {
     if (track.hasOwnProperty("type") && track.type === "read") {
@@ -2444,7 +2450,8 @@ function generateTrackColor(track, highlight) {
       config.colorSchemes[sourceID] = externalConfig.defaultReadColorPalette;
     } else {
       // Default to haplotype colors
-      config.colorSchemes[sourceID] = externalConfig.defaultHaplotypeColorPalette;
+      config.colorSchemes[sourceID] =
+        externalConfig.defaultHaplotypeColorPalette;
     }
   }
 
@@ -3109,26 +3116,130 @@ function drawNodes(dNodes) {
     .on("mouseover", nodeMouseOver)
     .on("mouseout", nodeMouseOut)
     .on("dblclick", nodeDoubleClick)
+    .on("click", nodeSingleClick)
     .style("fill", config.transparentNodesFlag ? "none" : "#fff")
     .style("fill-opacity", config.showExonsFlag ? "0.4" : "0.6")
     .style("stroke", "black")
     .style("stroke-width", "2px")
     .append("svg:title")
-    .text((d) => getPopUpText(d));
+    .text((d) => getPopUpNodeText(d));
 }
 
-function getPopUpText(node) {
+function getPopUpNodeText(node) {
+  return `Node ID: ${node.name}` + (node.switched ? ` (reversed)` : ``) + `\n`;
+}
 
-  return (
-    `Node ID: ${node.name}` + (node.switched ? ` (reversed)` : ``) + `\n` +
-    `Node Length: ${node.sequenceLength} bases\n` +
-    `Haplotypes: ${node.degree}\n` +
-    `Aligned Reads: ${
-      node.incomingReads.length +
-      node.internalReads.length +
-      node.outgoingReads.length
-    }`
-  );
+// Get any node object by name.
+function getNodeByName(nodeName) {
+  if (typeof nodeName !== "string") {
+    throw new Error("Node Names must be strings");
+  }
+  // We just do a scan.
+  // TODO: index!
+  console.log("All nodes:", nodes); //
+  for (let i = 1; i < nodes.length; i++) {
+    // changes i to start from 1 instead of 0
+    if (nodes[i].name === nodeName) {
+      console.log("Found node with name", nodeName, "at index ", i);
+      return nodes[i];
+    }
+  }
+}
+
+function nodeSingleClick() {
+  /* jshint validthis: true */
+  // Get the node name
+  const nodeName = d3.select(this).attr("id");
+  let currentNode = getNodeByName(nodeName);
+  console.log("Node ", nodeName, " is ", currentNode);
+  if (currentNode === undefined) {
+    console.error("Missing node: ", nodeName);
+    return;
+  }
+  let nodeAttributes = [];
+  nodeAttributes.push([
+    "Node ID:",
+    currentNode.name + currentNode.switched ? "(reversed)" : "",
+  ]);
+  nodeAttributes.push(["Node Length:", currentNode.sequenceLength + " bases"]);
+  nodeAttributes.push(["Haplotypes:", currentNode.degree]);
+  nodeAttributes.push([
+    "Aligned Reads:",
+    currentNode.incomingReads.length +
+      currentNode.internalReads.length +
+      currentNode.outgoingReads.length,
+  ]);
+  nodeAttributes.push([
+    "Total Visits:",
+    numReadsVisitNode(currentNode),
+  ]);
+  nodeAttributes.push(["Coverage:", coverage(currentNode, reads)]);
+
+  console.log("Single Click");
+  console.log("node show info callback", config.showInfoCallback);
+  config.showInfoCallback(nodeAttributes);
+}
+
+// Count the number of distinct reads that visit the given node object.
+export function numReadsVisitNode(node) {
+  let countReads = new Set();
+  // incoming reads are reads that enter the node but don't start within it. They are represented as
+  // an array of subarrays which have 2 elements: an index indicating the read index and read path's index.
+  // The first node will not have any incoming reads.
+  for (let readVisit of node.incomingReads) {
+    countReads.add(readVisit[0]);
+  }
+  // internal reads are reads that start and end within the node. They are represented as
+  // an array of values which indicate the read index.
+  for (let read of node.internalReads) {
+    countReads.add(read);
+  }
+  // outgoing reads are reads that exit the node when the read starts within it. They are represented as
+  // an array of subarrays which have 2 elements: an index indicating the read index and read path's index.
+  // The last node will not have any outgoing reads.
+  for (let readVisit of node.outgoingReads) {
+    countReads.add(readVisit[0]);
+  }
+  return countReads.size;
+}
+
+// computes average number of reads passing through each base in the node
+export function coverage(node, allReads) {
+  if (node.sequenceLength === 0) {
+    return 0.0;
+  }
+  let countBases = 0;
+  for (let readVisit of node.incomingReads) {
+    let readNum = readVisit[0];
+    let readPathIndex = readVisit[1];
+    let currRead = allReads[readNum];
+    let numNodes = currRead.sequenceNew.length;
+    //  if current node is the last node on the read path, add the finalNodeCoverLength number of bases
+    if (numNodes === readPathIndex + 1) {
+      countBases += currRead.finalNodeCoverLength;
+      // otherwise add the node's sequence length (width of node in bases)
+    } else {
+      countBases += node.sequenceLength;
+    }
+  }
+  // internal reads
+  for (let readVisit of node.internalReads) {
+    // compute coverage of read by finalNodeCoverLength and firstNodeOffset fields
+    //  indicating read's starting and ending points within the node.
+    let readNum = readVisit;
+    let currRead = allReads[readNum];
+    countBases += currRead.finalNodeCoverLength - currRead.firstNodeOffset;
+  }
+  // outgoing reads
+  for (let readVisit of node.outgoingReads) {
+    let readNum = readVisit[0];
+    let currRead = allReads[readNum];
+    // coverage of outgoing read would be the the distance between the end of the node and the
+    //  starting point of the read within the node
+    countBases += node.sequenceLength - currRead.firstNodeOffset;
+  }
+  // average coverage is total number of bases traversed by all reads divided by sequence length (width of node in bases)
+  return Math.round((countBases / node.sequenceLength) * 100) / 100;
 }
 
 // draw seqence labels for nodes
@@ -3747,19 +3858,21 @@ function trackSingleClick() {
     return;
   }
   let track_attributes = [];
-  track_attributes.push(["Name", current_track.name])
+  track_attributes.push(["Name", current_track.name]);
   if (current_track.type === "read") {
-    track_attributes.push(["Sample Name", current_track.sample_name])
-    track_attributes.push(["Primary Alignment?", current_track.is_secondary ? "Secondary" : "Primary"])
-    track_attributes.push(["Read Group", current_track.read_group])
-    track_attributes.push(["Score", current_track.score])
-    track_attributes.push(["CIGAR string", current_track.cigar_string])
-    track_attributes.push(["Mapping Quality", current_track.mapping_quality])
+    track_attributes.push(["Sample Name", current_track.sample_name]);
+    track_attributes.push([
+      "Primary Alignment?",
+      current_track.is_secondary ? "Secondary" : "Primary",
+    ]);
+    track_attributes.push(["Read Group", current_track.read_group]);
+    track_attributes.push(["Score", current_track.score]);
+    track_attributes.push(["CIGAR string", current_track.cigar_string]);
+    track_attributes.push(["Mapping Quality", current_track.mapping_quality]);
   }
   console.log("Single Click");
-  console.log("read path", );
-  console.log(config.showInfoCallback)
-  config.showInfoCallback(track_attributes)
+  console.log("read path");
+  config.showInfoCallback(track_attributes);
 }
 
 // show track name when hovering mouse
@@ -3974,51 +4087,50 @@ function compareReadsByLeftEnd2(a, b) {
 }
 
 // converts readPath, a vg Path object expressed as a JS object, to a CIGAR string
-export function cigar_string (readPath) {
+export function cigar_string(readPath) {
   if (DEBUG) {
     console.log("readPath mapping:", readPath.mapping);
   }
   let cigar = [];
   for (let i = 0; i < readPath.mapping.length; i += 1) {
-    let mapping = readPath.mapping[i]
+    let mapping = readPath.mapping[i];
     for (let j = 0; j < mapping.edit.length; j += 1) {
-      let edit = mapping.edit[j]
+      let edit = mapping.edit[j];
       // from_length is not 0, and from_length = to_length, this indicates a match
-      if (edit.from_length && edit.from_length === edit.to_length){
-        cigar = append_cigar_operation(edit.from_length, 'M', cigar);
-      }
-      else {
+      if (edit.from_length && edit.from_length === edit.to_length) {
+        cigar = append_cigar_operation(edit.from_length, "M", cigar);
+      } else {
         // from_length can be 0, and from_length = to_length, this indicates a match
-        if (edit.from_length === edit.to_length){
-          cigar = append_cigar_operation(edit.from_length, 'M', cigar);
-        } 
+        if (edit.from_length === edit.to_length) {
+          cigar = append_cigar_operation(edit.from_length, "M", cigar);
+        }
         // if from_length > to_length, this indicates a deletion
-        else if (edit.from_length > edit.to_length){
+        else if (edit.from_length > edit.to_length) {
           const del = edit.from_length - edit.to_length;
           const eq = edit.to_length;
-          if (eq){
-            cigar = append_cigar_operation(eq, 'M', cigar);
+          if (eq) {
+            cigar = append_cigar_operation(eq, "M", cigar);
           }
-          cigar = append_cigar_operation(del, 'D', cigar);
-        } 
+          cigar = append_cigar_operation(del, "D", cigar);
+        }
         // if from_length < to_length, this indicates an insertion
-        else if (edit.from_length < edit.to_length){
+        else if (edit.from_length < edit.to_length) {
           const ins = edit.to_length - edit.from_length;
           const eq = edit.from_length;
-          if (eq){
-            cigar = append_cigar_operation(eq, 'M', cigar);
+          if (eq) {
+            cigar = append_cigar_operation(eq, "M", cigar);
           }
-          cigar = append_cigar_operation(ins, 'I', cigar);
+          cigar = append_cigar_operation(ins, "I", cigar);
         }
         // if to_length is undefined, this indicates a deletion
-        else if (edit.from_length && edit.to_length === undefined){
+        else if (edit.from_length && edit.to_length === undefined) {
           const del = edit.from_length;
-          cigar = append_cigar_operation(del, 'D', cigar);
+          cigar = append_cigar_operation(del, "D", cigar);
         }
         // if from_length is undefined, this indicates an insertion
-        else if (edit.from_length === undefined && edit.to_length){
+        else if (edit.from_length === undefined && edit.to_length) {
           const ins = edit.to_length;
-          cigar = append_cigar_operation(ins, 'I', cigar);
+          cigar = append_cigar_operation(ins, "I", cigar);
         }
       }
     }
@@ -4029,15 +4141,14 @@ export function cigar_string (readPath) {
   return cigar.join("");
 }
 
-function append_cigar_operation (length, operator, cigar){
+function append_cigar_operation(length, operator, cigar) {
   let last_operation = cigar[cigar.length - 1];
   let last_length = cigar[cigar.length - 2];
   // if duplicate operations, add the two operations and replace the most recent operation with this
-  if (last_operation === operator){
+  if (last_operation === operator) {
     let newLength = last_length + length;
     cigar[cigar.length - 2] = newLength;
-  } 
-  else {
+  } else {
     cigar.push(length);
     cigar.push(operator);
   }
@@ -4047,7 +4158,13 @@ function append_cigar_operation (length, operator, cigar){
 // Pull out reads from a server response into tube map internal format.
 // Use myTracks, and idOffset to compute IDs for each read.
 // Assign each read the given sourceTrackID.
-export function vgExtractReads(myNodes, myTracks, myReads, idOffset, sourceTrackID) {
+export function vgExtractReads(
+  myNodes,
+  myTracks,
+  myReads,
+  idOffset,
+  sourceTrackID
+) {
   if (DEBUG) {
     console.log("Reads:");
     console.log(myReads);
