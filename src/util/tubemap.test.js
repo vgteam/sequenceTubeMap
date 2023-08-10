@@ -276,8 +276,11 @@ function checkNodeExample(node, reads) {
     if (visitIndex >= read.sequenceNew.length) {
       throw new Error("Outgoing read " + readNum + " visit " + visitIndex + " doesn't exist")
     }
+    if (visitIndex !== 0) {
+      throw new Error("Outgoing read did not start at the node it is outgoing for")
+    }
     checkNodeName(read, visitIndex)
-    if (visitIndex == read.sequenceNew.length - 1) {
+    if (visitIndex === 0) {
       // Read starts here
       if (read.firstNodeOffset > node.sequenceLength) {
         throw new Error("First node offset too long")

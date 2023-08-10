@@ -3170,7 +3170,7 @@ function nodeSingleClick() {
       currentNode.outgoingReads.length,
   ]);
   nodeAttributes.push([
-    "Number of Reads Visiting Node:",
+    "Total Visits:",
     numReadsVisitNode(currentNode),
   ]);
   nodeAttributes.push(["Coverage:", coverage(currentNode, reads)]);
@@ -3180,6 +3180,7 @@ function nodeSingleClick() {
   config.showInfoCallback(nodeAttributes);
 }
 
+// Count the number of distinct reads that visit the given node object.
 export function numReadsVisitNode(node) {
   let countReads = new Set();
   // incoming reads are reads that enter the node but don't start within it. They are represented as
