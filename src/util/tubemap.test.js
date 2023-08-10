@@ -276,8 +276,11 @@ function checkNodeExample(node, reads) {
     if (visitIndex >= read.sequenceNew.length) {
       throw new Error("Outgoing read " + readNum + " visit " + visitIndex + " doesn't exist")
     }
+    if (visitIndex !== 0) {
+      throw new Error("Outgoing read did not start at the node it is outgoing for")
+    }
     checkNodeName(read, visitIndex)
-    if (visitIndex == read.sequenceNew.length - 1) {
+    if (visitIndex === 0) {
       // Read starts here
       if (read.firstNodeOffset > node.sequenceLength) {
         throw new Error("First node offset too long")
@@ -452,7 +455,7 @@ describe('coverage', () => {
       sequenceLength: 30,
       incomingReads: [[0, 1], [1, 1]],
       internalReads: [2, 3, 4, 5],
-      outgoingReads: [[6, 2], [7, 2], [8, 2]],
+      outgoingReads: [[6, 0], [7, 0], [8, 0]],
     }
     const reads = [
       {
@@ -549,11 +552,11 @@ describe('coverage', () => {
             "mismatches": []
           },
           {
-            "nodeName": "4",
+            "nodeName": "7",
             "mismatches": []
           },
           {
-            "nodeName": "4",
+            "nodeName": "9",
             "mismatches": []
           }
         ],
@@ -561,9 +564,13 @@ describe('coverage', () => {
         "finalNodeCoverLength": 29,
       },
       {
-        "id": 15,
+        "id": 8,
         "sourceTrackID": "1",
         "sequenceNew": [
+          {
+            "nodeName": "4",
+            "mismatches": []
+          },
           {
             "nodeName": "13",
             "mismatches": []
@@ -572,10 +579,6 @@ describe('coverage', () => {
             "nodeName": "12",
             "mismatches": []
           },
-          {
-            "nodeName": "4",
-            "mismatches": []
-          }
         ],
         "firstNodeOffset": 7,
         "finalNodeCoverLength": 30,
@@ -585,6 +588,10 @@ describe('coverage', () => {
         "sourceTrackID": "1",
         "sequenceNew": [
           {
+            "nodeName": "4",
+            "mismatches": []
+          },
+          {
             "nodeName": "10",
             "mismatches": []
           },
@@ -592,10 +599,6 @@ describe('coverage', () => {
             "nodeName": "11",
             "mismatches": []
           },
-          {
-            "nodeName": "4",
-            "mismatches": []
-          }
         ],
         "firstNodeOffset": 3,
         "finalNodeCoverLength": 29,
