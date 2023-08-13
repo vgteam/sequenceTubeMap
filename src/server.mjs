@@ -655,6 +655,7 @@ app.use(returnErrorMiddleware);
 
 // Gets the chunk path from a region specified in a bedfile 
 function getChunkPath(bedFile, dataPath, parsedRegion) {
+  console.log("chunk path datapath: ", dataPath);
   let chunkPath = "";
   let regionInfo = getBedRegions(bedFile, dataPath);
 
@@ -666,13 +667,15 @@ function getChunkPath(bedFile, dataPath, parsedRegion) {
     }
     if (stringifyRegion(entryRegion) === stringifyRegion(parsedRegion)) {
       // A BED entry is defined for this region exactly
-      if (regionInfo["chunk_path"][i] !== "") {
+      if (regionInfo["chunk"][i] !== "") {
         // And a chunk file is stored for it, so use that.
-        chunkPath = regionInfo["chunk_path"][i];
+        chunkPath = regionInfo["chunk"][i];
         break;
       }
     }
   }
+  chunkPath = `${dataPath}${chunkPath}`;
+
   // check that the 'chunk.vg' file exists in the chunk folder
   if (chunkPath.endsWith("/")) {
     chunkPath = chunkPath.substring(0, chunkPath.length - 1);
@@ -1119,7 +1122,6 @@ const timeoutController = (seconds) => {
 }
 
 const processBedURL = async(url) => {
-
   const options = {
     method: "GET",
     credentials: "omit",
