@@ -655,7 +655,6 @@ app.use(returnErrorMiddleware);
 
 // Gets the chunk path from a region specified in a bedfile 
 function getChunkPath(bedFile, dataPath, parsedRegion) {
-  console.log("chunk path datapath: ", dataPath);
   let chunkPath = "";
   let regionInfo = getBedRegions(bedFile, dataPath);
 
@@ -1114,6 +1113,29 @@ function isValidURL(string) {
   return url.protocol === "http:" || url.protocol === "https:";
 }
 
+// download chunks specified by bed URL
+const retrieveChunks = async(bedURL, chunks) => {
+  dataPath = bedURL.concat("../");
+  for (const dirName of chunks) {
+    chunkDir = config.tempDirPath + "/" + dirName;
+    // create directory for the chunk
+    if (!fs.existsSync(chunkDir)) {
+      fs.mkdirSync(chunkDir, { recursive: true });
+    }
+
+    // fetch and download files and put them in the directory
+    const options = {
+      method: "GET",
+      credentials: "omit",
+      cache: "default",
+      signal: timeoutController(15).signal // pass in abort controller for timeout
+    };
+
+    
+  }
+
+}
+
 // aborts fetch request after certain amount of time
 const timeoutController = (seconds) => {
   let controller = new AbortController();
@@ -1180,8 +1202,10 @@ async function getBedRegions(bedFile, dataPath) {
   let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [], tracks: []};
   let bed_data;
   let lines;
+  let isURL = false;
   console.log("bed file recieved ", bedFile);
   if (isValidURL(bedFile)) {
+    isURL = true;
     bed_data = await processBedURL(bedFile);
   } else {  // otherwise search for bed file in dataPath
     if (!bedFile.endsWith(".bed")) {
@@ -1264,6 +1288,10 @@ async function getBedRegions(bedFile, dataPath) {
 
   });
 
+  if (isURL) {
+    retrieveChunks(bedFile, bed_info["chunk"]);
+  }
+
   console.log("returning bed_info, ", bed_info);
   return bed_info;
 }
@@ -1300,6 +1328,9 @@ export function start() {
       connections: undefined,
       // Shut down the server
       close: async () => {
+        // remove the temporary directory
+        fs.rmSync(config.tempDirPath, { recursive: true, force: true });
+
         // Shutdown the Websocket Server.
         state.wss.shutDown();
         // Close the file watcher.
@@ -1420,3 +1451,11 @@ if (process) {
     start();
   }
 }
+
+process.on( "SIGINT", function() {
+  console.log("\nshutting down from SIGINT");
+  // remove the temporary directory
+  fs.rmSync(config.tempDirPath, { recursive: true, force: true });
+
+  process.exit();
+})
