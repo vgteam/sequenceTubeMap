@@ -419,6 +419,9 @@ function createTubeMap() {
   trackForRuler = undefined;
   svg = d3.select(svgID);
   svg.selectAll("*").remove(); // clear svg for (re-)drawing
+  //console.log("svg:", svg)
+  //svg.append("g").attr("id", "group")
+  //console.log("svg with g:", svg)
 
   // early exit is necessary when visualization options such as colors are
   // changed before any graph has been rendered
@@ -511,17 +514,22 @@ function createTubeMap() {
   alignSVG(nodes, tracks);
   defineSVGPatterns();
 
-  drawTrackRectangles(trackRectangles);
-  drawTrackCurves();
-  drawReversalsByColor(trackCorners, trackVerticalRectangles);
-  drawTrackRectangles(trackRectanglesStep3);
-  drawTrackRectangles(trackRectangles, "read");
-  drawTrackCurves("read");
+  // all drawn tracks are grouped 
+  let trackGroup = svg.append("g").attr("class", "track")
+  drawTrackRectangles(trackRectangles, undefined, trackGroup);
+  drawTrackCurves(undefined, trackGroup);
+  drawReversalsByColor(trackCorners, trackVerticalRectangles, undefined, trackGroup);
+  drawTrackRectangles(trackRectanglesStep3, undefined, trackGroup);
+  drawTrackRectangles(trackRectangles, "read", trackGroup);
+  drawTrackCurves("read", trackGroup);
 
   // draw only those nodes which have coords assigned to them
   const dNodes = removeUnusedNodes(nodes);
-  drawReversalsByColor(trackCorners, trackVerticalRectangles, "read");
-  drawNodes(dNodes);
+  drawReversalsByColor(trackCorners, trackVerticalRectangles, "read", trackGroup);
+  
+  // all drawn nodes are grouped 
+  let nodeGroup = svg.append("g").attr("class", "node")
+  drawNodes(dNodes, nodeGroup);
   if (config.nodeWidthOption === 0) drawLabels(dNodes);
   if (trackForRuler !== undefined) drawRuler();
   if (config.nodeWidthOption === 0) drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
@@ -3038,7 +3046,7 @@ function generateReverseToForward(
 }
 
 // to avoid problems with wrong overlapping of tracks, draw them in order of their color
-function drawReversalsByColor(corners, rectangles, type) {
+function drawReversalsByColor(corners, rectangles, type, groupTrack) {
   if (typeof type === "undefined") type = "haplo";
   const co = new Set();
   rectangles.forEach((rect) => {
@@ -3047,14 +3055,16 @@ function drawReversalsByColor(corners, rectangles, type) {
   co.forEach((c) => {
     drawTrackRectangles(
       rectangles.filter(filterObjectByAttribute("color", c)),
-      type
+      type,
+      groupTrack
     );
-    drawTrackCorners(corners.filter(filterObjectByAttribute("color", c)), type);
+    drawTrackCorners(corners.filter(filterObjectByAttribute("color", c)), type, groupTrack);
   });
 }
 
 // draws nodes by building svg-path for border and filling it with transparent white
-function drawNodes(dNodes) {
+
+function drawNodes(dNodes, groupNode) {
   let x;
   let y;
 
@@ -3106,8 +3116,10 @@ function drawNodes(dNodes) {
     }
   });
 
-  svg
-    .selectAll(".node")
+  //let nodeGroup = svg.append("g").attr("class", "node")
+
+  groupNode
+    .selectAll("node")
     .data(dNodes)
     .enter()
     .append("path")
@@ -3455,11 +3467,11 @@ function filterObjectByAttribute(attribute, value) {
   return (item) => item[attribute] === value;
 }
 
-function drawTrackRectangles(rectangles, type) {
+function drawTrackRectangles(rectangles, type, groupTrack) {
   if (typeof type === "undefined") type = "haplo";
   rectangles = rectangles.filter(filterObjectByAttribute("type", type));
 
-  svg
+  groupTrack
     .selectAll("trackRectangles")
     .data(rectangles)
     .enter()
@@ -3675,7 +3687,7 @@ function defineSVGPatterns() {
     .attrs({ x: "4", y: "4", width: "2", height: "2", fill: "#8c564b" });
 }
 
-function drawTrackCurves(type) {
+function drawTrackCurves(type, groupTrack) {
   if (typeof type === "undefined") type = "haplo";
   const myTrackCurves = trackCurves.filter(
     filterObjectByAttribute("type", type)
@@ -3695,7 +3707,7 @@ function drawTrackCurves(type) {
     curve.path = d;
   });
 
-  svg
+  groupTrack
     .selectAll("trackCurves")
     .data(trackCurves)
     .enter()
@@ -3714,11 +3726,11 @@ function drawTrackCurves(type) {
     .text((d) => getPopUpTrackText(d.name));
 }
 
-function drawTrackCorners(corners, type) {
+function drawTrackCorners(corners, type, groupTrack) {
   if (typeof type === "undefined") type = "haplo";
   corners = corners.filter(filterObjectByAttribute("type", type));
 
-  svg
+  groupTrack
     .selectAll("trackCorners")
     .data(corners)
     .enter()
@@ -3808,7 +3820,7 @@ function getTrackByID(trackID) {
 function trackMouseOver() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
-  d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)");
+  d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)").raise();
 }
 
 // Highlight node on mouseover
@@ -3823,7 +3835,7 @@ function trackMouseOut() {
   const trackID = d3.select(this).attr("trackID");
   d3.selectAll(`.track${trackID}`).each(function clearTrackHighlight() {
     const c = d3.select(this).attr("color");
-    d3.select(this).style("fill", c);
+    d3.select(this).style("fill", c).lower();
   });
 }
 
