@@ -419,9 +419,6 @@ function createTubeMap() {
   trackForRuler = undefined;
   svg = d3.select(svgID);
   svg.selectAll("*").remove(); // clear svg for (re-)drawing
-  //console.log("svg:", svg)
-  //svg.append("g").attr("id", "group")
-  //console.log("svg with g:", svg)
 
   // early exit is necessary when visualization options such as colors are
   // changed before any graph has been rendered
