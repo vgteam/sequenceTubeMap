@@ -18,8 +18,10 @@ import compression from "compression";
 import { server as WebSocketServer } from "websocket";
 import dotenv from "dotenv";
 import dirname from "es-dirname";
-import { readFileSync } from 'fs';
+import { readFileSync, writeFile } from 'fs';
 import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
+import { Readable } from "stream";
+import { finished } from "stream/promises";
 
 // Now we want to load config.json.
 //
@@ -1113,14 +1115,35 @@ function isValidURL(string) {
   return url.protocol === "http:" || url.protocol === "https:";
 }
 
+// given the datapath and url, download file to the datapath
+const downloadFile = async(fileURL, dataPath, fileName) => {
+  const options = {
+    method: "GET",
+    credentials: "omit",
+    cache: "default",
+    signal: timeoutController(15).signal // pass in abort controller for timeout
+  };
+
+  const response = await fetch(fileURL, options);
+  
+  const destinationPath = path.resolve(dataPath, fileName);
+
+  const fileStream = fs.createWriteStream(destinationPath, { flags: 'wx' });
+  await finished(Readable.fromWeb(response.body).pipe(fileStream));
+
+}
+
 // download chunks specified by bed URL
 const retrieveChunks = async(bedURL, chunks) => {
-  dataPath = bedURL.concat("../");
+  // up go a directory level in the url
+  const dataPath = bedURL.split('/').slice(0, -1).join('/');
   for (const dirName of chunks) {
-    chunkDir = config.tempDirPath + "/" + dirName;
+    const chunkDir = config.tempDirPath + "/" + dirName;
     // create directory for the chunk
     if (!fs.existsSync(chunkDir)) {
       fs.mkdirSync(chunkDir, { recursive: true });
+    } else {
+      continue;
     }
 
     // fetch and download files and put them in the directory
@@ -1131,6 +1154,22 @@ const retrieveChunks = async(bedURL, chunks) => {
       signal: timeoutController(15).signal // pass in abort controller for timeout
     };
 
+
+
+    // retrieve and download each file in the chunk directory
+
+    let chunkContentURL = dataPath + "/" + dirName + "/chunk_contents.txt";
+    let response = await fetch(chunkContentURL, options);
+
+    const chunkContent = await response.text();
+    const fileNames = chunkContent.split("\n");
+    console.log("fileNames", fileNames);
+
+    for (const fileName of fileNames) {
+      let chunkFileURL = dataPath + "/" + dirName + "/" + fileName;
+      await downloadFile(chunkFileURL, chunkDir, fileName);
+    }
+    
     
   }
 
