@@ -63,6 +63,7 @@ const INTERNAL_DATA_PATH = config.internalDataPath;
 const UPLOAD_DATA_PATH = "uploads/";
 // This is where we will store per-request generated files
 const SCRATCH_DATA_PATH = "tmp/";
+const TEMP_DATA_PATH = config.tempDirPath;
 const SERVER_PORT = process.env.SERVER_PORT || config.serverPort || 3000;
 const SERVER_BIND_ADDRESS = config.serverBindAddress || undefined;
 
@@ -73,6 +74,7 @@ const ALLOWED_DATA_DIRECTORIES = [
   INTERNAL_DATA_PATH,
   UPLOAD_DATA_PATH,
   SCRATCH_DATA_PATH,
+  TEMP_DATA_PATH,
 ].map((p) => path.resolve(p));
 
 const GRAPH_EXTENSIONS = [".xg", ".vg", ".pg", ".hg", ".gbz"];
@@ -263,7 +265,7 @@ function getGams(tracks) {
   return getFilesOfType(tracks, fileTypes.READ);
 }
 
-api.post("/getChunkedData", (req, res, next) => {
+api.post("/getChunkedData", async (req, res, next) => {
   // We only want to have one downstream callback chain out of here.
   // TODO: Does Express let us next(err) multiple times if multiple errors happen concurrently???
   let sentResponse = false;
@@ -283,15 +285,13 @@ api.post("/getChunkedData", (req, res, next) => {
   // This request owns the directory, so clean it up when the request finishes.
   req.rmChunk = true;
 
-  //TODO: loop through and process all tracks
-
 
   // We always have an graph file
   const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
   // We sometimes have a GBWT with haplotypes that override any in the graph file
   const gbwtFile = getFirstFileOfType(req.body.tracks, fileTypes.HAPLOTYPE);
   // We sometimes have a BED file with regions to look at
-  const bedFile = req.bedFile;
+  const bedFile = req.body.bedFile;
 
   let gamFiles = getGams(req.body.tracks);
 
@@ -336,7 +336,7 @@ api.post("/getChunkedData", (req, res, next) => {
     // We need to parse the BED file we have been referred to so we can look up
     // the pre-parsed chunk. We don't want the client re-uploading the BED to
     // us on every request.
-    chunkPath = getChunkPath(bedFile, dataPath, parsedRegion);
+    chunkPath = await getChunkPath(bedFile, dataPath, parsedRegion);
   }
   
   // We always need a range-version of the region, to fill in req.region, to
@@ -656,9 +656,10 @@ function returnErrorMiddleware(err, req, res, next) {
 app.use(returnErrorMiddleware);
 
 // Gets the chunk path from a region specified in a bedfile 
-function getChunkPath(bedFile, dataPath, parsedRegion) {
+async function getChunkPath(bedFile, dataPath, parsedRegion) {
   let chunkPath = "";
-  let regionInfo = getBedRegions(bedFile, dataPath);
+  let regionInfo = await getBedRegions(bedFile, dataPath);
+
 
   for (let i = 0; i < regionInfo["desc"].length; i++) {
     let entryRegion = {
@@ -675,7 +676,16 @@ function getChunkPath(bedFile, dataPath, parsedRegion) {
       }
     }
   }
-  chunkPath = `${dataPath}${chunkPath}`;
+
+  // if chunk is pulled from an url
+  if (fs.existsSync(`${config.tempDirPath}/${chunkPath}`)) {
+    console.log("chunkpath is pull from url");
+    chunkPath = `${config.tempDirPath}/${chunkPath}`;
+  } else {
+    chunkPath = `${dataPath}${chunkPath}`;
+  }
+
+  console.log("returning chunk path: ", chunkPath);
 
   // check that the 'chunk.vg' file exists in the chunk folder
   if (chunkPath.endsWith("/")) {
@@ -692,6 +702,7 @@ function getChunkPath(bedFile, dataPath, parsedRegion) {
     console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
     chunkPath = "";
   }
+
   return chunkPath;
 }
 
@@ -1117,6 +1128,11 @@ function isValidURL(string) {
 
 // given the datapath and url, download file to the datapath
 const downloadFile = async(fileURL, dataPath, fileName) => {
+
+  if (!fileName) {
+    return;
+  }
+
   const options = {
     method: "GET",
     credentials: "omit",
@@ -1163,7 +1179,6 @@ const retrieveChunks = async(bedURL, chunks) => {
 
     const chunkContent = await response.text();
     const fileNames = chunkContent.split("\n");
-    console.log("fileNames", fileNames);
 
     for (const fileName of fileNames) {
       let chunkFileURL = dataPath + "/" + dirName + "/" + fileName;
@@ -1267,6 +1282,7 @@ async function getBedRegions(bedFile, dataPath) {
   lines = bed_data.split("\n");
   lines.map(function (line) {
     let records = line.split("\t");
+
     if (records.length < 3) {
       // This is an empty line or otherwise not BED
       return
