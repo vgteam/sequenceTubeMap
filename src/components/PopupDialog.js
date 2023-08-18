@@ -20,7 +20,7 @@ export const PopupDialog = ({
         <Popup open={open} closeOnDocumentClick={closeOnDocumentClick} contentStyle={width !== null ? {width: width} : {}} modal>
           <Container>
             <Card>
-              <CardBody style={{boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)"}}>
+              <CardBody style={{boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)", overflowY: "scroll", overflowX: "hidden", maxHeight: "90vh"}}>
                 {/* Close Button */}
                 <Button className="closePopup" onClick={close} data-testid={testID.concat("CloseButton")}><FontAwesomeIcon icon={faX}/></Button>
                 <div>{children}</div>

@@ -10,12 +10,24 @@ export const HelpButton = ({
   /* Expects a file input */
   file
 }) => {
+
+    let fileURL = new URL(file, document.baseURI)
     // based off of https://react-popup.elazizi.com/controlled-popup/#using-open-prop
     const [open, setOpen] = useState(false);
     const close = () => setOpen(false);
 
     // based off of https://stackoverflow.com/questions/42928530/how-do-i-load-a-markdown-file-into-a-react-component/65584658#65584658
     const [content, setContent] = useState("");
+
+    const Image = ({ alt, src, ...props }) => (
+      <img alt={alt} src={new URL(src, fileURL)} {...props} style={{maxWidth: "100%", border: "solid black 1px"}}/>
+    );
+
+    const options = {
+      overrides: {
+        img: { component: Image }
+      }
+    };
 
     useEffect(() => {
       fetch(file)
@@ -35,7 +47,7 @@ export const HelpButton = ({
       <>
         <Button aria-label="Help" onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faQuestion} /></Button>
         <PopupDialog open={open} close={close}>
-            <Markdown children={content}/>
+            <Markdown options={options} children={content}/>
         </PopupDialog>
       </>     
     )
