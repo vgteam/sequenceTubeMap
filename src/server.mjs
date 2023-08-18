@@ -1261,6 +1261,7 @@ async function getBedRegions(bedFile, dataPath) {
   if (isValidURL(bedFile)) {
     isURL = true;
     bed_data = await processBedURL(bedFile);
+    
   } else {  // otherwise search for bed file in dataPath
     if (!bedFile.endsWith(".bed")) {
       throw new BadRequestError("BED file path does not end in .bed: " + bedFile);
@@ -1278,6 +1279,7 @@ async function getBedRegions(bedFile, dataPath) {
     // Load and parse the BED file
     bed_data = fs.readFileSync(bed_path).toString();
   }
+  
 
   lines = bed_data.split("\n");
   lines.map(function (line) {
@@ -1301,13 +1303,27 @@ async function getBedRegions(bedFile, dataPath) {
     }
     bed_info["chunk"].push(chunk);
 
+  });
 
+  // download chunks if bedfile is an url
+  if (isURL) {
+    await retrieveChunks(bedFile, bed_info["chunk"]);
+  }
 
+  // check for a tracks.json file to prefill tracks configuration
+  for (let i = 0; i < bed_info["chunk"].length; i++) {
     let tracks = {};
     let trackID = 1;
 
-    const chunk_path = `${dataPath}${chunk}`;
-    const track_json = path.join(chunk_path, "tracks.json");
+    const dirName = bed_info["chunk"][i];
+    const chunk_path = `${dataPath}${dirName}`;
+    let track_json = `${chunk_path}/tracks.json`
+
+    // check the temporary directory for downloaded tracks info
+    if (fs.existsSync(`${config.tempDirPath}/${dirName}/tracks.json`)) {
+      track_json = `${config.tempDirPath}/${dirName}/tracks.json`;
+    }
+
     // If json file specifying the tracks exists
     if (fs.existsSync(track_json)) {
       // Read json file and create a tracks object from it 
@@ -1339,12 +1355,6 @@ async function getBedRegions(bedFile, dataPath) {
     }
 
     bed_info["tracks"].push(tracks);
-
-
-  });
-
-  if (isURL) {
-    retrieveChunks(bedFile, bed_info["chunk"]);
   }
 
   console.log("returning bed_info, ", bed_info);
