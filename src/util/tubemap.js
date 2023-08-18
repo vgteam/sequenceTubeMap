@@ -513,10 +513,10 @@ function createTubeMap() {
 
   // all drawn tracks are grouped 
   let trackGroup = svg.append("g").attr("class", "track")
-  drawTrackRectangles(trackRectangles, undefined, trackGroup);
-  drawTrackCurves(undefined, trackGroup);
-  drawReversalsByColor(trackCorners, trackVerticalRectangles, undefined, trackGroup);
-  drawTrackRectangles(trackRectanglesStep3, undefined, trackGroup);
+  drawTrackRectangles(trackRectangles, "haplo", trackGroup);
+  drawTrackCurves("haplo", trackGroup);
+  drawReversalsByColor(trackCorners, trackVerticalRectangles, "haplo", trackGroup);
+  drawTrackRectangles(trackRectanglesStep3, "haplo", trackGroup);
   drawTrackRectangles(trackRectangles, "read", trackGroup);
   drawTrackCurves("read", trackGroup);
 
@@ -3044,7 +3044,6 @@ function generateReverseToForward(
 
 // to avoid problems with wrong overlapping of tracks, draw them in order of their color
 function drawReversalsByColor(corners, rectangles, type, groupTrack) {
-  if (typeof type === "undefined") type = "haplo";
   const co = new Set();
   rectangles.forEach((rect) => {
     co.add(rect.color);
@@ -3465,7 +3464,6 @@ function filterObjectByAttribute(attribute, value) {
 }
 
 function drawTrackRectangles(rectangles, type, groupTrack) {
-  if (typeof type === "undefined") type = "haplo";
   rectangles = rectangles.filter(filterObjectByAttribute("type", type));
 
   groupTrack
@@ -3685,7 +3683,6 @@ function defineSVGPatterns() {
 }
 
 function drawTrackCurves(type, groupTrack) {
-  if (typeof type === "undefined") type = "haplo";
   const myTrackCurves = trackCurves.filter(
     filterObjectByAttribute("type", type)
   );
@@ -3724,7 +3721,6 @@ function drawTrackCurves(type, groupTrack) {
 }
 
 function drawTrackCorners(corners, type, groupTrack) {
-  if (typeof type === "undefined") type = "haplo";
   corners = corners.filter(filterObjectByAttribute("type", type));
 
   groupTrack
