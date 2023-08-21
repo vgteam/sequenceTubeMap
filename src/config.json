@@ -51,6 +51,9 @@
   "internalDataPath": "./exampleData/internal/",
   "tempDirPath": "./temp",
 
+  "fetchTimeout": 15,
+  "maxFileSizeBytes": 1000000000,
+
   "defaultHaplotypeColorPalette" : {
     "mainPalette": "ygreys", 
     "auxPalette": "ygreys", 

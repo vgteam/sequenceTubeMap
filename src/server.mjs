@@ -22,6 +22,7 @@ import { readFileSync, writeFile } from 'fs';
 import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
 import { Readable } from "stream";
 import { finished } from "stream/promises";
+import sanitize from "sanitize-filename";
 
 // Now we want to load config.json.
 //
@@ -1133,14 +1134,7 @@ const downloadFile = async(fileURL, dataPath, fileName) => {
     return;
   }
 
-  const options = {
-    method: "GET",
-    credentials: "omit",
-    cache: "default",
-    signal: timeoutController(15).signal // pass in abort controller for timeout
-  };
-
-  const response = await fetch(fileURL, options);
+  const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes);
   
   const destinationPath = path.resolve(dataPath, fileName);
 
@@ -1149,12 +1143,53 @@ const downloadFile = async(fileURL, dataPath, fileName) => {
 
 }
 
+const fetchAndValidate = async(url, maxBytes) => {
+  const options = {
+    method: "GET",
+    credentials: "omit",
+    cache: "default",
+    signal: timeoutController(config.fetchTimeout).signal
+  };
+
+  let response = await fetch(url, options);
+
+  // check for unsuccessful response codes
+  if (!response.ok) {
+    throw new BadRequestError("Fetch request failed: " + response.status);
+  }
+
+  // use a reader to make sure we're not going past the max size allowed
+  const reader = response.body.getReader();
+
+  let bytesRead = 0;
+  const dataRead = [];
+
+  while (true) {
+    let {done, value} = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    dataRead.push(value);
+    bytesRead += new Blob([value]).size;
+
+    if (bytesRead > maxBytes) {
+      reader.cancel();
+      throw new Error("Fetched Failed, maximum file size exceeded: " + maxSize);
+    }
+  }
+
+  return new Response(new Blob(dataRead), { headers: response.headers });
+
+}
+
 // download chunks specified by bed URL
 const retrieveChunks = async(bedURL, chunks) => {
   // up go a directory level in the url
-  const dataPath = bedURL.split('/').slice(0, -1).join('/');
+  const dataPath = bedURL.split('/').slice(0, -1).join('/') + '/';
   for (const dirName of chunks) {
-    const chunkDir = config.tempDirPath + "/" + dirName;
+    const chunkDir = path.resolve(config.tempDirPath, sanitize(dirName));
     // create directory for the chunk
     if (!fs.existsSync(chunkDir)) {
       fs.mkdirSync(chunkDir, { recursive: true });
@@ -1162,29 +1197,24 @@ const retrieveChunks = async(bedURL, chunks) => {
       continue;
     }
 
-    // fetch and download files and put them in the directory
-    const options = {
-      method: "GET",
-      credentials: "omit",
-      cache: "default",
-      signal: timeoutController(15).signal // pass in abort controller for timeout
-    };
-
-
 
     // retrieve and download each file in the chunk directory
 
-    let chunkContentURL = dataPath + "/" + dirName + "/chunk_contents.txt";
-    let response = await fetch(chunkContentURL, options);
+    // baseURL/dirName/"chunk_contents.txt"
+    let chunkContentURL = new URL(path.join(sanitize(dirName), "chunk_contents.txt"), dataPath).toString();
+    
+    let response = await fetchAndValidate(chunkContentURL, config.maxFileSizeBytes);
 
     const chunkContent = await response.text();
     const fileNames = chunkContent.split("\n");
 
     for (const fileName of fileNames) {
-      let chunkFileURL = dataPath + "/" + dirName + "/" + fileName;
+
+      // baseURL/dirName/fileName
+      let chunkFileURL = new URL(path.join(sanitize(dirName), sanitize(fileName)), dataPath).toString();
+      
       await downloadFile(chunkFileURL, chunkDir, fileName);
     }
-    
     
   }
 
@@ -1198,16 +1228,10 @@ const timeoutController = (seconds) => {
 }
 
 const processBedURL = async(url) => {
-  const options = {
-    method: "GET",
-    credentials: "omit",
-    cache: "default",
-    signal: timeoutController(15).signal // pass in abort controller for timeout
-  };
 
   let response;
   try{
-    response = await fetch(url, options);
+    response = await fetchAndValidate(url, config.maxFileSizeBytes);
 
     if (!response.ok) {
       throw new BadRequestError("BED url request failed");
@@ -1307,6 +1331,7 @@ async function getBedRegions(bedFile, dataPath) {
 
   // download chunks if bedfile is an url
   if (isURL) {
+    console.log("retrieving chunks");
     await retrieveChunks(bedFile, bed_info["chunk"]);
   }
 
