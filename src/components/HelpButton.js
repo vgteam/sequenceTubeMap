@@ -20,7 +20,7 @@ export const HelpButton = ({
     const [content, setContent] = useState("");
 
     const Image = ({ alt, src, ...props }) => (
-      <img alt={alt} src={new URL(src, fileURL)} {...props} style={{maxWidth: "100%", border: "solid black 1px"}}/>
+      <img alt={alt} src={new URL(src, fileURL)} {...props} style={{margin: "5px 0", maxWidth: "90%", border: "solid grey 1px", boxShadow: "0 2px 6px 0 rgba(0, 0, 0, 0.2)", borderRadius: "5px"}}/>
     );
 
     const options = {
