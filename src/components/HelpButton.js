@@ -47,7 +47,7 @@ export const HelpButton = ({
       <>
         <Button aria-label="Help" onClick={() => setOpen(!open)}><FontAwesomeIcon icon={faQuestion} /></Button>
         <PopupDialog open={open} close={close}>
-          <div style={{overflowY: "auto", overflowX: "hidden"}}>
+          <div style={{height: "90vh", overflowY: "scroll", overflowX: "hidden"}}>
             <Markdown options={options} children={content}/>
           </div>
         </PopupDialog>
