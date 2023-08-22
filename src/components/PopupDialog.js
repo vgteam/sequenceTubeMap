@@ -20,7 +20,7 @@ export const PopupDialog = ({
         <Popup open={open} closeOnDocumentClick={closeOnDocumentClick} contentStyle={width !== null ? {width: width} : {}} modal>
           <Container>
             <Card style={{boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)"}}>
-              <CardBody style={{overflowY: "scroll", overflowX: "hidden", maxHeight: "90vh"}}>
+              <CardBody>
                 {/* Close Button */}
                 <Button className="closePopup" onClick={close} data-testid={testID.concat("CloseButton")}><FontAwesomeIcon icon={faX}/></Button>
                 <div>{children}</div>
@@ -40,6 +40,7 @@ PopupDialog.propTypes = {
   close: PropTypes.func.isRequired,
   closeOnDocumentClick: PropTypes.bool,
   width: PropTypes.string,
+  height: PropTypes.string,
   testID: PropTypes.string
 }
 
