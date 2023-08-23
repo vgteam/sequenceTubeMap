@@ -679,9 +679,17 @@ async function getChunkPath(bedFile, dataPath, parsedRegion) {
   }
 
   // if chunk is pulled from an url
-  if (fs.existsSync(`${config.tempDirPath}/${chunkPath}`)) {
-    console.log("chunkpath is pull from url");
+  const chunkDirPath = path.resolve(config.tempDirPath, chunkPath);
+  const baseURLPath = path.resolve(chunkDirPath, "baseURL.txt");
+  // if the chunk directory exists and the baseURL.txt is in it
+  if (fs.existsSync(chunkDirPath) && fs.existsSync(baseURLPath)) {
+
+    const baseURL = await fs.readFile(baseURLPath, "utf8");
+
+    // download the rest of the chunk 
+    await retrieveChunk(baseURL, chunkPath, true)
     chunkPath = `${config.tempDirPath}/${chunkPath}`;
+
   } else {
     chunkPath = `${dataPath}${chunkPath}`;
   }
@@ -1128,7 +1136,7 @@ function isValidURL(string) {
 }
 
 // given the datapath and url, download file to the datapath
-const downloadFile = async(fileURL, dataPath, fileName) => {
+const downloadFile = async(fileURL, destinationPath, fileName) => {
 
   if (!fileName) {
     return;
@@ -1136,9 +1144,10 @@ const downloadFile = async(fileURL, dataPath, fileName) => {
 
   const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes);
   
-  const destinationPath = path.resolve(dataPath, fileName);
+  const destinationFile = path.resolve(destinationPath, fileName);
 
-  const fileStream = fs.createWriteStream(destinationPath, { flags: 'wx' });
+  // overwrites file if it already exists
+  const fileStream = fs.createWriteStream(destinationFile, { flags: 'w' });
   await finished(Readable.fromWeb(response.body).pipe(fileStream));
 
 }
@@ -1158,7 +1167,14 @@ const fetchAndValidate = async(url, maxBytes) => {
     throw new BadRequestError("Fetch request failed: " + response.status);
   }
 
-  // use a reader to make sure we're not going past the max size allowed
+  // check for size specified in header
+  const contentLength = response.headers.get("Content-Length");
+
+  if (contentLength > maxBytes) {
+    throw new Error("Fetch request failed: contentLength exceeds maximum file size");
+  }
+
+  // use a reader to make sure we're not reading past the max size allowed
   const reader = response.body.getReader();
 
   let bytesRead = 0;
@@ -1176,7 +1192,7 @@ const fetchAndValidate = async(url, maxBytes) => {
 
     if (bytesRead > maxBytes) {
       reader.cancel();
-      throw new Error("Fetched Failed, maximum file size exceeded: " + maxSize);
+      throw new Error("Fetched request failed, maximum file size exceeded: " + maxSize);
     }
   }
 
@@ -1184,41 +1200,48 @@ const fetchAndValidate = async(url, maxBytes) => {
 
 }
 
-// download chunks specified by bed URL
-const retrieveChunks = async(bedURL, chunks) => {
-  // up go a directory level in the url
-  const dataPath = bedURL.split('/').slice(0, -1).join('/') + '/';
-  for (const dirName of chunks) {
-    const chunkDir = path.resolve(config.tempDirPath, sanitize(dirName));
-    // create directory for the chunk
-    if (!fs.existsSync(chunkDir)) {
-      fs.mkdirSync(chunkDir, { recursive: true });
-    } else {
-      continue;
-    }
+// downloads files fo the specified chunk name from the destination of the bedURL
+// includeContent only downloads the tracks.json file when set to false
+const retrieveChunk = async(baseURL, chunk, includeContent) => {
 
+  // path to the designated chunk in the temp directory
+  const chunkDir = path.resolve(config.tempDirPath, sanitize(chunk));
 
-    // retrieve and download each file in the chunk directory
+  // TODO: check if this chunk has been downloaded before, to prevent duplicate fetches
+  if (!fs.existsSync(chunkDir)) {
+    fs.mkdirSync(chunkDir, { recursive: true });
+  } 
 
-    // baseURL/dirName/"chunk_contents.txt"
-    let chunkContentURL = new URL(path.join(sanitize(dirName), "chunk_contents.txt"), dataPath).toString();
+  // baseURL/dirName/"chunk_contents.txt"
+  let chunkContentURL = new URL(path.join(sanitize(chunk), "chunk_contents.txt"), baseURL).toString();
+
+  let response = await fetchAndValidate(chunkContentURL, config.maxFileSizeBytes);
+
+  const chunkContent = await response.text();
+  const fileNames = chunkContent.split("\n");
+
+  // download all the files in the chunk
+  for (const fileName of fileNames) {
+
+    // baseURL/dirName/fileName
+    let chunkFileURL = new URL(path.join(sanitize(chunk), sanitize(fileName)), baseURL).toString();
     
-    let response = await fetchAndValidate(chunkContentURL, config.maxFileSizeBytes);
-
-    const chunkContent = await response.text();
-    const fileNames = chunkContent.split("\n");
-
-    for (const fileName of fileNames) {
-
-      // baseURL/dirName/fileName
-      let chunkFileURL = new URL(path.join(sanitize(dirName), sanitize(fileName)), dataPath).toString();
-      
+    // download only the tracks.json file if the inlcudeContent flag is false
+    if (includeContent || fileName == "tracks.json") {
       await downloadFile(chunkFileURL, chunkDir, fileName);
     }
-    
   }
 
+  // write the baseURL to a file
+  const baseURLFile = path.resolve(chunkDir, "baseURL.txt");
+  fs.writeFile(baseURLFile, baseURL, function (error) {
+    if (error){
+      throw error;
+    }
+  })
+  
 }
+
 
 // aborts fetch request after certain amount of time
 const timeoutController = (seconds) => {
@@ -1226,35 +1249,6 @@ const timeoutController = (seconds) => {
   setTimeout(() => controller.abort(), seconds * 1000);
   return controller;
 }
-
-const processBedURL = async(url) => {
-
-  let response;
-  try{
-    response = await fetchAndValidate(url, config.maxFileSizeBytes);
-
-    if (!response.ok) {
-      throw new BadRequestError("BED url request failed");
-    }
-  } catch (error) {
-    console.error("There has been a problem with your fetch operation:", error);
-  }
-
-  const contentType = response.headers.get("Content-Type");
-  const contentLength = response.headers.get("Content-Length");
-
-  if (!contentType.startsWith("text")) {
-    throw new BadRequestError("BED File contain incorrect content type");
-  }
-
-  if (contentLength > 5000) {
-    throw new BadRequestError("Content Length too large");
-  }
-
-  const data = await response.text();
-  return data;
-
-} 
 
 api.post("/getBedRegions", async (req, res) => {
   console.log("received request for bedRegions");
@@ -1284,8 +1278,9 @@ async function getBedRegions(bedFile, dataPath) {
   console.log("bed file recieved ", bedFile);
   if (isValidURL(bedFile)) {
     isURL = true;
-    bed_data = await processBedURL(bedFile);
-    
+    const reponse = await fetchAndValidate(bedFile, config.maxFileSizeBytes);
+    bed_data = await reponse.text();
+
   } else {  // otherwise search for bed file in dataPath
     if (!bedFile.endsWith(".bed")) {
       throw new BadRequestError("BED file path does not end in .bed: " + bedFile);
@@ -1329,11 +1324,6 @@ async function getBedRegions(bedFile, dataPath) {
 
   });
 
-  // download chunks if bedfile is an url
-  if (isURL) {
-    console.log("retrieving chunks");
-    await retrieveChunks(bedFile, bed_info["chunk"]);
-  }
 
   // check for a tracks.json file to prefill tracks configuration
   for (let i = 0; i < bed_info["chunk"].length; i++) {
@@ -1343,10 +1333,18 @@ async function getBedRegions(bedFile, dataPath) {
     const dirName = bed_info["chunk"][i];
     const chunk_path = `${dataPath}${dirName}`;
     let track_json = `${chunk_path}/tracks.json`
+    
+    // download the tracks file if bed is an url
+    if (isURL) {
+      // 1 level above the bedurl
+      const baseURL = bedFile.split('/').slice(0, -1).join('/') + '/';
+      await retrieveChunk(baseURL, dirName, false);
+    }
 
+    const tempTracksPath = path.resolve(config.tempDirPath, sanitize(dirName), "tracks.json");
     // check the temporary directory for downloaded tracks info
-    if (fs.existsSync(`${config.tempDirPath}/${dirName}/tracks.json`)) {
-      track_json = `${config.tempDirPath}/${dirName}/tracks.json`;
+    if (fs.existsSync(tempTracksPath)) {
+      track_json = tempTracksPath;
     }
 
     // If json file specifying the tracks exists
