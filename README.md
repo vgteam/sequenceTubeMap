@@ -103,6 +103,12 @@ PATH=/<your_path_to_folder_with_vg>:$PATH
 ssh -N -L 3001:localhost:3001 <your username>@<your server>
 ```
 
+#### Setting Up a Visualization
+
+The application comes with pre-set demos that you can use to learn the tool's visual language and basic features.
+
+To set up a custom visualization of particular files, you will need to configure a set of "tracks" describing the files you want to visualize, using the "Configure Tracks" dialog in "custom (mounted files)" mode. For information on how to do this, click on the "?" help button, or [read the help documentation online](public/help/help.md).
+
 #### Adding Your Own Data
 
 - The vg files you want to visualize need to contain haplotype/path info. Generating visualizations for the graph itself only is not supported. In addition to the haplotype graph, you can optionally visualize aligned reads from a gam file.

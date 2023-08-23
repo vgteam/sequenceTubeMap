@@ -67,7 +67,7 @@ class DataPositionFormRow extends Component {
         )}
 
         {/* Help Button */}
-        <HelpButton file="./help/help-tooltip.md"></HelpButton>
+        <HelpButton file="./help/help.md"></HelpButton>
         
         <Button
           color={this.props.viewTargetHasChange ? "alert" : "primary"}
