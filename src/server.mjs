@@ -657,6 +657,7 @@ function returnErrorMiddleware(err, req, res, next) {
 app.use(returnErrorMiddleware);
 
 // Gets the chunk path from a region specified in a bedfile 
+// Also downloads the chunk data if the bedFile is an URL and it has not been downloaded yet
 async function getChunkPath(bedFile, dataPath, parsedRegion) {
   let chunkPath = "";
   let regionInfo = await getBedRegions(bedFile, dataPath);
@@ -678,17 +679,11 @@ async function getChunkPath(bedFile, dataPath, parsedRegion) {
     }
   }
 
-  // if chunk is pulled from an url
-  const chunkDirPath = path.resolve(config.tempDirPath, chunkPath);
-  const baseURLPath = path.resolve(chunkDirPath, "baseURL.txt");
-  // if the chunk directory exists and the baseURL.txt is in it
-  if (fs.existsSync(chunkDirPath) && fs.existsSync(baseURLPath)) {
-
-    const baseURL = await fs.readFile(baseURLPath, "utf8");
-
+  if (isValidURL(bedFile)) {
     // download the rest of the chunk 
-    await retrieveChunk(baseURL, chunkPath, true)
-    chunkPath = `${config.tempDirPath}/${chunkPath}`;
+    await retrieveChunk(bedFile, chunkPath, true);
+    const hashedBED = hashString(bedFile + chunkPath);
+    chunkPath = `${config.tempDirPath}/${hashedBED}`;
 
   } else {
     chunkPath = `${dataPath}${chunkPath}`;
@@ -1118,6 +1113,17 @@ api.post("/getPathNames", (req, res, next) => {
   });
 });
 
+// https://stackoverflow.com/questions/6122571/simple-non-secure-hash-function-for-javascript
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0, len = str.length; i < len; i++) {
+      let chr = str.charCodeAt(i);
+      hash = (hash << 5) - hash + chr;
+      hash |= 0; // Convert to 32bit integer
+  }
+  return String(hash);
+}
+
 // returns whether or not a string is a valid http url
 function isValidURL(string) {
   if (!string) {
@@ -1202,10 +1208,12 @@ const fetchAndValidate = async(url, maxBytes) => {
 
 // downloads files fo the specified chunk name from the destination of the bedURL
 // includeContent only downloads the tracks.json file when set to false
-const retrieveChunk = async(baseURL, chunk, includeContent) => {
+const retrieveChunk = async(bedURL, chunk, includeContent) => {
+
+  const baseURL = bedURL.split('/').slice(0, -1).join('/') + '/';
 
   // path to the designated chunk in the temp directory
-  const chunkDir = path.resolve(config.tempDirPath, sanitize(chunk));
+  const chunkDir = path.resolve(config.tempDirPath, hashString(bedURL + chunk));
 
   // TODO: check if this chunk has been downloaded before, to prevent duplicate fetches
   if (!fs.existsSync(chunkDir)) {
@@ -1213,7 +1221,7 @@ const retrieveChunk = async(baseURL, chunk, includeContent) => {
   } 
 
   // baseURL/dirName/"chunk_contents.txt"
-  let chunkContentURL = new URL(path.join(sanitize(chunk), "chunk_contents.txt"), baseURL).toString();
+  let chunkContentURL = new URL(path.join(chunk, "chunk_contents.txt"), baseURL).toString();
 
   let response = await fetchAndValidate(chunkContentURL, config.maxFileSizeBytes);
 
@@ -1224,21 +1232,13 @@ const retrieveChunk = async(baseURL, chunk, includeContent) => {
   for (const fileName of fileNames) {
 
     // baseURL/dirName/fileName
-    let chunkFileURL = new URL(path.join(sanitize(chunk), sanitize(fileName)), baseURL).toString();
+    let chunkFileURL = new URL(path.join(chunk, sanitize(fileName)), baseURL).toString();
     
     // download only the tracks.json file if the inlcudeContent flag is false
     if (includeContent || fileName == "tracks.json") {
       await downloadFile(chunkFileURL, chunkDir, fileName);
     }
   }
-
-  // write the baseURL to a file
-  const baseURLFile = path.resolve(chunkDir, "baseURL.txt");
-  fs.writeFile(baseURLFile, baseURL, function (error) {
-    if (error){
-      throw error;
-    }
-  })
   
 }
 
@@ -1336,14 +1336,9 @@ async function getBedRegions(bedFile, dataPath) {
     
     // download the tracks file if bed is an url
     if (isURL) {
-      // 1 level above the bedurl
-      const baseURL = bedFile.split('/').slice(0, -1).join('/') + '/';
-      await retrieveChunk(baseURL, dirName, false);
-    }
+      await retrieveChunk(bedFile, dirName, false);
 
-    const tempTracksPath = path.resolve(config.tempDirPath, sanitize(dirName), "tracks.json");
-    // check the temporary directory for downloaded tracks info
-    if (fs.existsSync(tempTracksPath)) {
+      const tempTracksPath = path.resolve(config.tempDirPath, hashString(bedFile + dirName), "tracks.json");
       track_json = tempTracksPath;
     }
 
