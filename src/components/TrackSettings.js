@@ -38,7 +38,6 @@ export const TrackSettings = ({
 
     function colorRenderSwitch(fileType) {
         switch(fileType) {
-            case "graph":
             case "haplotype":
                 return(
                     <Form>
@@ -64,13 +63,14 @@ export const TrackSettings = ({
                         </Row>
                     </Form>
                 );
+            case "graph":
             case  "read":
                 return(
                     <Form>
                         <Row>
                             <Col className="radio-row">
                                 <RadioRow
-                                    rowHeading="Forward Reads"
+                                    rowHeading={fileType === "read" ? "Forward Reads" : "Reference Path"}
                                     color={trackColorSettings.mainPalette}
                                     setting="mainPalette"
                                     setColorSetting={setTrackColorSetting}
@@ -90,7 +90,7 @@ export const TrackSettings = ({
                         <Row>
                             <Col className="radio-row">
                                 <RadioRow
-                                    rowHeading="Reverse Reads"
+                                    rowHeading={fileType === "read" ? "Reverse Reads" : "Non-Reference Path"}
                                     color={trackColorSettings.auxPalette}
                                     setting="auxPalette"
                                     setColorSetting={setTrackColorSetting}

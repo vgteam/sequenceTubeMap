@@ -2481,11 +2481,12 @@ function generateTrackColor(track, highlight) {
       // TODO: Allow using color 0 for other schemes not the same as the one for the reference path.
       // TODO: Stop reads from taking this color?
 
-      const colorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
-      if (track.id === 0 || colorSet.length === 1) {
-        trackColor = colorSet[0];
+      const colorSet = getColorSet(config.colorSchemes[sourceID].auxPalette);
+      const primaryColorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
+      if (track.id === 0) {
+        trackColor = primaryColorSet[0];
       } else {
-        trackColor = colorSet[((track.id - 1) % (colorSet.length - 1)) + 1];
+        trackColor = colorSet[((track.id - 1) % (colorSet.length))];
       }
     } else {
       const colorSet = getColorSet(config.exonColors);
