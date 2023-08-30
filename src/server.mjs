@@ -1410,8 +1410,7 @@ async function getBedRegions(bed) {
 
   // check for a tracks.json file to prefill tracks configuration
   for (let i = 0; i < bed_info["chunk"].length; i++) {
-    let tracks = {};
-    let trackID = 1;
+    let tracks = null;
     
     let chunk = bed_info["chunk"][i];
     if (chunk !== "") {
@@ -1430,6 +1429,10 @@ async function getBedRegions(bed) {
       if (fs.existsSync(track_json)) {
         // Read json file and create a tracks object from it 
         const json_data = JSON.parse(fs.readFileSync(track_json));
+
+        // Tracks are defined.
+        let trackID = 1;
+        tracks = {};
         
         if (json_data["graph_file"] !== "") {
           tracks[trackID] = {...config.defaultTrackProps};
@@ -1457,8 +1460,9 @@ async function getBedRegions(bed) {
       }
     }
 
-    // If there is no tracks JSON or no pre-made chunk, we send an empty object
-    // of tracks.
+    // If there is no tracks JSON or no pre-made chunk, we send a falsey value
+    // for tracks, which means whatever tracks were already selected will be
+    // retained.
 
     bed_info["tracks"].push(tracks);
   }
