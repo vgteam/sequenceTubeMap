@@ -268,10 +268,25 @@ function getGams(tracks) {
   return getFilesOfType(tracks, fileTypes.READ);
 }
 
-api.post("/getChunkedData", async (req, res, next) => {
-  // We only want to have one downstream callback chain out of here.
-  // TODO: Does Express let us next(err) multiple times if multiple errors happen concurrently???
-  let sentResponse = false;
+api.post("/getChunkedData", (req, res, next) => {
+  // We would like this to be an async function, but then Express error
+  // handling doesn't work, because it doesn't detect returned promise
+  // rejections until Express 5. We have to pass an error to next() or else
+  // throw synchronously.
+  //
+  // So we set up a promise here and we make sure to handle failures
+  // ourselves with next().
+  let promise = getChunkedData(req, res, next);
+  promise.catch(next);
+});
+
+// Handle a chunked data (tube map view) request. Returns a promise. On error,
+// either the promise rejects *or* next() is called with an error, or both.
+// TODO: This is a terrible mixed design for error handling; we need to either
+// rewrite the flow of talking to vg in terms of async/await or abandon
+// async/await altogether in order to get out of it.
+async function getChunkedData(req, res, next) {
+
   console.time("request-duration");
   console.log("http POST getChunkedData received");
   console.log(`region = ${req.body.region}`);
@@ -342,6 +357,11 @@ api.post("/getChunkedData", async (req, res, next) => {
     // the pre-parsed chunk.
     chunkPath = await getChunkPath(bed, parsedRegion);
   }
+
+  // We only want to have one downstream callback chain out of here, and we
+  // want to make sure it can only start after there's no possibility that we
+  // concurrently reject.
+  let sentResponse = false;
   
   // We always need a range-version of the region, to fill in req.region, to
   // generate the region part of the response with the range.
@@ -577,7 +597,7 @@ api.post("/getChunkedData", async (req, res, next) => {
       }
     });
   }
-});
+}
 
 // We can throw this error to trigger our error handling code instead of
 // Express's default. It covers input validation failures, and vaguely-expected
@@ -616,8 +636,9 @@ class VgExecutionError extends InternalServerError {
   }
 }
 
-// We can use this middleware to ensure that errors we throw
-// or next(err) will be sent along to the user.
+// We can use this middleware to ensure that errors we synchronously throw or
+// next(err) will be sent along to the user. It does *not* happen on API
+// endpoint promise rejections until Express 5.
 function returnErrorMiddleware(err, req, res, next) {
   // Clean up the temp directory for the request, if any
   cleanUpChunkIfOwned(req, res);
@@ -757,8 +778,6 @@ async function getChunkPath(bed, parsedRegion) {
 function processAnnotationFile(req, res, next) {
   try {
     // find annotation file
-    // TODO: This is not going to work if multiple people hit the server at once!
-    // We need to make vg chunk take an argument from us for where to put the file.
     console.time("processing annotation file");
     fs.readdirSync(req.chunkDir).forEach((file) => {
       if (file.endsWith("annotate.txt")) {
@@ -936,7 +955,7 @@ function processRegionFile(req, res, next) {
 // May throw.
 // TODO: Use as a middleware?
 function cleanUpChunkIfOwned(req, res) {
-  if (req.rmChunk) {
+  if (req.rmChunk && req.chunkDir !== undefined) {
     // Don't clean up individual files in the directory manually; it's too
     // fiddly, and we could have gotten here because we generated those paths
     // and they were outside our acceptable directory tree.
@@ -1214,14 +1233,14 @@ const fetchAndValidate = async(url, maxBytes) => {
 
   // check for unsuccessful response codes
   if (!response.ok) {
-    throw new BadRequestError("Fetch request failed: " + response.status);
+    throw new BadRequestError(`Fetch request for ${url} failed: ` + response.status);
   }
 
   // check for size specified in header
   const contentLength = response.headers.get("Content-Length");
 
   if (contentLength > maxBytes) {
-    throw new Error("Fetch request failed: contentLength exceeds maximum file size");
+    throw new Error(`Fetch request for ${url} failed: Content-Length exceeds maximum file size of ${maxBytes} bytes`);
   }
 
   // use a reader to make sure we're not reading past the max size allowed
@@ -1242,7 +1261,7 @@ const fetchAndValidate = async(url, maxBytes) => {
 
     if (bytesRead > maxBytes) {
       reader.cancel();
-      throw new Error("Fetched request failed, maximum file size exceeded: " + maxSize);
+      throw new Error(`Fetch request for ${url} failed: received content exceeds maximum file size of ${maxBytes} bytes`);
     }
   }
 
@@ -1310,23 +1329,28 @@ const timeoutController = (seconds) => {
   return controller;
 }
 
-api.post("/getBedRegions", async (req, res) => {
-  console.log("received request for bedRegions");
-  const result = {
-    bedRegions: [],
-    error: null,
-  };
+api.post("/getBedRegions", (req, res, next) => {
+  // Bridge async functions to Express error handling with next(err). Don't
+  // return a promise. 
+  let promise = (async () => {
+    console.log("received request for bedRegions");
+    const result = {
+      bedRegions: [],
+      error: null,
+    };
 
-  if (req.body.bedFile) {
-    let dataPath = pickDataPath(req.body.dataPath);
-    // Get the path or URL to the actual BED file.
-    let bed = isValidURL(req.body.bedFile) ? req.body.bedFile : path.resolve(dataPath, req.body.bedFile);
-    let bed_info = await getBedRegions(bed);
-    result.bedRegions = bed_info;
-    res.json(result);
-  } else {
-    throw new BadRequestError("No BED file specified");
-  }
+    if (req.body.bedFile) {
+      let dataPath = pickDataPath(req.body.dataPath);
+      // Get the path or URL to the actual BED file.
+      let bed = isValidURL(req.body.bedFile) ? req.body.bedFile : path.resolve(dataPath, req.body.bedFile);
+      let bed_info = await getBedRegions(bed);
+      result.bedRegions = bed_info;
+      res.json(result);
+    } else {
+      throw new BadRequestError("No BED file specified");
+    }
+  })();
+  promise.catch(next);
 });
 
 // Load up the given BED file by URL or path, and
