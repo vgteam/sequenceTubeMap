@@ -23,6 +23,7 @@ import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringif
 import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
+import { createHash } from "node:crypto";
 
 // Now we want to load config.json.
 //
@@ -1176,15 +1177,14 @@ api.post("/getPathNames", (req, res, next) => {
   });
 });
 
-// https://stackoverflow.com/questions/6122571/simple-non-secure-hash-function-for-javascript
+// Given a string, return a filename-safe string that is a hash of that string.
+// The hash is collision-resistant.
 function hashString(str) {
-  let hash = 0;
-  for (let i = 0, len = str.length; i < len; i++) {
-      let chr = str.charCodeAt(i);
-      hash = (hash << 5) - hash + chr;
-      hash |= 0; // Convert to 32bit integer
-  }
-  return String(hash);
+  // We should have access to crypto.subtle, but that's asynchronous and that's
+  // probably not worth it for a URL's worth of data. So use Node's crypto
+  // library.
+  // See <https://stackoverflow.com/a/75872519>
+  return createHash("sha256").update(str).digest("hex");
 }
 
 // returns whether or not a string is a valid http url
