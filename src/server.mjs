@@ -18,8 +18,12 @@ import compression from "compression";
 import { server as WebSocketServer } from "websocket";
 import dotenv from "dotenv";
 import dirname from "es-dirname";
-import { readFileSync } from 'fs';
+import { readFileSync, writeFile } from 'fs';
 import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
+import { Readable } from "stream";
+import { finished } from "stream/promises";
+import sanitize from "sanitize-filename";
+import { createHash } from "node:crypto";
 
 // Now we want to load config.json.
 //
@@ -61,6 +65,9 @@ const INTERNAL_DATA_PATH = config.internalDataPath;
 const UPLOAD_DATA_PATH = "uploads/";
 // This is where we will store per-request generated files
 const SCRATCH_DATA_PATH = "tmp/";
+// This is where data downloaded from URLs is cached.
+// This directory will be recursively removed!
+const DOWNLOAD_DATA_PATH = config.tempDirPath;
 const SERVER_PORT = process.env.SERVER_PORT || config.serverPort || 3000;
 const SERVER_BIND_ADDRESS = config.serverBindAddress || undefined;
 
@@ -71,6 +78,7 @@ const ALLOWED_DATA_DIRECTORIES = [
   INTERNAL_DATA_PATH,
   UPLOAD_DATA_PATH,
   SCRATCH_DATA_PATH,
+  DOWNLOAD_DATA_PATH,
 ].map((p) => path.resolve(p));
 
 const GRAPH_EXTENSIONS = [".xg", ".vg", ".pg", ".hg", ".gbz"];
@@ -262,9 +270,24 @@ function getGams(tracks) {
 }
 
 api.post("/getChunkedData", (req, res, next) => {
-  // We only want to have one downstream callback chain out of here.
-  // TODO: Does Express let us next(err) multiple times if multiple errors happen concurrently???
-  let sentResponse = false;
+  // We would like this to be an async function, but then Express error
+  // handling doesn't work, because it doesn't detect returned promise
+  // rejections until Express 5. We have to pass an error to next() or else
+  // throw synchronously.
+  //
+  // So we set up a promise here and we make sure to handle failures
+  // ourselves with next().
+  let promise = getChunkedData(req, res, next);
+  promise.catch(next);
+});
+
+// Handle a chunked data (tube map view) request. Returns a promise. On error,
+// either the promise rejects *or* next() is called with an error, or both.
+// TODO: This is a terrible mixed design for error handling; we need to either
+// rewrite the flow of talking to vg in terms of async/await or abandon
+// async/await altogether in order to get out of it.
+async function getChunkedData(req, res, next) {
+
   console.time("request-duration");
   console.log("http POST getChunkedData received");
   console.log(`region = ${req.body.region}`);
@@ -281,15 +304,13 @@ api.post("/getChunkedData", (req, res, next) => {
   // This request owns the directory, so clean it up when the request finishes.
   req.rmChunk = true;
 
-  //TODO: loop through and process all tracks
-
 
   // We always have an graph file
   const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
   // We sometimes have a GBWT with haplotypes that override any in the graph file
   const gbwtFile = getFirstFileOfType(req.body.tracks, fileTypes.HAPLOTYPE);
   // We sometimes have a BED file with regions to look at
-  const bedFile = req.bedFile;
+  const bedFile = req.body.bedFile;
 
   let gamFiles = getGams(req.body.tracks);
 
@@ -331,11 +352,17 @@ api.post("/getChunkedData", (req, res, next) => {
   // check the bed file if this region has been pre-fetched
   let chunkPath = "";
   if (req.withBed) {
+    // Determine where the BED is, URL or local path.
+    let bed = isValidURL(bedFile) ? bedFile : path.resolve(dataPath, bedFile);
     // We need to parse the BED file we have been referred to so we can look up
-    // the pre-parsed chunk. We don't want the client re-uploading the BED to
-    // us on every request.
-    chunkPath = getChunkPath(bedFile, dataPath, parsedRegion);
+    // the pre-parsed chunk.
+    chunkPath = await getChunkPath(bed, parsedRegion);
   }
+
+  // We only want to have one downstream callback chain out of here, and we
+  // want to make sure it can only start after there's no possibility that we
+  // concurrently reject.
+  let sentResponse = false;
   
   // We always need a range-version of the region, to fill in req.region, to
   // generate the region part of the response with the range.
@@ -571,7 +598,7 @@ api.post("/getChunkedData", (req, res, next) => {
       }
     });
   }
-});
+}
 
 // We can throw this error to trigger our error handling code instead of
 // Express's default. It covers input validation failures, and vaguely-expected
@@ -610,8 +637,9 @@ class VgExecutionError extends InternalServerError {
   }
 }
 
-// We can use this middleware to ensure that errors we throw
-// or next(err) will be sent along to the user.
+// We can use this middleware to ensure that errors we synchronously throw or
+// next(err) will be sent along to the user. It does *not* happen on API
+// endpoint promise rejections until Express 5.
 function returnErrorMiddleware(err, req, res, next) {
   // Clean up the temp directory for the request, if any
   cleanUpChunkIfOwned(req, res);
@@ -653,10 +681,56 @@ function returnErrorMiddleware(err, req, res, next) {
 // Hook up the error handling middleware.
 app.use(returnErrorMiddleware);
 
-// Gets the chunk path from a region specified in a bedfile 
-function getChunkPath(bedFile, dataPath, parsedRegion) {
-  let chunkPath = "";
-  let regionInfo = getBedRegions(bedFile, dataPath);
+// Given a BED file local path or URL, and a relative URL from the BED file for
+// a chunk data directory, get the local path at which the chunk data directory
+// will be stored. That local path may not exist, and, if the BED is a URL, is
+// guaranteed to be inside DOWNLOAD_DATA_PATH.
+//
+// The returned path is guaranteed to be an allowed path, under one of our
+// allowed directories.
+//
+// The returned path is guaranteed not to have a trailing slash.
+//
+// This is the One True Place for getting a BED file chunk path.
+function bedChunkLocalPath(bed, chunk) {
+  if (isValidURL(bed)) {
+    // Hash the BED URL and the chunk path together to a unique value
+    // guaranteed not to contain slashes or '.'.
+    const hashedBED = hashString(bed + chunk);
+    // Use that as a directory under the download path. We know this is under
+    // the download path and does not end in slash.
+    return path.resolve(DOWNLOAD_DATA_PATH, hashedBED);
+  } else {
+    // This is a local BED file. Evaluate the path in the BED file relative to it.
+    let destination = path.resolve(path.dirname(bed), chunk);
+
+    if (destination.endsWith("/")) {
+      // Drop any trailing slashes
+      destination = destination.substring(0, destination.length - 1);
+    }
+
+    // That can go up by e.g. starting with / or involving .., so make sure we
+    // are still pointing somewhere allowed.
+    if (!isAllowedPath(destination)) {
+      throw new BadRequestError("Path to chunk not allowed: " + destination);
+    }
+
+    return destination;
+  }
+}
+
+// Gets the chunk path from a region specified in a bedfile, which may be a URL
+// or an allowed local path.
+//
+// Also downloads the chunk data if the bed is an URL and it has not been
+// downloaded yet.
+//
+// The returned path is either an allowed path, or an empty string if we are
+// using a BED without a pre-generated chunk for the given region.
+async function getChunkPath(bed, parsedRegion) {
+  let chunk = "";
+  let regionInfo = await getBedRegions(bed);
+
 
   for (let i = 0; i < regionInfo["desc"].length; i++) {
     let entryRegion = {
@@ -666,36 +740,45 @@ function getChunkPath(bedFile, dataPath, parsedRegion) {
     }
     if (stringifyRegion(entryRegion) === stringifyRegion(parsedRegion)) {
       // A BED entry is defined for this region exactly
-      if (regionInfo["chunk_path"][i] !== "") {
+      if (regionInfo["chunk"][i] !== "") {
         // And a chunk file is stored for it, so use that.
-        chunkPath = regionInfo["chunk_path"][i];
+        chunk = regionInfo["chunk"][i];
         break;
       }
     }
   }
+
+  if (chunk === "") {
+    // There is no pre-generated chunk for this region.
+    return "";
+  }
+
+  // Work out where data for this chunk will be, locally
+  let chunkPath = bedChunkLocalPath(bed, chunk);
+
+  if (isValidURL(bed)) {
+    // download the rest of the chunk 
+    await retrieveChunk(bed, chunk, true);
+  }
+
+  console.log("returning chunk path: ", chunkPath);
+
   // check that the 'chunk.vg' file exists in the chunk folder
-  if (chunkPath.endsWith("/")) {
-    chunkPath = chunkPath.substring(0, chunkPath.length - 1);
-  }
-  let chunk_file = `${chunkPath}/chunk.vg`;
-  if (!isAllowedPath(chunk_file)) {
-    // We need to check allowed-ness before we check existence.
-    throw new BadRequestError("Path to chunk not allowed: " + chunkPath);
-  }
+  let chunk_file = path.resolve(chunkPath, "chunk.vg");
+  // We already checked allowed-ness in making the chunk path.
   if (fs.existsSync(chunk_file)) {
     console.log(`found pre-fetched chunk at ${chunk_file}`);
   } else {
-    console.log(`couldn't find pre-fetched chunk at ${chunk_file}`);
-    chunkPath = "";
+    // The chunk doesn't exist, but was supposed to.
+    throw new BadRequestError(`Couldn't find pre-fetched chunk at ${chunk_file}`);
   }
+
   return chunkPath;
 }
 
 function processAnnotationFile(req, res, next) {
   try {
     // find annotation file
-    // TODO: This is not going to work if multiple people hit the server at once!
-    // We need to make vg chunk take an argument from us for where to put the file.
     console.time("processing annotation file");
     fs.readdirSync(req.chunkDir).forEach((file) => {
       if (file.endsWith("annotate.txt")) {
@@ -873,7 +956,7 @@ function processRegionFile(req, res, next) {
 // May throw.
 // TODO: Use as a middleware?
 function cleanUpChunkIfOwned(req, res) {
-  if (req.rmChunk) {
+  if (req.rmChunk && req.chunkDir !== undefined) {
     // Don't clean up individual files in the directory manually; it's too
     // fiddly, and we could have gotten here because we generated those paths
     // and they were outside our acceptable directory tree.
@@ -1094,48 +1177,216 @@ api.post("/getPathNames", (req, res, next) => {
   });
 });
 
-api.post("/getBedRegions", (req, res) => {
-  console.log("received request for bedRegions");
-  const result = {
-    bedRegions: [],
-    error: null,
-  };
+// Given a string, return a filename-safe string that is a hash of that string.
+// The hash is collision-resistant.
+function hashString(str) {
+  // We should have access to crypto.subtle, but that's asynchronous and that's
+  // probably not worth it for a URL's worth of data. So use Node's crypto
+  // library.
+  // See <https://stackoverflow.com/a/75872519>
+  return createHash("sha256").update(str).digest("hex");
+}
 
-  if (req.body.bedFile !== "none") {
-    let dataPath = pickDataPath(req.body.dataPath);
-    let bed_info = getBedRegions(req.body.bedFile, dataPath);
-    console.log("bed reading done");
-    result.bedRegions = bed_info;
-    res.json(result);
-  } else {
-    throw new BadRequestError("No BED file specified");
+// returns whether or not a string is a valid http url
+function isValidURL(string) {
+  if (!string) {
+    return False;
   }
+
+  let url;
+
+  try {
+    url = new URL(string)
+  } catch(error) {
+    return false;
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
+// Given a URL and a filename, download the given URL to that filename. Assumes required directories exist.
+const downloadFile = async(fileURL, destination) => {
+  if (!isAllowedPath(destination)) {
+    throw new BadRequestError("Download destination path not allowed: " + destination);
+  }
+
+  const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes);
+
+  console.log("Save to:", destination);
+ 
+  // overwrites file if it already exists
+  const fileStream = fs.createWriteStream(destination, { flags: 'w' });
+  await finished(Readable.fromWeb(response.body).pipe(fileStream));
+
+}
+
+const fetchAndValidate = async(url, maxBytes) => {
+  const options = {
+    method: "GET",
+    credentials: "omit",
+    cache: "default",
+    signal: timeoutController(config.fetchTimeout).signal
+  };
+  
+  console.log("Fetching URL:", url);
+  let response = await fetch(url, options);
+
+  // check for unsuccessful response codes
+  if (!response.ok) {
+    throw new BadRequestError(`Fetch request for ${url} failed: ` + response.status);
+  }
+
+  // check for size specified in header
+  const contentLength = response.headers.get("Content-Length");
+
+  if (contentLength > maxBytes) {
+    throw new Error(`Fetch request for ${url} failed: Content-Length exceeds maximum file size of ${maxBytes} bytes`);
+  }
+
+  // use a reader to make sure we're not reading past the max size allowed
+  const reader = response.body.getReader();
+
+  let bytesRead = 0;
+  const dataRead = [];
+
+  while (true) {
+    let {done, value} = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    dataRead.push(value);
+    bytesRead += new Blob([value]).size;
+
+    if (bytesRead > maxBytes) {
+      reader.cancel();
+      throw new Error(`Fetch request for ${url} failed: received content exceeds maximum file size of ${maxBytes} bytes`);
+    }
+  }
+
+  return new Response(new Blob(dataRead), { headers: response.headers });
+
+}
+
+// Download files for the specified relative chunk path, for the BED file at
+// the given URL.
+//
+// includeContent only downloads the tracks.json file when set to false. If
+// true, all files listed in chunk_contents.txt will be downloaded.
+const retrieveChunk = async(bedURL, chunk, includeContent) => {
+  // path to the designated chunk in the temp directory
+  const chunkDir = bedChunkLocalPath(bedURL, chunk);
+
+  // TODO: check if this chunk has been downloaded before, to prevent duplicate fetches
+  if (!fs.existsSync(chunkDir)) {
+    fs.mkdirSync(chunkDir, { recursive: true });
+  }
+
+  // URL under which all the chunk files will exist. Make sure it ends in '/'
+  // so we can look up the contents relative to it.
+  let chunkURL = new URL(chunk, bedURL).toString();
+  if (!chunkURL.endsWith("/")) {
+    chunkURL = chunkURL + "/";
+  }
+
+  // Each chunk has an index in "chunk_contents.txt"
+  let chunkContentURL = new URL("chunk_contents.txt", chunkURL).toString();
+
+  let response = await fetchAndValidate(chunkContentURL, config.maxFileSizeBytes);
+
+  const chunkContent = await response.text();
+  const fileNames = chunkContent.split("\n");
+
+  // download all the files in the chunk
+  for (const fileName of fileNames) {
+    if (fileName == "") {
+      // Skip blank lines/trailing newline
+      continue;
+    }
+    if (fileName !== sanitize(fileName)) {
+      // Make sure we don't do things like get out of the directory.
+      throw new BadRequestError(`Chunk index at ${chunkContentURL} cointains disallowed filename ${fileName}`); 
+    }
+
+    // We can interpret all the files in chunk_contents.txt relative to the file they are listed in.
+    let chunkFileURL = new URL(fileName, chunkContentURL).toString();
+
+    // download only the tracks.json file if the inlcudeContent flag is false
+    if (includeContent || fileName == "tracks.json") {
+      let chunkFilePath = path.resolve(chunkDir, fileName);
+      await downloadFile(chunkFileURL, chunkFilePath);
+    }
+  }
+  
+}
+
+
+// aborts fetch request after certain amount of time
+const timeoutController = (seconds) => {
+  let controller = new AbortController();
+  setTimeout(() => controller.abort(), seconds * 1000);
+  return controller;
+}
+
+api.post("/getBedRegions", (req, res, next) => {
+  // Bridge async functions to Express error handling with next(err). Don't
+  // return a promise. 
+  let promise = (async () => {
+    console.log("received request for bedRegions");
+    const result = {
+      bedRegions: [],
+      error: null,
+    };
+
+    if (req.body.bedFile) {
+      let dataPath = pickDataPath(req.body.dataPath);
+      // Get the path or URL to the actual BED file.
+      let bed = isValidURL(req.body.bedFile) ? req.body.bedFile : path.resolve(dataPath, req.body.bedFile);
+      let bed_info = await getBedRegions(bed);
+      result.bedRegions = bed_info;
+      res.json(result);
+    } else {
+      throw new BadRequestError("No BED file specified");
+    }
+  })();
+  promise.catch(next);
 });
 
-// Load up the given BED file, relative to the given pre-resolved dataPath, and
+// Load up the given BED file by URL or path, and
 // return a data structure decribing all the pre-cached regions it defines.
 // Validates file paths for user-accessibility. May throw.
-function getBedRegions(bedFile, dataPath) {
-  if (!bedFile.endsWith(".bed")) {
-    throw new BadRequestError("BED file path does not end in .bed: " + bedFile);
-  }
-
-  // Work out what file we're talking about
-  let bed_path = path.join(dataPath, bedFile);
-  if (!isAllowedPath(bed_path)) {
-    throw new BadRequestError("BED file path not allowed: " + bedFile);
-  }
-  if (!fs.existsSync(bed_path)) {
-    throw new BadRequestError("BED file not found: " + bedFile);
-  }
-
+async function getBedRegions(bed) {
   let bed_info = { chr: [], start: [], end: [], desc: [], chunk: [], tracks: []};
+  let bed_data;
+  let lines;
+  let isURL = false;
+  console.log("bed file recieved ", bed);
+  if (isValidURL(bed)) {
+    isURL = true;
+    const reponse = await fetchAndValidate(bed, config.maxFileSizeBytes);
+    bed_data = await reponse.text();
 
-  // Load and parse the BED file
-  let bed_data = fs.readFileSync(bed_path).toString();
-  let lines = bed_data.split("\n");
+  } else {  // otherwise search for bed file in dataPath
+    if (!bed.endsWith(".bed")) {
+      throw new BadRequestError("BED file path does not end in .bed: " + bed);
+    } 
+    if (!isAllowedPath(bed)) {
+      throw new BadRequestError("BED file path not allowed: " + bed);
+    }
+    if (!fs.existsSync(bed)) {
+      throw new BadRequestError("BED file not found: " + bed);
+    }
+  
+    // Load and parse the BED file
+    bed_data = fs.readFileSync(bed).toString();
+  }
+  
+
+  lines = bed_data.split("\n");
   lines.map(function (line) {
     let records = line.split("\t");
+
     if (records.length < 3) {
       // This is an empty line or otherwise not BED
       return
@@ -1154,48 +1405,69 @@ function getBedRegions(bedFile, dataPath) {
     }
     bed_info["chunk"].push(chunk);
 
-
-
-    let tracks = {};
-    let trackID = 1;
-
-    const chunk_path = `${dataPath}${chunk}`;
-    const track_json = path.join(chunk_path, "tracks.json");
-    // If json file specifying the tracks exists
-    if (fs.existsSync(track_json)) {
-      // Read json file and create a tracks object from it 
-      const json_data = JSON.parse(fs.readFileSync(track_json));
-      
-      if (json_data["graph_file"] !== "") {
-        tracks[trackID] = {...config.defaultTrackProps};
-        tracks[trackID]["trackFile"] = json_data["graph_file"];
-        tracks[trackID]["trackType"] = fileTypes["GRAPH"];
-        trackID += 1;
-      }
-
-      if (json_data["haplotype_file"] !== "") {
-        tracks[trackID] = {...config.defaultTrackProps};
-        tracks[trackID]["trackFile"] = json_data["haplotype_file"];
-        tracks[trackID]["trackType"] = fileTypes["HAPLOTYPE"];
-        tracks[trackID]["trackColorSettings"] = {...config.defaultHaplotypeColorPalette};
-        trackID += 1;
-      }
-
-      for (const gam_file of json_data["gam_files"]) {
-        tracks[trackID] = {...config.defaultTrackProps};
-        tracks[trackID]["trackFile"] = gam_file;
-        tracks[trackID]["trackType"] = fileTypes["READ"];
-        tracks[trackID]["trackColorSettings"] = {...config.defaultReadColorPalette};
-        trackID += 1;
-      }
-
-    }
-
-    bed_info["tracks"].push(tracks);
-
-
   });
 
+
+  // check for a tracks.json file to prefill tracks configuration
+  for (let i = 0; i < bed_info["chunk"].length; i++) {
+    let tracks = null;
+    
+    let chunk = bed_info["chunk"][i];
+    if (chunk !== "") {
+      // There is a premade chunk for this BED region.
+      
+      // Work out where it should be locally.
+      const chunk_path = bedChunkLocalPath(bed, chunk);
+      // download the tracks file if bed is an url
+      if (isURL) {
+        await retrieveChunk(bed, chunk, false);
+      }
+
+      let track_json = path.resolve(chunk_path, "tracks.json");
+
+      // If json file specifying the tracks exists
+      if (fs.existsSync(track_json)) {
+        // Read json file and create a tracks object from it 
+        const json_data = JSON.parse(fs.readFileSync(track_json));
+
+        // Tracks are defined.
+        let trackID = 1;
+        tracks = {};
+        
+        if (json_data["graph_file"] !== "") {
+          tracks[trackID] = {...config.defaultTrackProps};
+          tracks[trackID]["trackFile"] = json_data["graph_file"];
+          tracks[trackID]["trackType"] = fileTypes["GRAPH"];
+          trackID += 1;
+        }
+
+        if (json_data["haplotype_file"] !== "") {
+          tracks[trackID] = {...config.defaultTrackProps};
+          tracks[trackID]["trackFile"] = json_data["haplotype_file"];
+          tracks[trackID]["trackType"] = fileTypes["HAPLOTYPE"];
+          tracks[trackID]["trackColorSettings"] = {...config.defaultHaplotypeColorPalette};
+          trackID += 1;
+        }
+
+        for (const gam_file of json_data["gam_files"]) {
+          tracks[trackID] = {...config.defaultTrackProps};
+          tracks[trackID]["trackFile"] = gam_file;
+          tracks[trackID]["trackType"] = fileTypes["READ"];
+          tracks[trackID]["trackColorSettings"] = {...config.defaultReadColorPalette};
+          trackID += 1;
+        }
+
+      }
+    }
+
+    // If there is no tracks JSON or no pre-made chunk, we send a falsey value
+    // for tracks, which means whatever tracks were already selected will be
+    // retained.
+
+    bed_info["tracks"].push(tracks);
+  }
+
+  console.log("returning bed_info, ", bed_info);
   return bed_info;
 }
 
@@ -1231,6 +1503,9 @@ export function start() {
       connections: undefined,
       // Shut down the server
       close: async () => {
+        // remove the temporary directory
+        fs.rmSync(DOWNLOAD_DATA_PATH, { recursive: true, force: true });
+
         // Shutdown the Websocket Server.
         state.wss.shutDown();
         // Close the file watcher.
@@ -1351,3 +1626,11 @@ if (process) {
     start();
   }
 }
+
+process.on( "SIGINT", function() {
+  console.log("\nshutting down from SIGINT");
+  // remove the temporary directory
+  fs.rmSync(DOWNLOAD_DATA_PATH, { recursive: true, force: true });
+
+  process.exit();
+})

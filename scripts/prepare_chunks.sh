@@ -55,3 +55,9 @@ JSON_STRING=$(jq -n \
                   '$ARGS.named' )
 
 printf "%s\n" "$JSON_STRING" > $OUTDIR/tracks.json
+
+
+for file in `ls $OUTDIR/`
+do
+    printf "$file\n" >> $OUTDIR/chunk_contents.txt
+done

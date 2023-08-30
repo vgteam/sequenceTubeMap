@@ -493,6 +493,14 @@ class HeaderForm extends Component {
 
     const nextViewTarget = this.getNextViewTarget();
     const currViewTarget = this.props.getCurrentViewTarget();
+
+    // Tracks list is empty
+    if (Object.keys(nextViewTarget["tracks"]).length === 0) {
+      // TODO: put some kind of visual indicator that the tracks list is empty
+      console.log("Tracks must not be empty before go");
+      return;
+    }
+
     
     if (!viewTargetsEqual(currViewTarget, nextViewTarget)) {
       // Update the view if the view target has changed.
