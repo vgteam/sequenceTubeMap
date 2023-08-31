@@ -65,8 +65,8 @@
   "defaultTrackProps" : {
     "trackType": "graph",
     "trackColorSettings": {
-      "mainPalette": "blues",
-      "auxPalette": "reds",
+      "mainPalette": "reds",
+      "auxPalette": "blues",
       "colorReadsByMappingQuality": false
     }
 

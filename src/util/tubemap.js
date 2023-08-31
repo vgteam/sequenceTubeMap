@@ -2480,19 +2480,19 @@ function generateTrackColor(track, highlight) {
       // Don't repeat the color of the first track (reference) to highilight is better.
       // TODO: Allow using color 0 for other schemes not the same as the one for the reference path.
       // TODO: Stop reads from taking this color?
-
-      const colorSet = getColorSet(config.colorSchemes[sourceID].auxPalette);
+      const auxColorSet = getColorSet(config.colorSchemes[sourceID].auxPalette);
       const primaryColorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
       if (track.id === 0) {
         trackColor = primaryColorSet[0];
       } else {
-        trackColor = colorSet[((track.id - 1) % (colorSet.length))];
+        trackColor = auxColorSet[((track.id - 1) % (auxColorSet.length))];
       }
     } else {
       const colorSet = getColorSet(config.exonColors);
       trackColor = colorSet[track.id % colorSet.length];
     }
   }
+  console.log("trackColor:", trackColor)
   return trackColor;
 }
 
