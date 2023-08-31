@@ -4,7 +4,7 @@
     {
       "name": "snp1kg-BRCA1",
       "tracks": [
-        {"trackFile": "snp1kg-BRCA1.vg.xg", "trackType": "graph"},
+        {"trackFile": "snp1kg-BRCA1.vg.xg", "trackType": "graph", "trackColorSettings": {"mainPalette": "greys", "auxPalette": "ygreys"}},
         {"trackFile": "NA12878-BRCA1.sorted.gam", "trackType": "read"}
       ],
       "dataPath": "default",
