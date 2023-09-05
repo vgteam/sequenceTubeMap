@@ -1248,11 +1248,13 @@ function alignSVG() {
   parentElement.addEventListener("wheel", (e) => { e.preventDefault(); })
 
   // If the view area resizes, reconfigure the zoom
-  const resizeObserver = new ResizeObserver((resizes) => {
-    configureZoomBounds();
-  });
-  resizeObserver.observe(parentElement);
-
+  if (window.ResizeObserver) {
+    // This feature is in all current major browsers, but not in React's testing environment.
+    const resizeObserver = new window.ResizeObserver((resizes) => {
+      configureZoomBounds();
+    });
+    resizeObserver.observe(parentElement);
+  }
 
   // translate to correct position on initial draw
   const containerWidth = parentElement.clientWidth;
@@ -2509,7 +2511,6 @@ function generateTrackColor(track, highlight) {
       trackColor = colorSet[track.id % colorSet.length];
     }
   }
-  console.log("trackColor:", trackColor)
   return trackColor;
 }
 
