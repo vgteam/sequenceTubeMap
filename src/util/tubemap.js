@@ -1241,7 +1241,11 @@ function alignSVG() {
 
   // Initially configure panning and zooming
   configureZoomBounds();
-  svg = svg.call(zoom).on("dblclick.zoom", null).append("g");
+  svg = svg.call(zoom)
+    .on("dblclick.zoom", null)
+    .append("g");
+  // Don't let scrolling bubble up from the visualization
+  parentElement.addEventListener("wheel", (e) => { e.preventDefault(); })
 
   // If the view area resizes, reconfigure the zoom
   const resizeObserver = new ResizeObserver((resizes) => {
