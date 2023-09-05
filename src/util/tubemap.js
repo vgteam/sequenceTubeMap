@@ -1204,23 +1204,29 @@ function alignSVG() {
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
 
-  svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
-  svg.attr("width", parentElement.clientWidth);
-
   function zoomed() {
+    // Apply the panning/zooming transform
     const transform = d3.event.transform;
     svg.attr("transform", transform);
   }
 
-  const minZoom = Math.min(
-    1,
-    parentElement.clientWidth / (maxXCoordinate + 10)
-  );
-  zoom = d3
-    .zoom()
+  zoom = d3.zoom();
+  zoom.on("zoom", zoomed);
+
+  function configureZoomBounds() {
+    // Configure panning and zooming, given the SVG parent's size on the page.
+
+    svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
+    svg.attr("width", parentElement.clientWidth);
+
+    const minZoom = Math.min(
+      1,
+      parentElement.clientWidth / (maxXCoordinate + 10)
+    );
+    
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
-    .extent([
+    zoom.extent([
       [0, 0],
       [parentElement.clientWidth, parentElement.clientHeight],
     ])
@@ -1228,10 +1234,21 @@ function alignSVG() {
     .translateExtent([
       [0, minYCoordinate - RAIL_SPACE],
       [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
-    ])
-    .on("zoom", zoomed);
+      ]);
+  }
 
+
+
+  // Initially configure panning and zooming
+  configureZoomBounds();
   svg = svg.call(zoom).on("dblclick.zoom", null).append("g");
+
+  // If the view area resizes, reconfigure the zoom
+  const resizeObserver = new ResizeObserver((resizes) => {
+    configureZoomBounds();
+  });
+  resizeObserver.observe(parentElement);
+
 
   // translate to correct position on initial draw
   const containerWidth = parentElement.clientWidth;
