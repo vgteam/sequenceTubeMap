@@ -704,8 +704,12 @@ class HeaderForm extends Component {
 
     return (
       <div>
-        {errorDiv}
-        <Container fluid={true}>
+        <Container>
+          <Row>
+            <Col>
+              {errorDiv}
+            </Col>
+          </Row>
           <Row>
             <Col md="auto">
               <img src="./logo.png" alt="Logo" />
@@ -786,27 +790,29 @@ class HeaderForm extends Component {
                 />
               )}
 
-              <Alert
-                color="danger"
-                isOpen={this.state.fileSizeAlert}
-                toggle={() => {
-                  this.setState({ fileSizeAlert: false });
-                }}
-                className="mt-3"
-              >
-                <strong>File size too big! </strong>
-                You may only upload files with a maximum size of{" "}
-                {MAX_UPLOAD_SIZE_DESCRIPTION}.
-              </Alert>
+              <Row>
+                <Alert
+                  color="danger"
+                  isOpen={this.state.fileSizeAlert}
+                  toggle={() => {
+                    this.setState({ fileSizeAlert: false });
+                  }}
+                  className="mt-3"
+                >
+                  <strong>File size too big! </strong>
+                  You may only upload files with a maximum size of{" "}
+                  {MAX_UPLOAD_SIZE_DESCRIPTION}.
+                </Alert>
 
-              {examplesFlag ? (
-                <ExampleSelectButtons
-                  setDataOrigin={this.props.setDataOrigin}
-                  setColorSetting={this.props.setColorSetting}
-                />
-              ) : (
-                !mountedFilesFlag && DataPositionFormRowComponent 
-              )}
+                {examplesFlag ? (
+                  <ExampleSelectButtons
+                    setDataOrigin={this.props.setDataOrigin}
+                    setColorSetting={this.props.setColorSetting}
+                  />
+                ) : (
+                  !mountedFilesFlag && DataPositionFormRowComponent 
+                )}
+              </Row>
             </Col>
           </Row>
         </Container>
