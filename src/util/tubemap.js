@@ -1188,6 +1188,13 @@ function getImageDimensions() {
   });
 }
 
+// This needs to be the width of the ruler.
+// TODO: Tell the ruler drawing code.
+const RULER_WIDTH = 15;
+const NODE_MARGIN = 10;
+// This is how much space to let us pan, around the nodes as measure by getImageDimensions()
+const RAIL_SPACE = 25;
+
 // align visualization to the top and left within svg and resize svg to correct size
 // enable zooming and panning
 function alignSVG() {
@@ -1197,48 +1204,60 @@ function alignSVG() {
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
 
-  svg.attr("height", maxYCoordinate - minYCoordinate + 50);
-  svg.attr("width", parentElement.offsetWidth);
-
   function zoomed() {
+    // Apply the panning/zooming transform
     const transform = d3.event.transform;
-    // vertical adjustment so that top of graph is at top of svg
-    // otherwise would violate translateExtent, which leads to graph "jumping" on next pan
-    transform.y = (25 - minYCoordinate) * transform.k;
     svg.attr("transform", transform);
-    const svg2 = d3.select(svgID);
-    // adjust height, so that vertical scroll bar is shown when necessary
-    svg2.attr(
-      "height",
-      (maxYCoordinate - minYCoordinate + 50) * d3.event.transform.k
-    );
-    // adjust width to compensate for verical scroll bar appearing
-    svg2.attr("width", document.getElementById("tubeMapSVG").clientWidth);
   }
 
-  const minZoom = Math.min(
-    1,
-    parentElement.offsetWidth / (maxXCoordinate + 10)
-  );
-  zoom = d3
-    .zoom()
+  zoom = d3.zoom();
+  zoom.on("zoom", zoomed);
+
+  function configureZoomBounds() {
+    // Configure panning and zooming, given the SVG parent's size on the page.
+
+    svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
+    svg.attr("width", parentElement.clientWidth);
+
+    const minZoom = Math.min(
+      1,
+      parentElement.clientWidth / (maxXCoordinate + 10)
+    );
+    
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
-    .extent([
+    zoom.extent([
       [0, 0],
-      [svg.attr("width"), svg.attr("height")],
+      [parentElement.clientWidth, parentElement.clientHeight],
     ])
     .scaleExtent([minZoom, 8])
     .translateExtent([
-      [-1, minYCoordinate - 25],
-      [maxXCoordinate + 2, maxYCoordinate + 25],
-    ])
-    .on("zoom", zoomed);
+      [0, minYCoordinate - RAIL_SPACE],
+      [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
+      ]);
+  }
 
-  svg = svg.call(zoom).on("dblclick.zoom", null).append("g");
+
+
+  // Initially configure panning and zooming
+  configureZoomBounds();
+  svg = svg.call(zoom)
+    .on("dblclick.zoom", null)
+    .append("g");
+  // Don't let scrolling bubble up from the visualization
+  parentElement.addEventListener("wheel", (e) => { e.preventDefault(); })
+
+  // If the view area resizes, reconfigure the zoom
+  if (window.ResizeObserver) {
+    // This feature is in all current major browsers, but not in React's testing environment.
+    const resizeObserver = new window.ResizeObserver((resizes) => {
+      configureZoomBounds();
+    });
+    resizeObserver.observe(parentElement);
+  }
 
   // translate to correct position on initial draw
-  const containerWidth = parentElement.offsetWidth;
+  const containerWidth = parentElement.clientWidth;
   const xOffset =
     maxXCoordinate + 10 < containerWidth
       ? (containerWidth - maxXCoordinate - 10) / 2
@@ -1247,7 +1266,7 @@ function alignSVG() {
     .select(svgID)
     .call(
       zoom.transform,
-      d3.zoomIdentity.translate(xOffset, 25 - minYCoordinate)
+      d3.zoomIdentity.translate(xOffset, RAIL_SPACE - minYCoordinate)
     );
 }
 
@@ -1260,7 +1279,7 @@ export function zoomBy(zoomFactor) {
 
   const minZoom = Math.min(
     1,
-    parentElement.offsetWidth / (maxXCoordinate + 10)
+    parentElement.clientWidth / (maxXCoordinate + 10)
   );
   const maxZoom = 8;
   const width = parentElement.clientWidth;
@@ -2492,7 +2511,6 @@ function generateTrackColor(track, highlight) {
       trackColor = colorSet[track.id % colorSet.length];
     }
   }
-  console.log("trackColor:", trackColor)
   return trackColor;
 }
 
