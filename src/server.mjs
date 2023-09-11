@@ -24,6 +24,7 @@ import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
+import { JSONParser} from '@streamparser/json';
 
 // Now we want to load config.json.
 //
@@ -1425,38 +1426,20 @@ async function getBedRegions(bed) {
 
       let track_json = path.resolve(chunk_path, "tracks.json");
 
+      let tracks_array = [];
+
       // If json file specifying the tracks exists
       if (fs.existsSync(track_json)) {
-        // Read json file and create a tracks object from it 
-        const json_data = JSON.parse(fs.readFileSync(track_json));
-
-        // Tracks are defined.
-        let trackID = 1;
-        tracks = {};
-        
-        if (json_data["graph_file"] !== "") {
-          tracks[trackID] = {...config.defaultTrackProps};
-          tracks[trackID]["trackFile"] = json_data["graph_file"];
-          tracks[trackID]["trackType"] = fileTypes["GRAPH"];
-          trackID += 1;
-        }
-
-        if (json_data["haplotype_file"] !== "") {
-          tracks[trackID] = {...config.defaultTrackProps};
-          tracks[trackID]["trackFile"] = json_data["haplotype_file"];
-          tracks[trackID]["trackType"] = fileTypes["HAPLOTYPE"];
-          tracks[trackID]["trackColorSettings"] = {...config.defaultHaplotypeColorPalette};
-          trackID += 1;
-        }
-
-        for (const gam_file of json_data["gam_files"]) {
-          tracks[trackID] = {...config.defaultTrackProps};
-          tracks[trackID]["trackFile"] = gam_file;
-          tracks[trackID]["trackType"] = fileTypes["READ"];
-          tracks[trackID]["trackColorSettings"] = {...config.defaultReadColorPalette};
-          trackID += 1;
-        }
-
+        // Create string of tracks data
+        const string_data = fs.readFileSync(track_json);
+        const parser = new JSONParser();
+        parser.onValue = (value, key, parent, stack) => {
+          if (stack > 0) return; // ignore inner values
+          // put tracks in array
+          tracks_array.push(value);
+        };
+        parser.write(string_data);
+        tracks = tracks_array; 
       }
     }
 
