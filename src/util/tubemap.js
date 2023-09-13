@@ -3240,7 +3240,17 @@ export function coverage(node, allReads) {
     let readNum = readVisit[0];
     let readPathIndex = readVisit[1];
     let currRead = allReads[readNum];
+    //console.log("incoming read: ", currRead)
     let numNodes = currRead.sequenceNew.length;
+    // identify deletion: if there's a deletion, then those bases must be deleted from total base count
+    for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
+      currRead.sequenceNew[i].mismatches.forEach((mm) => {
+        if (mm.type === "deletion") {
+          console.log ("this read has a deletion", currRead)
+          countBases -= mm.seq.length;
+        }
+      })
+    };
     //  if current node is the last node on the read path, add the finalNodeCoverLength number of bases
     if (numNodes === readPathIndex + 1) {
       countBases += currRead.finalNodeCoverLength;
@@ -3255,12 +3265,30 @@ export function coverage(node, allReads) {
     //  indicating read's starting and ending points within the node.
     let readNum = readVisit;
     let currRead = allReads[readNum];
+    // identify deletion: if there's a deletion, then those bases must be deleted from total base count
+    for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
+      currRead.sequenceNew[i].mismatches.forEach((mm) => {
+        if (mm.type === "deletion") {
+          console.log ("this read has a deletion", currRead)
+          countBases -= mm.seq.length;
+        }
+      })
+    };
     countBases += currRead.finalNodeCoverLength - currRead.firstNodeOffset;
   }
   // outgoing reads
   for (let readVisit of node.outgoingReads) {
     let readNum = readVisit[0];
     let currRead = allReads[readNum];
+    // identify deletion: if there's a deletion, then those bases must be deleted from total base count
+    for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
+      currRead.sequenceNew[i].mismatches.forEach((mm) => {
+        if (mm.type === "deletion") {
+          console.log ("this read has a deletion", currRead)
+          countBases -= mm.length;
+        }
+      })
+    };
     // coverage of outgoing read would be the the distance between the end of the node and the
     //  starting point of the read within the node
     countBases += node.sequenceLength - currRead.firstNodeOffset;
