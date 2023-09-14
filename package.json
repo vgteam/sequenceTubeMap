@@ -82,6 +82,9 @@
     "qs": "^6.11.1"
   },
   "jest": {
-    "resetMocks": false
+    "resetMocks": false,
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@streamparser/json)/)"
+    ]
   }
 }

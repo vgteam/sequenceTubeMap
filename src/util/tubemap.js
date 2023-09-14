@@ -2492,7 +2492,6 @@ function generateTrackColor(track, highlight) {
       trackColor = colorSet[track.id % colorSet.length];
     }
   }
-  console.log("trackColor:", trackColor)
   return trackColor;
 }
 
