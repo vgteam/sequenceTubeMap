@@ -3240,14 +3240,13 @@ export function coverage(node, allReads) {
     let readNum = readVisit[0];
     let readPathIndex = readVisit[1];
     let currRead = allReads[readNum];
-    //console.log("incoming read: ", currRead)
     let numNodes = currRead.sequenceNew.length;
     // identify deletion: if there's a deletion, then those bases must be deleted from total base count
     for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
       currRead.sequenceNew[i].mismatches.forEach((mm) => {
         if (mm.type === "deletion") {
           console.log ("this read has a deletion", currRead)
-          countBases -= mm.seq.length;
+          countBases -= mm.length;
         }
       })
     };
@@ -3270,7 +3269,7 @@ export function coverage(node, allReads) {
       currRead.sequenceNew[i].mismatches.forEach((mm) => {
         if (mm.type === "deletion") {
           console.log ("this read has a deletion", currRead)
-          countBases -= mm.seq.length;
+          countBases -= mm.length;
         }
       })
     };

@@ -607,4 +607,241 @@ describe('coverage', () => {
     expect(checkNodeExample(node, reads)).toBe(undefined);
     expect(coverage(node, reads)).toBe(6.57);
   })
+  // TEST #5
+  it('it can handle nodes with deletions in 1 read', async () => {
+    const node = {        
+      nodename: '3',    
+      sequenceLength: 6,
+      incomingReads: [],
+      internalReads: [0, 1],
+      outgoingReads: [[2, 0], [3, 0]]
+    }
+    const reads = [
+      {
+        "id": 1,
+        "sequenceNew": [
+          {
+            "nodeName": "1",
+            "mismatches": [
+              {
+                "type": "deletion",
+                "pos": 0,
+                "length": 2
+              }
+            ]
+          }
+        ],
+        "firstNodeOffset": 0,
+        "finalNodeCoverLength": 3,
+      },
+      {
+        "id": 2,
+        "sequenceNew": [
+          {
+            "nodeName": "1",
+            "mismatches": [
+              {
+                "type": "insertion",
+                "pos": 0,
+                "seq": "TCAAGAACAGTCATTCATG"
+              }
+            ]
+          }
+        ],
+        "firstNodeOffset": 1,
+        "finalNodeCoverLength": 5,
+      }, 
+      {
+        "id": 3,
+        "sequenceNew": [
+            {
+              "nodeName": "1",
+              "mismatches": []
+            },
+            {
+              "nodeName": "11",
+              "mismatches": []
+            },
+            {
+              "nodeName": "13",
+              "mismatches": []
+            }
+        ],
+        "firstNodeOffset": 2,
+        "finalNodeCoverLength": 6,
+      },
+      {
+        "id": 4,
+        "sourceTrackID": "1",
+        "sequence": [
+          "1",
+          "12",
+          "13"
+        ],
+        "sequenceNew": [
+            {
+              "nodeName": "1",
+              "mismatches": []
+            },
+            {
+              "nodeName": "12",
+              "mismatches": []
+            },
+            {
+              "nodeName": "13",
+              "mismatches": []
+            }
+        ],
+        "firstNodeOffset": 4,
+        "finalNodeCoverLength": 6,
+      }
+    ];
+    //expect(checkNodeExample(node, reads)).toBe(undefined);
+    //console.log("coverage(node, reads) for test 5:", coverage(node, reads))
+    expect(coverage(node, reads)).toBe(1.83);
+  })
+  // TEST #6
+  it('it can handle larger node with deletions in all reads', async () => {
+    const node = {        
+      nodename: '3',    
+      sequenceLength: 24,
+      incomingReads: [[0, 1]],
+      internalReads: [1, 2],
+      outgoingReads: [[3, 0], [4, 0]]
+    }
+    const reads = [
+      {
+        "id": 1,
+        "sequenceNew": [
+          {
+            "nodeName": "1",
+            "mismatches": [
+              {
+                "type": "deletion",
+                "pos": 0,
+                "length": 1
+              }
+            ]
+          }
+        ],
+        "firstNodeOffset": 1,
+        "finalNodeCoverLength": 10,
+      },
+      {
+        "id": 2,
+        "sequenceNew": [
+          {
+            "nodeName": "1",
+            "mismatches": [
+              {
+                "type": "deletion",
+                "pos": 0,
+                "length": 1
+              }
+            ]
+          }
+        ],
+        "firstNodeOffset": 4,
+        "finalNodeCoverLength": 15,
+      }, 
+      {
+        "id": 3,
+        "sequenceNew": [
+            {
+              "nodeName": "1",
+              "mismatches": [
+                {
+                  "type": "deletion",
+                  "pos": 0,
+                  "length": 1
+                }
+              ]
+            },
+            {
+              "nodeName": "11",
+              "mismatches": [
+                {
+                  "type": "deletion",
+                  "pos": 0,
+                  "length": 2
+                }
+              ]
+            },
+            {
+              "nodeName": "13",
+              "mismatches": [
+                {
+                  "type": "deletion",
+                  "pos": 0,
+                  "length": 1
+                }
+              ]
+            }
+        ],
+        "firstNodeOffset": 2,
+        "finalNodeCoverLength": 8,
+      },
+      {
+        "id": 4,
+        "sourceTrackID": "1",
+        "sequence": [
+          "1",
+          "12",
+          "13"
+        ],
+        "sequenceNew": [
+            {
+              "nodeName": "1",
+              "mismatches": [
+                {
+                  "type": "deletion",
+                  "pos": 0,
+                  "length": 1
+                }
+              ]
+            },
+            {
+              "nodeName": "12",
+              "mismatches": [
+                {
+                  "type": "deletion",
+                  "pos": 0,
+                  "length": 1
+                }
+              ]
+            },
+            {
+              "nodeName": "13",
+              "mismatches": [
+                {
+                  "type": "deletion",
+                  "pos": 0,
+                  "length": 1
+                }
+              ]
+            }
+        ],
+        "firstNodeOffset": 9,
+        "finalNodeCoverLength": 12,
+      },
+      {
+        "id": 5,
+        "sequenceNew": [
+          {
+            "nodeName": "1",
+            "mismatches": [
+              {
+                "type": "deletion",
+                "pos": 0,
+                "length": 2
+              }
+            ]
+          }
+        ],
+        "firstNodeOffset": 2,
+        "finalNodeCoverLength": 14,
+      },
+    ];
+    expect(coverage(node, reads)).toBe(2.79);
+  })
 })
