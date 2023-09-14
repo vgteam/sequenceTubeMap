@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-
 while getopts x:h:g:r:o: flag
 do
     case "${flag}" in
@@ -29,33 +28,24 @@ mkdir -p $OUTDIR
 
 vg_chunk_params="-x $XG_FILE -g -c 20 -p $REGION -T -b $OUTDIR/chunk -E $OUTDIR/regions.tsv"
 
-GAM_FILES_STRING=""
+# construct track JSON for xg file
+jq -n --arg trackFile "${XG_FILE}" --arg trackType "graph" --argjson trackColorSettings '{"mainPalette": "greys", "auxPalette": "ygreys"}' '$ARGS.named' >> $OUTDIR/tracks.json
 
+# construct track JSON for gbwt file; if not any specific gbwt file, then default would be haplotype
+if [[ ! -z "${GBWT}" ]] ; then
+    jq -n --arg trackFile "${GBWT}" --arg trackType "haplotype" --argjson trackColorSettings '{"mainPalette": "blues", "auxPalette": "reds"}' '$ARGS.named' >> $OUTDIR/tracks.json
+fi
+
+# construct track JSON for each gam file
 echo "Gam Files:"
 for GAM_FILE in "${GAM_FILES[@]}"; do
     echo " - $GAM_FILE"
-
-    # Put gam files into string format to be parsed by jq
-    GAM_FILES_STRING="$GAM_FILES_STRING$GAM_FILE\n"
-
+    jq -n --arg trackFile "${GAM_FILE}" --arg trackType "read" --argjson trackColorSettings '{"mainPalette": "blues", "auxPalette": "reds"}' '$ARGS.named' >> $OUTDIR/tracks.json
     vg_chunk_params=" $vg_chunk_params -a $GAM_FILE"
 done
 
 # Call vg chunk
 vg chunk $vg_chunk_params > $OUTDIR/chunk.vg
-
-GAM_FILES_JSON=$(printf "$GAM_FILES_STRING" | jq -R '[.]' | jq -n '[inputs[]]')
-
-
-# Construct tracks JSON, containing all tracks used to create the chunk
-JSON_STRING=$(jq -n \
-                  --arg graph_file "$XG_FILE" \
-                  --arg haplotype_file "$GBWT" \
-                  --argjson gam_files "$GAM_FILES_JSON" \
-                  '$ARGS.named' )
-
-printf "%s\n" "$JSON_STRING" > $OUTDIR/tracks.json
-
 
 for file in `ls $OUTDIR/`
 do
