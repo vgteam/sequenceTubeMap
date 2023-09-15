@@ -137,28 +137,51 @@ That can sometimes up to 10-20 seconds.
 If you already know of regions/subgraphs that you will be looking at, you can pre-fetch the data in advance. 
 This will save some time during the interactive visualization, especially if there are a lot of regions to visualize.
 
-This is a 2 step process that involves creating the chunk and linking it to a bed file
+The net result needs to be one or more chunk directories on disk, referenced from a BED file.
 
-1. 
-The subgraphs need to be pre-fetched using `vg chunk` like shown in [`prepare_chunks.sh`](scripts/prepare_chunks.sh). For example:
+To generate each chunk, you can use the `prepare_chunks.sh` script. You ought to run it from the directory containing your input files and where your output chunks will be stored (i.e. the `dataPath` in `sequenceTubeMpas/src/config.json`), which defaults to the `exampleData` directory in the repo.
+
+For example:
 
 ```
-./prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam
+cd exampleData/
+../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam >> mychunks.bed
+../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:101-200 -d 'Region B' -o chunk-chr1-100-200 -g mygam1.gam -g mygam2.gam >> mychunks.bed
 ```
 
-2.
-Then compile those regions in a BED file with two additional columns: 
+The BED file linking to the chunks has two additional nonstandard columns: 
 
 - a description of the region (column 4)
 - the path to the output directory of the chunk, `chunk-chr1-1-100` in the example above, (column 5). 
 
 ```
-ref	1	10	region one to ten	chunk-ref-1-20
-ref	10	20	region ten to twenty	chunk-ref-1-20
+chr1	1	100	Region A	chunk-chr1-1-100
+chr1	101	200	Region B	chunk-chr2-101-200
 ```
 Note each column is seperated by tabs
 
-This BED file will be read if placed in the `dataPath` directory, like for other files to mount (see above).
+This BED file needs to be in the `dataPath` directory, or it can be hosted on the web along with its chunk directories and accessed via URL.
+
+##### Pre-made subgraphs
+
+You may want to look at a graph that has already been extracted from a larger graph.
+To support this, there is a `prepare_local_chunk.sh` script, which takes a subgraph rather than a full graph.
+It supports most of the options that `prepare_chunks.sh` does, with the notable exception of haplotype files.
+It assumes that the graph represents some region along some reference path that is present in the graph, and expects that region to be provided with the `-r` option.
+It assumes that path names in the subgraph *don't* use subregion suffixes (bracket-enclosed numbers).
+The path name used in the region should *exactly* match the name of one of the paths in the graph.
+
+For example, you can run it like:
+
+```
+cd exampleData/
+../scripts/prepare_local_chunk.sh -x subgraph.gfa -r chr5:1023911-1025911 -g subgraph_reads.gam -g other_sample_reads.gam -o subgraph1 >> subgraphs.bed
+```
+
+If the original subgraph file does not remain in place under the configured `dataPath` and accessible by the tube map, errors may occur complaining that it couldn't be accessed when the tube map attempts to list ist contained paths.
+
+The net result will be that you can select the BED file, select the region it specifies, and view a precomputed view of the subgraph, with coordinates computed assuming it covers the region provided to `prepare_local_chunk.sh`.
+
 
 #### Development Mode
 

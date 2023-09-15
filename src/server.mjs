@@ -537,6 +537,7 @@ async function getChunkedData(req, res, next) {
       }
       req.graph = JSON.parse(graphAsString);
       req.region = [rangeRegion.start, rangeRegion.end];
+      // vg chunk always puts the path we reference on first automatically
       if (!sentResponse) {
         sentResponse = true;
         processAnnotationFile(req, res, next);
@@ -593,6 +594,24 @@ async function getChunkedData(req, res, next) {
       }
       req.graph = JSON.parse(graphAsString);
       req.region = [rangeRegion.start, rangeRegion.end];
+
+      // We might not have the path we are referencing on appearing first.
+      if (parsedRegion.contig !== "node") {
+        // Make sure that path 0 is the path we actually asked about
+        let refPaths = [];
+        let otherPaths = [];
+        for (let path of req.graph.path) {
+          if (path.name === parsedRegion.contig) {
+            // This is the path we asked about, so it goes first
+            refPaths.push(path);
+          } else { 
+            // Then we put each other path
+            otherPaths.push(path);
+          }
+        }
+        req.graph.path = refPaths.concat(otherPaths);
+      }
+
       if (!sentResponse) {
         sentResponse = true;
         processAnnotationFile(req, res, next);
@@ -669,6 +688,7 @@ function returnErrorMiddleware(err, req, res, next) {
     result.error += req.error.toString("utf-8");
   }
   console.log("returning error: " + result.error);
+  console.error(err);
   if (err.status) {
     // Error comes with a status
     res.status(err.status);
@@ -922,6 +942,10 @@ function processGamFiles(req, res, next) {
   }
 }
 
+// Function to do the step of reading the "region" file, a BED inside the chunk
+// that records the path and start offset that were used to define the chunk.
+//
+// Calls out to the next step, cleanUpAndSendResult
 function processRegionFile(req, res, next) {
   try {
     console.time("processing region file");
@@ -1432,14 +1456,21 @@ async function getBedRegions(bed) {
       if (fs.existsSync(track_json)) {
         // Create string of tracks data
         const string_data = fs.readFileSync(track_json);
-        const parser = new JSONParser();
-        parser.onValue = (value, key, parent, stack) => {
-          if (stack > 0) return; // ignore inner values
+        const parser = new JSONParser({separator: ''});
+        parser.onValue = ({value, key, parent, stack}) => {
+          if (stack.length > 0) {
+            // ignore inner values
+            return;
+          }
+          if (!Object.hasOwn(value, 'trackFile')) {
+            throw new BadRequestError('Non-track object in tracks.json: ' + JSON.stringify(value))
+          }
           // put tracks in array
           tracks_array.push(value);
         };
         parser.write(string_data);
-        tracks = tracks_array; 
+        // Convert to object container like the client component prop types expect
+        tracks = {...tracks_array}; 
       }
     }
 
