@@ -30,7 +30,7 @@ class TubeMapContainer extends Component {
 
   handleFetchError(error, message) {
     if (!this.cancelSignal.aborted) {
-      console.log(message, error.name, error.message);
+      console.error(message, error);
       this.setState({ error: error, isLoading: false });
     } else {
       console.log("fetch canceled by componentWillUnmount", error.message);
@@ -199,7 +199,7 @@ class TubeMapContainer extends Component {
     } catch (error) {
       this.handleFetchError(
         error,
-        `POST to ${this.props.apiUrl}/getChunkedData failed:`
+        `Fetching and parsing POST to ${this.props.apiUrl}/getChunkedData failed:`
       );
     }
   };

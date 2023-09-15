@@ -26,6 +26,7 @@ const greys = [
   "#000000",
 ];
 
+// Greys but with a special color for the first thing.
 const ygreys = [
   "#9467bd",
   "#d9d9d9",
@@ -4229,6 +4230,12 @@ export function vgExtractReads(
 
   for (let i = 0; i < myReads.length; i += 1) {
     const read = myReads[i];
+
+    if (!read.path) {
+      // Read does not have a path assigned, this is an unmapped read.
+      continue;
+    }
+
     const sequence = [];
     const sequenceNew = [];
     let firstIndex = -1; // index within mapping of the first node id contained in nodeNames

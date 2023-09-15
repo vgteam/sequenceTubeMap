@@ -51,14 +51,14 @@
   "internalDataPath": "./exampleData/internal",
 
   "defaultHaplotypeColorPalette" : {
-    "mainPalette": "ygreys", 
-    "auxPalette": "ygreys", 
+    "mainPalette": "greys", 
+    "auxPalette": "greys", 
     "colorReadsByMappingQuality": false
   },
   
   "defaultReadColorPalette" : {
-    "mainPalette": "reds", 
-    "auxPalette": "blues", 
+    "mainPalette": "blues", 
+    "auxPalette": "reds", 
     "colorReadsByMappingQuality": false
   },
 
