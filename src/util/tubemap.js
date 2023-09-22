@@ -156,6 +156,10 @@ const config = {
   },
 };
 
+
+
+
+
 // variables for storing info which can be directly translated into drawing instructions
 let trackRectangles = [];
 let trackCurves = [];
@@ -384,6 +388,10 @@ export function setNodeWidthOption(value) {
       }
     }
   }
+}
+
+export function setColoredNodes(value){
+  config.coloredNodes = value;
 }
 
 // sets callback function that would generate React popup of track information. The callback would
@@ -3132,7 +3140,7 @@ function drawNodes(dNodes, groupNode) {
     }
   });
 
-  //let nodeGroup = svg.append("g").attr("class", "node")
+  console.log("config:", config)
 
   groupNode
     .selectAll("node")
@@ -3145,12 +3153,26 @@ function drawNodes(dNodes, groupNode) {
     .on("mouseout", nodeMouseOut)
     .on("dblclick", nodeDoubleClick)
     .on("click", nodeSingleClick)
-    .style("fill", config.transparentNodesFlag ? "none" : "#fff")
-    .style("fill-opacity", config.showExonsFlag ? "0.4" : "0.6")
-    .style("stroke", "black")
+    .style("fill", (d) => colorNodes(d.name)["fill"])
+    .style("fill-opacity", (d) => colorNodes(d.name)["fill-opacity"])
+    .style("stroke", (d) => colorNodes(d.name)["outline"])
     .style("stroke-width", "2px")
     .append("svg:title")
     .text((d) => getPopUpNodeText(d));
+}
+
+function colorNodes(nodeName){
+  let nodesColors = {};
+  if (config.coloredNodes.includes(nodeName)){
+    nodesColors["fill"] = "#ffc0cb"
+    nodesColors["fill-opacity"] = "0.4"
+    nodesColors["outline"] = "#ff0000"
+  } else {
+    nodesColors["fill"] = "#ffffff"
+    nodesColors["fill-opacity"] = "0.4"
+    nodesColors["outline"] = "#000000"
+  }
+  return nodesColors;
 }
 
 function getPopUpNodeText(node) {
