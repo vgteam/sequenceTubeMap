@@ -338,9 +338,6 @@ async function getChunkedData(req, res, next) {
     console.log("no BED file provided.");
   }
 
-  let dataPath = pickDataPath(req.body.dataPath);
-  console.log(`dataPath = ${dataPath}`);
-
   // This will have a conitg, start, end, or a contig, start, distance
   let parsedRegion;
   try {
@@ -353,11 +350,9 @@ async function getChunkedData(req, res, next) {
   // check the bed file if this region has been pre-fetched
   let chunkPath = "";
   if (req.withBed) {
-    // Determine where the BED is, URL or local path.
-    let bed = isValidURL(bedFile) ? bedFile : path.resolve(dataPath, bedFile);
     // We need to parse the BED file we have been referred to so we can look up
     // the pre-parsed chunk.
-    chunkPath = await getChunkPath(bed, parsedRegion);
+    chunkPath = await getChunkPath(bedFile, parsedRegion);
   }
 
   // We only want to have one downstream callback chain out of here, and we
@@ -378,7 +373,7 @@ async function getChunkedData(req, res, next) {
         "Graph file does not end in valid extension: " + graphFile
       );
     }
-    if (!isAllowedPath(`${dataPath}${graphFile}`)) {
+    if (!isAllowedPath(graphFile)) {
       throw new BadRequestError("Graph file path not allowed: " + graphFile);
     }
     // TODO: Use same variable for check and command line?
@@ -391,12 +386,12 @@ async function getChunkedData(req, res, next) {
       //either push gbz with graph and haplotype or push seperate graph and gbwt file
       if (graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz") && graphFile === gbwtFile) { 
         // use gbz haplotype
-        vgChunkParams.push("-x", `${dataPath}${graphFile}`);
+        vgChunkParams.push("-x", graphFile);
       } else if (!graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz")){
         throw new BadRequestError("Cannot use gbz as haplotype alone.");
       } else {
         // ignoring haplotype from graph file and using haplotype from gbwt file
-        vgChunkParams.push("--no-embedded-haplotypes", "-x", `${dataPath}${graphFile}`);
+        vgChunkParams.push("--no-embedded-haplotypes", "-x", graphFile);
 
         // double-check that the file is a .gbwt and allowed
         if (!endsWithExtensions(gbwtFile, HAPLOTYPE_EXTENSIONS)) {
@@ -404,18 +399,18 @@ async function getChunkedData(req, res, next) {
             "GBWT file doesn't end in .gbwt or .gbz: " + gbwtFile
           );
         }
-        if (!isAllowedPath(`${dataPath}${gbwtFile}`)) {
+        if (!isAllowedPath(gbwtFile)) {
           throw new BadRequestError("GBWT file path not allowed: " + gbwtFile);
         }
         // Use a GBWT haplotype database
-        vgChunkParams.push("--gbwt-name", `${dataPath}${gbwtFile}`);
+        vgChunkParams.push("--gbwt-name", gbwtFile);
       }
     } else {
       // push graph file
       if (graphFile.endsWith(".gbz")) {
-        vgChunkParams.push("-x", `${dataPath}${graphFile}`, "--no-embedded-haplotypes");
+        vgChunkParams.push("-x", graphFile, "--no-embedded-haplotypes");
       } else {
-        vgChunkParams.push("-x", `${dataPath}${graphFile}`);
+        vgChunkParams.push("-x", graphFile);
       }
     }
 
@@ -424,12 +419,12 @@ async function getChunkedData(req, res, next) {
       if (!gamFile.endsWith(".gam")) {
         throw new BadRequestError("GAM file doesn't end in .gam: " + gamFile);
       }
-      if (!isAllowedPath(`${dataPath}${gamFile}`)) {
+      if (!isAllowedPath(gamFile)) {
         throw new BadRequestError("GAM file path not allowed: " + gamFile);
       }
       // Use a GAM index
       console.log("pushing gam file", gamFile);
-      vgChunkParams.push("-a", `${dataPath}${gamFile}`, "-g");
+      vgChunkParams.push("-a", gamFile, "-g");
     }
     
 
@@ -1070,33 +1065,6 @@ assert(
   "Scratch path is not acceptable; does it contain .. or //?"
 );
 
-// Decide where to pull the data from
-// (builtin examples, mounted user data folder or uploaded data).
-// Returned path is guaranteed to pass isAllowedPath().
-function pickDataPath(reqDataPath) {
-  let dataPath;
-  switch (reqDataPath) {
-    case "mounted":
-      dataPath = MOUNTED_DATA_PATH;
-      break;
-    case "upload":
-      dataPath = UPLOAD_DATA_PATH;
-      break;
-    case "default":
-      dataPath = INTERNAL_DATA_PATH;
-      break;
-    default:
-      // User supplied an impermissible option.
-      throw new BadRequestError("Unrecognized data path type: " + reqDataPath);
-  }
-  if (!dataPath.endsWith("/")) {
-    dataPath = dataPath + "/";
-  }
-  // This path will always be allowed. Caller does not need to check.
-  assert(isAllowedPath(dataPath));
-  return dataPath;
-}
-
 api.get("/getFilenames", (req, res) => {
   console.log("received request for filenames");
   const result = {
@@ -1139,10 +1107,8 @@ api.post("/getPathNames", (req, res, next) => {
     pathNames: [],
   };
 
-  let dataPath = pickDataPath(req.body.dataPath);
-
   // call 'vg paths' to get path name information
-  const graphFile = `${dataPath}${req.body.graphFile}`;
+  const graphFile = req.body.graphFile;
 
   if (!isAllowedPath(graphFile)) {
     // Spit back the provided user data in the error, not the generated and
@@ -1365,10 +1331,7 @@ api.post("/getBedRegions", (req, res, next) => {
     };
 
     if (req.body.bedFile) {
-      let dataPath = pickDataPath(req.body.dataPath);
-      // Get the path or URL to the actual BED file.
-      let bed = isValidURL(req.body.bedFile) ? req.body.bedFile : path.resolve(dataPath, req.body.bedFile);
-      let bed_info = await getBedRegions(bed);
+      let bed_info = await getBedRegions(req.body.bedFile);
       result.bedRegions = bed_info;
       res.json(result);
     } else {

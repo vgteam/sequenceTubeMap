@@ -13,6 +13,7 @@ import TrackPicker from "./TrackPicker";
 import SelectionDropdown from "./SelectionDropdown";
 import { parseRegion, stringifyRegion } from "../common.mjs";
 
+
 // See src/Types.ts
 
 const DATA_SOURCES = config.DATA_SOURCES;
@@ -187,7 +188,6 @@ class HeaderForm extends Component {
       );
     }
   }
-  DATA_NAMES = DATA_SOURCES.map((source) => source.name);
 
   initState = () => {
     // Populate state with either viewTarget or the first example

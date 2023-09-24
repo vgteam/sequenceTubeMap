@@ -1,5 +1,7 @@
 import PropTypes from "prop-types";
 import Select from "react-select";
+import config from "../config";
+
 
 /*
  * A selection dropdown component that select files.
@@ -23,12 +25,18 @@ export const TrackFilePicker = ({
 }) => {
 
 
-    function onChange(option) {
+    function mountedOnChange(option) {
       // update parent state
       value = option.value;
-      handleInputChange(option.value);
+      handleInputChange(config.dataPath + "/" + option.value);
     }
 
+    function getFilename(fullPath) {
+      const segments = fullPath.split("/");
+      return segments[segments.length - 1];
+    }
+
+    const fileName = getFilename(value);
 
     const fileOptions = []
     // find all file options matching the specified file type
@@ -51,7 +59,7 @@ export const TrackFilePicker = ({
         <div data-testid={testID}>
             <Select 
               options={dropDownOptions}
-              value={{label: value, value: value}}
+              value={{label: fileName, value: fileName}}
               // Identical-looking object literals will compare unequal, so we
               // need to provide a way to turn them into strings so that
               // `value` can be matched up with the corresponding item in
@@ -59,7 +67,7 @@ export const TrackFilePicker = ({
               getOptionValue={(o) => {
                 return o["label"];
               }}
-              onChange={onChange}
+              onChange={mountedOnChange}
               autoComplete="on"
               className={className}
             />  
