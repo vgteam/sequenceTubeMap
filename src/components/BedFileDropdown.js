@@ -19,7 +19,7 @@ import CreatableSelect from 'react-select/creatable';
  *   // Here e is {"target": {"id": "box1", "value": "b"}}
  * }}>
  */
-export class SelectionDropdown extends Component {
+export class BedFileDropdown extends Component {
   render() {
     // Tweaks to the default react-select styles so that it'll look good with tube maps.
     const styles = {
@@ -49,8 +49,13 @@ export class SelectionDropdown extends Component {
       }),
     };
 
+    function getFilename(fullPath) {
+      const segments = fullPath.split("/");
+      return segments[segments.length - 1];
+    }
+
     const dropdownOptions = this.props.options.map((option) => ({
-      label: option,
+      label: getFilename(option),
       value: option,
     }));
 
@@ -73,19 +78,22 @@ export class SelectionDropdown extends Component {
         inputId={this.props.inputId}
         className={this.props.className}
         value={
-          dropdownOptions.find((option) => option.value === this.props.value) || {label: this.props.value , value: this.props.value}
+          dropdownOptions.find((option) => option.value === this.props.value) || {label: getFilename(this.props.value) , value: this.props.value}
         }
         styles={styles}
         isSearchable={true}
         onChange={onChange}
         options={dropdownOptions}
+        getOptionValue={(o) => {
+          return o["value"];
+        }}
         openMenuOnClick={dropdownOptions.length < 2000}
       />
     );
   }
 }
 
-SelectionDropdown.propTypes = {
+BedFileDropdown.propTypes = {
   id: PropTypes.string,
   inputId: PropTypes.string,
   className: PropTypes.string,
@@ -94,11 +102,11 @@ SelectionDropdown.propTypes = {
   options: PropTypes.array.isRequired,
 };
 
-SelectionDropdown.defaultProps = {
+BedFileDropdown.defaultProps = {
   id: undefined,
   inputId: undefined,
   className: undefined,
   value: undefined,
 };
 
-export default SelectionDropdown;
+export default BedFileDropdown;
