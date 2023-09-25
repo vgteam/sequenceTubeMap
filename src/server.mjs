@@ -1076,16 +1076,16 @@ api.get("/getFilenames", (req, res) => {
     // list files in folder
     fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
       if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
-        result.files.push({"trackFile": file, "trackType": "graph"});
+        result.files.push({"trackFile": path.resolve(config.dataPath, file), "trackType": "graph"});
       }
       if (endsWithExtensions(file, HAPLOTYPE_EXTENSIONS)) {
-        result.files.push({"trackFile": file, "trackType": "haplotype"});
+        result.files.push({"trackFile": path.resolve(config.dataPath, file), "trackType": "haplotype"});
       }
       if (file.endsWith(".sorted.gam")) {
-        result.files.push({"trackFile": file, "trackType": "read"});
+        result.files.push({"trackFile": path.resolve(config.dataPath, file), "trackType": "read"});
       }
       if (file.endsWith(".bed")) {
-        result.bedFiles.push(file);
+        result.bedFiles.push(path.resolve(config.dataPath, file));
       }
     });
   } else {

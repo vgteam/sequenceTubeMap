@@ -308,7 +308,7 @@ describe("When we wait for it to load", () => {
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
   const expectedLinkBRCA1 =
-    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=snp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=NA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in";
+    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=.%2FexampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=.%2FexampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=.%2FexampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in";
   // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -342,7 +342,7 @@ it("produces correct link for view before & after go is pressed", async () => {
   await clickCopyLink();
 
   const expectedLinkCactus =
-    "http://localhost?tracks[0][trackFile]=cactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=cactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=cactus.bed&name=cactus&region=ref%3A1-100&dataPath=mounted&dataType=built-in";
+    "http://localhost?tracks[0][trackFile]=.%2FexampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=.%2FexampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=.%2FexampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
 });
