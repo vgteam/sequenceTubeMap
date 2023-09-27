@@ -99,6 +99,4 @@ done
 
 # Print BED line
 cat $OUTDIR/regions.tsv | cut -f1-3 | tr -d "\n"
-cat $OUTDIR/nodeColors.tsv
-
 printf "\t${DESC}\t${OUTDIR}\n"

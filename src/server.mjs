@@ -1039,7 +1039,6 @@ function cleanUpAndSendResult(req, res, next) {
     result.gam = req.withGam === true ? req.gamResults : [];
     result.region = req.region;
     result.coloredNodes = req.coloredNodes;
-    // add new nodenames field
     res.json(result);
     console.timeEnd("request-duration");
   } catch (error) {

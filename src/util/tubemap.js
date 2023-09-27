@@ -3161,6 +3161,8 @@ function drawNodes(dNodes, groupNode) {
     .text((d) => getPopUpNodeText(d));
 }
 
+// Given a node name, return an object with "fill", "fill-opacity", and "outline"
+// keys describing what colors should be used to draw it.
 function colorNodes(nodeName){
   let nodesColors = {};
   if (config.coloredNodes.includes(nodeName)){
