@@ -1,8 +1,7 @@
 import PropTypes from "prop-types";
 import Select from "react-select";
-import config from "../config";
 import React from "react";
-import { Input } from "reactstrap";
+
 
 
 /*
