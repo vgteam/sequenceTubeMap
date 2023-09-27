@@ -8,7 +8,7 @@ function usage() {
     exit 1
 }
 
-while getopts x:h:g:r:o:d: flag
+while getopts x:h:g:r:o:d:n: flag
 do
     case "${flag}" in
         x) GRAPH_FILE=${OPTARG};;
@@ -17,6 +17,7 @@ do
         r) REGION=${OPTARG};;
         o) OUTDIR=${OPTARG};;
         d) DESC="${OPTARG}";;
+        n) NODE_COLORS="${OPTARG}";;
         *)
             usage
             ;;
@@ -56,6 +57,7 @@ echo >&2 "Graph File: " $GRAPH_FILE
 echo >&2 "Haplotype File: " $HAPLOTYPE_FILE
 echo >&2 "Region: " $REGION
 echo >&2 "Output Directory: " $OUTDIR
+echo >&2 "Node colors: " $NODE_COLORS
 
 rm -fr $OUTDIR
 mkdir -p $OUTDIR
@@ -78,6 +80,15 @@ for GAM_FILE in "${GAM_FILES[@]}"; do
     vg_chunk_params+=(-a $GAM_FILE)
 done
 
+# construct node file
+if [[ ! -z "${NODE_COLORS}" ]] ; then
+    node_names_arr=($NODE_COLORS);
+    for NODENAME in "${node_names_arr[@]}"; do
+        echo >&2 "$NODENAME"
+        printf "$NODENAME\n" >> $OUTDIR/nodeColors.tsv
+    done
+fi
+
 # Call vg chunk
 vg chunk "${vg_chunk_params[@]}" > $OUTDIR/chunk.vg
 
@@ -88,4 +99,6 @@ done
 
 # Print BED line
 cat $OUTDIR/regions.tsv | cut -f1-3 | tr -d "\n"
+cat $OUTDIR/nodeColors.tsv
+
 printf "\t${DESC}\t${OUTDIR}\n"
