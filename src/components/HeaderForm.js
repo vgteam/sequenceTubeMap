@@ -10,8 +10,9 @@ import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
-import SelectionDropdown from "./SelectionDropdown";
+import BedFileDropdown from "./BedFileDropdown";
 import { parseRegion, stringifyRegion } from "../common.mjs";
+
 
 // See src/Types.ts
 
@@ -47,7 +48,6 @@ const CLEAR_STATE = {
 
   tracks: {},
   bedFile: undefined,
-  dataPath: undefined,
   region: "",
   name: undefined,
 
@@ -187,21 +187,19 @@ class HeaderForm extends Component {
       );
     }
   }
-  DATA_NAMES = DATA_SOURCES.map((source) => source.name);
 
   initState = () => {
     // Populate state with either viewTarget or the first example
     let ds = this.props.defaultViewTarget ?? DATA_SOURCES[0];
     const bedSelect = ds.bedFile ? ds.bedFile : "none";
-    const dataPath = ds.dataPath;
     if (bedSelect !== "none") {
-      this.getBedRegions(bedSelect, dataPath);
+      this.getBedRegions(bedSelect);
     }
     for (const key in ds.tracks) {
       if (ds.tracks[key].trackType === fileTypes.GRAPH) {
         // Load the paths for any graph tracks
         console.log("Get path names for track: ", ds.tracks[key]);
-        this.getPathNames(ds.tracks[key].trackFile, dataPath);
+        this.getPathNames(ds.tracks[key].trackFile);
       }
     }
     this.setState((state) => {
@@ -209,7 +207,6 @@ class HeaderForm extends Component {
         tracks: ds.tracks,
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
-        dataPath: dataPath,
         region: ds.region,
         dataType: ds.dataType,
         name: ds.name,
@@ -310,20 +307,20 @@ class HeaderForm extends Component {
       } else {
         json.bedFiles.unshift("none");
 
-        if (this.state.dataPath === "mounted") {
+        if (this.state.dataType === dataTypes.MOUNTED_FILES) {
           this.setState((state) => {
             const bedSelect = json.bedFiles.includes(state.bedSelect)
               ? state.bedSelect
               : "none";
             if (bedSelect !== "none") {
-              this.getBedRegions(bedSelect, "mounted");
+              this.getBedRegions(bedSelect);
             }
             for (const key in state.tracks) {
               if (state.tracks[key].trackType === fileTypes.GRAPH) {
                 // Load the paths for any graph tracks.
                 // TODO: Do we need to do this now?
                 console.log("Get path names for track: ", state.tracks[key]);
-                this.getPathNames(state.tracks[key].trackFile, "mounted");
+                this.getPathNames(state.tracks[key].trackFile);
               }
             } 
             return {
@@ -349,7 +346,7 @@ class HeaderForm extends Component {
     }
   };
 
-  getBedRegions = async (bedFile, dataPath) => {
+  getBedRegions = async (bedFile) => {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
@@ -358,7 +355,7 @@ class HeaderForm extends Component {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bedFile, dataPath }),
+        body: JSON.stringify({ bedFile }),
       });
       // We need to do all our parsing here, if we expect the catch to catch errors.
       if (!json.bedRegions || !(json.bedRegions["desc"] instanceof Array)) {
@@ -386,7 +383,7 @@ class HeaderForm extends Component {
     });
   };
 
-  getPathNames = async (graphFile, dataPath) => {
+  getPathNames = async (graphFile) => {
     this.setState({ error: null });
     try {
       const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
@@ -395,7 +392,7 @@ class HeaderForm extends Component {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ graphFile, dataPath }),
+        body: JSON.stringify({ graphFile }),
       });
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
@@ -421,7 +418,6 @@ class HeaderForm extends Component {
     if (value === dataTypes.FILE_UPLOAD) {
       const newState = {
         ...CLEAR_STATE,
-        dataPath: "upload",
         dataType: dataTypes.FILE_UPLOAD,
         error: this.state.error,
       };
@@ -433,7 +429,6 @@ class HeaderForm extends Component {
           bedFile: "none",
           // not sure why we would like to keep the previous selection when changing data sources. What I know is it creates a bug for the regions, where the tubemap tries to read the previous bedFile (e.g. defaulted to example 1), can't find it and raises an error
           // bedFile: state.bedSelect,
-          dataPath: "mounted",
           dataType: dataTypes.MOUNTED_FILES,
         };
       });
@@ -445,10 +440,9 @@ class HeaderForm extends Component {
       // Find data source whose name matches selection
       DATA_SOURCES.forEach((ds) => {
         if (ds.name === value) {
-          let dataPath = ds.dataPath;
           let bedSelect = "none";
           if (ds.bedFile) {
-            this.getBedRegions(ds.bedFile, dataPath);
+            this.getBedRegions(ds.bedFile);
             bedSelect = ds.bedFile;
           } else {
             // Without bedFile, we have no regions
@@ -458,14 +452,13 @@ class HeaderForm extends Component {
             if (ds.tracks[key].trackType === fileTypes.GRAPH) {
               // Load the paths for any graph tracks.
               console.log("Get path names for track: ", ds.tracks[key]);
-              this.getPathNames(ds.tracks[key].trackFile, dataPath);
+              this.getPathNames(ds.tracks[key].trackFile);
             }
           }
           this.setState({
             tracks: ds.tracks, 
             bedFile: ds.bedFile,
             bedSelect: bedSelect,
-            dataPath: dataPath,
             region: ds.region,
             dataType: dataTypes.BUILT_IN,
             name: ds.name,
@@ -480,7 +473,6 @@ class HeaderForm extends Component {
     bedFile: this.state.bedFile,
     name: this.state.name,
     region: this.state.region,
-    dataPath: this.state.dataPath,
     dataType: this.state.dataType,
   });
 
@@ -558,7 +550,7 @@ class HeaderForm extends Component {
     // update path names
     const graphFile = this.getTrackFile(newTracks, fileTypes.GRAPH, 0);
     if (graphFile && graphFile !== "none"){
-      this.getPathNames(graphFile, this.state.dataPath);
+      this.getPathNames(graphFile);
     }
 
   };
@@ -569,7 +561,7 @@ class HeaderForm extends Component {
     this.setState({ [id]: value });
 
     if (value !== "none") {
-      this.getBedRegions(value, this.state.dataPath);
+      this.getBedRegions(value);
     }
     this.setState({ bedFile: value });
 
@@ -746,7 +738,7 @@ class HeaderForm extends Component {
                     BED file:
                   </Label>
                   &nbsp;
-                  <SelectionDropdown
+                  <BedFileDropdown
                     className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
                     id="bedSelect"
                     inputId="bedSelectInput"

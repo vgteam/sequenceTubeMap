@@ -4,19 +4,19 @@
     {
       "name": "snp1kg-BRCA1",
       "tracks": [
-        {"trackFile": "snp1kg-BRCA1.vg.xg", "trackType": "graph", "trackColorSettings": {"mainPalette": "greys", "auxPalette": "ygreys"}},
-        {"trackFile": "NA12878-BRCA1.sorted.gam", "trackType": "read"}
+        {"trackFile": "exampleData/internal/snp1kg-BRCA1.vg.xg", "trackType": "graph", "trackColorSettings": {"mainPalette": "greys", "auxPalette": "ygreys"}},
+        {"trackFile": "exampleData/internal/NA12878-BRCA1.sorted.gam", "trackType": "read"}
       ],
       "dataPath": "default",
       "region": "17:1-100",
-      "bedFile": "snp1kg-BRCA1.bed",
+      "bedFile": "exampleData/internal/snp1kg-BRCA1.bed",
       "dataType": "built-in"
     },
     {
       "name": "vg \"small\" example",
       "tracks": [
-        {"trackFile": "x.vg.xg", "trackType": "graph"},
-        {"trackFile": "x.vg.gbwt", "trackType": "haplotype"}
+        {"trackFile": "exampleData/x.vg.xg", "trackType": "graph"},
+        {"trackFile": "exampleData/x.vg.gbwt", "trackType": "haplotype"}
       ],
       "dataPath": "mounted",
       "dataType": "built-in",
@@ -25,31 +25,31 @@
     {
       "name": "cactus",
       "tracks": [
-        {"trackFile": "cactus.vg.xg", "trackType": "graph"},
-        {"trackFile": "cactus-NA12879.sorted.gam", "trackType": "read"}
+        {"trackFile": "exampleData/cactus.vg.xg", "trackType": "graph"},
+        {"trackFile": "exampleData/cactus-NA12879.sorted.gam", "trackType": "read"}
       ],
       "dataPath": "mounted",
-      "bedFile": "cactus.bed",
+      "bedFile": "exampleData/cactus.bed",
       "region": "ref:1-100",
       "dataType": "built-in"
     },
     {
       "name": "cactus multiple reads",
       "tracks": [
-        {"trackFile": "cactus.vg.xg", "trackType": "graph"},
-        {"trackFile": "cactus0_10.sorted.gam", "trackType": "read"},
-        {"trackFile": "cactus10_20.sorted.gam", "trackType": "read"}
+        {"trackFile": "exampleData/cactus.vg.xg", "trackType": "graph"},
+        {"trackFile": "exampleData/cactus0_10.sorted.gam", "trackType": "read"},
+        {"trackFile": "exampleData/cactus10_20.sorted.gam", "trackType": "read"}
       ],
       "dataPath": "mounted",
-      "bedFile": "cactus.bed",
+      "bedFile": "exampleData/cactus.bed",
       "region": "ref:1-100",
       "dataType": "built-in"
     }
   ],
   "vgPath": "",
-  "dataPath": "./exampleData",
-  "internalDataPath": "./exampleData/internal/",
-  "tempDirPath": "./temp",
+  "dataPath": "exampleData",
+  "internalDataPath": "exampleData/internal/",
+  "tempDirPath": "temp",
 
   "fetchTimeout": 15,
   "maxFileSizeBytes": 1000000000,
