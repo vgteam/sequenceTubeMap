@@ -139,7 +139,7 @@ This will save some time during the interactive visualization, especially if the
 
 The net result needs to be one or more chunk directories on disk, referenced from a BED file.
 
-To generate each chunk, you can use the `prepare_chunks.sh` script. You ought to run it from the directory containing your input files and where your output chunks will be stored (i.e. the `dataPath` in `sequenceTubeMpas/src/config.json`), which defaults to the `exampleData` directory in the repo.
+To generate each chunk, you can use the `prepare_chunks.sh` script. You ought to run it from the directory containing your input files and where your output chunks will be stored (i.e. the `dataPath` in `sequenceTubeMaps/src/config.json`), which defaults to the `exampleData` directory in the repo.
 
 For example:
 
@@ -161,6 +161,23 @@ chr1	101	200	Region B	chunk-chr2-101-200
 Note each column is seperated by tabs
 
 This BED file needs to be in the `dataPath` directory, or it can be hosted on the web along with its chunk directories and accessed via URL.
+
+If you want certain nodes of the graph to be colored, place the node names to be colored in a `nodeColors.tsv` file, with a node name on each line, within output directory of the chunk. When rendered, these specified nodes will be colored differently than other nodes.
+
+You can use `prepare_chunks.sh` script to generate this additional `nodeColors.tsv` by adding an additional option. Here is an example:
+
+```
+cd exampleData/
+../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam -n "1 2 3" >> mychunks.bed
+```
+
+Adding this additional `n` flag will allow a string space delimited input of node names which will be outputted to `nodeColors.tsv`.
+
+```
+1
+2
+3
+```
 
 ##### Pre-made subgraphs
 
