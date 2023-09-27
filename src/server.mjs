@@ -1075,17 +1075,18 @@ api.get("/getFilenames", (req, res) => {
   if (isAllowedPath(MOUNTED_DATA_PATH)) {
     // list files in folder
     fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
+      const absPath = path.resolve(MOUNTED_DATA_PATH, file);
       if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
-        result.files.push({"trackFile": path.resolve(config.dataPath, file), "trackType": "graph"});
+        result.files.push({"trackFile": absPath, "trackType": "graph"});
       }
       if (endsWithExtensions(file, HAPLOTYPE_EXTENSIONS)) {
-        result.files.push({"trackFile": path.resolve(config.dataPath, file), "trackType": "haplotype"});
+        result.files.push({"trackFile": absPath, "trackType": "haplotype"});
       }
       if (file.endsWith(".sorted.gam")) {
-        result.files.push({"trackFile": path.resolve(config.dataPath, file), "trackType": "read"});
+        result.files.push({"trackFile": absPath, "trackType": "read"});
       }
       if (file.endsWith(".bed")) {
-        result.bedFiles.push(path.resolve(config.dataPath, file));
+        result.bedFiles.push(absPath);
       }
     });
   } else {
