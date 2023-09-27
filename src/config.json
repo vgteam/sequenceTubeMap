@@ -29,7 +29,7 @@
         {"trackFile": "exampleData/cactus-NA12879.sorted.gam", "trackType": "read"}
       ],
       "dataPath": "mounted",
-      "bedFile": "./exampleData/cactus.bed",
+      "bedFile": "exampleData/cactus.bed",
       "region": "ref:1-100",
       "dataType": "built-in"
     },
