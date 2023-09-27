@@ -965,6 +965,43 @@ function processRegionFile(req, res, next) {
 
     lineReader.on("close", () => {
       console.timeEnd("processing region file");
+      processNodeColorsFile(req, res, next);
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+function processNodeColorsFile(req, res, next) {
+  try {
+    console.time("processing node colors file");
+    const nodeColorsFile = `${req.chunkDir}/nodeColors.tsv`;
+    if (!isAllowedPath(nodeColorsFile)) {
+      throw new BadRequestError(
+        "Path to node colors file not allowed: " + nodeColorsFile
+      );
+    }
+
+    req.coloredNodes = [];
+
+    // check if file exists
+    if (!fs.existsSync(nodeColorsFile)) {
+      cleanUpAndSendResult(req, res, next);
+      return;
+    }
+
+    const lineReader = rl.createInterface({
+      input: fs.createReadStream(nodeColorsFile),
+    });
+
+    lineReader.on("line", (line) => {
+      console.log("Node name: " + line);
+      const nodeName = line.replace("\n", "");
+      req.coloredNodes.push(nodeName);
+    });
+
+    lineReader.on("close", () => {
+      console.timeEnd("processing node colors file");
       cleanUpAndSendResult(req, res, next);
     });
   } catch (error) {
@@ -996,6 +1033,7 @@ function cleanUpAndSendResult(req, res, next) {
     result.graph = req.graph;
     result.gam = req.withGam === true ? req.gamResults : [];
     result.region = req.region;
+    result.coloredNodes = req.coloredNodes;
     res.json(result);
     console.timeEnd("request-duration");
   } catch (error) {

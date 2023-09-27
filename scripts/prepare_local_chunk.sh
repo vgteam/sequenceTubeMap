@@ -8,7 +8,7 @@ function usage() {
     exit 1
 }
 
-while getopts x:g:r:o:d: flag
+while getopts x:g:r:o:d:n: flag
 do
     case "${flag}" in
         x) GRAPH_FILE=${OPTARG};;
@@ -16,6 +16,7 @@ do
         r) REGION=${OPTARG};;
         o) OUTDIR=${OPTARG};;
         d) DESC="${OPTARG}";;
+        n) NODE_COLORS="${OPTARG}";;
         *)
             usage
             ;;
@@ -54,6 +55,7 @@ fi
 echo >&2 "Graph File: " $GRAPH_FILE
 echo >&2 "Region: " $REGION
 echo >&2 "Output Directory: " $OUTDIR
+echo >&2 "Node colors: " $NODE_COLORS
 
 rm -fr $OUTDIR
 mkdir -p $OUTDIR
@@ -91,6 +93,15 @@ for GAM_FILE in "${GAM_FILES[@]}"; do
     printf "\t$(basename "${GAM_CHUNK_NAME}")" >> $OUTDIR/regions.tsv
     GAM_NUM=$((GAM_NUM + 1))
 done
+
+# construct node file
+if [[ ! -z "${NODE_COLORS}" ]] ; then
+    node_names_arr=($NODE_COLORS);
+    for NODENAME in "${node_names_arr[@]}"; do
+        echo >&2 "$NODENAME"
+        printf "$NODENAME\n" >> $OUTDIR/nodeColors.tsv
+    done
+fi
 
 # Make the empty but required annotation file. We have no haplotypes to put in it.
 touch "${OUTDIR}/chunk_0_${REGION_CONTIG}_${REGION_START}_${REGION_END}.annotate.txt"

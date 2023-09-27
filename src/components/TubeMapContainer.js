@@ -119,7 +119,7 @@ class TubeMapContainer extends Component {
             tracks={this.state.tracks}
             reads={this.state.reads}
             region={this.state.region}
-            visOptions={this.props.visOptions}
+            visOptions={{coloredNodes: this.state.coloredNodes, ...this.props.visOptions}}
           />
         </div>
       </div>
@@ -188,13 +188,16 @@ class TubeMapContainer extends Component {
         const reads = readsArr.flat();
 
         const region = json.region;
+        const coloredNodes = json.coloredNodes;
         this.setState({
           isLoading: false,
           nodes,
           tracks,
           reads,
           region,
+          coloredNodes
         });
+        
       }
     } catch (error) {
       this.handleFetchError(
