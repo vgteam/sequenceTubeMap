@@ -8,7 +8,9 @@ import {TrackFilePicker} from './TrackFilePicker';
 import {TrackTypeDropdown} from './TrackTypeDropdown';
 import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
+import {PickerTypeDropdown} from './PickerTypeDropdown';
 import React, { useEffect, useState} from 'react';
+import config from "./../config.json";
 
 
 export const TrackListItem = ({
@@ -24,10 +26,16 @@ export const TrackListItem = ({
     onChange, // expects a new trackProps object
     onDelete,
     trackID,
+    showFileSizeAlert,
+    setUploadInProgress,
+    getPathNames,
+    apiUrl,
   }) => {
     // propChanges only store new trackType, trackFile, and trackColorSettings changes
     // reset after onChange is called
     const [propChanges, setPropChanges] = useState({});
+
+    const [pickerType, setPickerType] = useState("mounted");
 
   
     const trackTypeOnChange = async(newTrackType) => {
@@ -76,7 +84,7 @@ export const TrackListItem = ({
     const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
     console.log(displayedFile);
     return (
-      <Container key={trackID} style={{ width: "800px", marginLeft: 0 }}>
+      <Container key={trackID} style={{ width: "1000px", marginLeft: 0 }}>
         <Row className="g-0">
           <Col className="tracklist-dropdown" lg="5">
             <TrackTypeDropdown value={propChanges["trackType"] || trackProps["trackType"]} 
@@ -85,12 +93,24 @@ export const TrackListItem = ({
                               />
           </Col>
           <Col className="tracklist-dropdown" lg="5">
+            <PickerTypeDropdown
+              value={pickerType}
+              handleInputChange={setPickerType}
+              pickerOptions={config.pickerTypeOptions}
+            />
+          </Col>
+
+          <Col className="tracklist-dropdown" lg="5">
             <TrackFilePicker tracks={availableTracks} 
                             fileType={propChanges["trackType"] || trackProps["trackType"]} 
                             value={displayedFile}
-                            pickerType={"dropdown"} 
+                            pickerType={pickerType} 
                             handleInputChange={trackFileOnChange}
                             testID={"file-select-component".concat(trackID)}
+                            apiUrl={apiUrl}
+                            getPathNames={getPathNames}
+                            showFileSizeAlert={showFileSizeAlert}
+                            setUploadInProgress={setUploadInProgress}
                             />
           </Col>
           <Col className="tracklist-button" lg="1">
@@ -118,6 +138,10 @@ export const TrackListItem = ({
     onChange: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
     trackID: PropTypes.number.isRequired,
+    showFileSizeAlert: PropTypes.func.isRequired,
+    setUploadInProgress: PropTypes.func.isRequired,
+    getPathNames: PropTypes.func.isRequired,
+    apiUrl: PropTypes.string.isRequired,
   }
     
   

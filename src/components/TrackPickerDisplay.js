@@ -17,6 +17,10 @@ export const TrackPickerDisplay = ({
     availableTracks, // array of tracks(see types.ts)
     availableColors, // array of ColorPalettes
     onChange, // expects a new tracks object
+    showFileSizeAlert,
+    setUploadInProgress,
+    getPathNames,
+    apiUrl,
 }) => {
 
     const [trackListChanges, setTrackListChanges] = useState({});
@@ -98,6 +102,10 @@ export const TrackPickerDisplay = ({
                     availableColors={availableColors}
                     onChange={trackListOnChange}
                     onDelete={onDelete}
+                    apiUrl={apiUrl}
+                    getPathNames={getPathNames}
+                    showFileSizeAlert={showFileSizeAlert}
+                    setUploadInProgress={setUploadInProgress}
                 />
             </Row>
             <Row>
@@ -114,7 +122,11 @@ TrackPickerDisplay.propTypes = {
     tracks: PropTypes.object.isRequired,
     availableTracks: PropTypes.array.isRequired,
     availableColors: PropTypes.array,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    showFileSizeAlert: PropTypes.func.isRequired,
+    setUploadInProgress: PropTypes.func.isRequired,
+    getPathNames: PropTypes.func.isRequired,
+    apiUrl: PropTypes.string.isRequired,
 }
 
 TrackPickerDisplay.defaultProps = {

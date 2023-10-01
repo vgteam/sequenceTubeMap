@@ -168,6 +168,12 @@ api.use((req, res, next) => {
   next();
 });
 
+api.post("/trackFileSubmission", upload.single("trackFile"), (req, res) => {
+  console.log("/trackFileSubmission");
+  console.log(req.file);
+  res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
+})
+
 api.post("/graphFileSubmission", upload.single("graphFile"), (req, res) => {
   console.log("/graphFileSubmission");
   console.log(req.file);

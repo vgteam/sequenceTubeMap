@@ -1,6 +1,8 @@
 import PropTypes from "prop-types";
 import Select from "react-select";
 import React from "react";
+import config from "./../config.json";
+import { Input } from "reactstrap";
 
 
 
@@ -22,8 +24,46 @@ export const TrackFilePicker = ({
   handleInputChange,
   pickerType, // either "dropdown or upload" to determine which component we render
   className,
-  testID
+  testID,
+  showFileSizeAlert,
+  setUploadInProgress,
+  getPathNames,
+  apiUrl,
 }) => {
+
+    let uploadFileInput = React.createRef();
+    console.log(config.fileTypeToExtensions);
+    let acceptedExtensions = config.fileTypeToExtensions[fileType];
+
+    function uploadOnChange() {
+      console.log("upload on change");
+      const file = uploadFileInput.current.files[0];
+      console.log(file);
+
+      if (file.size > config.MAXUPLOADSIZE) {
+        showFileSizeAlert();
+        return;
+      }
+
+      setUploadInProgress(true);
+
+      const formData = new FormData();
+      formData.append("trackFile", file);
+      formData.append("fileType", fileType);
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = "json";
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          // Every thing ok, file uploaded
+          setUploadInProgress(false);
+
+          getPathNames(xhr.response.path);
+        }
+      };
+      xhr.open("POST", `${apiUrl}/trackFileSubmission`, true);
+      xhr.send(formData);
+
+    }
 
 
     function mountedOnChange(option) {
@@ -50,9 +90,11 @@ export const TrackFilePicker = ({
       label: getFilename(option),
       value: option,
     }));
+
+    console.log("picker type: ", pickerType);
     
 
-    if (pickerType === "dropdown"){
+    if (pickerType === "mounted"){
       return(
       // wrap Select container in div to easily query in tests
         <div data-testid={testID}>
@@ -73,10 +115,15 @@ export const TrackFilePicker = ({
           </div>
       );
     } else if (pickerType === "upload") {
-      // TODO: render <input> component and create upload onChange function 
       return (
-        <div data-testid="file-select-component">
-          <input/>  
+        <div data-testid={testID}>
+          <Input
+          type="file"
+          className="customDataUpload form-control-file"
+          accept={acceptedExtensions}
+          innerRef={uploadFileInput}
+          onChange={uploadOnChange}
+        />
         </div>
 
       );
@@ -92,13 +139,17 @@ TrackFilePicker.propTypes = {
     handleInputChange: PropTypes.func.isRequired,
     pickerType: PropTypes.string,
     className: PropTypes.string,
-    testID: PropTypes.string
+    testID: PropTypes.string,
+    showFileSizeAlert: PropTypes.func.isRequired,
+    setUploadInProgress: PropTypes.func.isRequired,
+    getPathNames: PropTypes.func.isRequired,
+    apiUrl: PropTypes.string.isRequired,
 }
   
 TrackFilePicker.defaultProps = {
   value: "Select a file",
   fileType: "graph",
-  pickerType: "dropdown",
+  pickerType: "mounted",
   className: undefined,
   testID: "file-select-component"
 }

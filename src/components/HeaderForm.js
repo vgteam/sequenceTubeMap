@@ -767,6 +767,10 @@ class HeaderForm extends Component {
                     tracks={this.state.tracks}
                     availableTracks={this.state.fileSelectOptions}
                     onChange={this.handleInputChange}
+                    apiUrl={this.props.apiUrl}
+                    getPathNames={this.getPathNames}
+                    showFileSizeAlert={this.showFileSizeAlert}
+                    setUploadInProgress={this.setUploadInProgress}
                   ></TrackPicker>
                 </div>
               }
