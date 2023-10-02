@@ -84,15 +84,15 @@ export const TrackListItem = ({
     const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
     console.log(displayedFile);
     return (
-      <Container key={trackID} style={{ width: "800px", marginLeft: 0 }}>
+      <Container key={trackID} style={{ width: "900px", marginLeft: 0, marginRight: 15 }}>
         <Row className="g-0">
-          <Col className="tracklist-dropdown" lg="5">
+          <Col className="tracklist-dropdown">
             <TrackTypeDropdown value={propChanges["trackType"] || trackProps["trackType"]} 
                               onChange={trackTypeOnChange}
                               testID={"file-type-select-component".concat(trackID)}
                               />
           </Col>
-          <Col className="tracklist-dropdown" lg="5">
+          <Col className="tracklist-dropdown">
             <PickerTypeDropdown
               value={pickerType}
               handleInputChange={setPickerType}
@@ -100,7 +100,7 @@ export const TrackListItem = ({
             />
           </Col>
 
-          <Col className="tracklist-dropdown" lg="5">
+          <Col className="tracklist-dropdown">
             <TrackFilePicker tracks={availableTracks} 
                             fileType={propChanges["trackType"] || trackProps["trackType"]} 
                             value={displayedFile}
@@ -113,7 +113,7 @@ export const TrackListItem = ({
                             setUploadInProgress={setUploadInProgress}
                             />
           </Col>
-          <Col className="tracklist-button" lg="1">
+          <Col className="tracklist-button" md="1">
             <TrackSettingsButton fileType={propChanges["trackType"] || trackProps["trackType"]}
                                 trackColorSettings={propChanges["trackColorSettings"] || trackProps["trackColorSettings"]}
                                 setTrackColorSetting={trackSettingsOnChange}
