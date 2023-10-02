@@ -168,29 +168,16 @@ api.use((req, res, next) => {
   next();
 });
 
+// Store files uploaded from trackFilePicker via multer
 api.post("/trackFileSubmission", upload.single("trackFile"), (req, res) => {
   console.log("/trackFileSubmission");
   console.log(req.file);
-  res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
+  if (req.body.fileType === fileTypes["READ"]) {
+    indexGamSorted(req, res);
+  } else {
+    res.json({ path: path.relative(".", req.file.path) });
+  }
 })
-
-api.post("/graphFileSubmission", upload.single("graphFile"), (req, res) => {
-  console.log("/graphFileSubmission");
-  console.log(req.file);
-  res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
-});
-
-api.post("/gbwtFileSubmission", upload.single("gbwtFile"), (req, res) => {
-  console.log("/gbwtFileSubmission");
-  console.log(req.file);
-  res.json({ path: path.relative(UPLOAD_DATA_PATH, req.file.path) });
-});
-
-api.post("/gamFileSubmission", upload.single("gamFile"), (req, res) => {
-  console.log("/gamFileSubmission");
-  console.log(req.file);
-  indexGamSorted(req, res);
-});
 
 function indexGamSorted(req, res) {
   const prefix = req.file.path.substring(0, req.file.path.lastIndexOf("."));
@@ -214,7 +201,7 @@ function indexGamSorted(req, res) {
 
   vgIndexChild.on("close", () => {
     sortedGamFile.end();
-    res.json({ path: path.relative(UPLOAD_DATA_PATH, prefix + ".sorted.gam") });
+    res.json({ path: path.relative(".", prefix + ".sorted.gam") });
   });
 }
 

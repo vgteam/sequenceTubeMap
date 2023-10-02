@@ -84,7 +84,7 @@ export const TrackListItem = ({
     const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
     console.log(displayedFile);
     return (
-      <Container key={trackID} style={{ width: "1000px", marginLeft: 0 }}>
+      <Container key={trackID} style={{ width: "800px", marginLeft: 0 }}>
         <Row className="g-0">
           <Col className="tracklist-dropdown" lg="5">
             <TrackTypeDropdown value={propChanges["trackType"] || trackProps["trackType"]} 

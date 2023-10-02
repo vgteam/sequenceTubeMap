@@ -32,13 +32,10 @@ export const TrackFilePicker = ({
 }) => {
 
     let uploadFileInput = React.createRef();
-    console.log(config.fileTypeToExtensions);
     let acceptedExtensions = config.fileTypeToExtensions[fileType];
 
     function uploadOnChange() {
-      console.log("upload on change");
       const file = uploadFileInput.current.files[0];
-      console.log(file);
 
       if (file.size > config.MAXUPLOADSIZE) {
         showFileSizeAlert();
@@ -49,20 +46,23 @@ export const TrackFilePicker = ({
 
       const formData = new FormData();
       formData.append("trackFile", file);
-      formData.append("fileType", fileType);
+      // Make sure server can identify a Read file
+      formData.append("fileType", fileType); 
       const xhr = new XMLHttpRequest();
       xhr.responseType = "json";
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Every thing ok, file uploaded
           setUploadInProgress(false);
-
-          getPathNames(xhr.response.path);
+          handleInputChange(xhr.response.path);
+          if (fileType === "graph"){
+            getPathNames(xhr.response.path);
+          }
         }
       };
+
       xhr.open("POST", `${apiUrl}/trackFileSubmission`, true);
       xhr.send(formData);
-
     }
 
 
@@ -90,8 +90,6 @@ export const TrackFilePicker = ({
       label: getFilename(option),
       value: option,
     }));
-
-    console.log("picker type: ", pickerType);
     
 
     if (pickerType === "mounted"){
