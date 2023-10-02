@@ -17,7 +17,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"graph"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             handleInputChange={fakeOnChange}/>
         );
 
@@ -32,7 +32,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"graph"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             value={"fileA1.vg"}
             handleInputChange={fakeOnChange}/>
         );
@@ -46,7 +46,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"graph"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             value={"fileC1.xg"}
             handleInputChange={fakeOnChange}/>
         );
@@ -63,7 +63,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"haplotype"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             handleInputChange={fakeOnChange}/>
         );
 
@@ -97,7 +97,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"graph"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             handleInputChange={fakeOnChange}/>
         );
 

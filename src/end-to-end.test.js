@@ -356,7 +356,7 @@ it("can retrieve the list of mounted graph files", async () => {
     let dropdown = document.getElementById("dataSourceSelect");
     await userEvent.selectOptions(
       screen.getByLabelText(/Data/i),
-      "custom (mounted files)"
+      "custom"
     );
   });
 

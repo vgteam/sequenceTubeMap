@@ -15,7 +15,7 @@ export default (<Demo
 
     value: P.string("fileA1.vg"),
     fileType: P.choices(["graph", "haplotype", "read"]),
-    pickerType: P.choices(["dropdown", "upload"]),
+    pickerType: P.choices(["mounted", "upload"]),
   }}
 >
   {
