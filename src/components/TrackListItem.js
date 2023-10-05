@@ -9,6 +9,7 @@ import {TrackTypeDropdown} from './TrackTypeDropdown';
 import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
 import React, { useEffect, useState} from 'react';
+import {defaultTrackColors} from "../common.mjs"
 
 
 export const TrackListItem = ({
@@ -35,6 +36,7 @@ export const TrackListItem = ({
       let newPropChanges = {...propChanges};
       newPropChanges["trackType"] = newTrackType;
       newPropChanges["trackFile"] = undefined;
+      newPropChanges["trackColorSettings"] = defaultTrackColors(newTrackType);
       setPropChanges(newPropChanges);
     }
 

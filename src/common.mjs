@@ -1,5 +1,7 @@
 // common.mjs: shared functions between client and server
 
+import config from "./config.json";
+
 // function to remove commas from coordinate input
 const removeCommas = (input) => {
   let parts = input.split(":");
@@ -88,5 +90,19 @@ export function stringifyRegion(region) {
   } else {
     // It is a range region
     return stringifyRangeRegion(region);
+  }
+}
+
+/* This function accepts a track type input and returns the default color scheme for that track type if the 
+track type is valid */
+export function defaultTrackColors(trackType){
+  if (trackType === "graph"){
+    return config.defaultGraphColorPalette;
+  } else if (trackType === "read"){
+    return config.defaultReadColorPalette;
+  } else if (trackType === "haplotype"){
+    return config.defaultHaplotypeColorPalette;
+  } else {
+    throw new Error("Invalid track type: " + trackType); 
   }
 }
