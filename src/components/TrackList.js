@@ -14,10 +14,7 @@ export const TrackList = ({
   availableColors,
   onChange, // expects a new tracks object
   onDelete,
-  showFileSizeAlert,
-  setUploadInProgress,
-  getPathNames,
-  apiUrl,
+  handleFileUpload,
 }) => {
 
   function trackItemOnChange(trackID, trackProps) {
@@ -44,10 +41,7 @@ export const TrackList = ({
               onDelete={onDelete}
               trackID={parseInt(trackID)}
               key={trackID}
-              apiUrl={apiUrl}
-              getPathNames={getPathNames}
-              showFileSizeAlert={showFileSizeAlert}
-              setUploadInProgress={setUploadInProgress} />
+              handleFileUpload={handleFileUpload}/>
           );
       })
 
@@ -66,10 +60,7 @@ TrackList.propTypes = {
   availableColors: PropTypes.array,
   onChange: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
-  showFileSizeAlert: PropTypes.func.isRequired,
-  setUploadInProgress: PropTypes.func.isRequired,
-  getPathNames: PropTypes.func.isRequired,
-  apiUrl: PropTypes.string.isRequired,
+  handleFileUpload: PropTypes.func.isRequired,
 }
   
 

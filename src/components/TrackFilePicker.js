@@ -25,44 +25,17 @@ export const TrackFilePicker = ({
   pickerType, // either "dropdown or upload" to determine which component we render
   className,
   testID,
-  showFileSizeAlert,
-  setUploadInProgress,
-  getPathNames,
-  apiUrl,
+  handleFileUpload,
 }) => {
 
     let uploadFileInput = React.createRef();
     let acceptedExtensions = config.fileTypeToExtensions[fileType];
 
-    function uploadOnChange() {
+    async function uploadOnChange() {
       const file = uploadFileInput.current.files[0];
 
-      if (file.size > config.MAXUPLOADSIZE) {
-        showFileSizeAlert();
-        return;
-      }
-
-      setUploadInProgress(true);
-
-      const formData = new FormData();
-      formData.append("trackFile", file);
-      // Make sure server can identify a Read file
-      formData.append("fileType", fileType); 
-      const xhr = new XMLHttpRequest();
-      xhr.responseType = "json";
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          // Every thing ok, file uploaded
-          setUploadInProgress(false);
-          handleInputChange(xhr.response.path);
-          if (fileType === "graph"){
-            getPathNames(xhr.response.path);
-          }
-        }
-      };
-
-      xhr.open("POST", `${apiUrl}/trackFileSubmission`, true);
-      xhr.send(formData);
+      const completePath = await handleFileUpload(fileType, file);
+      handleInputChange(completePath);
     }
 
 
@@ -138,10 +111,7 @@ TrackFilePicker.propTypes = {
     pickerType: PropTypes.string,
     className: PropTypes.string,
     testID: PropTypes.string,
-    showFileSizeAlert: PropTypes.func.isRequired,
-    setUploadInProgress: PropTypes.func.isRequired,
-    getPathNames: PropTypes.func.isRequired,
-    apiUrl: PropTypes.string.isRequired,
+    handleFileUpload: PropTypes.func.isRequired,
 }
   
 TrackFilePicker.defaultProps = {

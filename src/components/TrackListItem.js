@@ -26,10 +26,7 @@ export const TrackListItem = ({
     onChange, // expects a new trackProps object
     onDelete,
     trackID,
-    showFileSizeAlert,
-    setUploadInProgress,
-    getPathNames,
-    apiUrl,
+    handleFileUpload,
   }) => {
     // propChanges only store new trackType, trackFile, and trackColorSettings changes
     // reset after onChange is called
@@ -107,10 +104,7 @@ export const TrackListItem = ({
                             pickerType={pickerType} 
                             handleInputChange={trackFileOnChange}
                             testID={"file-select-component".concat(trackID)}
-                            apiUrl={apiUrl}
-                            getPathNames={getPathNames}
-                            showFileSizeAlert={showFileSizeAlert}
-                            setUploadInProgress={setUploadInProgress}
+                            handleFileUpload={handleFileUpload}
                             />
           </Col>
           <Col className="tracklist-button" md="1">
@@ -138,10 +132,7 @@ export const TrackListItem = ({
     onChange: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
     trackID: PropTypes.number.isRequired,
-    showFileSizeAlert: PropTypes.func.isRequired,
-    setUploadInProgress: PropTypes.func.isRequired,
-    getPathNames: PropTypes.func.isRequired,
-    apiUrl: PropTypes.string.isRequired,
+    handleFileUpload: PropTypes.func.isRequired,
   }
     
   

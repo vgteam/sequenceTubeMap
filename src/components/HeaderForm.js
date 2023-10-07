@@ -592,27 +592,45 @@ class HeaderForm extends Component {
     this.budgeRegion(-0.5);
   };
 
-  handleFileUpload = (fileType, fileName) => {
-    /// Apply a file that was uploaded as a track.
-    if (fileType === "graphFile") {
-      this.setTrackFile(fileTypes.GRAPH, 0, fileName);
-    } else if (fileType === "gbwtFile") {
-      this.setTrackFile(fileTypes.HAPLOTYPE, 0, fileName);
-    } else if (fileType === "gamFile") {
-      this.setTrackFile(fileTypes.READ, 0, fileName);
-    } else if (fileType === "gamFile2") {
-      this.setTrackFile(fileTypes.READ, 1, fileName);
-    } else {
-      throw new Error("Unknown file type " + fileType + " uploaded: " + fileName);
-    }
-  };
-
   showFileSizeAlert = () => {
     this.setState({ fileSizeAlert: true });
   };
 
   setUploadInProgress = (val) => {
     this.setState({ uploadInProgress: val });
+  };
+
+  // Sends uploaded file to server and returns a path to the file
+  handleFileUpload = async (fileType, file) => {
+    return new Promise(function (resolve, reject) {
+      if (file.size > config.MAXUPLOADSIZE) {
+        this.showFileSizeAlert();
+        return;
+      }
+  
+      this.setUploadInProgress(true);
+  
+      const formData = new FormData();
+      formData.append("trackFile", file);
+      // Make sure server can identify a Read file
+      formData.append("fileType", fileType); 
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = "json";
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          // Every thing ok, file uploaded
+          this.setUploadInProgress(false);
+          if (fileType === "graph") {
+            this.getPathNames(xhr.response.path);
+          }
+
+          resolve(xhr.response.path);
+        }
+      };
+  
+      xhr.open("POST", `${this.props.apiUrl}/trackFileSubmission`, true);
+      xhr.send(formData);
+    }.bind(this));
   };
 
   setUpWebsocket = () => {
@@ -754,10 +772,7 @@ class HeaderForm extends Component {
                     tracks={this.state.tracks}
                     availableTracks={this.state.fileSelectOptions}
                     onChange={this.handleInputChange}
-                    apiUrl={this.props.apiUrl}
-                    getPathNames={this.getPathNames}
-                    showFileSizeAlert={this.showFileSizeAlert}
-                    setUploadInProgress={this.setUploadInProgress}
+                    handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
                 </div>
               }
