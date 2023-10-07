@@ -2478,14 +2478,7 @@ function generateTrackColor(track, highlight) {
 
   const sourceID = track.sourceTrackID;
   if (!config.colorSchemes[sourceID]) {
-    if (track.hasOwnProperty("type") && track.type === "read") {
-      // Default to read colors
-      config.colorSchemes[sourceID] = externalConfig.defaultReadColorPalette;
-    } else {
-      // Default to haplotype colors
-      config.colorSchemes[sourceID] =
-        externalConfig.defaultHaplotypeColorPalette;
-    }
+    config.colorSchemes[sourceID] = defaultTrackColors(track.type);
   }
 
   if (track.hasOwnProperty("type") && track.type === "read") {
