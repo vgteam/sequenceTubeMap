@@ -351,7 +351,7 @@ it("can retrieve the list of mounted graph files", async () => {
   // Wait for everything to settle so we don't stop the server while it is thinking
   await waitForLoadEnd();
 
-  // Swap over to the mounted files mode
+  // Swap over to the custom files mode
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
     await userEvent.selectOptions(
@@ -389,4 +389,55 @@ it("can retrieve the list of mounted graph files", async () => {
   });
 
   expect(screen.queryByText("cactus.vg.xg")).toBeTruthy();
+});
+
+it("can accept uploaded files", async () => {
+  await waitForLoadEnd();
+
+  // Swap over to the custom files mode
+  await act(async () => {
+    let dropdown = document.getElementById("dataSourceSelect");
+    await userEvent.selectOptions(
+      screen.getByLabelText(/Data/i),
+      "custom"
+    );
+  });
+
+  // Find the select box's input
+  let trackSelectButton = screen.queryByTestId("TrackPickerButton");
+  expect(trackSelectButton).toBeTruthy();
+
+  // open track selection
+  await act(async () => {
+    //fireEvent.click(trackSelectButton);
+    userEvent.click(trackSelectButton);
+  });
+
+
+  // add a new track
+  await waitFor(() => {
+    fireEvent.click(screen.queryByTestId("track-add-button-component"));
+  });
+
+  await waitFor(() => {
+    // try to select the picker type
+    fireEvent.keyDown(screen.queryByTestId('picker-type-select-component1').firstChild, {key: "ArrowDown"});
+  });
+
+
+  await waitFor(() => screen.getByText("upload"));
+  fireEvent.click(screen.getByText("upload"));
+
+  await waitFor(() => screen.queryByTestId("file-select-component1"));
+
+  const fileUploader = screen.queryByTestId("file-select-component1");
+  const fakeFile = new File(["example_data"], "example.vg", { type: "text/vg" });
+
+  await waitFor(() => {
+    userEvent.upload(fileUploader, fakeFile);
+  });
+  
+  expect(fileUploader.files.length).toBe(1);
+  expect(fileUploader.files[0]).toStrictEqual(fakeFile);
+
 });

@@ -87,8 +87,9 @@ export const TrackFilePicker = ({
       );
     } else if (pickerType === "upload") {
       return (
-        <div data-testid={testID} style={{display: 'flex',  justifyContent:'center', alignItems:'center', marginTop: 5}}>
+        <div style={{display: 'flex',  justifyContent:'center', alignItems:'center', marginTop: 5}}>
           <Input
+          data-testid={testID}
           type="file"
           className="customDataUpload form-control-file"
           accept={acceptedExtensions}

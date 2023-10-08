@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor }  from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {TrackFilePicker} from './TrackFilePicker';
 
 
@@ -114,6 +115,34 @@ describe('TrackFilePicker', () => {
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
         expect(fakeOnChange).toHaveBeenCalledWith("fileC1.xg");
+    })
+
+    it('should call call handleFileUpload when a file is inputted', async() => {
+        const fakeOnChange = jest.fn();
+        const fakeHandleFileUpload = jest.fn();
+
+        const { queryByTestId } = render(
+            <TrackFilePicker 
+            tracks={testTracks}
+            fileType={"graph"}
+            pickerType={"upload"}
+            handleInputChange={fakeOnChange}
+            handleFileUpload={fakeHandleFileUpload}/>
+        );
+
+        const fakeFile = new File(["example_data"], "example.vg", { type: "text/vg" });
+
+
+        const fileSelectComponent = queryByTestId("file-select-component");
+
+        await waitFor(() => {
+            userEvent.upload(fileSelectComponent, fakeFile);
+        });  
+
+        expect(fakeHandleFileUpload).toHaveBeenCalledTimes(1);
+        expect(fileSelectComponent.files.length).toBe(1);
+        expect(fileSelectComponent.files[0]).toStrictEqual(fakeFile);
+
     })
     
 });

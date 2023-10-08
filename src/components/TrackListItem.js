@@ -8,7 +8,6 @@ import {TrackFilePicker} from './TrackFilePicker';
 import {TrackTypeDropdown} from './TrackTypeDropdown';
 import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
-import {PickerTypeDropdown} from './PickerTypeDropdown';
 import React, { useEffect, useState} from 'react';
 import config from "./../config.json";
 
@@ -87,13 +86,15 @@ export const TrackListItem = ({
             <TrackTypeDropdown value={propChanges["trackType"] || trackProps["trackType"]} 
                               onChange={trackTypeOnChange}
                               testID={"file-type-select-component".concat(trackID)}
+                              options={["graph", "haplotype", "read"]}
                               />
           </Col>
           <Col className="tracklist-dropdown">
-            <PickerTypeDropdown
+            <TrackTypeDropdown
               value={pickerType}
-              handleInputChange={setPickerType}
-              pickerOptions={config.pickerTypeOptions}
+              onChange={setPickerType}
+              testID={"picker-type-select-component".concat(trackID)}
+              options={config.pickerTypeOptions}
             />
           </Col>
 
