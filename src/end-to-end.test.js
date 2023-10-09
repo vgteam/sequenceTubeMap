@@ -136,6 +136,15 @@ function findDropdownOption(dropdown, optionText) {
   return wantedEntry;
 }
 
+// Returns a file object fetching from the given url
+async function getFileFromURL(url, name, defaultType = "text/vg") {
+  const response = await fetch(url);
+  const data = await response.blob();
+  return new File([data], name, {
+    type: data.type || defaultType,
+  });
+}
+
 it("initially renders as loading", () => {
   let loader = document.getElementById("loader");
   expect(loader).toBeTruthy();
@@ -391,6 +400,7 @@ it("can retrieve the list of mounted graph files", async () => {
   expect(screen.queryByText("cactus.vg.xg")).toBeTruthy();
 });
 
+// uploads a cactus.vg file and renders the svg
 it("can accept uploaded files", async () => {
   await waitForLoadEnd();
 
@@ -409,7 +419,6 @@ it("can accept uploaded files", async () => {
 
   // open track selection
   await act(async () => {
-    //fireEvent.click(trackSelectButton);
     userEvent.click(trackSelectButton);
   });
 
@@ -420,11 +429,11 @@ it("can accept uploaded files", async () => {
   });
 
   await waitFor(() => {
-    // try to select the picker type
+    // wait for picker type dropdown
     fireEvent.keyDown(screen.queryByTestId('picker-type-select-component1').firstChild, {key: "ArrowDown"});
   });
 
-
+  // select the upload option
   await waitFor(() => screen.getByText("upload"));
   fireEvent.click(screen.getByText("upload"));
 
@@ -433,11 +442,47 @@ it("can accept uploaded files", async () => {
   const fileUploader = screen.queryByTestId("file-select-component1");
   const fakeFile = new File(["example_data"], "example.vg", { type: "text/vg" });
 
+  // try to fetch and upload a vg graph file
+  const file_url = "https://raw.githubusercontent.com/vgteam/sequenceTubeMap/9f9f9e8724329d3c7cae9d724e6f8235b275f8d3/exampleData/cactus.vg";
+  const file = await getFileFromURL(file_url, "cactus.vg");
+
   await waitFor(() => {
-    userEvent.upload(fileUploader, fakeFile);
+    userEvent.upload(fileUploader, file);
   });
   
+  // make sure the file is in the upload component
   expect(fileUploader.files.length).toBe(1);
   expect(fileUploader.files[0]).toStrictEqual(fakeFile);
 
-});
+  // exit the track picker
+  fireEvent.click(screen.queryByTestId("TrackPickerCloseButton"));
+
+  // try to compute the svg
+  const autocomplete = screen.getByTestId("autocomplete");
+  const input = autocomplete.querySelector("input");
+
+  await userEvent.clear(input);
+
+  // Input region
+  // using fireEvent because userEvent has no change
+  fireEvent.focus(input);
+  fireEvent.change(input, { target: { value: "node:1+10" } });
+  expect(input.value).toBe("node:1+10");
+  fireEvent.keyDown(autocomplete, { key: "Enter" });
+
+  // Wait for rendered response
+  await waitFor(() => screen.getByTestId("autocomplete"));
+
+  // Click go
+  let go = document.getElementById("goButton");
+  await userEvent.click(go);
+
+  await waitForLoadEnd();
+
+  // See if correct svg rendered
+  let svg = document.getElementById("svg");
+  expect(svg).toBeTruthy();
+  expect(svg.getElementsByTagName("title").length).toEqual(1054);
+
+// increase timeout to allow fetching of url
+}, 50000);
