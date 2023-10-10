@@ -4,9 +4,11 @@ set -e
 function usage() {
     echo >&2 "${0}: Prepare a tube map chunk and BED line on standard output from a pre-made subgraph. Only supports paths, not haplotypes."
     echo >&2
-    echo >&2 "Usage: ${0} -x subgraph.xg -r chr1:1-100 [-d 'Description of region'] -o chunk-chr1-1-100 [-g mygam1.gam [-g mygam2.gam ...]] >> regions.bed"
+    echo >&2 "Usage: ${0} -x subgraph.xg -r chr1:1-100 [-d 'Description of region'] [-n 123 [-n 456]] -o chunk-chr1-1-100 [-g mygam1.gam [-g mygam2.gam ...]] >> regions.bed"
     exit 1
 }
+
+NODE_COLORS=()
 
 while getopts x:g:r:o:d:n: flag
 do
@@ -16,7 +18,7 @@ do
         r) REGION=${OPTARG};;
         o) OUTDIR=${OPTARG};;
         d) DESC="${OPTARG}";;
-        n) NODE_COLORS="${OPTARG}";;
+        n) NODE_COLORS+=("${OPTARG}");;
         *)
             usage
             ;;
@@ -55,7 +57,7 @@ fi
 echo >&2 "Graph File: " $GRAPH_FILE
 echo >&2 "Region: " $REGION
 echo >&2 "Output Directory: " $OUTDIR
-echo >&2 "Node colors: " $NODE_COLORS
+echo >&2 "Node colors: " ${NODE_COLORS[@]}
 
 rm -fr $OUTDIR
 mkdir -p $OUTDIR
@@ -96,9 +98,8 @@ done
 
 # construct node file
 if [[ ! -z "${NODE_COLORS}" ]] ; then
-    node_names_arr=($NODE_COLORS);
-    for NODENAME in "${node_names_arr[@]}"; do
-        echo >&2 "$NODENAME"
+    for NODENAME in "${NODE_COLORS[@]}"; do
+        echo >&2 "Highlighted node: $NODENAME"
         printf "$NODENAME\n" >> $OUTDIR/nodeColors.tsv
     done
 fi
