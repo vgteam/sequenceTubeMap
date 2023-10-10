@@ -14,6 +14,7 @@ export const TrackList = ({
   availableColors,
   onChange, // expects a new tracks object
   onDelete,
+  handleFileUpload,
 }) => {
 
   function trackItemOnChange(trackID, trackProps) {
@@ -39,7 +40,8 @@ export const TrackList = ({
               onChange={trackItemOnChange}
               onDelete={onDelete}
               trackID={parseInt(trackID)}
-              key={trackID} />
+              key={trackID}
+              handleFileUpload={handleFileUpload}/>
           );
       })
 
@@ -58,6 +60,7 @@ TrackList.propTypes = {
   availableColors: PropTypes.array,
   onChange: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  handleFileUpload: PropTypes.func.isRequired,
 }
   
 

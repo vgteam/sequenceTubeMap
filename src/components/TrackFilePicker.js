@@ -1,6 +1,8 @@
 import PropTypes from "prop-types";
 import Select from "react-select";
 import React from "react";
+import config from "./../config.json";
+import { Input } from "reactstrap";
 
 
 
@@ -22,8 +24,19 @@ export const TrackFilePicker = ({
   handleInputChange,
   pickerType, // either "dropdown or upload" to determine which component we render
   className,
-  testID
+  testID,
+  handleFileUpload,
 }) => {
+
+    let uploadFileInput = React.createRef();
+    let acceptedExtensions = config.fileTypeToExtensions[fileType];
+
+    async function uploadOnChange() {
+      const file = uploadFileInput.current.files[0];
+
+      const completePath = await handleFileUpload(fileType, file);
+      handleInputChange(completePath);
+    }
 
 
     function mountedOnChange(option) {
@@ -52,7 +65,7 @@ export const TrackFilePicker = ({
     }));
     
 
-    if (pickerType === "dropdown"){
+    if (pickerType === "mounted"){
       return(
       // wrap Select container in div to easily query in tests
         <div data-testid={testID}>
@@ -73,10 +86,16 @@ export const TrackFilePicker = ({
           </div>
       );
     } else if (pickerType === "upload") {
-      // TODO: render <input> component and create upload onChange function 
       return (
-        <div data-testid="file-select-component">
-          <input/>  
+        <div style={{display: 'flex',  justifyContent:'center', alignItems:'center', marginTop: 5}}>
+          <Input
+          data-testid={testID}
+          type="file"
+          className="customDataUpload form-control-file"
+          accept={acceptedExtensions}
+          innerRef={uploadFileInput}
+          onChange={uploadOnChange}
+        />
         </div>
 
       );
@@ -92,13 +111,14 @@ TrackFilePicker.propTypes = {
     handleInputChange: PropTypes.func.isRequired,
     pickerType: PropTypes.string,
     className: PropTypes.string,
-    testID: PropTypes.string
+    testID: PropTypes.string,
+    handleFileUpload: PropTypes.func.isRequired,
 }
   
 TrackFilePicker.defaultProps = {
   value: "Select a file",
   fileType: "graph",
-  pickerType: "dropdown",
+  pickerType: "mounted",
   className: undefined,
   testID: "file-select-component"
 }

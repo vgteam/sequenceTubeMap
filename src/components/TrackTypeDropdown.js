@@ -11,6 +11,8 @@ import Select from "react-select";
  * 
  */
 
+
+// TODO: rename TrackTypeDropdown to be generalized dropdown component
 export function TrackTypeDropdown (props) {
   
     
@@ -21,7 +23,7 @@ export function TrackTypeDropdown (props) {
         <Select {...props} onChange={o => {
           props.onChange(o.value)}
         }
-          options={["graph", "haplotype", "read"].map(o => ({
+          options={props.options.map(o => ({
             label: o, value: o
           }))}
           value={{label: props.value, value: props.value}}
@@ -44,14 +46,16 @@ TrackTypeDropdown.propTypes = {
   className: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func.isRequired,
-  testID: PropTypes.string
+  testID: PropTypes.string,
+  options: PropTypes.array,
 };
 
 TrackTypeDropdown.defaultProps = {
   id: undefined,
   className: undefined,
   value: "graph",
-  testID: "file-type-select-component"
+  testID: "file-type-select-component",
+  options: ["graph", "haplotype", "read"]
 };
 
 export default TrackTypeDropdown;

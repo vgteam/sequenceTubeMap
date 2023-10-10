@@ -15,7 +15,7 @@ export default (<Demo
 
     value: P.string("fileA1.vg"),
     fileType: P.choices(["graph", "haplotype", "read"]),
-    pickerType: P.choices(["dropdown", "upload"]),
+    pickerType: P.choices(["mounted", "upload"]),
   }}
 >
   {
@@ -23,7 +23,11 @@ export default (<Demo
       return <TrackFilePicker {...props} handleInputChange={(file) => {
         // takes file name as value, updates the fileSelect prop in TrackFilePicker
         update({value: file});
-      }}/>
+      }}
+      handleFileUpload={(fileType, file) => {
+        console.log("handling file upload");
+      }}
+    />
     }
   }
 </Demo>)

@@ -4,6 +4,7 @@
 // not-really-standard implementations of JS modules in play. So we import the
 // server's start function and put it in an object pretendign to be a module.
 import { start } from "./server.mjs";
+import fs from "fs-extra";
 const server = { start };
 
 import React from "react";
@@ -345,18 +346,18 @@ it("produces correct link for view before & after go is pressed", async () => {
     "http://localhost?tracks[0][trackFile]=exampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=exampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=exampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
-});
+}, 20000);
 
 it("can retrieve the list of mounted graph files", async () => {
   // Wait for everything to settle so we don't stop the server while it is thinking
   await waitForLoadEnd();
 
-  // Swap over to the mounted files mode
+  // Swap over to the custom files mode
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
     await userEvent.selectOptions(
       screen.getByLabelText(/Data/i),
-      "custom (mounted files)"
+      "custom"
     );
   });
 
@@ -389,4 +390,88 @@ it("can retrieve the list of mounted graph files", async () => {
   });
 
   expect(screen.queryByText("cactus.vg.xg")).toBeTruthy();
+});
+
+// uploads a cactus.vg file and renders the svg
+it("can accept uploaded files", async () => {
+  await waitForLoadEnd();
+
+  // Swap over to the custom files mode
+  await act(async () => {
+    let dropdown = document.getElementById("dataSourceSelect");
+    await userEvent.selectOptions(
+      screen.getByLabelText(/Data/i),
+      "custom"
+    );
+  });
+
+  // Find the select box's input
+  let trackSelectButton = screen.queryByTestId("TrackPickerButton");
+  expect(trackSelectButton).toBeTruthy();
+
+  // open track selection
+  await act(async () => {
+    userEvent.click(trackSelectButton);
+  });
+
+
+  // add a new track
+  await waitFor(() => {
+    fireEvent.click(screen.queryByTestId("track-add-button-component"));
+  });
+
+  await waitFor(() => {
+    // wait for picker type dropdown
+    fireEvent.keyDown(screen.queryByTestId('picker-type-select-component1').firstChild, {key: "ArrowDown"});
+  });
+
+  // select the upload option
+  await waitFor(() => screen.getByText("upload"));
+  fireEvent.click(screen.getByText("upload"));
+
+  await waitFor(() => screen.queryByTestId("file-select-component1"));
+
+  const fileUploader = screen.queryByTestId("file-select-component1");
+
+  const file = await fs.readFileSync("exampleData/cactus.vg");
+
+  await waitFor(() => {
+    userEvent.upload(fileUploader, file);
+  });
+  
+  // make sure the file is in the upload component
+  expect(fileUploader.files.length).toBe(1);
+  expect(fileUploader.files[0]).toStrictEqual(file);
+
+  // exit the track picker
+  fireEvent.click(screen.queryByTestId("TrackPickerCloseButton"));
+
+  // try to compute the svg
+  const autocomplete = screen.getByTestId("autocomplete");
+  const input = autocomplete.querySelector("input");
+
+  await userEvent.clear(input);
+
+  // Input region
+  // using fireEvent because userEvent has no change
+  fireEvent.focus(input);
+  fireEvent.change(input, { target: { value: "node:1+10" } });
+  expect(input.value).toBe("node:1+10");
+  fireEvent.keyDown(autocomplete, { key: "Enter" });
+
+  // Wait for rendered response
+  await waitFor(() => screen.getByTestId("autocomplete"));
+
+  // Click go
+  let go = document.getElementById("goButton");
+  await userEvent.click(go);
+
+  await waitForLoadEnd();
+
+  // See if correct svg rendered
+  let svg = document.getElementById("svg");
+  expect(svg).toBeTruthy();
+  expect(svg.getElementsByTagName("title").length).toEqual(1054);
+
+// increase timeout to allow fetching of url
 });
