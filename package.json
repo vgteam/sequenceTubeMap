@@ -21,7 +21,7 @@
     "bootstrap": "^5.2.3",
     "compression": "^1.7.4",
     "concurrently": "^7.6.0",
-    "d3": "^5.16.0",
+    "d3": "^7.8.5",
     "d3-selection-multi": "^1.0.1",
     "deep-equal": "^2.2.1",
     "dotenv": "^16.0.3",
@@ -30,7 +30,7 @@
     "fs-extra": "^10.1.0",
     "gh-pages": "^4.0.0",
     "markdown-to-jsx": "^7.2.0",
-    "multer": "^1.4.4",
+    "multer": "^1.4.5-lts.1",
     "path-is-inside": "^1.0.2",
     "polyfill-object.fromentries": "^1.0.1",
     "prop-types": "^15.8.1",
@@ -52,6 +52,11 @@
     "webpack": "^5.82.0",
     "webpack-dev-server": "4.11.1",
     "websocket": "^1.0.34"
+  },
+  "overrides": {
+    "react-demo": {
+      "lodash": "4.17.21"
+    }
   },
   "scripts": {
     "start": "concurrently -n frontend,backend -c red,green 'HOST=${HOST:=127.0.0.1} PORT=${PORT:=3001} react-scripts start' 'npm:serve'",
