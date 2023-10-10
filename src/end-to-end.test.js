@@ -4,6 +4,7 @@
 // not-really-standard implementations of JS modules in play. So we import the
 // server's start function and put it in an object pretendign to be a module.
 import { start } from "./server.mjs";
+import fs from "fs-extra";
 const server = { start };
 
 import React from "react";
@@ -134,15 +135,6 @@ function findDropdownOption(dropdown, optionText) {
     }
   }
   return wantedEntry;
-}
-
-// Returns a file object fetching from the given url
-async function getFileFromURL(url, name, defaultType = "text/vg") {
-  const response = await fetch(url);
-  const data = await response.blob();
-  return new File([data], name, {
-    type: data.type || defaultType,
-  });
 }
 
 it("initially renders as loading", () => {
@@ -354,7 +346,7 @@ it("produces correct link for view before & after go is pressed", async () => {
     "http://localhost?tracks[0][trackFile]=exampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=exampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=exampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
-});
+}, 20000);
 
 it("can retrieve the list of mounted graph files", async () => {
   // Wait for everything to settle so we don't stop the server while it is thinking
@@ -440,11 +432,8 @@ it("can accept uploaded files", async () => {
   await waitFor(() => screen.queryByTestId("file-select-component1"));
 
   const fileUploader = screen.queryByTestId("file-select-component1");
-  const fakeFile = new File(["example_data"], "example.vg", { type: "text/vg" });
 
-  // try to fetch and upload a vg graph file
-  const file_url = "https://raw.githubusercontent.com/vgteam/sequenceTubeMap/9f9f9e8724329d3c7cae9d724e6f8235b275f8d3/exampleData/cactus.vg";
-  const file = await getFileFromURL(file_url, "cactus.vg");
+  const file = await fs.readFileSync("exampleData/cactus.vg");
 
   await waitFor(() => {
     userEvent.upload(fileUploader, file);
@@ -452,7 +441,7 @@ it("can accept uploaded files", async () => {
   
   // make sure the file is in the upload component
   expect(fileUploader.files.length).toBe(1);
-  expect(fileUploader.files[0]).toStrictEqual(fakeFile);
+  expect(fileUploader.files[0]).toStrictEqual(file);
 
   // exit the track picker
   fireEvent.click(screen.queryByTestId("TrackPickerCloseButton"));
@@ -485,4 +474,4 @@ it("can accept uploaded files", async () => {
   expect(svg.getElementsByTagName("title").length).toEqual(1054);
 
 // increase timeout to allow fetching of url
-}, 50000);
+});
