@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor }  from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {TrackFilePicker} from './TrackFilePicker';
 
 
@@ -17,7 +18,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"graph"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             handleInputChange={fakeOnChange}/>
         );
 
@@ -32,7 +33,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"graph"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             value={"fileA1.vg"}
             handleInputChange={fakeOnChange}/>
         );
@@ -46,7 +47,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"graph"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             value={"fileC1.xg"}
             handleInputChange={fakeOnChange}/>
         );
@@ -63,7 +64,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"haplotype"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             handleInputChange={fakeOnChange}/>
         );
 
@@ -97,7 +98,7 @@ describe('TrackFilePicker', () => {
             <TrackFilePicker 
             tracks={testTracks}
             fileType={"graph"}
-            pickerType={"dropdown"}
+            pickerType={"mounted"}
             handleInputChange={fakeOnChange}/>
         );
 
@@ -114,6 +115,34 @@ describe('TrackFilePicker', () => {
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
         expect(fakeOnChange).toHaveBeenCalledWith("fileC1.xg");
+    })
+
+    it('should call call handleFileUpload when a file is inputted', async() => {
+        const fakeOnChange = jest.fn();
+        const fakeHandleFileUpload = jest.fn();
+
+        const { queryByTestId } = render(
+            <TrackFilePicker 
+            tracks={testTracks}
+            fileType={"graph"}
+            pickerType={"upload"}
+            handleInputChange={fakeOnChange}
+            handleFileUpload={fakeHandleFileUpload}/>
+        );
+
+        const fakeFile = new File(["example_data"], "example.vg", { type: "text/vg" });
+
+
+        const fileSelectComponent = queryByTestId("file-select-component");
+
+        await waitFor(() => {
+            userEvent.upload(fileSelectComponent, fakeFile);
+        });  
+
+        expect(fakeHandleFileUpload).toHaveBeenCalledTimes(1);
+        expect(fileSelectComponent.files.length).toBe(1);
+        expect(fileSelectComponent.files[0]).toStrictEqual(fakeFile);
+
     })
     
 });

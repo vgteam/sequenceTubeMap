@@ -73,6 +73,15 @@
       "auxPalette": "reds",
       "colorReadsByMappingQuality": false
     }
+  },
 
-  }
+  "fileTypeToExtensions": {
+    "graph": ".xg,.vg,.hg,.gbz,.pg",
+    "haplotype": ".gbwt,.gbz",
+    "read": ".gam"
+  },
+
+  "MAXUPLOADSIZE": 5242880,
+  "pickerTypeOptions": ["mounted", "upload"]
+
 }
