@@ -4,9 +4,11 @@ set -e
 function usage() {
     echo >&2 "${0}: Extract graph and read chunks for a region, producing a referencing line for a BED file on standard output"
     echo >&2
-    echo >&2 "Usage: ${0} -x mygraph.xg [-h mygraph.gbwt] -r chr1:1-100 [-d 'Description of region'] -o chunk-chr1-1-100 [-g mygam1.gam [-g mygam2.gam ...]] >> regions.bed"
+    echo >&2 "Usage: ${0} -x mygraph.xg [-h mygraph.gbwt] -r chr1:1-100 [-d 'Description of region'] [-n 123 [-n 456]] -o chunk-chr1-1-100 [-g mygam1.gam [-g mygam2.gam ...]] >> regions.bed"
     exit 1
 }
+
+NODE_COLORS=()
 
 while getopts x:h:g:r:o:d:n: flag
 do
@@ -17,7 +19,7 @@ do
         r) REGION=${OPTARG};;
         o) OUTDIR=${OPTARG};;
         d) DESC="${OPTARG}";;
-        n) NODE_COLORS="${OPTARG}";;
+        n) NODE_COLORS+=("${OPTARG}");;
         *)
             usage
             ;;
@@ -57,7 +59,7 @@ echo >&2 "Graph File: " $GRAPH_FILE
 echo >&2 "Haplotype File: " $HAPLOTYPE_FILE
 echo >&2 "Region: " $REGION
 echo >&2 "Output Directory: " $OUTDIR
-echo >&2 "Node colors: " $NODE_COLORS
+echo >&2 "Node colors: " ${NODE_COLORS[@]}
 
 rm -fr $OUTDIR
 mkdir -p $OUTDIR
@@ -82,9 +84,8 @@ done
 
 # construct node file
 if [[ ! -z "${NODE_COLORS}" ]] ; then
-    node_names_arr=($NODE_COLORS);
-    for NODENAME in "${node_names_arr[@]}"; do
-        echo >&2 "$NODENAME"
+    for NODENAME in "${NODE_COLORS[@]}"; do
+        echo >&2 "Highlighted node: $NODENAME"
         printf "$NODENAME\n" >> $OUTDIR/nodeColors.tsv
     done
 fi
