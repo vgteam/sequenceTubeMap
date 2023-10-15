@@ -1451,6 +1451,7 @@ async function getBedRegions(bed) {
       if (fs.existsSync(track_json)) {
         // Create string of tracks data
         const string_data = fs.readFileSync(track_json);
+        console.log(string_data);
         const parser = new JSONParser({separator: ''});
         parser.onValue = ({value, key, parent, stack}) => {
           if (stack.length > 0) {
