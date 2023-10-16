@@ -1451,22 +1451,9 @@ async function getBedRegions(bed) {
       if (fs.existsSync(track_json)) {
         // Create string of tracks data
         const string_data = fs.readFileSync(track_json);
-        console.log(string_data);
-        const parser = new JSONParser({separator: ''});
-        parser.onValue = ({value, key, parent, stack}) => {
-          if (stack.length > 0) {
-            // ignore inner values
-            return;
-          }
-          if (!Object.hasOwn(value, 'trackFile')) {
-            throw new BadRequestError('Non-track object in tracks.json: ' + JSON.stringify(value))
-          }
-          // put tracks in array
-          tracks_array.push(value);
-        };
-        parser.write(string_data);
+
         // Convert to object container like the client component prop types expect
-        tracks = {...tracks_array}; 
+        tracks = JSON.parse(string_data);
       }
     }
 
