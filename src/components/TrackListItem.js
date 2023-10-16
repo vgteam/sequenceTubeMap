@@ -10,6 +10,7 @@ import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
 import React, { useEffect, useState} from 'react';
 import {defaultTrackColors} from "../common.mjs"
+import config from "./../config.json";
 
 
 export const TrackListItem = ({
@@ -25,10 +26,13 @@ export const TrackListItem = ({
     onChange, // expects a new trackProps object
     onDelete,
     trackID,
+    handleFileUpload,
   }) => {
     // propChanges only store new trackType, trackFile, and trackColorSettings changes
     // reset after onChange is called
     const [propChanges, setPropChanges] = useState({});
+
+    const [pickerType, setPickerType] = useState("mounted");
 
   
     const trackTypeOnChange = async(newTrackType) => {
@@ -78,24 +82,35 @@ export const TrackListItem = ({
     const displayedFile = "trackFile" in propChanges ? propChanges["trackFile"] : trackProps["trackFile"];
     console.log(displayedFile);
     return (
-      <Container key={trackID} style={{ width: "800px", marginLeft: 0 }}>
+      <Container key={trackID} style={{ width: "900px", marginLeft: 0, marginRight: 15 }}>
         <Row className="g-0">
-          <Col className="tracklist-dropdown" lg="5">
+          <Col className="tracklist-dropdown">
             <TrackTypeDropdown value={propChanges["trackType"] || trackProps["trackType"]} 
                               onChange={trackTypeOnChange}
                               testID={"file-type-select-component".concat(trackID)}
+                              options={["graph", "haplotype", "read"]}
                               />
           </Col>
-          <Col className="tracklist-dropdown" lg="5">
+          <Col className="tracklist-dropdown">
+            <TrackTypeDropdown
+              value={pickerType}
+              onChange={setPickerType}
+              testID={"picker-type-select-component".concat(trackID)}
+              options={config.pickerTypeOptions}
+            />
+          </Col>
+
+          <Col className="tracklist-dropdown">
             <TrackFilePicker tracks={availableTracks} 
                             fileType={propChanges["trackType"] || trackProps["trackType"]} 
                             value={displayedFile}
-                            pickerType={"dropdown"} 
+                            pickerType={pickerType} 
                             handleInputChange={trackFileOnChange}
                             testID={"file-select-component".concat(trackID)}
+                            handleFileUpload={handleFileUpload}
                             />
           </Col>
-          <Col className="tracklist-button" lg="1">
+          <Col className="tracklist-button" md="1">
             <TrackSettingsButton fileType={propChanges["trackType"] || trackProps["trackType"]}
                                 trackColorSettings={propChanges["trackColorSettings"] || trackProps["trackColorSettings"]}
                                 setTrackColorSetting={trackSettingsOnChange}
@@ -120,6 +135,7 @@ export const TrackListItem = ({
     onChange: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
     trackID: PropTypes.number.isRequired,
+    handleFileUpload: PropTypes.func.isRequired,
   }
     
   

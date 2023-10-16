@@ -12,6 +12,7 @@ export const TrackPicker = ({
     availableTracks,
     availableColors,
     onChange,
+    handleFileUpload,
 }) => {
     // based off of https://react-popup.elazizi.com/controlled-popup/#using-open-prop
     const [open, setOpen] = useState(false);
@@ -30,6 +31,7 @@ export const TrackPicker = ({
               availableTracks={availableTracks}
               availableColors={availableColors}
               onChange={onChange}
+              handleFileUpload={handleFileUpload}
           />
         </PopupDialog>
       </div>
@@ -40,7 +42,8 @@ TrackPicker.propTypes = {
     tracks: PropTypes.object.isRequired,
     availableTracks: PropTypes.array.isRequired,
     availableColors: PropTypes.array,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    handleFileUpload: PropTypes.func,
 }
 
 TrackPicker.defaultProps = {

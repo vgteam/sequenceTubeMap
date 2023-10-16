@@ -6,7 +6,6 @@ import { fetchAndParse } from "../fetchAndParse";
 // import defaultConfig from '../config.default.json';
 import config from "../config.json";
 import DataPositionFormRow from "./DataPositionFormRow";
-import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
@@ -20,8 +19,7 @@ const DATA_SOURCES = config.DATA_SOURCES;
 const MAX_UPLOAD_SIZE_DESCRIPTION = "5 MB";
 const dataTypes = {
   BUILT_IN: "built-in",
-  FILE_UPLOAD: "file-upload",
-  MOUNTED_FILES: "mounted files",
+  CUSTOM_FILES: "mounted files",
   EXAMPLES: "examples",
 };
 const fileTypes = {
@@ -307,7 +305,7 @@ class HeaderForm extends Component {
       } else {
         json.bedFiles.unshift("none");
 
-        if (this.state.dataType === dataTypes.MOUNTED_FILES) {
+        if (this.state.dataType === dataTypes.CUSTOM_FILES) {
           this.setState((state) => {
             const bedSelect = json.bedFiles.includes(state.bedSelect)
               ? state.bedSelect
@@ -415,21 +413,14 @@ class HeaderForm extends Component {
   handleDataSourceChange = (event) => {
     const value = event.target.value;
 
-    if (value === dataTypes.FILE_UPLOAD) {
-      const newState = {
-        ...CLEAR_STATE,
-        dataType: dataTypes.FILE_UPLOAD,
-        error: this.state.error,
-      };
-      this.setState(newState, () => {});
-    } else if (value === dataTypes.MOUNTED_FILES) {
+    if (value === dataTypes.CUSTOM_FILES) {
       this.setState((state) => {
         return {
           ...CLEAR_STATE,
           bedFile: "none",
           // not sure why we would like to keep the previous selection when changing data sources. What I know is it creates a bug for the regions, where the tubemap tries to read the previous bedFile (e.g. defaulted to example 1), can't find it and raises an error
           // bedFile: state.bedSelect,
-          dataType: dataTypes.MOUNTED_FILES,
+          dataType: dataTypes.CUSTOM_FILES,
         };
       });
     } else if (value === dataTypes.EXAMPLES) {
@@ -601,27 +592,45 @@ class HeaderForm extends Component {
     this.budgeRegion(-0.5);
   };
 
-  handleFileUpload = (fileType, fileName) => {
-    /// Apply a file that was uploaded as a track.
-    if (fileType === "graphFile") {
-      this.setTrackFile(fileTypes.GRAPH, 0, fileName);
-    } else if (fileType === "gbwtFile") {
-      this.setTrackFile(fileTypes.HAPLOTYPE, 0, fileName);
-    } else if (fileType === "gamFile") {
-      this.setTrackFile(fileTypes.READ, 0, fileName);
-    } else if (fileType === "gamFile2") {
-      this.setTrackFile(fileTypes.READ, 1, fileName);
-    } else {
-      throw new Error("Unknown file type " + fileType + " uploaded: " + fileName);
-    }
-  };
-
   showFileSizeAlert = () => {
     this.setState({ fileSizeAlert: true });
   };
 
   setUploadInProgress = (val) => {
     this.setState({ uploadInProgress: val });
+  };
+
+  // Sends uploaded file to server and returns a path to the file
+  handleFileUpload = async (fileType, file) => {
+    return new Promise(function (resolve, reject) {
+      if (file.size > config.MAXUPLOADSIZE) {
+        this.showFileSizeAlert();
+        return;
+      }
+  
+      this.setUploadInProgress(true);
+  
+      const formData = new FormData();
+      formData.append("trackFile", file);
+      // Make sure server can identify a Read file
+      formData.append("fileType", fileType); 
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = "json";
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          // Every thing ok, file uploaded
+          this.setUploadInProgress(false);
+          if (fileType === "graph") {
+            this.getPathNames(xhr.response.path);
+          }
+
+          resolve(xhr.response.path);
+        }
+      };
+  
+      xhr.open("POST", `${this.props.apiUrl}/trackFileSubmission`, true);
+      xhr.send(formData);
+    }.bind(this));
   };
 
   setUpWebsocket = () => {
@@ -667,16 +676,12 @@ class HeaderForm extends Component {
       <option value={dataTypes.EXAMPLES} key="syntheticExamples">
         synthetic data examples
       </option>,
-      <option value={dataTypes.FILE_UPLOAD} key="customFileUpload">
-        custom (file upload)
-      </option>,
-      <option value={dataTypes.MOUNTED_FILES} key={dataTypes.MOUNTED_FILES}>
-        custom (mounted files)
+      <option value={dataTypes.CUSTOM_FILES} key={dataTypes.CUSTOM_FILES}>
+        custom
       </option>
     );
 
-    const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
-    const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
+    const customFilesFlag = this.state.dataType === dataTypes.CUSTOM_FILES;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
     const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
 
@@ -729,7 +734,7 @@ class HeaderForm extends Component {
                 {dataSourceDropdownOptions}
               </select>
               &nbsp;
-              {mountedFilesFlag && (
+              {customFilesFlag && (
                 <React.Fragment>
                   <Label
                     for="bedSelectInput"
@@ -760,27 +765,17 @@ class HeaderForm extends Component {
                 />
               )}
 
-              {mountedFilesFlag && 
+              {customFilesFlag && 
                 <div style={{display: "flex"}}>
                   {DataPositionFormRowComponent}
                   <TrackPicker
                     tracks={this.state.tracks}
                     availableTracks={this.state.fileSelectOptions}
                     onChange={this.handleInputChange}
+                    handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
                 </div>
               }
-
-              {uploadFilesFlag && (
-                <FileUploadFormRow
-                  apiUrl={this.props.apiUrl}
-                  getPathNames={this.getPathNames}
-                  handleInputChange={this.handleInputChange}
-                  handleFileUpload={this.handleFileUpload}
-                  showFileSizeAlert={this.showFileSizeAlert}
-                  setUploadInProgress={this.setUploadInProgress}
-                />
-              )}
 
               <Row>
                 <Alert
@@ -802,7 +797,7 @@ class HeaderForm extends Component {
                     setColorSetting={this.props.setColorSetting}
                   />
                 ) : (
-                  !mountedFilesFlag && DataPositionFormRowComponent 
+                  !customFilesFlag && DataPositionFormRowComponent 
                 )}
               </Row>
             </Col>
