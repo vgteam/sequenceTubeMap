@@ -1,17 +1,26 @@
 [
-    {
-        "trackFile": "cactus.vg", 
-        "trackType": "graph", 
-        "trackColorSettings": {"mainPalette": "plainColors", "auxPalette": "greys"}
-    },
-    {
-        "trackFile": "cactus0_10.sorted.gam", 
-        "trackType": "read", 
-        "trackColorSettings": {"mainPalette": "blues", "auxPalette": "reds"}
-    },
-    {
-        "trackFile": "cactus10_20.sorted.gam", 
-        "trackType": "read", 
-        "trackColorSettings": {"mainPalette": "blues", "auxPalette": "reds"}
+  {
+    "trackFile": "exampleData/cactus.vg",
+    "trackType": "graph",
+    "trackColorSettings": {
+      "mainPalette": "plainColors",
+      "auxPalette": "greys"
     }
+  },
+  {
+    "trackFile": "exampleData/cactus0_10.sorted.gam",
+    "trackType": "read",
+    "trackColorSettings": {
+      "mainPalette": "blues",
+      "auxPalette": "reds"
+    }
+  },
+  {
+    "trackFile": "exampleData/cactus0_10.sorted.gam",
+    "trackType": "read",
+    "trackColorSettings": {
+      "mainPalette": "blues",
+      "auxPalette": "reds"
+    }
+  }
 ]
