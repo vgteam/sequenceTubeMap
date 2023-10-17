@@ -35,6 +35,7 @@ export const TrackFilePicker = ({
       const file = uploadFileInput.current.files[0];
 
       const completePath = await handleFileUpload(fileType, file);
+      console.log("TrackFilePicker got an upload result:", completePath);
       handleInputChange(completePath);
     }
 

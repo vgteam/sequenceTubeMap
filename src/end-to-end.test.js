@@ -105,6 +105,36 @@ async function waitForLoadEnd() {
   });
 }
 
+// Wait for the upload throbber to appear
+async function waitForUploadStart() {
+  return new Promise((resolve, reject) => {
+    function waitAround() {
+      let loaders = document.getElementsByClassName("upload-in-progress");
+      if (loaders.length == 0) {
+        setTimeout(waitAround, 100);
+      } else {
+        resolve();
+      }
+    }
+    waitAround();
+  });
+}
+
+// Wait for the upload throbber to disappear
+async function waitForUploadEnd() {
+  return new Promise((resolve, reject) => {
+    function waitAround() {
+      let loaders = document.getElementsByClassName("upload-in-progress");
+      if (loaders.length > 0) {
+        setTimeout(waitAround, 100);
+      } else {
+        resolve();
+      }
+    }
+    waitAround();
+  });
+}
+
 async function clickCopyLink() {
   // Click copy link button to test clipboard
   await act(async () => {
@@ -433,15 +463,36 @@ it("can accept uploaded files", async () => {
 
   const fileUploader = screen.queryByTestId("file-select-component1");
 
-  const file = await fs.readFileSync("exampleData/cactus.vg");
-
+  // We need to make sure we make a jsdom File (which is a jsdom Blob), and not
+  // a Node Blob, for our test file. Otherwise it doesn't work with jsdom's
+  // upload machinery.
+  // See for example <https://github.com/vitest-dev/vitest/issues/2078> for
+  // background on the many flavors of Blob.
+  const fileData = await fs.readFileSync("exampleData/cactus.vg");
+  // Since a Node Buffer is an ArrayBuffer, we can use it to make a jsdom File.
+  // We need to put the data block in an enclosing array, or else the block
+  // will be iterated and each byte will be stringified and *those* bytes will
+  // be uploaded.
+  const file = new window.File([fileData], "cactus.vg", { type: "application/octet-stream" });
+  
+  console.log("Adding file:", file);
   await waitFor(() => {
     userEvent.upload(fileUploader, file);
   });
-  
+  console.log("File added");
+
   // make sure the file is in the upload component
   expect(fileUploader.files.length).toBe(1);
   expect(fileUploader.files[0]).toStrictEqual(file);
+
+  // Wait for the upload to actually go through.
+  // TODO: Don't let the user close the dialog until the upload goes through?
+  // We need to see the upload spinner
+  await waitForUploadStart();
+  console.log("Upload started");
+  // And then it needs to go away again
+  await waitForUploadEnd();
+  console.log("Upload ended");
 
   // exit the track picker
   fireEvent.click(screen.queryByTestId("TrackPickerCloseButton"));
@@ -449,7 +500,8 @@ it("can accept uploaded files", async () => {
   // try to compute the svg
   const autocomplete = screen.getByTestId("autocomplete");
   const input = autocomplete.querySelector("input");
-
+  
+  console.log("Clearing input");
   await userEvent.clear(input);
 
   // Input region
@@ -471,7 +523,9 @@ it("can accept uploaded files", async () => {
   // See if correct svg rendered
   let svg = document.getElementById("svg");
   expect(svg).toBeTruthy();
-  expect(svg.getElementsByTagName("title").length).toEqual(1054);
+  expect(svg.getElementsByTagName("title").length).toEqual(5);
+
+  console.log("Test over");
 
 // increase timeout to allow fetching of url
 });

@@ -611,7 +611,26 @@ class HeaderForm extends Component {
       this.setUploadInProgress(true);
   
       const formData = new FormData();
-      formData.append("trackFile", file);
+      // If the file is anything other than a Blob, it will be turned into a
+      // string and added as a normal form value. If it is a Blob it will
+      // become a file upload. Note that a File is a kind of Blob. See
+      // <https://developer.mozilla.org/en-US/docs/Web/API/FormData/append#value>
+      //
+      // But in jsdom in the test environment there are two Blob types: Node's
+      // and jdsom's, and only jsdom's will work. Node's will turn into a
+      // string. And it seems hard to get at both types in a way that makes
+      // sense in a browser. So we will add the file and make sure it added OK
+      // and didn't stringify.
+      
+      // According to <https://stackoverflow.com/a/43914175>, we *must* set a filename for uploads.
+      // In jsdom it turns on jsdom's own type checking support.
+      let fileName = file.name || "upload.dat";
+      formData.append("trackFile", file, fileName);
+      if (typeof formData.get("trackFile") == "string") {
+        // Catch stringification in case jsdom didn't.
+        console.error("Cannot upload file because it is not the appropriate type:", file);
+        throw new Error("File is not an appropriate type to upload");
+      }
       // Make sure server can identify a Read file
       formData.append("fileType", fileType); 
       const xhr = new XMLHttpRequest();
@@ -627,7 +646,10 @@ class HeaderForm extends Component {
           resolve(xhr.response.path);
         }
       };
-  
+      
+      console.log("Uploading file", file);
+      console.log("Sending form data", formData);
+      console.log("Form file is a " + typeof formData.get("trackFile"));
       xhr.open("POST", `${this.props.apiUrl}/trackFileSubmission`, true);
       xhr.send(formData);
     }.bind(this));

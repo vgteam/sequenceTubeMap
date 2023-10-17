@@ -172,6 +172,10 @@ api.use((req, res, next) => {
 api.post("/trackFileSubmission", upload.single("trackFile"), (req, res) => {
   console.log("/trackFileSubmission");
   console.log(req.file);
+  if (typeof req.file === "undefined") {
+    // No file was sent
+    throw new BadRequestError("No file upload was provided");
+  }
   if (req.body.fileType === fileTypes["READ"]) {
     indexGamSorted(req, res);
   } else {
@@ -588,13 +592,13 @@ async function getChunkedData(req, res, next) {
         // Make sure that path 0 is the path we actually asked about
         let refPaths = [];
         let otherPaths = [];
-        for (let path of req.graph.path) {
-          if (path.name === parsedRegion.contig) {
+        for (let pathObject of req.graph.path) {
+          if (pathObject.name === parsedRegion.contig) {
             // This is the path we asked about, so it goes first
-            refPaths.push(path);
+            refPaths.push(pathObject);
           } else { 
             // Then we put each other path
-            otherPaths.push(path);
+            otherPaths.push(pathObject);
           }
         }
         req.graph.path = refPaths.concat(otherPaths);
