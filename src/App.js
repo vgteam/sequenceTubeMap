@@ -45,7 +45,7 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    console.log('Tube map statting up with API URL: ' + props.apiUrl)
+    console.log('App component starting up with API URL: ' + props.apiUrl)
 
     // Set defaultViewTarget to either URL params (if present) or the first example
     this.defaultViewTarget =
