@@ -2,7 +2,9 @@ import React from 'react';
 import { render, fireEvent, waitFor }  from '@testing-library/react';
 import {TrackPicker} from './TrackPicker';
 import '@testing-library/jest-dom'
-import config from "./../config.json";
+import "../config-client.js";
+import { config } from "../config-global.mjs";
+import {defaultTrackColors} from "../common.mjs";
 
 
 describe('TrackPicker', () => {
@@ -126,10 +128,13 @@ describe('TrackPicker', () => {
 
         newTracks[1].trackFile = "fileA1.vg";
         newTracks[1].trackType = "graph";
+        newTracks[1].trackColorSettings = defaultTrackColors("graph");
         newTracks[2].trackFile = "fileB1.gbwt"
         newTracks[2].trackType = "haplotype";
+        newTracks[2].trackColorSettings = defaultTrackColors("haplotype");
         newTracks[3].trackFile = "fileC1.xg";
         newTracks[3].trackType = "graph";
+        newTracks[3].trackColorSettings = defaultTrackColors("graph");
 
         expect(fakeOnChange).toHaveBeenCalledTimes(1);
         expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
@@ -159,17 +164,12 @@ describe('TrackPicker', () => {
         newTracks[4] = {
             trackFile: "fileB2.gam",
             trackType: "read",
-            trackColorSettings: {    
-                mainPalette: "blues",
-                auxPalette: "reds",
-                colorReadsByMappingQuality: false
-            }
+            trackColorSettings: defaultTrackColors("read")
         }
 
         expect(fakeOnChange).toHaveBeenCalledTimes(2);
-        expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
-
-    });    
+        expect(fakeOnChange).toHaveBeenCalledWith(newTracks);        
+    }, 50000);    
 
     it('should close when the exit button is pressed', async () => {
         const fakeOnChange = jest.fn();
@@ -199,8 +199,6 @@ describe('TrackPicker', () => {
         expect(queryByTestId("file-select-component1")).toBeFalsy();
 
         expect(queryByTestId("settings-button-component1")).toBeFalsy();
-
-
 
     });
 

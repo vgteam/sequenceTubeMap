@@ -107,8 +107,8 @@ class DataPositionFormRow extends Component {
         </Button>
         <CopyLink getCurrentViewTarget={this.props.getCurrentViewTarget} />
         {this.props.uploadInProgress && (
-          <div class="spinner-grow" role="status">
-            <span class="sr-only">Loading...</span>
+          <div className="spinner-grow upload-in-progress" role="status">
+            <span className="sr-only">Loading...</span>
           </div>
         )}
       </Form>

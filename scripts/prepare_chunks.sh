@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set -x
 
 function usage() {
     echo >&2 "${0}: Extract graph and read chunks for a region, producing a referencing line for a BED file on standard output"
@@ -67,18 +68,22 @@ mkdir -p $OUTDIR
 vg_chunk_params=(-x $GRAPH_FILE -g -c 20 -p $REGION -T -b $OUTDIR/chunk -E $OUTDIR/regions.tsv)
 
 # construct track JSON for graph file
-jq -n --arg trackFile "${GRAPH_FILE}" --arg trackType "graph" --argjson trackColorSettings '{"mainPalette": "plainColors", "auxPalette": "greys"}' '$ARGS.named' >> $OUTDIR/tracks.json
+GRAPH_PALETTE="$(cat src/config.json | jq '.defaultGraphColorPalette')"
+jq -n --arg trackFile "${GRAPH_FILE}" --arg trackType "graph" --argjson trackColorSettings "$GRAPH_PALETTE" '$ARGS.named' >> $OUTDIR/tracks.json
 
 # construct track JSON for haplotype file, if provided
+HAPLOTYPE_PALETTE="$(cat src/config.json | jq '.defaultHaplotypeColorPalette')"
 if [[ ! -z "${HAPLOTYPE_FILE}" ]] ; then
-    jq -n --arg trackFile "${HAPLOTYPE_FILE}" --arg trackType "haplotype" --argjson trackColorSettings '{"mainPalette": "blues", "auxPalette": "reds"}' '$ARGS.named' >> $OUTDIR/tracks.json
+    jq -n --arg trackFile "${HAPLOTYPE_FILE}" --arg trackType "haplotype" --argjson trackColorSettings "$HAPLOTYPE_PALETTE" '$ARGS.named' >> $OUTDIR/tracks.json
 fi
 
 # construct track JSON for each gam file
 echo >&2 "Gam Files:"
+READ_PALETTE="$(cat src/config.json | jq '.defaultReadColorPalette')"
+echo >&2 "Read Palette: $READ_PALETTE"
 for GAM_FILE in "${GAM_FILES[@]}"; do
     echo >&2 " - $GAM_FILE"
-    jq -n --arg trackFile "${GAM_FILE}" --arg trackType "read" --argjson trackColorSettings '{"mainPalette": "blues", "auxPalette": "reds"}' '$ARGS.named' >> $OUTDIR/tracks.json
+    jq -n --arg trackFile "${GAM_FILE}" --arg trackType "read" --argjson trackColorSettings "$READ_PALETTE" '$ARGS.named' >> $OUTDIR/tracks.json
     vg_chunk_params+=(-a $GAM_FILE)
 done
 

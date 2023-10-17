@@ -10,7 +10,9 @@
 /* eslint no-return-assign: "off" */
 import * as d3 from "d3";
 import "d3-selection-multi";
-import externalConfig from "../config.json";
+import "../config-client.js";
+import externalConfig from "../config-global.mjs";
+import {defaultTrackColors} from "../common.mjs"
 
 const deepEqual = require("deep-equal");
 
@@ -2478,14 +2480,7 @@ function generateTrackColor(track, highlight) {
 
   const sourceID = track.sourceTrackID;
   if (!config.colorSchemes[sourceID]) {
-    if (track.hasOwnProperty("type") && track.type === "read") {
-      // Default to read colors
-      config.colorSchemes[sourceID] = externalConfig.defaultReadColorPalette;
-    } else {
-      // Default to haplotype colors
-      config.colorSchemes[sourceID] =
-        externalConfig.defaultHaplotypeColorPalette;
-    }
+    config.colorSchemes[sourceID] = defaultTrackColors(track.type);
   }
 
   if (track.hasOwnProperty("type") && track.type === "read") {

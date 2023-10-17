@@ -1,7 +1,8 @@
 import PropTypes from "prop-types";
 import Select from "react-select";
 import React from "react";
-import config from "./../config.json";
+import "../config-client.js";
+import { config } from "../config-global.mjs";
 import { Input } from "reactstrap";
 
 
@@ -35,6 +36,7 @@ export const TrackFilePicker = ({
       const file = uploadFileInput.current.files[0];
 
       const completePath = await handleFileUpload(fileType, file);
+      console.log("TrackFilePicker got an upload result:", completePath);
       handleInputChange(completePath);
     }
 
