@@ -12,7 +12,8 @@ import { urlParamsToViewTarget } from "./components/CopyLink";
 import CustomizationAccordion from "./components/CustomizationAccordion";
 import Footer from "./components/Footer";
 import { dataOriginTypes } from "./enums";
-import config from "./config.json";
+import "./config-client.js";
+import { config } from "./config-global.mjs";
 
 const EXAMPLE_TRACKS = [
   // Fake tracks for the generated examples.

@@ -2,7 +2,8 @@ import React from 'react';
 import { render, fireEvent, waitFor }  from '@testing-library/react';
 import {TrackPicker} from './TrackPicker';
 import '@testing-library/jest-dom'
-import config from "./../config.json";
+import "../config-client.js";
+import { config } from "../config-global.mjs";
 import {defaultTrackColors} from "../common.mjs";
 
 

@@ -5,7 +5,8 @@ import { Button } from 'reactstrap'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faList } from '@fortawesome/free-solid-svg-icons';
 import PopupDialog from './PopupDialog.js';
-import config from "./../config.json";
+import "../config-client.js";
+import { config } from "../config-global.mjs";
 
 export const TrackPicker = ({
     tracks, // expects a trackList, same as trackListDisplay

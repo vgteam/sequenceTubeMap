@@ -6,7 +6,8 @@ import {
   } from "reactstrap";
 import {TrackList} from "./TrackList";
 import {TrackAddButton} from "./TrackAddButton";
-import config from "./../config.json";
+import "../config-client.js";
+import { config } from "../config-global.mjs";
 
 export const TrackPickerDisplay = ({
     // tracks expects an object mapping a trackID to trackProps, which includes

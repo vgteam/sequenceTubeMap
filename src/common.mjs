@@ -1,6 +1,10 @@
 // common.mjs: shared functions between client and server
 
-import config from "./config.json";
+// NOTE! Since this file is imported on the server *and* transpiled for the
+// client, we CANNOT import config.json. It would require syntax on Node which
+// is not allowed by the transpiler.
+// So we get the cinfig a fancy way instead. But you *must* import config-client.js or config-server.,js before this file!
+import {config} from "./config-global.mjs";
 
 // function to remove commas from coordinate input
 const removeCommas = (input) => {

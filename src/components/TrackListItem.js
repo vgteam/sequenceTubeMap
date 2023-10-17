@@ -10,7 +10,8 @@ import {TrackDeleteButton} from './TrackDeleteButton';
 import {TrackSettingsButton} from './TrackSettingsButton';
 import React, { useEffect, useState} from 'react';
 import {defaultTrackColors} from "../common.mjs"
-import config from "./../config.json";
+import "../config-client.js";
+import { config } from "../config-global.mjs";
 
 
 export const TrackListItem = ({
