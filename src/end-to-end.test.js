@@ -523,6 +523,7 @@ it("can accept uploaded files", async () => {
   // See if correct svg rendered
   let svg = document.getElementById("svg");
   expect(svg).toBeTruthy();
+  // Since remove redundant nodes is on, we have 3 titles for nodes and 2 for paths.
   expect(svg.getElementsByTagName("title").length).toEqual(5);
 
   console.log("Test over");
