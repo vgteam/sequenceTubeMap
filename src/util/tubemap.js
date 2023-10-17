@@ -12,7 +12,7 @@ import * as d3 from "d3";
 import "d3-selection-multi";
 import "../config-client.js";
 import externalConfig from "../config-global.mjs";
-import {defaultTrackColors} from "../common.mjs"
+import defaultTrackColors from "../common.mjs"
 
 const deepEqual = require("deep-equal");
 
