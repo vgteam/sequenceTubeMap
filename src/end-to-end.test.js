@@ -532,6 +532,5 @@ it("can accept uploaded files", async () => {
   expect(svg.getElementsByTagName("title").length).toEqual(5);
 
   console.log("Test over");
-
-// increase timeout to allow fetching of url
-});
+}, 50000); // We need to allow a long time for the slow vg test machines.
+// TODO: Is this slow because of unnecessary re-renders caused by the new color schemes taking effect and being rendered with the old data, before the new data downloads?
