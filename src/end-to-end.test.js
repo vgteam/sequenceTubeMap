@@ -92,12 +92,15 @@ async function waitForLoadStart() {
 
 // Wait for the loading throbber to disappear
 async function waitForLoadEnd() {
+  console.log("Waiting for load end")
   return new Promise((resolve, reject) => {
     function waitAround() {
       let loader = document.getElementById("loader");
       if (loader) {
+        console.log("Still loading...")
         setTimeout(waitAround, 100);
       } else {
+        console.log("Loading over!")
         resolve();
       }
     }
@@ -476,23 +479,25 @@ it("can accept uploaded files", async () => {
   const file = new window.File([fileData], "cactus.vg", { type: "application/octet-stream" });
   
   console.log("Adding file:", file);
-  await waitFor(() => {
-    userEvent.upload(fileUploader, file);
+  await act(async () => {
+    await waitFor(() => {
+      userEvent.upload(fileUploader, file);
+    });
+    console.log("File added");
+
+    // make sure the file is in the upload component
+    expect(fileUploader.files.length).toBe(1);
+    expect(fileUploader.files[0]).toStrictEqual(file);
+
+    // Wait for the upload to actually go through.
+    // TODO: Don't let the user close the dialog until the upload goes through?
+    // We need to see the upload spinner
+    await waitForUploadStart();
+    console.log("Upload started");
+    // And then it needs to go away again
+    await waitForUploadEnd();
+    console.log("Upload ended");
   });
-  console.log("File added");
-
-  // make sure the file is in the upload component
-  expect(fileUploader.files.length).toBe(1);
-  expect(fileUploader.files[0]).toStrictEqual(file);
-
-  // Wait for the upload to actually go through.
-  // TODO: Don't let the user close the dialog until the upload goes through?
-  // We need to see the upload spinner
-  await waitForUploadStart();
-  console.log("Upload started");
-  // And then it needs to go away again
-  await waitForUploadEnd();
-  console.log("Upload ended");
 
   // exit the track picker
   fireEvent.click(screen.queryByTestId("TrackPickerCloseButton"));
