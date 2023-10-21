@@ -67,8 +67,11 @@ REGION_END="$(echo ${REGION} | rev | cut -f1 -d'-' | rev)"
 REGION_START="$(echo ${REGION} | rev | cut -f2 -d'-' | cut -f1 -d':' | rev)"
 REGION_CONTIG="$(echo ${REGION} | rev| cut -f2- -d':' | rev)"
 
+# get path relative to directory above the scripts directory
+GRAPH_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $GRAPH_FILE)
+
 # construct track JSON for graph file
-jq -n --arg trackFile "${GRAPH_FILE}" --arg trackType "graph" --argjson trackColorSettings '{"mainPalette": "plainColors", "auxPalette": "greys"}' '$ARGS.named' >> $OUTDIR/tracks.json
+jq -n --arg trackFile "${GRAPH_FILE_PATH}" --arg trackType "graph" --argjson trackColorSettings '{"mainPalette": "plainColors", "auxPalette": "greys"}' '$ARGS.named' >> $OUTDIR/temp.json
 
 # Put the graphy file in place
 vg convert -p "${GRAPH_FILE}" > $OUTDIR/chunk.vg
@@ -80,8 +83,10 @@ echo >&2 "Gam Files:"
 GAM_NUM=0
 for GAM_FILE in "${GAM_FILES[@]}"; do
     echo >&2 " - $GAM_FILE"
+
+    GAM_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $GAM_FILE)
     # construct track JSON for each gam file
-    jq -n --arg trackFile "${GAM_FILE}" --arg trackType "read" --argjson trackColorSettings '{"mainPalette": "blues", "auxPalette": "reds"}' '$ARGS.named' >> $OUTDIR/tracks.json
+    jq -n --arg trackFile "${GAM_FILE_PATH}" --arg trackType "read" --argjson trackColorSettings '{"mainPalette": "blues", "auxPalette": "reds"}' '$ARGS.named' >> $OUTDIR/temp.json
     # Work out a chunk-internal GAM name with the same leading numbering vg chunk uses
     if [[ "${GAM_NUM}" == "0" ]] ; then
         GAM_LEADER="chunk"
@@ -95,6 +100,11 @@ for GAM_FILE in "${GAM_FILES[@]}"; do
     printf "\t$(basename "${GAM_CHUNK_NAME}")" >> $OUTDIR/regions.tsv
     GAM_NUM=$((GAM_NUM + 1))
 done
+
+# put all tracks objects into an array
+(jq -s '.' < $OUTDIR/temp.json) > $OUTDIR/tracks.json
+
+rm $OUTDIR/temp.json
 
 # construct node file
 if [[ ! -z "${NODE_COLORS}" ]] ; then
