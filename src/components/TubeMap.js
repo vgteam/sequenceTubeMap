@@ -10,7 +10,10 @@ class TubeMap extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    console.log('Props:', this.props);
+    console.log("New node count:", (this.props.nodes || []).length);
+    console.log("New read count:", (this.props.reads || []).length);
+    console.log("Old node count:", (prevProps.nodes || []).length);
+    console.log("Old read count:", (prevProps.reads || []).length);
     if (!isEqual(this.props, prevProps)) {
       console.log('Props have changed so re-creating tube map');
       this.updateVisOptions();

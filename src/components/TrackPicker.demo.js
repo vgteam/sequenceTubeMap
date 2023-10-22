@@ -2,7 +2,8 @@ import Demo, {props as P} from 'react-demo'
 // See https://github.com/rpominov/react-demo for how to make a demo
 
 import React from "react";
-import config from "./../config.json";
+import "../config-client.js";
+import { config } from "../config-global.mjs";
 import TrackPicker from "./TrackPicker";
 
 export default (<Demo

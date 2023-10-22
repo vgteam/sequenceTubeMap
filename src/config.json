@@ -54,9 +54,15 @@
   "fetchTimeout": 15,
   "maxFileSizeBytes": 1000000000,
 
+  "defaultGraphColorPalette" : {
+    "mainPalette": "#000000", 
+    "auxPalette": "greys", 
+    "colorReadsByMappingQuality": false
+  },
+
   "defaultHaplotypeColorPalette" : {
-    "mainPalette": "ygreys", 
-    "auxPalette": "ygreys", 
+    "mainPalette": "plainColors", 
+    "auxPalette": "lightColors", 
     "colorReadsByMappingQuality": false
   },
   
@@ -69,8 +75,8 @@
   "defaultTrackProps" : {
     "trackType": "graph",
     "trackColorSettings": {
-      "mainPalette": "blues",
-      "auxPalette": "reds",
+      "mainPalette": "#000000",
+      "auxPalette": "greys",
       "colorReadsByMappingQuality": false
     }
   },
