@@ -4,9 +4,6 @@
 
 "use strict";
 
-import "./config-server.mjs";
-import { config } from "./config-global.mjs";
-
 import assert from "assert";
 import { spawn } from "child_process";
 import express from "express";
@@ -27,9 +24,34 @@ import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
-import { JSONParser} from '@streamparser/json';
 
-
+// Now we want to load config.json.
+//
+// We *should* be able to import it, but that is not allowed by Node without
+// 'assert { type: "json" }' at the end.
+//
+// But that syntax is in turn prohibited by Babel unless you add a flag to tell
+// it to turn on its own ability to parse that "experimental" syntax.
+//
+// And the React setup prohibits you from setting the flag (unless you eject
+// and take on the maintainance burden of all changes to react-scripts, or else
+// you install one of the modules dedicated to hacking around this).
+//
+// We could go back to require for this, but then we'd have to say import.meta
+// to get ahold of it, and we aren't allowed to say that with Jest's parser;
+// it's a syntax error because React's Babel (?) turns all our code into
+// non-module JS for Jest but doesn't handle that.
+//
+// So we try a filesystem load.
+// See <https://stackoverflow.com/a/75705665>
+// But we can't use top-level await, so it has to be synchronous.
+//
+// We also can't say "__dirname" or "import.meta" even to poll if those exist,
+// or node and Babel (respectively) will yell at us.
+// Luckily the es-dirname module exists which can find *our* directory by
+// looking at the stack. See
+// https://github.com/vdegenne/es-dirname/blob/master/es-dirname.js
+const config = JSON.parse(readFileSync(dirname() + '/config.json'));
 
 if (process.env.NODE_ENV !== "production") {
   // Load any .env file config
@@ -72,6 +94,11 @@ const fileTypes = {
   READ: "read",
   BED:"bed",
 };
+
+// In memory storage of fetched file eTags
+// Used to check if the file has been updated and we need to fetch again
+// Stores urls mapped to the eTag from the most recently recieved request
+const ETagMap = new Map(); 
 
 // Make sure that the scratch directory exists at startup, so multiple requests
 // can't fight over its creation.
@@ -149,10 +176,6 @@ api.use((req, res, next) => {
 api.post("/trackFileSubmission", upload.single("trackFile"), (req, res) => {
   console.log("/trackFileSubmission");
   console.log(req.file);
-  if (typeof req.file === "undefined") {
-    // No file was sent
-    throw new BadRequestError("No file upload was provided");
-  }
   if (req.body.fileType === fileTypes["READ"]) {
     indexGamSorted(req, res);
   } else {
@@ -569,13 +592,13 @@ async function getChunkedData(req, res, next) {
         // Make sure that path 0 is the path we actually asked about
         let refPaths = [];
         let otherPaths = [];
-        for (let pathObject of req.graph.path) {
-          if (pathObject.name === parsedRegion.contig) {
+        for (let path of req.graph.path) {
+          if (path.name === parsedRegion.contig) {
             // This is the path we asked about, so it goes first
-            refPaths.push(pathObject);
+            refPaths.push(path);
           } else { 
             // Then we put each other path
-            otherPaths.push(pathObject);
+            otherPaths.push(path);
           }
         }
         req.graph.path = refPaths.concat(otherPaths);
@@ -1214,7 +1237,13 @@ const downloadFile = async(fileURL, destination) => {
     throw new BadRequestError("Download destination path not allowed: " + destination);
   }
 
-  const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes);
+  const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes, destination);
+
+  // file has already been downloaded and has not been updated since last fetch
+  if (!response) {
+    console.log("File has already been downloaded at ", destination);
+    return
+  }
 
   console.log("Save to:", destination);
  
@@ -1224,21 +1253,45 @@ const downloadFile = async(fileURL, destination) => {
 
 }
 
-const fetchAndValidate = async(url, maxBytes) => {
+// url: url destination to fetch from
+// maxBytes: maxBytes before aborting fetch
+// existingLocation: the existing location of a file, to prevent duplicate fetches of a file already on disk
+//                   leaving it empty will result in always fetching
+const fetchAndValidate = async(url, maxBytes, existingLocation = null) => {
+  let fetchHeader = {};
+  // We don't want to fetch again if we have a copy on disk
+  // Use a "If-None-Match" header to only fetch if our copy is outdated
+  if (existingLocation && fs.existsSync(existingLocation)) {
+    fetchHeader = {
+      "If-None-Match": ETagMap.get(url) || "-1"
+    }
+  }
   const options = {
     method: "GET",
     credentials: "omit",
     cache: "default",
-    signal: timeoutController(config.fetchTimeout).signal
+    signal: timeoutController(config.fetchTimeout).signal,
+    headers: fetchHeader
   };
   
   console.log("Fetching URL:", url);
   let response = await fetch(url, options);
 
+  // file exists on disk and file has not been updated since last fetch
+  if (response.status === 304) {
+    console.log("file not modified since last fetch");
+    return 0
+  }
+
+  // update our eTag for this url
+  ETagMap.set(url, response.headers.get("ETag"));
+
   // check for unsuccessful response codes
   if (!response.ok) {
     throw new BadRequestError(`Fetch request for ${url} failed: ` + response.status);
   }
+  
+  
 
   // check for size specified in header
   const contentLength = response.headers.get("Content-Length");
@@ -1432,21 +1485,9 @@ async function getBedRegions(bed) {
       if (fs.existsSync(track_json)) {
         // Create string of tracks data
         const string_data = fs.readFileSync(track_json);
-        const parser = new JSONParser({separator: ''});
-        parser.onValue = ({value, key, parent, stack}) => {
-          if (stack.length > 0) {
-            // ignore inner values
-            return;
-          }
-          if (!Object.hasOwn(value, 'trackFile')) {
-            throw new BadRequestError('Non-track object in tracks.json: ' + JSON.stringify(value))
-          }
-          // put tracks in array
-          tracks_array.push(value);
-        };
-        parser.write(string_data);
+
         // Convert to object container like the client component prop types expect
-        tracks = {...tracks_array}; 
+        tracks = JSON.parse(string_data);
       }
     }
 
