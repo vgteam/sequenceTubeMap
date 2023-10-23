@@ -28,6 +28,7 @@ import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
 import { JSONParser} from '@streamparser/json';
+import cron from "node-cron";
 
 
 
@@ -112,6 +113,36 @@ var limits = {
   fileSize: 1024 * 1024 * 5, // 5 MB (max file size)
 };
 var upload = multer({ storage, limits });
+
+// runs every hour
+// deletes any files in the download directory past the set fileExpirationTime set in config
+cron.schedule('0 * * * *', () => {
+  console.log("cron scheduled check");
+  const currentTime = new Date().getTime();
+  // loop through these specified directories
+  for (const dir of [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH]) {
+    fs.readdir(dir, (err, files) => {
+      
+      if (!files || files.length === 0) {
+        return;
+      }
+
+      files.forEach((file) => {
+        const filePath = path.join(dir, file)
+        // get file statistics
+        fs.stat(filePath, (statErr, stats) => {
+          const creationTime = stats.birthtime.getTime();
+          if (currentTime - creationTime >= config.fileExpirationTime) {
+            // delete file
+            if (file !== ".gitignore") {
+              fs.unlink(filePath);
+            }
+          }
+        });
+      });
+    });
+  }
+});
 
 const app = express();
 
