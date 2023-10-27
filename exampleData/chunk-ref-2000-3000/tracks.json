@@ -1,7 +1,18 @@
-{
-  "graph_file": "cactus.vg",
-  "haplotype_file": "",
-  "gam_files": [
-    "cactus-NA12879.sorted.gam"
-  ]
-}
+[
+  {
+    "trackFile": "exampleData/cactus.vg",
+    "trackType": "graph",
+    "trackColorSettings": {
+      "mainPalette": "plainColors",
+      "auxPalette": "greys"
+    }
+  },
+  {
+    "trackFile": "exampleData/cactus-NA12879.sorted.gam",
+    "trackType": "read",
+    "trackColorSettings": {
+      "mainPalette": "blues",
+      "auxPalette": "reds"
+    }
+  }
+]
