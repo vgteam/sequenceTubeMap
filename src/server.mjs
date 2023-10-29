@@ -114,33 +114,51 @@ var limits = {
 };
 var upload = multer({ storage, limits });
 
+// deletes expired files given a directory, recursively calls itself for nested directories
+// expired files are files not accessed for a certain amount of time
+function deleteExpiredFiles(directoryPath) {
+  const currentTime = new Date().getTime();
+
+  if (!fs.existsSync(directoryPath)) {
+    return
+  }
+
+  const files = fs.readdirSync(directoryPath);
+
+  files.forEach((file) => {
+    const filePath = path.join(directoryPath, file);
+
+    
+    if (fs.statSync(filePath).isFile()) {
+      // check to see if file needs to be deleted
+      const lastAccessedTime = fs.statSync(filePath).atime;
+      console.log(`${filePath}: ${lastAccessedTime}, currentTime: ${currentTime}`);
+      if (currentTime - lastAccessedTime >= config.fileExpirationTime) {
+        if (file !== ".gitignore") {
+          fs.unlinkSync(filePath);
+          console.log("Deleting file: ", filePath);
+        }
+      }
+    } else if (fs.statSync(filePath).isDirectory()) {
+      // call deleteExpiredFiles on the nested directory
+      deleteExpiredFiles(filePath);
+
+      // if the nested directory is empty after deleting expired files, remove it
+      if (fs.readdirSync(filePath).length === 0) {
+        fs.rmdirSync(filePath);
+        console.log("Deleting directory: ", filePath);
+      }
+    }
+  });
+}
+
 // runs every hour
 // deletes any files in the download directory past the set fileExpirationTime set in config
 cron.schedule('0 * * * *', () => {
   console.log("cron scheduled check");
-  const currentTime = new Date().getTime();
   // loop through these specified directories
   for (const dir of [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH]) {
-    fs.readdir(dir, (err, files) => {
-      
-      if (!files || files.length === 0) {
-        return;
-      }
-
-      files.forEach((file) => {
-        const filePath = path.join(dir, file)
-        // get file statistics
-        fs.stat(filePath, (statErr, stats) => {
-          const creationTime = stats.birthtime.getTime();
-          if (currentTime - creationTime >= config.fileExpirationTime) {
-            // delete file
-            if (file !== ".gitignore") {
-              fs.unlink(filePath);
-            }
-          }
-        });
-      });
-    });
+    deleteExpiredFiles(dir);
   }
 });
 
