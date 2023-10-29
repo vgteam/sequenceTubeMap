@@ -29,6 +29,7 @@ import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
 import { JSONParser} from '@streamparser/json';
 import cron from "node-cron";
+import lockFile from "lockfile";
 
 
 
@@ -117,6 +118,7 @@ var upload = multer({ storage, limits });
 // deletes expired files given a directory, recursively calls itself for nested directories
 // expired files are files not accessed for a certain amount of time
 function deleteExpiredFiles(directoryPath) {
+  console.log("deleting expired files in ", directoryPath);
   const currentTime = new Date().getTime();
 
   if (!fs.existsSync(directoryPath)) {
@@ -128,13 +130,11 @@ function deleteExpiredFiles(directoryPath) {
   files.forEach((file) => {
     const filePath = path.join(directoryPath, file);
 
-    
     if (fs.statSync(filePath).isFile()) {
       // check to see if file needs to be deleted
       const lastAccessedTime = fs.statSync(filePath).atime;
-      console.log(`${filePath}: ${lastAccessedTime}, currentTime: ${currentTime}`);
       if (currentTime - lastAccessedTime >= config.fileExpirationTime) {
-        if (file !== ".gitignore") {
+        if (file !== ".gitignore" && file !== "directory.lock") {
           fs.unlinkSync(filePath);
           console.log("Deleting file: ", filePath);
         }
@@ -152,13 +152,57 @@ function deleteExpiredFiles(directoryPath) {
   });
 }
 
+function lockDirectory(directoryPath) {
+  if (!fs.existsSync(directoryPath)) {
+    return 1;
+  }
+  const lockOptions = {
+    "retries": 10, // number of tries before giving up
+    "retriesWait": 1000 // number of miliseconds to wait before trying to aquire the lock again
+  }
+
+  const lockFilePath = path.join(directoryPath, "directory.lock");
+  // attempt to aquire the lock for the directory
+  lockFile.lock(lockFilePath, lockOptions, function (err) {
+    if (err) {
+      console.log("failed to aquire locks for", directoryPath);
+      return err;
+    } else {
+      console.log("successfully aquired locks for", directoryPath);
+      return 0;
+    }
+  });
+}
+
+function unlockDirectory(directoryPath) {
+  if (!fs.existsSync(directoryPath)) {
+    return 1;
+  }
+  const lockFilePath = path.join(directoryPath, "directory.lock");
+  lockFile.unlock(lockFilePath, function (err) {
+    if (err) {
+      console.log("failed to release locks for", directoryPath);
+      return err;
+    } else {
+      console.log("successfully released locks for ", directoryPath);
+      return 0;
+    }
+  });
+}
+
 // runs every hour
 // deletes any files in the download directory past the set fileExpirationTime set in config
-cron.schedule('0 * * * *', () => {
+cron.schedule('* * * * *', () => {
   console.log("cron scheduled check");
   // loop through these specified directories
   for (const dir of [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH]) {
-    deleteExpiredFiles(dir);
+    const err = lockDirectory(dir);
+    if (err) {
+      console.log("unable to delete expired files for", dir);
+    } else{
+      deleteExpiredFiles(dir);
+      unlockDirectory(dir);
+    }
   }
 });
 
