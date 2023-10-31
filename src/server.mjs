@@ -312,6 +312,15 @@ async function getChunkedData(req, res, next) {
     console.log("no BED file provided.");
   }
 
+  // client is going to send ifSimplifyChecked = true if they want to simplify view
+  // where is the request
+  // add a field to the request
+  let ifSimplifyChecked = false;
+  req.simplify = false;
+  if (ifSimplifyChecked === true){
+    req.simplify = true;
+  }
+
   // This will have a conitg, start, end, or a contig, start, distance
   let parsedRegion;
   try {
@@ -427,6 +436,10 @@ async function getChunkedData(req, res, next) {
 
     console.time("vg chunk");
     const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
+    let vgSimplifyCall = null;
+    if (req.simplify){
+      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
+    }
     const vgViewCall = spawn(`${VG_PATH}vg`, ["view", "-j", "-"]);
     let graphAsString = "";
     req.error = Buffer.alloc(0);
@@ -453,12 +466,16 @@ async function getChunkedData(req, res, next) {
     });
 
     vgChunkCall.stdout.on("data", function (data) {
-      vgViewCall.stdin.write(data);
+      if (req.simplify){
+        vgSimplifyCall.stdin.write(data);
+      } else {
+        vgViewCall.stdin.write(data);
+      }
     });
 
     vgChunkCall.on("close", (code) => {
       console.log(`vg chunk exited with code ${code}`);
-      vgViewCall.stdin.end();
+      vgSimplifyCall.stdin.end();
       if (code !== 0) {
         console.log("Error from " + VG_PATH + "vg " + vgChunkParams.join(" "));
         // Execution failed
@@ -469,6 +486,49 @@ async function getChunkedData(req, res, next) {
       }
     });
 
+    // vg simplify
+    if (req.simplify){
+      vgSimplifyCall.on("error", function (err) {
+        console.log(
+          "Error executing " +
+            VG_PATH +
+            "vg " +
+            "simplify " + 
+            "- " + 
+            ": " +
+            err
+        );
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("vg simplify failed"));
+        }
+        return;
+      });
+
+      vgSimplifyCall.stderr.on("data", (data) => {
+        console.log(`vg simplify err data: ${data}`);
+        req.error += data;
+      });
+
+      vgSimplifyCall.stdout.on("data", function (data) {
+        vgViewCall.stdin.write(data);
+      });
+
+      vgSimplifyCall.on("close", (code) => {
+        console.log(`vg simplify exited with code ${code}`);
+        vgViewCall.stdin.end();
+        if (code !== 0) {
+          console.log("Error from " + VG_PATH + "vg " + "simplify - ");
+          // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg simplify failed"));
+          }
+        }
+      });
+    }
+
+    // vg view
     vgViewCall.on("error", function (err) {
       console.log('Error executing "vg view": ' + err);
       if (!sentResponse) {
