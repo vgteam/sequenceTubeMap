@@ -29,7 +29,7 @@ import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
 import { JSONParser} from '@streamparser/json';
 import cron from "node-cron";
-import lockFile from "lockfile";
+import RWLock from "readers-writer-lock";
 
 
 
@@ -74,6 +74,8 @@ const fileTypes = {
   READ: "read",
   BED:"bed",
 };
+
+const lockMap = new Map();
 
 // Make sure that the scratch directory exists at startup, so multiple requests
 // can't fight over its creation.
@@ -152,26 +154,20 @@ function deleteExpiredFiles(directoryPath) {
   });
 }
 
-function lockDirectory(directoryPath) {
+async function lockDirectory(directoryPath, lockType, func) {
   if (!fs.existsSync(directoryPath)) {
     return 1;
   }
-  const lockOptions = {
-    "retries": 10, // number of tries before giving up
-    "retriesWait": 1000 // number of miliseconds to wait before trying to aquire the lock again
+
+  let lock = lockMap.get(directoryPath);
+  // if there are no locks, create a new lock and store it in the lock directionary
+  if (!lock) {
+    lock = new RWLock();
+    lockMap.set(directoryPath, lock);
   }
 
-  const lockFilePath = path.join(directoryPath, "directory.lock");
-  // attempt to aquire the lock for the directory
-  lockFile.lock(lockFilePath, lockOptions, function (err) {
-    if (err) {
-      console.log("failed to aquire locks for", directoryPath);
-      return err;
-    } else {
-      console.log("successfully aquired locks for", directoryPath);
-      return 0;
-    }
-  });
+  if lockType == 
+
 }
 
 function unlockDirectory(directoryPath) {

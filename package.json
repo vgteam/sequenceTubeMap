@@ -49,6 +49,7 @@
     "react-select-event": "^5.5.1",
     "reactjs-popup": "^2.0.5",
     "reactstrap": "^9.1.9",
+    "readers-writer-lock": "^1.0.0",
     "sanitize-filename": "^1.6.3",
     "uuid": "^9.0.0",
     "webpack": "^5.82.0",
