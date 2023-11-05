@@ -29,7 +29,7 @@ import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
 import { JSONParser} from '@streamparser/json';
 import cron from "node-cron";
-import RWLock from "readers-writer-lock";
+import { RWLock, combine } from "readers-writer-lock";
 
 
 
@@ -76,6 +76,11 @@ const fileTypes = {
 };
 
 const lockMap = new Map();
+
+const lockTypes = {
+  READ_LOCK: "read_lock",
+  WRITE_LOCK: "write_lock"
+}
 
 // Make sure that the scratch directory exists at startup, so multiple requests
 // can't fight over its creation.
@@ -154,51 +159,58 @@ function deleteExpiredFiles(directoryPath) {
   });
 }
 
+// takes in an async function, locks the direcotry for the duration of the function
 async function lockDirectory(directoryPath, lockType, func) {
-  if (!fs.existsSync(directoryPath)) {
-    return 1;
-  }
-
+  console.log("Acquiring", lockType, "for", directoryPath);
+  // look into lockMap to see if there is a lock assigned to the directory
   let lock = lockMap.get(directoryPath);
   // if there are no locks, create a new lock and store it in the lock directionary
   if (!lock) {
     lock = new RWLock();
+    
     lockMap.set(directoryPath, lock);
   }
 
-  if lockType == 
+  if (lockType == lockTypes.READ_LOCK) {
+    // lock is released when func returns
+    return lock.read(func);
+  } else if (lockType == lockTypes.WRITE_LOCK) {
+    return lock.write(func);
+  } else {
+    console.log("Not a valid lock type:", lockType);
+    return 1;
+  }
 
 }
 
-function unlockDirectory(directoryPath) {
-  if (!fs.existsSync(directoryPath)) {
-    return 1;
+// expects an array of directory paths, attemping to acquire all directory locks
+async function lockDirectories(directoryPaths, lockType, func) {
+  // input is unexpected
+  if (!directoryPaths || directoryPaths.length === 0) {
+    return
   }
-  const lockFilePath = path.join(directoryPath, "directory.lock");
-  lockFile.unlock(lockFilePath, function (err) {
-    if (err) {
-      console.log("failed to release locks for", directoryPath);
-      return err;
-    } else {
-      console.log("successfully released locks for ", directoryPath);
-      return 0;
-    }
-  });
+
+  // last lock to acquire, ready to proceed
+  if (directoryPaths.length === 1) {
+    return lockDirectory(directoryPaths[0], lockType, func);
+  }
+
+  // attempt to acquire a lock for the next directory, and call lockDirectories on the remaining directories
+  const currDirectory = directoryPaths.pop();
+  return lockDirectory(currDirectory, lockType, async function() {
+    lockDirectories(directoryPaths, lockType, func);
+  })
 }
 
 // runs every hour
 // deletes any files in the download directory past the set fileExpirationTime set in config
 cron.schedule('* * * * *', () => {
   console.log("cron scheduled check");
-  // loop through these specified directories
+  // attempt to acquire a write lock for each on the directory before attemping to delete files
   for (const dir of [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH]) {
-    const err = lockDirectory(dir);
-    if (err) {
-      console.log("unable to delete expired files for", dir);
-    } else{
+    lockDirectory(dir, lockTypes.WRITE_LOCK, async function() {
       deleteExpiredFiles(dir);
-      unlockDirectory(dir);
-    }
+    });
   }
 });
 
@@ -341,8 +353,10 @@ api.post("/getChunkedData", (req, res, next) => {
   //
   // So we set up a promise here and we make sure to handle failures
   // ourselves with next().
-  let promise = getChunkedData(req, res, next);
-  promise.catch(next);
+  lockDirectories([DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH], lockTypes.READ_LOCK, async function() {
+    let promise = getChunkedData(req, res, next);
+    promise.catch(next);
+  })
 });
 
 // Handle a chunked data (tube map view) request. Returns a promise. On error,
