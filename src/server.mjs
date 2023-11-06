@@ -6,7 +6,6 @@
 
 import "./config-server.mjs";
 import { config } from "./config-global.mjs";
-
 import assert from "assert";
 import { spawn } from "child_process";
 import express from "express";
@@ -27,9 +26,6 @@ import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
-import { JSONParser} from '@streamparser/json';
-
-
 
 if (process.env.NODE_ENV !== "production") {
   // Load any .env file config
@@ -72,6 +68,11 @@ const fileTypes = {
   READ: "read",
   BED:"bed",
 };
+
+// In memory storage of fetched file eTags
+// Used to check if the file has been updated and we need to fetch again
+// Stores urls mapped to the eTag from the most recently recieved request
+const ETagMap = new Map(); 
 
 // Make sure that the scratch directory exists at startup, so multiple requests
 // can't fight over its creation.
@@ -149,10 +150,6 @@ api.use((req, res, next) => {
 api.post("/trackFileSubmission", upload.single("trackFile"), (req, res) => {
   console.log("/trackFileSubmission");
   console.log(req.file);
-  if (typeof req.file === "undefined") {
-    // No file was sent
-    throw new BadRequestError("No file upload was provided");
-  }
   if (req.body.fileType === fileTypes["READ"]) {
     indexGamSorted(req, res);
   } else {
@@ -569,13 +566,13 @@ async function getChunkedData(req, res, next) {
         // Make sure that path 0 is the path we actually asked about
         let refPaths = [];
         let otherPaths = [];
-        for (let pathObject of req.graph.path) {
-          if (pathObject.name === parsedRegion.contig) {
+        for (let path of req.graph.path) {
+          if (path.name === parsedRegion.contig) {
             // This is the path we asked about, so it goes first
-            refPaths.push(pathObject);
+            refPaths.push(path);
           } else { 
             // Then we put each other path
-            otherPaths.push(pathObject);
+            otherPaths.push(path);
           }
         }
         req.graph.path = refPaths.concat(otherPaths);
@@ -1214,7 +1211,13 @@ const downloadFile = async(fileURL, destination) => {
     throw new BadRequestError("Download destination path not allowed: " + destination);
   }
 
-  const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes);
+  const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes, destination);
+
+  // file has already been downloaded and has not been updated since last fetch
+  if (!response) {
+    console.log("File has already been downloaded at ", destination);
+    return
+  }
 
   console.log("Save to:", destination);
  
@@ -1224,21 +1227,45 @@ const downloadFile = async(fileURL, destination) => {
 
 }
 
-const fetchAndValidate = async(url, maxBytes) => {
+// url: url destination to fetch from
+// maxBytes: maxBytes before aborting fetch
+// existingLocation: the existing location of a file, to prevent duplicate fetches of a file already on disk
+//                   leaving it empty will result in always fetching
+const fetchAndValidate = async(url, maxBytes, existingLocation = null) => {
+  let fetchHeader = {};
+  // We don't want to fetch again if we have a copy on disk
+  // Use a "If-None-Match" header to only fetch if our copy is outdated
+  if (existingLocation && fs.existsSync(existingLocation)) {
+    fetchHeader = {
+      "If-None-Match": ETagMap.get(url) || "-1"
+    }
+  }
   const options = {
     method: "GET",
     credentials: "omit",
     cache: "default",
-    signal: timeoutController(config.fetchTimeout).signal
+    signal: timeoutController(config.fetchTimeout).signal,
+    headers: fetchHeader
   };
   
   console.log("Fetching URL:", url);
   let response = await fetch(url, options);
 
+  // file exists on disk and file has not been updated since last fetch
+  if (response.status === 304) {
+    console.log("file not modified since last fetch");
+    return 0
+  }
+
+  // update our eTag for this url
+  ETagMap.set(url, response.headers.get("ETag"));
+
   // check for unsuccessful response codes
   if (!response.ok) {
     throw new BadRequestError(`Fetch request for ${url} failed: ` + response.status);
   }
+  
+  
 
   // check for size specified in header
   const contentLength = response.headers.get("Content-Length");
