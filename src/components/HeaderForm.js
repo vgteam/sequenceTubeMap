@@ -155,6 +155,10 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
      return false;
   }
 
+  if (currViewTarget.simplify !== nextViewTarget.simplify){
+    return false;
+  }
+
   return true;
 
 }
@@ -208,6 +212,7 @@ class HeaderForm extends Component {
         region: ds.region,
         dataType: ds.dataType,
         name: ds.name,
+        simplify: ds.simplify 
       };
       return stateVals;
     });
@@ -465,6 +470,7 @@ class HeaderForm extends Component {
     name: this.state.name,
     region: this.state.region,
     dataType: this.state.dataType,
+    simplify: this.state.simplify
   });
 
   handleGoButton = () => {
@@ -796,6 +802,9 @@ class HeaderForm extends Component {
                     onChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
+                  {/* Button for simplify */}
+                  
+                  
                 </div>
               }
 

@@ -312,14 +312,11 @@ async function getChunkedData(req, res, next) {
     console.log("no BED file provided.");
   }
 
-  // client is going to send ifSimplifyChecked = true if they want to simplify view
-  // where is the request
-  // add a field to the request
-  let ifSimplifyChecked = false;
+  // client is going to send simplify = true if they want to simplify view
   req.simplify = false;
-  if (ifSimplifyChecked === true){
+  if (req.body.simplify){
     req.simplify = true;
-  }
+  } 
 
   // This will have a conitg, start, end, or a contig, start, distance
   let parsedRegion;
@@ -475,7 +472,11 @@ async function getChunkedData(req, res, next) {
 
     vgChunkCall.on("close", (code) => {
       console.log(`vg chunk exited with code ${code}`);
-      vgSimplifyCall.stdin.end();
+      if (req.simplify){
+        vgSimplifyCall.stdin.end();
+      } else {
+        vgViewCall.stdin.end();
+      }
       if (code !== 0) {
         console.log("Error from " + VG_PATH + "vg " + vgChunkParams.join(" "));
         // Execution failed

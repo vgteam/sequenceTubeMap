@@ -10,7 +10,8 @@
       "dataPath": "default",
       "region": "17:1-100",
       "bedFile": "exampleData/internal/snp1kg-BRCA1.bed",
-      "dataType": "built-in"
+      "dataType": "built-in",
+      "simplify": false
     },
     {
       "name": "vg \"small\" example",
@@ -89,5 +90,6 @@
 
   "MAXUPLOADSIZE": 5242880,
   "pickerTypeOptions": ["mounted", "upload"]
+
 
 }
