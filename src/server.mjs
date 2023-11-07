@@ -124,6 +124,8 @@ var upload = multer({ storage, limits });
 
 // deletes expired files given a directory, recursively calls itself for nested directories
 // expired files are files not accessed for a certain amount of time
+// TODO: find a more reliable way to detect file accessed time than stat.atime?
+// atime requires correct environment configurations
 function deleteExpiredFiles(directoryPath) {
   console.log("deleting expired files in ", directoryPath);
   const currentTime = new Date().getTime();
@@ -184,6 +186,8 @@ async function lockDirectory(directoryPath, lockType, func) {
 }
 
 // expects an array of directory paths, attemping to acquire all directory locks
+// all uses of this function requires the array of directoryPaths to be in the same order
+// e.g locking [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH] should always lock DOWNLOAD_DATA_PATH first to prevent deadlock
 async function lockDirectories(directoryPaths, lockType, func) {
   // input is unexpected
   if (!directoryPaths || directoryPaths.length === 0) {
@@ -353,10 +357,13 @@ api.post("/getChunkedData", (req, res, next) => {
   //
   // So we set up a promise here and we make sure to handle failures
   // ourselves with next().
+  
+  // put readlock on necessary directories while processing chunked data
   lockDirectories([DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH], lockTypes.READ_LOCK, async function() {
     let promise = getChunkedData(req, res, next);
     promise.catch(next);
-  })
+    await promise;
+  });
 });
 
 // Handle a chunked data (tube map view) request. Returns a promise. On error,
