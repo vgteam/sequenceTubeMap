@@ -71,7 +71,7 @@ REGION_CONTIG="$(echo ${REGION} | rev| cut -f2- -d':' | rev)"
 GRAPH_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $GRAPH_FILE)
 
 # construct track JSON for graph file
-GRAPH_PALETTE="$(cat src/config.json | jq '.defaultGraphColorPalette')"
+GRAPH_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultGraphColorPalette')"
 jq -n --arg trackFile "${GRAPH_FILE_PATH}" --arg trackType "graph" --argjson trackColorSettings "$GRAPH_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
 
 # Put the graphy file in place
@@ -82,7 +82,7 @@ printf "${REGION_CONTIG}\t${REGION_START}\t${REGION_END}" > $OUTDIR/regions.tsv
 
 echo >&2 "Gam Files:"
 GAM_NUM=0
-READ_PALETTE="$(cat src/config.json | jq '.defaultReadColorPalette')"
+READ_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultReadColorPalette')"
 for GAM_FILE in "${GAM_FILES[@]}"; do
     echo >&2 " - $GAM_FILE"
 
