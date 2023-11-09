@@ -192,8 +192,10 @@ For example, you can run it like:
 
 ```
 cd exampleData/
-../scripts/prepare_local_chunk.sh -x subgraph.gfa -r chr5:1023911-1025911 -g subgraph_reads.gam -g other_sample_reads.gam -o subgraph1 >> subgraphs.bed
+../scripts/prepare_local_chunk.sh -x subgraph.gbz -r chr5:1023911-1025911 -g subgraph_reads.gam -g other_sample_reads.gam -o subgraph1 >> subgraphs.bed
 ```
+
+Your graph can be a `.vg`, `.xg`, `.gfa`, or any other graph format understood by vg, but it *must* be in the same node ID space as your reads, and the script does *not* check this for you! In particular, indexing a GFA graph and mapping to it with `vg giraffe` can result in the original GFA nodes being cut into manageable pieces and assigned new numbers in the graph that the reads actually are aligned to, meaning the original GFA won't work here. You can check your reads against your graph with `vg validate subgraph.gfa --gam subgraph_reads.gam`. If your read alignments look completely absurd and jump all over the place, this is likely the problem.
 
 If the original subgraph file does not remain in place under the configured `dataPath` and accessible by the tube map, errors may occur complaining that it couldn't be accessed when the tube map attempts to list ist contained paths.
 
