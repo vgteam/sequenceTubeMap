@@ -83,11 +83,13 @@ export const urlParamsToViewTarget = (url) => {
 
   // Ensures that the simplify field is a boolean, as the qs module can't tell 
   // the difference between false and "false" 
-  let resultSimplify = result.simplify;
-  if (resultSimplify === "true"){
-    result.simplify = true;
-  } else if (resultSimplify === "false"){
-    result.simplify = false;
+  if (result != null){
+    let resultSimplify = result.simplify;
+    if (resultSimplify === "true"){
+      result.simplify = true;
+    } else if (resultSimplify === "false"){
+      result.simplify = false;
+    }
   }
 
   return result;

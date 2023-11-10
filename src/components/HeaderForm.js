@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Container, Row, Col, Label, Alert } from "reactstrap";
+import { Container, Row, Col, Label, Alert, Button } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
 import "../config-client.js";
@@ -108,7 +108,7 @@ function tracksEqual(curr, next) {
         return false;
     }
   }
-  //count falsy file names as the same
+  // count falsy file names as the same
   if ((!curr_file && !next_file) || curr_file === next_file) {
     return true;
   }
@@ -162,7 +162,6 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
   return true;
 
 }
-
 
 class HeaderForm extends Component {
   state = EMPTY_STATE;
@@ -674,6 +673,11 @@ class HeaderForm extends Component {
     };
   };
 
+  /* Function for simplify */
+  enableSimplify = () => {
+    this.setState( { simplify: !this.state.simplify });
+  }
+
   render() {
     let errorDiv = null;
     if (this.state.error) {
@@ -803,8 +807,7 @@ class HeaderForm extends Component {
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
                   {/* Button for simplify */}
-                  
-                  
+                  <Button onClick={this.enableSimplify} outline active={this.state.simplify}>{this.state.simplify ? "Simplify On" : "Simplify Off"}</Button>
                 </div>
               }
 
