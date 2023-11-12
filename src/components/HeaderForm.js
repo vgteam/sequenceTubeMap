@@ -10,7 +10,7 @@ import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
-import { parseRegion, stringifyRegion } from "../common.mjs";
+import { parseRegion, stringifyRegion, isValidURL } from "../common.mjs";
 
 
 // See src/Types.ts
@@ -509,11 +509,17 @@ class HeaderForm extends Component {
     const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
     return regionString;
   };
-  handleRegionChange = (value, tracks) => {
-    // After user selects a region name or coordinates,
-    // update path and region
-    let coords = value;
 
+  // In addition to a new region value, also takes tracks and chunk associated with the region
+  // Update current track if the new tracks are valid
+  // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
+  // Tracks remain unchanged if neither conditions are met
+  handleRegionChange = async (value, tracks, chunk) => {
+    // After user selects a region name or coordinates,
+    // update path, region, and associated tracks(if applicable)
+
+    // Update path and region
+    let coords = value;
     if (
       this.state.regionInfo.hasOwnProperty("desc") &&
       this.state.regionInfo["desc"].includes(value)
@@ -527,6 +533,20 @@ class HeaderForm extends Component {
     if (tracks) {
       this.setState({ tracks: tracks });
       console.log("New tracks have been population");
+    } else if (isValidURL(this.state.bedFile)){
+      // Try to retrieve tracks if the current bed file is an URL
+      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkTracks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bedURL: this.state.bedFile, chunk: chunk }),
+      });
+
+      // Replace tracks if request returns non-falsey value
+      if (json.tracks) {
+        this.setState({ tracks: json.tracks });
+      }
     }
   };
 

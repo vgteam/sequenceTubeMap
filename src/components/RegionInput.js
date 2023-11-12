@@ -22,6 +22,7 @@ export const RegionInput = ({
 
   // Store possible options from bed file and match them with their respective tracks
   let optionToTrack = {};
+  let optionToChunk = {};
 
   if (regionInfo && !isEmpty(regionInfo)) {
     // Stitch path name + region start and end
@@ -31,14 +32,17 @@ export const RegionInput = ({
       );
     }
 
-    // populate optionToTrack with paths with region
+    // populate optionToTrack and optionToChunk with paths with region
     pathsWithRegion.forEach((path, i) => optionToTrack[path] = regionInfo.tracks[i]);
+    pathsWithRegion.forEach((path, i) => optionToChunk[path] = regionInfo.chunk[i]);
+
 
     // Add descriptions
     pathsWithRegion.push(...regionInfo["desc"]);
 
-    // populate optionToTrack with paths with description as keys
+    // populate optionToTrack and optionToChunk with paths with description as keys
     regionInfo.desc.forEach((desc, i) => optionToTrack[desc] = regionInfo.tracks[i]);
+    regionInfo.desc.forEach((desc, i) => optionToChunk[desc] = regionInfo.chunk[i]);
   }
 
   // Autocomplete selectable options
@@ -56,12 +60,14 @@ export const RegionInput = ({
         id="regionInput"    
 
         onInputChange={(event, newInputValue) => {
-          // If an option is selected, should have a match in optionToTrack
-          if (event.target.textContent in optionToTrack) {
-            // also pass tracks associated with the option
-            handleRegionChange(newInputValue, optionToTrack[event.target.textContent]);
+          // If an option is selected, should have a match in optionToTrack and optionToChunk
+          if (event.target.textContent in optionToTrack && event.target.textContent in optionToChunk) {
+            // pass tracks and chunk associated with the option
+            // handleRegionChange will determine if and how tracks are going to be updated
+            handleRegionChange(newInputValue, optionToTrack[event.target.textContent], optionToChunk[event.target.textContent]);
           } else {
-            handleRegionChange(newInputValue, null);
+            // only pass a region value, tracks will not be updated
+            handleRegionChange(newInputValue, null, null);
           }
         }}
 

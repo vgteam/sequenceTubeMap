@@ -21,7 +21,7 @@ import { server as WebSocketServer } from "websocket";
 import dotenv from "dotenv";
 import dirname from "es-dirname";
 import { readFileSync, writeFile } from 'fs';
-import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
+import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion, isValidURL } from "./common.mjs";
 import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
@@ -1188,23 +1188,6 @@ function hashString(str) {
   return createHash("sha256").update(str).digest("hex");
 }
 
-// returns whether or not a string is a valid http url
-function isValidURL(string) {
-  if (!string) {
-    return False;
-  }
-
-  let url;
-
-  try {
-    url = new URL(string)
-  } catch(error) {
-    return false;
-  }
-
-  return url.protocol === "http:" || url.protocol === "https:";
-}
-
 // Given a URL and a filename, download the given URL to that filename. Assumes required directories exist.
 const downloadFile = async(fileURL, destination) => {
   if (!isAllowedPath(destination)) {
@@ -1305,11 +1288,12 @@ const fetchAndValidate = async(url, maxBytes, existingLocation = null) => {
 //
 // includeContent only downloads the tracks.json file when set to false. If
 // true, all files listed in chunk_contents.txt will be downloaded.
+// includeContent is false when we select a region, we only need the track names
+// includeContent is true when the go button is pressed and a getChunkedData request is called
 const retrieveChunk = async(bedURL, chunk, includeContent) => {
   // path to the designated chunk in the temp directory
   const chunkDir = bedChunkLocalPath(bedURL, chunk);
 
-  // TODO: check if this chunk has been downloaded before, to prevent duplicate fetches
   if (!fs.existsSync(chunkDir)) {
     fs.mkdirSync(chunkDir, { recursive: true });
   }
@@ -1359,6 +1343,38 @@ const timeoutController = (seconds) => {
   setTimeout(() => controller.abort(), seconds * 1000);
   return controller;
 }
+
+// Expects a request with a bed url and a chunk name
+// Attempts to download tracks associated with the chunk name from the bed url
+// Returns downloaded tracks
+api.post("/getChunkTracks", (req, res, next) => {
+  console.log("received request for chunk tracks");
+  if (!req.body.bedURL || !req.body.chunk) {
+    throw new BadReqeustError("Invalid request format", req.body.bedURL, req.body.chunk);
+  }
+  let promise = (async () => {
+    await retrieveChunk(req.body.bedURL, req.body.chunk, false);
+
+    // Get the path to where the track is downloaded
+    let chunkPath = bedChunkLocalPath(req.body.bedURL, req.body.chunk);
+    let track_json = path.resolve(chunkPath, "tracks.json");
+    let tracks = null;
+    // Attempt to read tracks.json and covnert it into a tracks object
+    if (fs.existsSync(track_json)) {
+      // Create string of tracks data
+      const string_data = fs.readFileSync(track_json);
+
+      // Convert to object container like the client component prop types expect
+      tracks = JSON.parse(string_data);
+    }
+
+    res.json({ tracks: tracks });
+  })();
+
+  // schedules next to be called if promise is rejected
+  promise.catch(next);
+
+});
 
 api.post("/getBedRegions", (req, res, next) => {
   // Bridge async functions to Express error handling with next(err). Don't
@@ -1446,16 +1462,14 @@ async function getBedRegions(bed) {
       
       // Work out where it should be locally.
       const chunk_path = bedChunkLocalPath(bed, chunk);
-      // download the tracks file if bed is an url
-      if (isURL) {
-        await retrieveChunk(bed, chunk, false);
-      }
 
+      // See if we have downloaded tracks.json in a previous instance
       let track_json = path.resolve(chunk_path, "tracks.json");
+      console.log("bed", bed);
+      console.log("track_json", track_json);
 
-      let tracks_array = [];
-
-      // If json file specifying the tracks exists
+      // If json file specifying the tracks exists, pass its information into a tracks object
+      // future selection of this region won't re-fetch tracks.json
       if (fs.existsSync(track_json)) {
         // Create string of tracks data
         const string_data = fs.readFileSync(track_json);
