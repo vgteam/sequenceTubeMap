@@ -26,6 +26,11 @@ import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
+import cron from "node-cron";
+import { RWLock, combine } from "readers-writer-lock";
+
+
+
 
 if (process.env.NODE_ENV !== "production") {
   // Load any .env file config
@@ -68,6 +73,13 @@ const fileTypes = {
   READ: "read",
   BED:"bed",
 };
+
+const lockMap = new Map();
+
+const lockTypes = {
+  READ_LOCK: "read_lock",
+  WRITE_LOCK: "write_lock"
+}
 
 // In memory storage of fetched file eTags
 // Used to check if the file has been updated and we need to fetch again
@@ -113,6 +125,102 @@ var limits = {
   fileSize: 1024 * 1024 * 5, // 5 MB (max file size)
 };
 var upload = multer({ storage, limits });
+
+// deletes expired files given a directory, recursively calls itself for nested directories
+// expired files are files not accessed for a certain amount of time
+// TODO: find a more reliable way to detect file accessed time than stat.atime?
+// atime requires correct environment configurations
+function deleteExpiredFiles(directoryPath) {
+  console.log("deleting expired files in ", directoryPath);
+  const currentTime = new Date().getTime();
+
+  if (!fs.existsSync(directoryPath)) {
+    return
+  }
+
+  const files = fs.readdirSync(directoryPath);
+
+  files.forEach((file) => {
+    const filePath = path.join(directoryPath, file);
+
+    if (fs.statSync(filePath).isFile()) {
+      // check to see if file needs to be deleted
+      const lastAccessedTime = fs.statSync(filePath).atime;
+      if (currentTime - lastAccessedTime >= config.fileExpirationTime) {
+        if (file !== ".gitignore" && file !== "directory.lock") {
+          fs.unlinkSync(filePath);
+          console.log("Deleting file: ", filePath);
+        }
+      }
+    } else if (fs.statSync(filePath).isDirectory()) {
+      // call deleteExpiredFiles on the nested directory
+      deleteExpiredFiles(filePath);
+
+      // if the nested directory is empty after deleting expired files, remove it
+      if (fs.readdirSync(filePath).length === 0) {
+        fs.rmdirSync(filePath);
+        console.log("Deleting directory: ", filePath);
+      }
+    }
+  });
+}
+
+// takes in an async function, locks the direcotry for the duration of the function
+async function lockDirectory(directoryPath, lockType, func) {
+  console.log("Acquiring", lockType, "for", directoryPath);
+  // look into lockMap to see if there is a lock assigned to the directory
+  let lock = lockMap.get(directoryPath);
+  // if there are no locks, create a new lock and store it in the lock directionary
+  if (!lock) {
+    lock = new RWLock();
+    
+    lockMap.set(directoryPath, lock);
+  }
+
+  if (lockType == lockTypes.READ_LOCK) {
+    // lock is released when func returns
+    return lock.read(func);
+  } else if (lockType == lockTypes.WRITE_LOCK) {
+    return lock.write(func);
+  } else {
+    console.log("Not a valid lock type:", lockType);
+    return 1;
+  }
+
+}
+
+// expects an array of directory paths, attemping to acquire all directory locks
+// all uses of this function requires the array of directoryPaths to be in the same order
+// e.g locking [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH] should always lock DOWNLOAD_DATA_PATH first to prevent deadlock
+async function lockDirectories(directoryPaths, lockType, func) {
+  // input is unexpected
+  if (!directoryPaths || directoryPaths.length === 0) {
+    return
+  }
+
+  // last lock to acquire, ready to proceed
+  if (directoryPaths.length === 1) {
+    return lockDirectory(directoryPaths[0], lockType, func);
+  }
+
+  // attempt to acquire a lock for the next directory, and call lockDirectories on the remaining directories
+  const currDirectory = directoryPaths.pop();
+  return lockDirectory(currDirectory, lockType, async function() {
+    lockDirectories(directoryPaths, lockType, func);
+  })
+}
+
+// runs every hour
+// deletes any files in the download directory past the set fileExpirationTime set in config
+cron.schedule('* * * * *', () => {
+  console.log("cron scheduled check");
+  // attempt to acquire a write lock for each on the directory before attemping to delete files
+  for (const dir of [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH]) {
+    lockDirectory(dir, lockTypes.WRITE_LOCK, async function() {
+      deleteExpiredFiles(dir);
+    });
+  }
+});
 
 const app = express();
 
@@ -249,8 +357,13 @@ api.post("/getChunkedData", (req, res, next) => {
   //
   // So we set up a promise here and we make sure to handle failures
   // ourselves with next().
-  let promise = getChunkedData(req, res, next);
-  promise.catch(next);
+  
+  // put readlock on necessary directories while processing chunked data
+  lockDirectories([DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH], lockTypes.READ_LOCK, async function() {
+    let promise = getChunkedData(req, res, next);
+    promise.catch(next);
+    await promise;
+  });
 });
 
 // Handle a chunked data (tube map view) request. Returns a promise. On error,
