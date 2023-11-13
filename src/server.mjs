@@ -265,6 +265,31 @@ async function getChunkedData(req, res, next) {
   console.log(`region = ${req.body.region}`);
   console.log(`tracks = ${JSON.stringify(req.body.tracks)}`);
 
+  // This will have a conitg, start, end, or a contig, start, distance
+  let parsedRegion;
+  try {
+    parsedRegion = parseRegion(req.body.region);
+  } catch (e) {
+    // Whatever went wrong in the parsing, it makes the request bad.
+    throw new BadRequestError("Wrong query: " + e.message + " See ? button above.");
+  }
+
+  // There's a chance this request was sent before the proper tracks were fetched
+  // This can happen when the bed file is a url and track names need to be downloaded
+  // TODO: There's also a chance the user decided to use different tracks than what was provided in the bedFile,
+  // maybe we shouldn't always replace tracks if found?
+  if (req.body.bedFile && isValidURL(req.body.bedFile)) {
+    const chunk = await getChunkName(req.body.bedFile, parsedRegion);
+    const fetchedTracks = await getChunkTracks(req.body.bedFile, chunk);
+
+    // We're always replacing the given tracks if we were able to find tracks from the bed file
+    if (fetchedTracks) {
+      console.log("Using new fetched tracks", JSON.stringify(req.body.tracks));
+      req.body.tracks = fetchedTracks;
+    }
+  }
+
+
   // Assign each request a UUID. v1 UUIDs can be very similar for similar
   // timestamps on the same node, but are still guaranteed to be unique within
   // a given nodejs process.
@@ -275,7 +300,6 @@ async function getChunkedData(req, res, next) {
   fs.mkdirSync(req.chunkDir);
   // This request owns the directory, so clean it up when the request finishes.
   req.rmChunk = true;
-
 
   // We always have an graph file
   const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
@@ -307,15 +331,6 @@ async function getChunkedData(req, res, next) {
   if (!bedFile || bedFile === "none") {
     req.withBed = false;
     console.log("no BED file provided.");
-  }
-
-  // This will have a conitg, start, end, or a contig, start, distance
-  let parsedRegion;
-  try {
-    parsedRegion = parseRegion(req.body.region);
-  } catch (e) {
-    // Whatever went wrong in the parsing, it makes the request bad.
-    throw new BadRequestError("Wrong query: " + e.message + " See ? button above.");
   }
 
   // check the bed file if this region has been pre-fetched
@@ -706,15 +721,9 @@ function bedChunkLocalPath(bed, chunk) {
   }
 }
 
-// Gets the chunk path from a region specified in a bedfile, which may be a URL
-// or an allowed local path.
-//
-// Also downloads the chunk data if the bed is an URL and it has not been
-// downloaded yet.
-//
-// The returned path is either an allowed path, or an empty string if we are
-// using a BED without a pre-generated chunk for the given region.
-async function getChunkPath(bed, parsedRegion) {
+// Gets the chunk name from a region specifed in a bedfile
+// Returns an empty string if the region is not found within the bed file
+async function getChunkName(bed, parsedRegion) {
   let chunk = "";
   let regionInfo = await getBedRegions(bed);
 
@@ -734,6 +743,20 @@ async function getChunkPath(bed, parsedRegion) {
       }
     }
   }
+  
+  return chunk;
+}
+
+// Gets the chunk path from a region specified in a bedfile, which may be a URL
+// or an allowed local path.
+//
+// Also downloads the chunk data if the bed is an URL and it has not been
+// downloaded yet.
+//
+// The returned path is either an allowed path, or an empty string if we are
+// using a BED without a pre-generated chunk for the given region.
+async function getChunkPath(bed, parsedRegion) {
+  const chunk = await getChunkName(bed, parsedRegion);
 
   if (chunk === "") {
     // There is no pre-generated chunk for this region.
@@ -1344,19 +1367,15 @@ const timeoutController = (seconds) => {
   return controller;
 }
 
-// Expects a request with a bed url and a chunk name
+// Expects a bed url and a chunk name
 // Attempts to download tracks associated with the chunk name from the bed url
-// Returns downloaded tracks
-api.post("/getChunkTracks", (req, res, next) => {
-  console.log("received request for chunk tracks");
-  if (!req.body.bedURL || !req.body.chunk) {
-    throw new BadReqeustError("Invalid request format", req.body.bedURL, req.body.chunk);
-  }
-  let promise = (async () => {
-    await retrieveChunk(req.body.bedURL, req.body.chunk, false);
+// Returns downloaded tracks as a tracks object
+async function getChunkTracks (bedURL, chunk) {
+  // Download tracks.json file
+  await retrieveChunk(bedURL, chunk, false);
 
     // Get the path to where the track is downloaded
-    let chunkPath = bedChunkLocalPath(req.body.bedURL, req.body.chunk);
+    let chunkPath = bedChunkLocalPath(bedURL, chunk);
     let track_json = path.resolve(chunkPath, "tracks.json");
     let tracks = null;
     // Attempt to read tracks.json and covnert it into a tracks object
@@ -1368,6 +1387,19 @@ api.post("/getChunkTracks", (req, res, next) => {
       tracks = JSON.parse(string_data);
     }
 
+    return tracks;
+}
+
+// Expects a request with a bed url and a chunk name
+// Returns tracks retrieved from getChunkTracks
+api.post("/getChunkTracks", (req, res, next) => {
+  console.log("received request for chunk tracks");
+  if (!req.body.bedURL || !req.body.chunk) {
+    throw new BadReqeustError("Invalid request format", req.body.bedURL, req.body.chunk);
+  }
+  let promise = (async () => {
+    // tracks are falsy if fetch is unsuccessful
+    const tracks = await getChunkTracks(req.body.bedURL, req.body.chunk);
     res.json({ tracks: tracks });
   })();
 
@@ -1465,8 +1497,6 @@ async function getBedRegions(bed) {
 
       // See if we have downloaded tracks.json in a previous instance
       let track_json = path.resolve(chunk_path, "tracks.json");
-      console.log("bed", bed);
-      console.log("track_json", track_json);
 
       // If json file specifying the tracks exists, pass its information into a tracks object
       // future selection of this region won't re-fetch tracks.json
