@@ -110,3 +110,15 @@ export function defaultTrackColors(trackType){
     throw new Error("Invalid track type: " + trackType); 
   }
 }
+
+
+/* Function to determine if reads are added, where tracks is an object */
+export function readsExist(tracks){
+  for (let key in tracks){
+    if (tracks[key].trackType === "read"){
+      return true;
+    }
+  }
+  return false;
+}
+

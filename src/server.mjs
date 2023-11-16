@@ -22,7 +22,7 @@ import { server as WebSocketServer } from "websocket";
 import dotenv from "dotenv";
 import dirname from "es-dirname";
 import { readFileSync, writeFile } from 'fs';
-import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
+import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion, readsExist } from "./common.mjs";
 import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
@@ -315,6 +315,9 @@ async function getChunkedData(req, res, next) {
   // client is going to send simplify = true if they want to simplify view
   req.simplify = false;
   if (req.body.simplify){
+    if (readsExist(req.body.tracks)){
+      throw new BadRequestError("Simplify cannot be used on read tracks.");
+    }
     req.simplify = true;
   } 
 

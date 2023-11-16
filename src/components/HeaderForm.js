@@ -10,7 +10,7 @@ import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
-import { parseRegion, stringifyRegion } from "../common.mjs";
+import { parseRegion, stringifyRegion, readsExist } from "../common.mjs";
 
 
 // See src/Types.ts
@@ -469,7 +469,7 @@ class HeaderForm extends Component {
     name: this.state.name,
     region: this.state.region,
     dataType: this.state.dataType,
-    simplify: this.state.simplify
+    simplify: this.state.simplify && !(readsExist(this.state.tracks))
   });
 
   handleGoButton = () => {
@@ -717,6 +717,9 @@ class HeaderForm extends Component {
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
     const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
 
+    const ifReadsExist = readsExist(this.state.tracks);
+
+
     console.log(
       "Rendering header form with fileSelectOptions: ",
       this.state.fileSelectOptions
@@ -807,8 +810,11 @@ class HeaderForm extends Component {
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
                   {/* Button for simplify */}
-                  <Button onClick={this.enableSimplify} outline active={this.state.simplify}>{this.state.simplify ? "Simplify On" : "Simplify Off"}</Button>
-                </div>
+                  {
+                    !ifReadsExist &&
+                    <Button onClick={this.enableSimplify} outline active={this.state.simplify}>{this.state.simplify ? "Simplify On" : "Simplify Off"}</Button>
+                  }
+                  </div>
               }
 
               <Row>
