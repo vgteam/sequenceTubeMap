@@ -283,8 +283,30 @@ async function getChunkedData(req, res, next) {
 
     // We're always replacing the given tracks if we were able to find tracks from the bed file
     if (fetchedTracks) {
-      console.log("Using new fetched tracks", JSON.stringify(req.body.tracks));
-      req.body.tracks = fetchedTracks;
+      // Color Settings are retained from the initial request
+      // if newly fetched tracks have matching file names
+      // Store current colors and file names
+      const fileToColor = new Map();
+      for (const key of Object.keys(req.body.tracks)) {
+        const track = req.body.tracks[key];
+        fileToColor.set(track["trackFile"], track["trackColorSettings"]);
+      }
+
+      // Replace new track colors if there's a matching file name
+      for (const track of fetchedTracks) {
+        if (fileToColor.has(track["trackFile"])) {
+          track["trackColorSettings"] = fileToColor.get(track["trackFile"]);
+        }
+      }
+
+      // Convert fetchedTracks into an object format the server expects
+      let fetchedTracksObject = fetchedTracks.reduce((accumulator, obj, index) => {
+        accumulator[index] = obj;
+        return accumulator;
+      }, {});
+
+      console.log("Using new fetched tracks", JSON.stringify(fetchedTracksObject));
+      req.body.tracks = fetchedTracksObject;
     }
   }
 
