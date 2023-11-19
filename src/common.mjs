@@ -111,7 +111,7 @@ export function defaultTrackColors(trackType){
   }
 }
 
-// Excepts a string, returns whether or not the input is a valid http URL we can call fetch on
+// Accepts a string, returns whether or not the input is a valid http URL we can call fetch on
 export function isValidURL(string) {
   if (!string) {
     return false;

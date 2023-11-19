@@ -276,9 +276,8 @@ async function getChunkedData(req, res, next) {
 
   // There's a chance this request was sent before the proper tracks were fetched
   // This can happen when the bed file is a url and track names need to be downloaded
-  // TODO: There's also a chance the user decided to use different tracks than what was provided in the bedFile,
-  // maybe we shouldn't always replace tracks if found?
-  if (req.body.bedFile && isValidURL(req.body.bedFile)) {
+  // Check if there are tracks specified by the bedFile
+  if (req.body.bedFile) {
     const chunk = await getChunkName(req.body.bedFile, parsedRegion);
     const fetchedTracks = await getChunkTracks(req.body.bedFile, chunk);
 
@@ -1367,39 +1366,44 @@ const timeoutController = (seconds) => {
   return controller;
 }
 
-// Expects a bed url and a chunk name
-// Attempts to download tracks associated with the chunk name from the bed url
-// Returns downloaded tracks as a tracks object
-async function getChunkTracks (bedURL, chunk) {
-  // Download tracks.json file
-  await retrieveChunk(bedURL, chunk, false);
+// Expects a bed file and a chunk name
+// Attempts to download tracks associated with the chunk name from the bed file if it is a URL
+// Returns tracks found from local directories as a tracks object
+async function getChunkTracks (bedFile, chunk) {
+  // Download tracks.json file if it is a URL
+  if (isValidURL(bedFile)) {
+    await retrieveChunk(bedFile, chunk, false);
+  }
 
-    // Get the path to where the track is downloaded
-    let chunkPath = bedChunkLocalPath(bedURL, chunk);
-    let track_json = path.resolve(chunkPath, "tracks.json");
-    let tracks = null;
-    // Attempt to read tracks.json and covnert it into a tracks object
-    if (fs.existsSync(track_json)) {
-      // Create string of tracks data
-      const string_data = fs.readFileSync(track_json);
+  // Get the path to where the track is downloaded
+  let chunkPath = bedChunkLocalPath(bedFile, chunk);
+  let track_json = path.resolve(chunkPath, "tracks.json");
+  let tracks = null;
+  // Attempt to read tracks.json and covnert it into a tracks object
+  if (fs.existsSync(track_json)) {
+    // Create string of tracks data
+    const string_data = fs.readFileSync(track_json);
 
-      // Convert to object container like the client component prop types expect
-      tracks = JSON.parse(string_data);
-    }
+    // Convert to object container like the client component prop types expect
+    tracks = JSON.parse(string_data);
+  }
 
-    return tracks;
+  return tracks;
 }
 
-// Expects a request with a bed url and a chunk name
+// Expects a request with a bed file and a chunk name
 // Returns tracks retrieved from getChunkTracks
 api.post("/getChunkTracks", (req, res, next) => {
   console.log("received request for chunk tracks");
-  if (!req.body.bedURL || !req.body.chunk) {
-    throw new BadReqeustError("Invalid request format", req.body.bedURL, req.body.chunk);
+  if (!req.body.bedFile || !req.body.chunk) {
+    throw new BadReqeustError("Invalid request format", req.body.bedFile, req.body.chunk);
   }
   let promise = (async () => {
     // tracks are falsy if fetch is unsuccessful
-    const tracks = await getChunkTracks(req.body.bedURL, req.body.chunk);
+
+    // TODO: This operation needs to hold a reader lock on the upload/download directories.
+    // waiting for lock changes to be merged
+    const tracks = await getChunkTracks(req.body.bedFile, req.body.chunk);
     res.json({ tracks: tracks });
   })();
 

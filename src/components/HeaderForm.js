@@ -10,7 +10,7 @@ import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
-import { parseRegion, stringifyRegion, isValidURL } from "../common.mjs";
+import { parseRegion, stringifyRegion } from "../common.mjs";
 
 
 // See src/Types.ts
@@ -513,7 +513,7 @@ class HeaderForm extends Component {
   // In addition to a new region value, also takes tracks and chunk associated with the region
   // Update current track if the new tracks are valid
   // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
-  // Tracks remain unchanged if neither conditions are met
+  // Tracks remain unchanged if neither condition is met
   handleRegionChange = async (value, tracks, chunk) => {
     // After user selects a region name or coordinates,
     // update path, region, and associated tracks(if applicable)
@@ -532,20 +532,27 @@ class HeaderForm extends Component {
     // Override current tracks with new tracks from chunk dir
     if (tracks) {
       this.setState({ tracks: tracks });
-      console.log("New tracks have been population");
-    } else if (isValidURL(this.state.bedFile)){
-      // Try to retrieve tracks if the current bed file is an URL
+      console.log("New tracks have been applied");
+    } else {
+      // Try to retrieve tracks from the server
       const json = await fetchAndParse(`${this.props.apiUrl}/getChunkTracks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bedURL: this.state.bedFile, chunk: chunk }),
+        body: JSON.stringify({ bedFile: this.state.bedFile, chunk: chunk }),
       });
 
       // Replace tracks if request returns non-falsey value
       if (json.tracks) {
-        this.setState({ tracks: json.tracks });
+        this.setState((laterState) => {
+          if (laterState.region === coords) {
+            // The user still has the same region selected, so apply the tracks we now have
+            return { tracks: json.tracks };
+          }
+          // Otherwise, don't apply the downloaded tracks, because they are no longer relevant.
+          // TODO: Save the downloaded tracks in case the user selects the region again?
+        });
       }
     }
   };
