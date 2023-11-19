@@ -3,10 +3,10 @@ import PropTypes from "prop-types";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormHelperText from "@mui/material/FormHelperText";
+import { isEmpty } from "../common.mjs";
 
 // RegionInput: The path and region input box component
 // Responsible for selecting the path/chr and segment of data to look at
-const isEmpty = (obj) => Object.keys(obj).length === 0;
 
 export const RegionInput = ({
   region,
@@ -20,10 +20,6 @@ export const RegionInput = ({
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
 
-  // Store possible options from bed file and match them with their respective tracks
-  let optionToTrack = {};
-  let optionToChunk = {};
-
   if (regionInfo && !isEmpty(regionInfo)) {
     // Stitch path name + region start and end
     for (const [index, path] of regionInfo["chr"].entries()) {
@@ -32,17 +28,9 @@ export const RegionInput = ({
       );
     }
 
-    // populate optionToTrack and optionToChunk with paths with region
-    pathsWithRegion.forEach((path, i) => optionToTrack[path] = regionInfo.tracks[i]);
-    pathsWithRegion.forEach((path, i) => optionToChunk[path] = regionInfo.chunk[i]);
-
-
     // Add descriptions
     pathsWithRegion.push(...regionInfo["desc"]);
 
-    // populate optionToTrack and optionToChunk with paths with description as keys
-    regionInfo.desc.forEach((desc, i) => optionToTrack[desc] = regionInfo.tracks[i]);
-    regionInfo.desc.forEach((desc, i) => optionToChunk[desc] = regionInfo.chunk[i]);
   }
 
   // Autocomplete selectable options
@@ -60,15 +48,7 @@ export const RegionInput = ({
         id="regionInput"    
 
         onInputChange={(event, newInputValue) => {
-          // If an option is selected, should have a match in optionToTrack and optionToChunk
-          if (event.target.textContent in optionToTrack && event.target.textContent in optionToChunk) {
-            // pass tracks and chunk associated with the option
-            // handleRegionChange will determine if and how tracks are going to be updated
-            handleRegionChange(newInputValue, optionToTrack[event.target.textContent], optionToChunk[event.target.textContent]);
-          } else {
-            // only pass a region value, tracks will not be updated
-            handleRegionChange(newInputValue, null, null);
-          }
+          handleRegionChange(newInputValue);
         }}
 
         options={displayRegions}

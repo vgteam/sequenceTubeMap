@@ -10,7 +10,7 @@ import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
-import { parseRegion, stringifyRegion } from "../common.mjs";
+import { parseRegion, stringifyRegion, isEmpty } from "../common.mjs";
 
 
 // See src/Types.ts
@@ -514,7 +514,7 @@ class HeaderForm extends Component {
   // Update current track if the new tracks are valid
   // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
   // Tracks remain unchanged if neither condition is met
-  handleRegionChange = async (value, tracks, chunk) => {
+  handleRegionChange = async (value) => {
     // After user selects a region name or coordinates,
     // update path, region, and associated tracks(if applicable)
 
@@ -528,6 +528,24 @@ class HeaderForm extends Component {
       coords = this.getRegionCoords(value);
     }
     this.setState({ region: coords });
+    
+    let coordsToMetaData = {}
+
+    // Construct a concatenated string of possible coords
+    // Set relative meta data to each coord
+    if (this.state.regionInfo && !isEmpty(this.state.regionInfo)) {
+      for (const [index, path] of this.state.regionInfo["chr"].entries()) {
+        const pathWithRegion = path + ":" + this.state.regionInfo.start[index] + "-" + this.state.regionInfo.end[index];
+        coordsToMetaData[pathWithRegion] = {
+          "tracks": this.state.regionInfo.tracks[index],
+          "chunk": this.state.regionInfo.chunk[index]
+        }
+      }
+    }
+
+    // Set to null if any properties are undefined
+    const tracks = coordsToMetaData?.[coords]?.tracks ?? null;
+    const chunk = coordsToMetaData?.[coords]?.chunk ?? null;
 
     // Override current tracks with new tracks from chunk dir
     if (tracks) {

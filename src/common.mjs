@@ -126,3 +126,7 @@ export function isValidURL(string) {
 
   return url.protocol === "http:" || url.protocol === "https:";
 }
+
+export function isEmpty(obj) {
+  return Object.keys(obj).length === 0;
+}
