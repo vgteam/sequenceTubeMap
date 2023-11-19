@@ -533,7 +533,7 @@ class HeaderForm extends Component {
     if (tracks) {
       this.setState({ tracks: tracks });
       console.log("New tracks have been applied");
-    } else {
+    } else if (this.state.bedFile && chunk) {
       // Try to retrieve tracks from the server
       const json = await fetchAndParse(`${this.props.apiUrl}/getChunkTracks`, {
         method: "POST",

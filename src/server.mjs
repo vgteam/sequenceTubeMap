@@ -277,7 +277,7 @@ async function getChunkedData(req, res, next) {
   // There's a chance this request was sent before the proper tracks were fetched
   // This can happen when the bed file is a url and track names need to be downloaded
   // Check if there are tracks specified by the bedFile
-  if (req.body.bedFile) {
+  if (req.body.bedFile && req.body.bedFile !== "none") {
     const chunk = await getChunkName(req.body.bedFile, parsedRegion);
     const fetchedTracks = await getChunkTracks(req.body.bedFile, chunk);
 
@@ -1418,7 +1418,7 @@ async function getChunkTracks (bedFile, chunk) {
 api.post("/getChunkTracks", (req, res, next) => {
   console.log("received request for chunk tracks");
   if (!req.body.bedFile || !req.body.chunk) {
-    throw new BadReqeustError("Invalid request format", req.body.bedFile, req.body.chunk);
+    throw new BadRequestError("Invalid request format", req.body.bedFile, req.body.chunk);
   }
   let promise = (async () => {
     // tracks are falsy if fetch is unsuccessful
