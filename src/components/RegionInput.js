@@ -3,6 +3,8 @@ import PropTypes from "prop-types";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormHelperText from "@mui/material/FormHelperText";
+import "../config-client.js";
+import "../config-global.mjs";
 import { isEmpty } from "../common.mjs";
 
 // RegionInput: The path and region input box component
