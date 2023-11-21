@@ -21,7 +21,7 @@ import { server as WebSocketServer } from "websocket";
 import dotenv from "dotenv";
 import dirname from "es-dirname";
 import { readFileSync, writeFile } from 'fs';
-import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
+import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion, isValidURL } from "./common.mjs";
 import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
@@ -378,6 +378,52 @@ async function getChunkedData(req, res, next) {
   console.log(`region = ${req.body.region}`);
   console.log(`tracks = ${JSON.stringify(req.body.tracks)}`);
 
+  // This will have a conitg, start, end, or a contig, start, distance
+  let parsedRegion;
+  try {
+    parsedRegion = parseRegion(req.body.region);
+  } catch (e) {
+    // Whatever went wrong in the parsing, it makes the request bad.
+    throw new BadRequestError("Wrong query: " + e.message + " See ? button above.");
+  }
+
+  // There's a chance this request was sent before the proper tracks were fetched
+  // This can happen when the bed file is a url and track names need to be downloaded
+  // Check if there are tracks specified by the bedFile
+  if (req.body.bedFile && req.body.bedFile !== "none") {
+    const chunk = await getChunkName(req.body.bedFile, parsedRegion);
+    const fetchedTracks = await getChunkTracks(req.body.bedFile, chunk);
+
+    // We're always replacing the given tracks if we were able to find tracks from the bed file
+    if (fetchedTracks) {
+      // Color Settings are retained from the initial request
+      // if newly fetched tracks have matching file names
+      // Store current colors and file names
+      const fileToColor = new Map();
+      for (const key of Object.keys(req.body.tracks)) {
+        const track = req.body.tracks[key];
+        fileToColor.set(track["trackFile"], track["trackColorSettings"]);
+      }
+
+      // Replace new track colors if there's a matching file name
+      for (const track of fetchedTracks) {
+        if (fileToColor.has(track["trackFile"])) {
+          track["trackColorSettings"] = fileToColor.get(track["trackFile"]);
+        }
+      }
+
+      // Convert fetchedTracks into an object format the server expects
+      let fetchedTracksObject = fetchedTracks.reduce((accumulator, obj, index) => {
+        accumulator[index] = obj;
+        return accumulator;
+      }, {});
+
+      console.log("Using new fetched tracks", JSON.stringify(fetchedTracksObject));
+      req.body.tracks = fetchedTracksObject;
+    }
+  }
+
+
   // Assign each request a UUID. v1 UUIDs can be very similar for similar
   // timestamps on the same node, but are still guaranteed to be unique within
   // a given nodejs process.
@@ -388,7 +434,6 @@ async function getChunkedData(req, res, next) {
   fs.mkdirSync(req.chunkDir);
   // This request owns the directory, so clean it up when the request finishes.
   req.rmChunk = true;
-
 
   // We always have an graph file
   const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
@@ -420,15 +465,6 @@ async function getChunkedData(req, res, next) {
   if (!bedFile || bedFile === "none") {
     req.withBed = false;
     console.log("no BED file provided.");
-  }
-
-  // This will have a conitg, start, end, or a contig, start, distance
-  let parsedRegion;
-  try {
-    parsedRegion = parseRegion(req.body.region);
-  } catch (e) {
-    // Whatever went wrong in the parsing, it makes the request bad.
-    throw new BadRequestError("Wrong query: " + e.message + " See ? button above.");
   }
 
   // check the bed file if this region has been pre-fetched
@@ -819,15 +855,9 @@ function bedChunkLocalPath(bed, chunk) {
   }
 }
 
-// Gets the chunk path from a region specified in a bedfile, which may be a URL
-// or an allowed local path.
-//
-// Also downloads the chunk data if the bed is an URL and it has not been
-// downloaded yet.
-//
-// The returned path is either an allowed path, or an empty string if we are
-// using a BED without a pre-generated chunk for the given region.
-async function getChunkPath(bed, parsedRegion) {
+// Gets the chunk name from a region specifed in a bedfile
+// Returns an empty string if the region is not found within the bed file
+async function getChunkName(bed, parsedRegion) {
   let chunk = "";
   let regionInfo = await getBedRegions(bed);
 
@@ -847,6 +877,20 @@ async function getChunkPath(bed, parsedRegion) {
       }
     }
   }
+  
+  return chunk;
+}
+
+// Gets the chunk path from a region specified in a bedfile, which may be a URL
+// or an allowed local path.
+//
+// Also downloads the chunk data if the bed is an URL and it has not been
+// downloaded yet.
+//
+// The returned path is either an allowed path, or an empty string if we are
+// using a BED without a pre-generated chunk for the given region.
+async function getChunkPath(bed, parsedRegion) {
+  const chunk = await getChunkName(bed, parsedRegion);
 
   if (chunk === "") {
     // There is no pre-generated chunk for this region.
@@ -1301,23 +1345,6 @@ function hashString(str) {
   return createHash("sha256").update(str).digest("hex");
 }
 
-// returns whether or not a string is a valid http url
-function isValidURL(string) {
-  if (!string) {
-    return False;
-  }
-
-  let url;
-
-  try {
-    url = new URL(string)
-  } catch(error) {
-    return false;
-  }
-
-  return url.protocol === "http:" || url.protocol === "https:";
-}
-
 // Given a URL and a filename, download the given URL to that filename. Assumes required directories exist.
 const downloadFile = async(fileURL, destination) => {
   if (!isAllowedPath(destination)) {
@@ -1418,11 +1445,12 @@ const fetchAndValidate = async(url, maxBytes, existingLocation = null) => {
 //
 // includeContent only downloads the tracks.json file when set to false. If
 // true, all files listed in chunk_contents.txt will be downloaded.
+// includeContent is false when we select a region, we only need the track names
+// includeContent is true when the go button is pressed and a getChunkedData request is called
 const retrieveChunk = async(bedURL, chunk, includeContent) => {
   // path to the designated chunk in the temp directory
   const chunkDir = bedChunkLocalPath(bedURL, chunk);
 
-  // TODO: check if this chunk has been downloaded before, to prevent duplicate fetches
   if (!fs.existsSync(chunkDir)) {
     fs.mkdirSync(chunkDir, { recursive: true });
   }
@@ -1472,6 +1500,52 @@ const timeoutController = (seconds) => {
   setTimeout(() => controller.abort(), seconds * 1000);
   return controller;
 }
+
+// Expects a bed file and a chunk name
+// Attempts to download tracks associated with the chunk name from the bed file if it is a URL
+// Returns tracks found from local directories as a tracks object
+async function getChunkTracks (bedFile, chunk) {
+  // Download tracks.json file if it is a URL
+  if (isValidURL(bedFile)) {
+    await retrieveChunk(bedFile, chunk, false);
+  }
+
+  // Get the path to where the track is downloaded
+  let chunkPath = bedChunkLocalPath(bedFile, chunk);
+  let track_json = path.resolve(chunkPath, "tracks.json");
+  let tracks = null;
+  // Attempt to read tracks.json and covnert it into a tracks object
+  if (fs.existsSync(track_json)) {
+    // Create string of tracks data
+    const string_data = fs.readFileSync(track_json);
+
+    // Convert to object container like the client component prop types expect
+    tracks = JSON.parse(string_data);
+  }
+
+  return tracks;
+}
+
+// Expects a request with a bed file and a chunk name
+// Returns tracks retrieved from getChunkTracks
+api.post("/getChunkTracks", (req, res, next) => {
+  console.log("received request for chunk tracks");
+  if (!req.body.bedFile || !req.body.chunk) {
+    throw new BadRequestError("Invalid request format", req.body.bedFile, req.body.chunk);
+  }
+  let promise = (async () => {
+    // tracks are falsy if fetch is unsuccessful
+
+    // TODO: This operation needs to hold a reader lock on the upload/download directories.
+    // waiting for lock changes to be merged
+    const tracks = await getChunkTracks(req.body.bedFile, req.body.chunk);
+    res.json({ tracks: tracks });
+  })();
+
+  // schedules next to be called if promise is rejected
+  promise.catch(next);
+
+});
 
 api.post("/getBedRegions", (req, res, next) => {
   // Bridge async functions to Express error handling with next(err). Don't
@@ -1559,16 +1633,12 @@ async function getBedRegions(bed) {
       
       // Work out where it should be locally.
       const chunk_path = bedChunkLocalPath(bed, chunk);
-      // download the tracks file if bed is an url
-      if (isURL) {
-        await retrieveChunk(bed, chunk, false);
-      }
 
+      // See if we have downloaded tracks.json in a previous instance
       let track_json = path.resolve(chunk_path, "tracks.json");
 
-      let tracks_array = [];
-
-      // If json file specifying the tracks exists
+      // If json file specifying the tracks exists, pass its information into a tracks object
+      // future selection of this region won't re-fetch tracks.json
       if (fs.existsSync(track_json)) {
         // Create string of tracks data
         const string_data = fs.readFileSync(track_json);

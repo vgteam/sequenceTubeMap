@@ -10,7 +10,7 @@ import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
-import { parseRegion, stringifyRegion } from "../common.mjs";
+import { parseRegion, stringifyRegion, isEmpty } from "../common.mjs";
 
 
 // See src/Types.ts
@@ -509,11 +509,17 @@ class HeaderForm extends Component {
     const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
     return regionString;
   };
-  handleRegionChange = (value, tracks) => {
-    // After user selects a region name or coordinates,
-    // update path and region
-    let coords = value;
 
+  // In addition to a new region value, also takes tracks and chunk associated with the region
+  // Update current track if the new tracks are valid
+  // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
+  // Tracks remain unchanged if neither condition is met
+  handleRegionChange = async (value) => {
+    // After user selects a region name or coordinates,
+    // update path, region, and associated tracks(if applicable)
+
+    // Update path and region
+    let coords = value;
     if (
       this.state.regionInfo.hasOwnProperty("desc") &&
       this.state.regionInfo["desc"].includes(value)
@@ -522,11 +528,50 @@ class HeaderForm extends Component {
       coords = this.getRegionCoords(value);
     }
     this.setState({ region: coords });
+    
+    let coordsToMetaData = {}
+
+    // Construct a concatenated string of possible coords
+    // Set relative meta data to each coord
+    if (this.state.regionInfo && !isEmpty(this.state.regionInfo)) {
+      for (const [index, path] of this.state.regionInfo["chr"].entries()) {
+        const pathWithRegion = path + ":" + this.state.regionInfo.start[index] + "-" + this.state.regionInfo.end[index];
+        coordsToMetaData[pathWithRegion] = {
+          "tracks": this.state.regionInfo.tracks[index],
+          "chunk": this.state.regionInfo.chunk[index]
+        }
+      }
+    }
+
+    // Set to null if any properties are undefined
+    const tracks = coordsToMetaData?.[coords]?.tracks ?? null;
+    const chunk = coordsToMetaData?.[coords]?.chunk ?? null;
 
     // Override current tracks with new tracks from chunk dir
     if (tracks) {
       this.setState({ tracks: tracks });
-      console.log("New tracks have been population");
+      console.log("New tracks have been applied");
+    } else if (this.state.bedFile && chunk) {
+      // Try to retrieve tracks from the server
+      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkTracks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bedFile: this.state.bedFile, chunk: chunk }),
+      });
+
+      // Replace tracks if request returns non-falsey value
+      if (json.tracks) {
+        this.setState((laterState) => {
+          if (laterState.region === coords) {
+            // The user still has the same region selected, so apply the tracks we now have
+            return { tracks: json.tracks };
+          }
+          // Otherwise, don't apply the downloaded tracks, because they are no longer relevant.
+          // TODO: Save the downloaded tracks in case the user selects the region again?
+        });
+      }
     }
   };
 

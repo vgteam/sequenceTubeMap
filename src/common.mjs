@@ -110,3 +110,23 @@ export function defaultTrackColors(trackType){
     throw new Error("Invalid track type: " + trackType); 
   }
 }
+
+// Accepts a string, returns whether or not the input is a valid http URL we can call fetch on
+export function isValidURL(string) {
+  if (!string) {
+    return false;
+  }
+
+  let url;
+  try {
+    url = new URL(string)
+  } catch(error) {
+    return false;
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
+export function isEmpty(obj) {
+  return Object.keys(obj).length === 0;
+}
