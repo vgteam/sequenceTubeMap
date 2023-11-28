@@ -70,7 +70,7 @@ vg_chunk_params=(-x $GRAPH_FILE -g -c 20 -p $REGION -T -b $OUTDIR/chunk -E $OUTD
 # construct track JSON for graph file
 # get path relative to directory above the scripts directory
 GRAPH_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $GRAPH_FILE)
-echo ${GRAPH_FILE_PATH}
+echo >&2 "Graph file: ${GRAPH_FILE_PATH}"
 GRAPH_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultGraphColorPalette')"
 jq -n --arg trackFile "${GRAPH_FILE_PATH}" --arg trackType "graph" --argjson trackColorSettings "$GRAPH_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
 
