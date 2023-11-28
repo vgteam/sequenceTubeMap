@@ -145,8 +145,8 @@ For example:
 
 ```
 cd exampleData/
-../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam >> mychunks.bed
-../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:101-200 -d 'Region B' -o chunk-chr1-100-200 -g mygam1.gam -g mygam2.gam >> mychunks.bed
+../scripts/prepare_chunks.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam >> mychunks.bed
+../scripts/prepare_chunks.sh -x mygraph.xg -h mygraph.gbwt -r chr1:101-200 -d 'Region B' -o chunk-chr1-100-200 -g mygam1.gam -g mygam2.gam >> mychunks.bed
 ```
 
 The BED file linking to the chunks has two additional nonstandard columns: 
@@ -168,7 +168,7 @@ You can use `prepare_chunks.sh` script to generate this additional `nodeColors.t
 
 ```
 cd exampleData/
-../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam -n "1 2 3" >> mychunks.bed
+../scripts/prepare_chunks.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam -n "1 2 3" >> mychunks.bed
 ```
 
 Adding this additional `n` flag will allow a string space delimited input of node names which will be outputted to `nodeColors.tsv`.
