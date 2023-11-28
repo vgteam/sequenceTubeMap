@@ -212,7 +212,7 @@ async function lockDirectories(directoryPaths, lockType, func) {
 
 // runs every hour
 // deletes any files in the download directory past the set fileExpirationTime set in config
-cron.schedule('* * * * *', () => {
+cron.schedule('0 * * * *', () => {
   console.log("cron scheduled check");
   // attempt to acquire a write lock for each on the directory before attemping to delete files
   for (const dir of [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH]) {
