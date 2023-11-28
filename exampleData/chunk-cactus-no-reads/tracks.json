@@ -1,0 +1,11 @@
+[
+  {
+    "trackFile": "exampleData/cactus.vg.xg",
+    "trackType": "graph",
+    "trackColorSettings": {
+      "mainPalette": "#000000",
+      "auxPalette": "greys",
+      "colorReadsByMappingQuality": false
+    }
+  }
+]
