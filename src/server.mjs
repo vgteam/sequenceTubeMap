@@ -436,10 +436,12 @@ async function getChunkedData(req, res, next) {
 
     console.time("vg chunk");
     const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
+    // vg simplify for gam files
     let vgSimplifyCall = null;
     if (req.simplify){
       vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
     }
+
     const vgViewCall = spawn(`${VG_PATH}vg`, ["view", "-j", "-"]);
     let graphAsString = "";
     req.error = Buffer.alloc(0);
@@ -582,6 +584,11 @@ async function getChunkedData(req, res, next) {
     // We're using a shared directory for this request, so leave it in place
     // when the request finishes.
     req.rmChunk = false;
+    // vg simplify for bed files
+    let vgSimplifyCall = null;
+    if (req.simplify){
+      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
+    }
     const vgViewCall = spawn(`${VG_PATH}vg`, [
       "view",
       "-j",
@@ -589,6 +596,49 @@ async function getChunkedData(req, res, next) {
     ]);
     let graphAsString = "";
     req.error = Buffer.alloc(0);
+
+    // vg simplify
+    if (req.simplify){
+      vgSimplifyCall.on("error", function (err) {
+        console.log(
+          "Error executing " +
+            VG_PATH +
+            "vg " +
+            "simplify " + 
+            "- " + 
+            ": " +
+            err
+        );
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("vg simplify failed"));
+        }
+        return;
+      });
+
+      vgSimplifyCall.stderr.on("data", (data) => {
+        console.log(`vg simplify err data: ${data}`);
+        req.error += data;
+      });
+
+      vgSimplifyCall.stdout.on("data", function (data) {
+        vgViewCall.stdin.write(data);
+      });
+
+      vgSimplifyCall.on("close", (code) => {
+        console.log(`vg simplify exited with code ${code}`);
+        vgViewCall.stdin.end();
+        if (code !== 0) {
+          console.log("Error from " + VG_PATH + "vg " + "simplify - ");
+          // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg simplify failed"));
+          }
+        }
+      });
+    }
+
     vgViewCall.on("error", function (err) {
       console.log('Error executing "vg view": ' + err);
       if (!sentResponse) {
