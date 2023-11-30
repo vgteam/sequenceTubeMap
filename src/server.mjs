@@ -466,7 +466,7 @@ async function getChunkedData(req, res, next) {
     req.withBed = false;
     console.log("no BED file provided.");
   }
-
+  /*
   // This will have a conitg, start, end, or a contig, start, distance
   let parsedRegion;
   try {
@@ -474,7 +474,7 @@ async function getChunkedData(req, res, next) {
   } catch (e) {
     // Whatever went wrong in the parsing, it makes the request bad.
     throw new BadRequestError("Wrong query: " + e.message + " See ? button above.");
-  }
+  }*/
 
   // check the bed file if this region has been pre-fetched
   let chunkPath = "";
@@ -732,16 +732,16 @@ async function getChunkedData(req, res, next) {
     req.rmChunk = false;
     // vg simplify for bed files
     let vgSimplifyCall = null;
-
+    let vgViewArguments = ["view", "-j"];
     if (req.simplify){
-      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
+      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify",`${req.chunkDir}/chunk.vg`,]);
+      vgViewArguments.push("-");
+    } else {
+      vgViewArguments.push(`${req.chunkDir}/chunk.vg`);
     }
-    
-    const vgViewCall = spawn(`${VG_PATH}vg`, [
-      "view",
-      "-j",
-      `${req.chunkDir}/chunk.vg`,
-    ]);
+     
+    let vgViewCall = spawn(`${VG_PATH}vg`, vgViewArguments);
+
     let graphAsString = "";
     req.error = Buffer.alloc(0);
 
