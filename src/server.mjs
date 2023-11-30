@@ -586,13 +586,15 @@ async function getChunkedData(req, res, next) {
     req.rmChunk = false;
     // vg simplify for bed files
     let vgSimplifyCall = null;
+
+    // if simplify is on: route input to view as simplify
     if (req.simplify){
       vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
     }
-    const vgViewCall = spawn(`${VG_PATH}vg`, [
+    const vgViewCall = spawn(`${VG_PATH}vg`, [ // vg chunk call 601 on master
       "view",
       "-j",
-      `${req.chunkDir}/chunk.vg`,
+      `${req.chunkDir}/chunk.vg`, // change this one to - for simplify
     ]);
     let graphAsString = "";
     req.error = Buffer.alloc(0);
