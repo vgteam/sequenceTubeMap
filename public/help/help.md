@@ -27,5 +27,6 @@ The following procedure describes adding and updating settings of custom tracks.
    * A start position and a distance (e.g. "chr1:1+100")
    * A node ID anchor and a distance (e.g. "node:100+10")
 ![Region Input Options](helpGuideImages/img8.png)
-9. Click Go to see the selected tracks render in the visualization area.
+4. There is an option to click on the "Simplify Off" button to enable vg simplify, which would remove eliding small snarls in the graph. This would only work for BED files or graph tracks (not reads or haplotypes). 
+5. Click Go to see the selected tracks render in the visualization area.
 ![Go Button](helpGuideImages/img9.png)
