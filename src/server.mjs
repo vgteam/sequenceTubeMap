@@ -21,7 +21,7 @@ import { server as WebSocketServer } from "websocket";
 import dotenv from "dotenv";
 import dirname from "es-dirname";
 import { readFileSync, writeFile } from 'fs';
-import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
+import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion, isValidURL, readsExist } from "./common.mjs";
 import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
@@ -466,15 +466,14 @@ async function getChunkedData(req, res, next) {
     req.withBed = false;
     console.log("no BED file provided.");
   }
-  /*
-  // This will have a conitg, start, end, or a contig, start, distance
-  let parsedRegion;
-  try {
-    parsedRegion = parseRegion(req.body.region);
-  } catch (e) {
-    // Whatever went wrong in the parsing, it makes the request bad.
-    throw new BadRequestError("Wrong query: " + e.message + " See ? button above.");
-  }*/
+  // client is going to send simplify = true if they want to simplify view
+  req.simplify = false;
+  if (req.body.simplify){
+    if (readsExist(req.body.tracks)){
+      throw new BadRequestError("Simplify cannot be used on read tracks.");
+    }
+    req.simplify = true;
+  } 
 
   // check the bed file if this region has been pre-fetched
   let chunkPath = "";
@@ -586,6 +585,7 @@ async function getChunkedData(req, res, next) {
     let vgSimplifyCall = null;
     if (req.simplify){
       vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
+      console.log("Spawning vg simplify call");
     }
 
     const vgViewCall = spawn(`${VG_PATH}vg`, ["view", "-j", "-"]);
@@ -736,6 +736,7 @@ async function getChunkedData(req, res, next) {
     if (req.simplify){
       vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify",`${req.chunkDir}/chunk.vg`,]);
       vgViewArguments.push("-");
+      console.log("Spawning vg simplify call");
     } else {
       vgViewArguments.push(`${req.chunkDir}/chunk.vg`);
     }
