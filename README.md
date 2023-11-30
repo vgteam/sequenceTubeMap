@@ -145,8 +145,8 @@ For example:
 
 ```
 cd exampleData/
-../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam >> mychunks.bed
-../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:101-200 -d 'Region B' -o chunk-chr1-100-200 -g mygam1.gam -g mygam2.gam >> mychunks.bed
+../scripts/prepare_chunks.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam >> mychunks.bed
+../scripts/prepare_chunks.sh -x mygraph.xg -h mygraph.gbwt -r chr1:101-200 -d 'Region B' -o chunk-chr1-100-200 -g mygam1.gam -g mygam2.gam >> mychunks.bed
 ```
 
 The BED file linking to the chunks has two additional nonstandard columns: 
@@ -168,7 +168,7 @@ You can use `prepare_chunks.sh` script to generate this additional `nodeColors.t
 
 ```
 cd exampleData/
-../scripts/prepare_chunk.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam -n "1 2 3" >> mychunks.bed
+../scripts/prepare_chunks.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam -n "1 2 3" >> mychunks.bed
 ```
 
 Adding this additional `n` flag will allow a string space delimited input of node names which will be outputted to `nodeColors.tsv`.
@@ -192,8 +192,10 @@ For example, you can run it like:
 
 ```
 cd exampleData/
-../scripts/prepare_local_chunk.sh -x subgraph.gfa -r chr5:1023911-1025911 -g subgraph_reads.gam -g other_sample_reads.gam -o subgraph1 >> subgraphs.bed
+../scripts/prepare_local_chunk.sh -x subgraph.gbz -r chr5:1023911-1025911 -g subgraph_reads.gam -g other_sample_reads.gam -o subgraph1 >> subgraphs.bed
 ```
+
+Your graph can be a `.vg`, `.xg`, `.gfa`, or any other graph format understood by vg, but it *must* be in the same node ID space as your reads, and the script does *not* check this for you! In particular, indexing a GFA graph and mapping to it with `vg giraffe` can result in the original GFA nodes being cut into manageable pieces and assigned new numbers in the graph that the reads actually are aligned to, meaning the original GFA won't work here. You can check your reads against your graph with `vg validate subgraph.gfa --gam subgraph_reads.gam`. If your read alignments look completely absurd and jump all over the place, this is likely the problem.
 
 If the original subgraph file does not remain in place under the configured `dataPath` and accessible by the tube map, errors may occur complaining that it couldn't be accessed when the tube map attempts to list ist contained paths.
 

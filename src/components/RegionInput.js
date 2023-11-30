@@ -3,10 +3,12 @@ import PropTypes from "prop-types";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormHelperText from "@mui/material/FormHelperText";
+import "../config-client.js";
+import "../config-global.mjs";
+import { isEmpty } from "../common.mjs";
 
 // RegionInput: The path and region input box component
 // Responsible for selecting the path/chr and segment of data to look at
-const isEmpty = (obj) => Object.keys(obj).length === 0;
 
 export const RegionInput = ({
   region,
@@ -20,9 +22,6 @@ export const RegionInput = ({
   const pathNamesColon = pathNames.map((name) => name + ":");
   const pathsWithRegion = [];
 
-  // Store possible options from bed file and match them with their respective tracks
-  let optionToTrack = {};
-
   if (regionInfo && !isEmpty(regionInfo)) {
     // Stitch path name + region start and end
     for (const [index, path] of regionInfo["chr"].entries()) {
@@ -31,14 +30,9 @@ export const RegionInput = ({
       );
     }
 
-    // populate optionToTrack with paths with region
-    pathsWithRegion.forEach((path, i) => optionToTrack[path] = regionInfo.tracks[i]);
-
     // Add descriptions
     pathsWithRegion.push(...regionInfo["desc"]);
 
-    // populate optionToTrack with paths with description as keys
-    regionInfo.desc.forEach((desc, i) => optionToTrack[desc] = regionInfo.tracks[i]);
   }
 
   // Autocomplete selectable options
@@ -56,13 +50,7 @@ export const RegionInput = ({
         id="regionInput"    
 
         onInputChange={(event, newInputValue) => {
-          // If an option is selected, should have a match in optionToTrack
-          if (event.target.textContent in optionToTrack) {
-            // also pass tracks associated with the option
-            handleRegionChange(newInputValue, optionToTrack[event.target.textContent]);
-          } else {
-            handleRegionChange(newInputValue, null);
-          }
+          handleRegionChange(newInputValue);
         }}
 
         options={displayRegions}

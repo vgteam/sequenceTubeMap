@@ -89,7 +89,8 @@
   },
 
   "MAXUPLOADSIZE": 5242880,
-  "pickerTypeOptions": ["mounted", "upload"]
+  "pickerTypeOptions": ["mounted", "upload"],
+  "fileExpirationTime": 86400
 
 
 }

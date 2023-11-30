@@ -6,7 +6,6 @@
 
 import "./config-server.mjs";
 import { config } from "./config-global.mjs";
-
 import assert from "assert";
 import { spawn } from "child_process";
 import express from "express";
@@ -22,12 +21,14 @@ import { server as WebSocketServer } from "websocket";
 import dotenv from "dotenv";
 import dirname from "es-dirname";
 import { readFileSync, writeFile } from 'fs';
-import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion, readsExist } from "./common.mjs";
+import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion } from "./common.mjs";
 import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
-import { JSONParser} from '@streamparser/json';
+import cron from "node-cron";
+import { RWLock, combine } from "readers-writer-lock";
+
 
 
 
@@ -73,6 +74,18 @@ const fileTypes = {
   BED:"bed",
 };
 
+const lockMap = new Map();
+
+const lockTypes = {
+  READ_LOCK: "read_lock",
+  WRITE_LOCK: "write_lock"
+}
+
+// In memory storage of fetched file eTags
+// Used to check if the file has been updated and we need to fetch again
+// Stores urls mapped to the eTag from the most recently recieved request
+const ETagMap = new Map(); 
+
 // Make sure that the scratch directory exists at startup, so multiple requests
 // can't fight over its creation.
 fs.mkdirSync(SCRATCH_DATA_PATH, { recursive: true });
@@ -113,6 +126,102 @@ var limits = {
 };
 var upload = multer({ storage, limits });
 
+// deletes expired files given a directory, recursively calls itself for nested directories
+// expired files are files not accessed for a certain amount of time
+// TODO: find a more reliable way to detect file accessed time than stat.atime?
+// atime requires correct environment configurations
+function deleteExpiredFiles(directoryPath) {
+  console.log("deleting expired files in ", directoryPath);
+  const currentTime = new Date().getTime();
+
+  if (!fs.existsSync(directoryPath)) {
+    return
+  }
+
+  const files = fs.readdirSync(directoryPath);
+
+  files.forEach((file) => {
+    const filePath = path.join(directoryPath, file);
+
+    if (fs.statSync(filePath).isFile()) {
+      // check to see if file needs to be deleted
+      const lastAccessedTime = fs.statSync(filePath).atime;
+      if (currentTime - lastAccessedTime >= config.fileExpirationTime) {
+        if (file !== ".gitignore" && file !== "directory.lock") {
+          fs.unlinkSync(filePath);
+          console.log("Deleting file: ", filePath);
+        }
+      }
+    } else if (fs.statSync(filePath).isDirectory()) {
+      // call deleteExpiredFiles on the nested directory
+      deleteExpiredFiles(filePath);
+
+      // if the nested directory is empty after deleting expired files, remove it
+      if (fs.readdirSync(filePath).length === 0) {
+        fs.rmdirSync(filePath);
+        console.log("Deleting directory: ", filePath);
+      }
+    }
+  });
+}
+
+// takes in an async function, locks the direcotry for the duration of the function
+async function lockDirectory(directoryPath, lockType, func) {
+  console.log("Acquiring", lockType, "for", directoryPath);
+  // look into lockMap to see if there is a lock assigned to the directory
+  let lock = lockMap.get(directoryPath);
+  // if there are no locks, create a new lock and store it in the lock directionary
+  if (!lock) {
+    lock = new RWLock();
+    
+    lockMap.set(directoryPath, lock);
+  }
+
+  if (lockType == lockTypes.READ_LOCK) {
+    // lock is released when func returns
+    return lock.read(func);
+  } else if (lockType == lockTypes.WRITE_LOCK) {
+    return lock.write(func);
+  } else {
+    console.log("Not a valid lock type:", lockType);
+    return 1;
+  }
+
+}
+
+// expects an array of directory paths, attemping to acquire all directory locks
+// all uses of this function requires the array of directoryPaths to be in the same order
+// e.g locking [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH] should always lock DOWNLOAD_DATA_PATH first to prevent deadlock
+async function lockDirectories(directoryPaths, lockType, func) {
+  // input is unexpected
+  if (!directoryPaths || directoryPaths.length === 0) {
+    return
+  }
+
+  // last lock to acquire, ready to proceed
+  if (directoryPaths.length === 1) {
+    return lockDirectory(directoryPaths[0], lockType, func);
+  }
+
+  // attempt to acquire a lock for the next directory, and call lockDirectories on the remaining directories
+  const currDirectory = directoryPaths.pop();
+  return lockDirectory(currDirectory, lockType, async function() {
+    lockDirectories(directoryPaths, lockType, func);
+  })
+}
+
+// runs every hour
+// deletes any files in the download directory past the set fileExpirationTime set in config
+cron.schedule('0 * * * *', () => {
+  console.log("cron scheduled check");
+  // attempt to acquire a write lock for each on the directory before attemping to delete files
+  for (const dir of [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH]) {
+    lockDirectory(dir, lockTypes.WRITE_LOCK, async function() {
+      deleteExpiredFiles(dir);
+    });
+  }
+});
+
 const app = express();
 
 // Configure global server settings
@@ -149,10 +258,6 @@ api.use((req, res, next) => {
 api.post("/trackFileSubmission", upload.single("trackFile"), (req, res) => {
   console.log("/trackFileSubmission");
   console.log(req.file);
-  if (typeof req.file === "undefined") {
-    // No file was sent
-    throw new BadRequestError("No file upload was provided");
-  }
   if (req.body.fileType === fileTypes["READ"]) {
     indexGamSorted(req, res);
   } else {
@@ -252,8 +357,13 @@ api.post("/getChunkedData", (req, res, next) => {
   //
   // So we set up a promise here and we make sure to handle failures
   // ourselves with next().
-  let promise = getChunkedData(req, res, next);
-  promise.catch(next);
+  
+  // put readlock on necessary directories while processing chunked data
+  lockDirectories([DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH], lockTypes.READ_LOCK, async function() {
+    let promise = getChunkedData(req, res, next);
+    promise.catch(next);
+    await promise;
+  });
 });
 
 // Handle a chunked data (tube map view) request. Returns a promise. On error,
@@ -268,6 +378,52 @@ async function getChunkedData(req, res, next) {
   console.log(`region = ${req.body.region}`);
   console.log(`tracks = ${JSON.stringify(req.body.tracks)}`);
 
+  // This will have a conitg, start, end, or a contig, start, distance
+  let parsedRegion;
+  try {
+    parsedRegion = parseRegion(req.body.region);
+  } catch (e) {
+    // Whatever went wrong in the parsing, it makes the request bad.
+    throw new BadRequestError("Wrong query: " + e.message + " See ? button above.");
+  }
+
+  // There's a chance this request was sent before the proper tracks were fetched
+  // This can happen when the bed file is a url and track names need to be downloaded
+  // Check if there are tracks specified by the bedFile
+  if (req.body.bedFile && req.body.bedFile !== "none") {
+    const chunk = await getChunkName(req.body.bedFile, parsedRegion);
+    const fetchedTracks = await getChunkTracks(req.body.bedFile, chunk);
+
+    // We're always replacing the given tracks if we were able to find tracks from the bed file
+    if (fetchedTracks) {
+      // Color Settings are retained from the initial request
+      // if newly fetched tracks have matching file names
+      // Store current colors and file names
+      const fileToColor = new Map();
+      for (const key of Object.keys(req.body.tracks)) {
+        const track = req.body.tracks[key];
+        fileToColor.set(track["trackFile"], track["trackColorSettings"]);
+      }
+
+      // Replace new track colors if there's a matching file name
+      for (const track of fetchedTracks) {
+        if (fileToColor.has(track["trackFile"])) {
+          track["trackColorSettings"] = fileToColor.get(track["trackFile"]);
+        }
+      }
+
+      // Convert fetchedTracks into an object format the server expects
+      let fetchedTracksObject = fetchedTracks.reduce((accumulator, obj, index) => {
+        accumulator[index] = obj;
+        return accumulator;
+      }, {});
+
+      console.log("Using new fetched tracks", JSON.stringify(fetchedTracksObject));
+      req.body.tracks = fetchedTracksObject;
+    }
+  }
+
+
   // Assign each request a UUID. v1 UUIDs can be very similar for similar
   // timestamps on the same node, but are still guaranteed to be unique within
   // a given nodejs process.
@@ -278,7 +434,6 @@ async function getChunkedData(req, res, next) {
   fs.mkdirSync(req.chunkDir);
   // This request owns the directory, so clean it up when the request finishes.
   req.rmChunk = true;
-
 
   // We always have an graph file
   const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
@@ -311,15 +466,6 @@ async function getChunkedData(req, res, next) {
     req.withBed = false;
     console.log("no BED file provided.");
   }
-
-  // client is going to send simplify = true if they want to simplify view
-  req.simplify = false;
-  if (req.body.simplify){
-    if (readsExist(req.body.tracks)){
-      throw new BadRequestError("Simplify cannot be used on read tracks.");
-    }
-    req.simplify = true;
-  } 
 
   // This will have a conitg, start, end, or a contig, start, distance
   let parsedRegion;
@@ -587,14 +733,14 @@ async function getChunkedData(req, res, next) {
     // vg simplify for bed files
     let vgSimplifyCall = null;
 
-    // if simplify is on: route input to view as simplify
     if (req.simplify){
       vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
     }
-    const vgViewCall = spawn(`${VG_PATH}vg`, [ // vg chunk call 601 on master
+    
+    const vgViewCall = spawn(`${VG_PATH}vg`, [
       "view",
       "-j",
-      `${req.chunkDir}/chunk.vg`, // change this one to - for simplify
+      `${req.chunkDir}/chunk.vg`,
     ]);
     let graphAsString = "";
     req.error = Buffer.alloc(0);
@@ -685,13 +831,13 @@ async function getChunkedData(req, res, next) {
         // Make sure that path 0 is the path we actually asked about
         let refPaths = [];
         let otherPaths = [];
-        for (let pathObject of req.graph.path) {
-          if (pathObject.name === parsedRegion.contig) {
+        for (let path of req.graph.path) {
+          if (path.name === parsedRegion.contig) {
             // This is the path we asked about, so it goes first
-            refPaths.push(pathObject);
+            refPaths.push(path);
           } else { 
             // Then we put each other path
-            otherPaths.push(pathObject);
+            otherPaths.push(path);
           }
         }
         req.graph.path = refPaths.concat(otherPaths);
@@ -825,15 +971,9 @@ function bedChunkLocalPath(bed, chunk) {
   }
 }
 
-// Gets the chunk path from a region specified in a bedfile, which may be a URL
-// or an allowed local path.
-//
-// Also downloads the chunk data if the bed is an URL and it has not been
-// downloaded yet.
-//
-// The returned path is either an allowed path, or an empty string if we are
-// using a BED without a pre-generated chunk for the given region.
-async function getChunkPath(bed, parsedRegion) {
+// Gets the chunk name from a region specifed in a bedfile
+// Returns an empty string if the region is not found within the bed file
+async function getChunkName(bed, parsedRegion) {
   let chunk = "";
   let regionInfo = await getBedRegions(bed);
 
@@ -853,6 +993,20 @@ async function getChunkPath(bed, parsedRegion) {
       }
     }
   }
+  
+  return chunk;
+}
+
+// Gets the chunk path from a region specified in a bedfile, which may be a URL
+// or an allowed local path.
+//
+// Also downloads the chunk data if the bed is an URL and it has not been
+// downloaded yet.
+//
+// The returned path is either an allowed path, or an empty string if we are
+// using a BED without a pre-generated chunk for the given region.
+async function getChunkPath(bed, parsedRegion) {
+  const chunk = await getChunkName(bed, parsedRegion);
 
   if (chunk === "") {
     // There is no pre-generated chunk for this region.
@@ -1307,30 +1461,19 @@ function hashString(str) {
   return createHash("sha256").update(str).digest("hex");
 }
 
-// returns whether or not a string is a valid http url
-function isValidURL(string) {
-  if (!string) {
-    return False;
-  }
-
-  let url;
-
-  try {
-    url = new URL(string)
-  } catch(error) {
-    return false;
-  }
-
-  return url.protocol === "http:" || url.protocol === "https:";
-}
-
 // Given a URL and a filename, download the given URL to that filename. Assumes required directories exist.
 const downloadFile = async(fileURL, destination) => {
   if (!isAllowedPath(destination)) {
     throw new BadRequestError("Download destination path not allowed: " + destination);
   }
 
-  const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes);
+  const response = await fetchAndValidate(fileURL, config.maxFileSizeBytes, destination);
+
+  // file has already been downloaded and has not been updated since last fetch
+  if (!response) {
+    console.log("File has already been downloaded at ", destination);
+    return
+  }
 
   console.log("Save to:", destination);
  
@@ -1340,21 +1483,45 @@ const downloadFile = async(fileURL, destination) => {
 
 }
 
-const fetchAndValidate = async(url, maxBytes) => {
+// url: url destination to fetch from
+// maxBytes: maxBytes before aborting fetch
+// existingLocation: the existing location of a file, to prevent duplicate fetches of a file already on disk
+//                   leaving it empty will result in always fetching
+const fetchAndValidate = async(url, maxBytes, existingLocation = null) => {
+  let fetchHeader = {};
+  // We don't want to fetch again if we have a copy on disk
+  // Use a "If-None-Match" header to only fetch if our copy is outdated
+  if (existingLocation && fs.existsSync(existingLocation)) {
+    fetchHeader = {
+      "If-None-Match": ETagMap.get(url) || "-1"
+    }
+  }
   const options = {
     method: "GET",
     credentials: "omit",
     cache: "default",
-    signal: timeoutController(config.fetchTimeout).signal
+    signal: timeoutController(config.fetchTimeout).signal,
+    headers: fetchHeader
   };
   
   console.log("Fetching URL:", url);
   let response = await fetch(url, options);
 
+  // file exists on disk and file has not been updated since last fetch
+  if (response.status === 304) {
+    console.log("file not modified since last fetch");
+    return 0
+  }
+
+  // update our eTag for this url
+  ETagMap.set(url, response.headers.get("ETag"));
+
   // check for unsuccessful response codes
   if (!response.ok) {
     throw new BadRequestError(`Fetch request for ${url} failed: ` + response.status);
   }
+  
+  
 
   // check for size specified in header
   const contentLength = response.headers.get("Content-Length");
@@ -1394,11 +1561,12 @@ const fetchAndValidate = async(url, maxBytes) => {
 //
 // includeContent only downloads the tracks.json file when set to false. If
 // true, all files listed in chunk_contents.txt will be downloaded.
+// includeContent is false when we select a region, we only need the track names
+// includeContent is true when the go button is pressed and a getChunkedData request is called
 const retrieveChunk = async(bedURL, chunk, includeContent) => {
   // path to the designated chunk in the temp directory
   const chunkDir = bedChunkLocalPath(bedURL, chunk);
 
-  // TODO: check if this chunk has been downloaded before, to prevent duplicate fetches
   if (!fs.existsSync(chunkDir)) {
     fs.mkdirSync(chunkDir, { recursive: true });
   }
@@ -1448,6 +1616,52 @@ const timeoutController = (seconds) => {
   setTimeout(() => controller.abort(), seconds * 1000);
   return controller;
 }
+
+// Expects a bed file and a chunk name
+// Attempts to download tracks associated with the chunk name from the bed file if it is a URL
+// Returns tracks found from local directories as a tracks object
+async function getChunkTracks (bedFile, chunk) {
+  // Download tracks.json file if it is a URL
+  if (isValidURL(bedFile)) {
+    await retrieveChunk(bedFile, chunk, false);
+  }
+
+  // Get the path to where the track is downloaded
+  let chunkPath = bedChunkLocalPath(bedFile, chunk);
+  let track_json = path.resolve(chunkPath, "tracks.json");
+  let tracks = null;
+  // Attempt to read tracks.json and covnert it into a tracks object
+  if (fs.existsSync(track_json)) {
+    // Create string of tracks data
+    const string_data = fs.readFileSync(track_json);
+
+    // Convert to object container like the client component prop types expect
+    tracks = JSON.parse(string_data);
+  }
+
+  return tracks;
+}
+
+// Expects a request with a bed file and a chunk name
+// Returns tracks retrieved from getChunkTracks
+api.post("/getChunkTracks", (req, res, next) => {
+  console.log("received request for chunk tracks");
+  if (!req.body.bedFile || !req.body.chunk) {
+    throw new BadRequestError("Invalid request format", req.body.bedFile, req.body.chunk);
+  }
+  let promise = (async () => {
+    // tracks are falsy if fetch is unsuccessful
+
+    // TODO: This operation needs to hold a reader lock on the upload/download directories.
+    // waiting for lock changes to be merged
+    const tracks = await getChunkTracks(req.body.bedFile, req.body.chunk);
+    res.json({ tracks: tracks });
+  })();
+
+  // schedules next to be called if promise is rejected
+  promise.catch(next);
+
+});
 
 api.post("/getBedRegions", (req, res, next) => {
   // Bridge async functions to Express error handling with next(err). Don't
@@ -1535,16 +1749,12 @@ async function getBedRegions(bed) {
       
       // Work out where it should be locally.
       const chunk_path = bedChunkLocalPath(bed, chunk);
-      // download the tracks file if bed is an url
-      if (isURL) {
-        await retrieveChunk(bed, chunk, false);
-      }
 
+      // See if we have downloaded tracks.json in a previous instance
       let track_json = path.resolve(chunk_path, "tracks.json");
 
-      let tracks_array = [];
-
-      // If json file specifying the tracks exists
+      // If json file specifying the tracks exists, pass its information into a tracks object
+      // future selection of this region won't re-fetch tracks.json
       if (fs.existsSync(track_json)) {
         // Create string of tracks data
         const string_data = fs.readFileSync(track_json);
