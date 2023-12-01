@@ -1,10 +1,11 @@
 [
   {
-    "trackFile": "exampleData/cactus.vg",
+    "trackFile": "exampleData/cactus.vg.xg",
     "trackType": "graph",
     "trackColorSettings": {
-      "mainPalette": "plainColors",
-      "auxPalette": "greys"
+      "mainPalette": "#000000",
+      "auxPalette": "greys",
+      "colorReadsByMappingQuality": false
     }
   },
   {
@@ -12,7 +13,8 @@
     "trackType": "read",
     "trackColorSettings": {
       "mainPalette": "blues",
-      "auxPalette": "reds"
+      "auxPalette": "reds",
+      "colorReadsByMappingQuality": false
     }
   }
 ]
