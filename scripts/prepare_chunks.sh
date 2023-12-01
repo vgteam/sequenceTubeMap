@@ -115,6 +115,10 @@ do
     printf "$file\n" >> $OUTDIR/chunk_contents.txt
 done
 
-# Print BED line
-cat $OUTDIR/regions.tsv | cut -f1-3 | tr -d "\n"
+# Print BED line, using the region we were passed as the coordinates
+echo "${REGION%:*}" | tr -d "\n"
+printf "\t"
+echo "${REGION}" | rev | cut -f1 -d'-' | rev | tr -d "\n"
+printf "\t"
+echo "${REGION}" | rev | cut -f2 -d'-' | cut -f1 -d':' | rev | tr -d "\n"
 printf "\t${DESC}\t${OUTDIR}\n"

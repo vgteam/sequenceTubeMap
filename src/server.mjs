@@ -206,19 +206,23 @@ async function lockDirectories(directoryPaths, lockType, func) {
   // attempt to acquire a lock for the next directory, and call lockDirectories on the remaining directories
   const currDirectory = directoryPaths.pop();
   return lockDirectory(currDirectory, lockType, async function() {
-    lockDirectories(directoryPaths, lockType, func);
+    return lockDirectories(directoryPaths, lockType, func);
   })
 }
 
 // runs every hour
 // deletes any files in the download directory past the set fileExpirationTime set in config
-cron.schedule('0 * * * *', () => {
+cron.schedule('0 * * * *', async () => {
   console.log("cron scheduled check");
   // attempt to acquire a write lock for each on the directory before attemping to delete files
   for (const dir of [DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH]) {
-    lockDirectory(dir, lockTypes.WRITE_LOCK, async function() {
-      deleteExpiredFiles(dir);
-    });
+    try {
+      await lockDirectory(dir, lockTypes.WRITE_LOCK, async function() {
+        deleteExpiredFiles(dir);
+      });
+    } catch (e) {
+      console.error("Error checking for expired files in " + dir + ":", e);
+    }
   }
 });
 
@@ -349,20 +353,28 @@ function getGams(tracks) {
   return getFilesOfType(tracks, fileTypes.READ);
 }
 
+// To bridge Express next(err) error handling and async function error
+// handling, we have this adapter. It takes Express's next and an async
+// function and calls next with any error raised when the async function is
+// initially called *or* when its promise is awaited.
+async function captureErrors(next, callback) {
+  try {
+    await callback();
+  } catch (e) {
+    next(e);
+  }
+}
+
 api.post("/getChunkedData", (req, res, next) => {
   // We would like this to be an async function, but then Express error
   // handling doesn't work, because it doesn't detect returned promise
   // rejections until Express 5. We have to pass an error to next() or else
   // throw synchronously.
-  //
-  // So we set up a promise here and we make sure to handle failures
-  // ourselves with next().
-  
-  // put readlock on necessary directories while processing chunked data
-  lockDirectories([DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH], lockTypes.READ_LOCK, async function() {
-    let promise = getChunkedData(req, res, next);
-    promise.catch(next);
-    await promise;
+  captureErrors(next, async () => {
+    // put readlock on necessary directories while processing chunked data
+    return lockDirectories([DOWNLOAD_DATA_PATH, UPLOAD_DATA_PATH], lockTypes.READ_LOCK, async function() {
+      return getChunkedData(req, res, next);
+    });
   });
 });
 
@@ -1529,28 +1541,23 @@ async function getChunkTracks (bedFile, chunk) {
 // Expects a request with a bed file and a chunk name
 // Returns tracks retrieved from getChunkTracks
 api.post("/getChunkTracks", (req, res, next) => {
-  console.log("received request for chunk tracks");
-  if (!req.body.bedFile || !req.body.chunk) {
-    throw new BadRequestError("Invalid request format", req.body.bedFile, req.body.chunk);
-  }
-  let promise = (async () => {
+  captureErrors(next, async () => {
+    console.log("received request for chunk tracks");
+    if (!req.body.bedFile || !req.body.chunk) {
+      throw new BadRequestError("Invalid request format", req.body.bedFile, req.body.chunk);
+    }
+
     // tracks are falsy if fetch is unsuccessful
 
     // TODO: This operation needs to hold a reader lock on the upload/download directories.
     // waiting for lock changes to be merged
     const tracks = await getChunkTracks(req.body.bedFile, req.body.chunk);
     res.json({ tracks: tracks });
-  })();
-
-  // schedules next to be called if promise is rejected
-  promise.catch(next);
-
+  });
 });
 
 api.post("/getBedRegions", (req, res, next) => {
-  // Bridge async functions to Express error handling with next(err). Don't
-  // return a promise. 
-  let promise = (async () => {
+  captureErrors(next, async () => {
     console.log("received request for bedRegions");
     const result = {
       bedRegions: [],
@@ -1564,8 +1571,7 @@ api.post("/getBedRegions", (req, res, next) => {
     } else {
       throw new BadRequestError("No BED file specified");
     }
-  })();
-  promise.catch(next);
+  });
 });
 
 // Load up the given BED file by URL or path, and
