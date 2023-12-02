@@ -48,7 +48,7 @@ export const RegionInput = ({
 
   return (
     <>
-      <Tooltip title={descLabel} placement="bottom-start">
+      <Tooltip title={descLabel} placement="top-start">
         <Autocomplete
           disablePortal
           freeSolo // Allows custom input outside of the options
@@ -66,7 +66,7 @@ export const RegionInput = ({
           renderInput={(params) => (
             <TextField
               {...params}
-              label={descLabel}
+              label={"Region"}
               name="Region Input"
               inputProps={{
                 ...params.inputProps,
