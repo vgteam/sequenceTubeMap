@@ -718,8 +718,8 @@ class HeaderForm extends Component {
     };
   };
 
-  /* Function for simplify */
-  enableSimplify = () => {
+/* Function for toggling simplify button, enabling vg simplify to be turned on or off */
+toggleSimplify = () => {
     this.setState( { simplify: !this.state.simplify });
   }
 
@@ -761,8 +761,6 @@ class HeaderForm extends Component {
     const customFilesFlag = this.state.dataType === dataTypes.CUSTOM_FILES;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
     const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
-
-    const ifReadsExist = readsExist(this.state.tracks);
 
 
     console.log(
@@ -856,8 +854,8 @@ class HeaderForm extends Component {
                   ></TrackPicker>
                   {/* Button for simplify */}
                   {
-                    !ifReadsExist &&
-                    <Button onClick={this.enableSimplify} outline active={this.state.simplify}>{this.state.simplify ? "Simplify On" : "Simplify Off"}</Button>
+                    !(readsExist(this.state.tracks)) &&
+                    <Button onClick={this.toggleSimplify} outline active={this.state.simplify}>{this.state.simplify ? "Simplify On" : "Simplify Off"}</Button>
                   }
                   </div>
               }

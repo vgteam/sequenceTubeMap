@@ -730,15 +730,16 @@ async function getChunkedData(req, res, next) {
     // We're using a shared directory for this request, so leave it in place
     // when the request finishes.
     req.rmChunk = false;
+    let filename = `${req.chunkDir}/chunk.vg`;
     // vg simplify for bed files
     let vgSimplifyCall = null;
     let vgViewArguments = ["view", "-j"];
     if (req.simplify){
-      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify",`${req.chunkDir}/chunk.vg`,]);
+      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", filename,]);
       vgViewArguments.push("-");
       console.log("Spawning vg simplify call");
     } else {
-      vgViewArguments.push(`${req.chunkDir}/chunk.vg`);
+      vgViewArguments.push(filename);
     }
      
     let vgViewCall = spawn(`${VG_PATH}vg`, vgViewArguments);
@@ -754,7 +755,7 @@ async function getChunkedData(req, res, next) {
             VG_PATH +
             "vg " +
             "simplify " + 
-            "- " + 
+            filename + 
             ": " +
             err
         );
@@ -778,7 +779,7 @@ async function getChunkedData(req, res, next) {
         console.log(`vg simplify exited with code ${code}`);
         vgViewCall.stdin.end();
         if (code !== 0) {
-          console.log("Error from " + VG_PATH + "vg " + "simplify - ");
+          console.log("Error from " + VG_PATH + "vg " + "simplify " + filename);
           // Execution failed
           if (!sentResponse) {
             sentResponse = true;

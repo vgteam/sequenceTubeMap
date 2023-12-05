@@ -111,7 +111,7 @@ export function defaultTrackColors(trackType){
   }
 }
 
-/* Function to determine if reads are added, where tracks is an object */
+/* Function to determine if any of the tracks are reads, where the tracks parameter is an object of track types */
 export function readsExist(tracks){
   for (let key in tracks){
     if (tracks[key].trackType === "read"){
