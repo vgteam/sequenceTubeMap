@@ -38,8 +38,25 @@ const CLEAR_STATE = {
   // File: The file name actually used (or undefined)
   bedSelect: "none",
 
-  // This tracks several arrays of BED region data, stored by data type, with
+  // This tracks several arrays (desc, chr, start, end) of BED region data, with
   // one entry in each array per region.
+  // desc: description of region, i.e. "region with no source graph available"
+  // chr: path in graph where the region is on, i.e. in ref:2000-3000, "ref" is the chr
+  // start: start of the region, i.e. in ref:2000-3000, 2000 is the start
+  // end: end of the region, i.e. in ref:2000-3000, 3000 is the end
+  // chunk: url/directory for preexisting cached chunk, or empty string if not available
+  // tracks: object full of tracks to apply when user selects region, or null
+  // so regionInfo might look like: 
+  /*
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+  */
   regionInfo: {},
 
   pathNames: ["none"],
@@ -509,6 +526,34 @@ class HeaderForm extends Component {
     const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
     return regionString;
   };
+
+  // determine the current region: accepts a region string and returns the region index
+  /*
+    {
+      chr: [ '17', '17' ],
+      start: [ '1', '1000' ],
+      end: [ '100', '1200' ],
+      desc: [ '17_1_100', '17_1000_1200' ],
+      chunk: [ '', '' ],
+      tracks: [ null, null ]
+    }
+    17:1-100 -> parse -> {contig: "17", start: 1, end: 100} -> 0
+    17:1000-1200 -> parse -> {contig: "17", start: 1000, end: 1200} -> 1
+    17:2000-3000 - cannot be found - return null
+  */
+
+    /*
+    function (region string){
+      parse(region string) -> return {contig, start, end}
+      loop over chr in region info
+        determine if contig, start, end are present at the current index
+        if present: return index
+      return null
+    }
+    */
+
+
+  
 
   // In addition to a new region value, also takes tracks and chunk associated with the region
   // Update current track if the new tracks are valid
