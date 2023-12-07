@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Container, Row, Col, Label, Alert } from "reactstrap";
+import { Container, Row, Col, Label, Alert, Button } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import { fetchAndParse } from "../fetchAndParse";
 import "../config-client.js";
@@ -10,7 +10,7 @@ import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
-import { parseRegion, stringifyRegion, isEmpty } from "../common.mjs";
+import { parseRegion, stringifyRegion, isEmpty, readsExist } from "../common.mjs";
 
 
 // See src/Types.ts
@@ -108,7 +108,7 @@ function tracksEqual(curr, next) {
         return false;
     }
   }
-  //count falsy file names as the same
+  // count falsy file names as the same
   if ((!curr_file && !next_file) || curr_file === next_file) {
     return true;
   }
@@ -155,10 +155,13 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
      return false;
   }
 
+  if (currViewTarget.simplify !== nextViewTarget.simplify){
+    return false;
+  }
+
   return true;
 
 }
-
 
 class HeaderForm extends Component {
   state = EMPTY_STATE;
@@ -208,6 +211,7 @@ class HeaderForm extends Component {
         region: ds.region,
         dataType: ds.dataType,
         name: ds.name,
+        simplify: ds.simplify 
       };
       return stateVals;
     });
@@ -465,6 +469,7 @@ class HeaderForm extends Component {
     name: this.state.name,
     region: this.state.region,
     dataType: this.state.dataType,
+    simplify: this.state.simplify && !(readsExist(this.state.tracks))
   });
 
   handleGoButton = () => {
@@ -713,6 +718,11 @@ class HeaderForm extends Component {
     };
   };
 
+/* Function for toggling simplify button, enabling vg simplify to be turned on or off */
+toggleSimplify = () => {
+    this.setState( { simplify: !this.state.simplify });
+  }
+
   render() {
     let errorDiv = null;
     if (this.state.error) {
@@ -751,6 +761,7 @@ class HeaderForm extends Component {
     const customFilesFlag = this.state.dataType === dataTypes.CUSTOM_FILES;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
     const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
+
 
     console.log(
       "Rendering header form with fileSelectOptions: ",
@@ -841,7 +852,12 @@ class HeaderForm extends Component {
                     onChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
-                </div>
+                  {/* Button for simplify */}
+                  {
+                    !(readsExist(this.state.tracks)) &&
+                    <Button onClick={this.toggleSimplify} outline active={this.state.simplify}>{this.state.simplify ? "Simplify On" : "Simplify Off"}</Button>
+                  }
+                  </div>
               }
 
               <Row>

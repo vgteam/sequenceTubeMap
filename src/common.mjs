@@ -111,6 +111,16 @@ export function defaultTrackColors(trackType){
   }
 }
 
+/* Function to determine if any of the tracks are reads, where the tracks parameter is an object of track types */
+export function readsExist(tracks){
+  for (let key in tracks){
+    if (tracks[key].trackType === "read"){
+      return true;
+    }
+  }
+  return false;
+}
+
 // Accepts a string, returns whether or not the input is a valid http URL we can call fetch on
 export function isValidURL(string) {
   if (!string) {
@@ -130,3 +140,4 @@ export function isValidURL(string) {
 export function isEmpty(obj) {
   return Object.keys(obj).length === 0;
 }
+

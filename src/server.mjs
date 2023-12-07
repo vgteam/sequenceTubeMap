@@ -21,7 +21,7 @@ import { server as WebSocketServer } from "websocket";
 import dotenv from "dotenv";
 import dirname from "es-dirname";
 import { readFileSync, writeFile } from 'fs';
-import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion, isValidURL } from "./common.mjs";
+import { parseRegion, convertRegionToRangeRegion, stringifyRangeRegion, stringifyRegion, isValidURL, readsExist } from "./common.mjs";
 import { Readable } from "stream";
 import { finished } from "stream/promises";
 import sanitize from "sanitize-filename";
@@ -478,6 +478,14 @@ async function getChunkedData(req, res, next) {
     req.withBed = false;
     console.log("no BED file provided.");
   }
+  // client is going to send simplify = true if they want to simplify view
+  req.simplify = false;
+  if (req.body.simplify){
+    if (readsExist(req.body.tracks)){
+      throw new BadRequestError("Simplify cannot be used on read tracks.");
+    }
+    req.simplify = true;
+  } 
 
   // check the bed file if this region has been pre-fetched
   let chunkPath = "";
@@ -585,6 +593,13 @@ async function getChunkedData(req, res, next) {
 
     console.time("vg chunk");
     const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
+    // vg simplify for gam files
+    let vgSimplifyCall = null;
+    if (req.simplify){
+      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
+      console.log("Spawning vg simplify call");
+    }
+
     const vgViewCall = spawn(`${VG_PATH}vg`, ["view", "-j", "-"]);
     let graphAsString = "";
     req.error = Buffer.alloc(0);
@@ -611,12 +626,20 @@ async function getChunkedData(req, res, next) {
     });
 
     vgChunkCall.stdout.on("data", function (data) {
-      vgViewCall.stdin.write(data);
+      if (req.simplify){
+        vgSimplifyCall.stdin.write(data);
+      } else {
+        vgViewCall.stdin.write(data);
+      }
     });
 
     vgChunkCall.on("close", (code) => {
       console.log(`vg chunk exited with code ${code}`);
-      vgViewCall.stdin.end();
+      if (req.simplify){
+        vgSimplifyCall.stdin.end();
+      } else {
+        vgViewCall.stdin.end();
+      }
       if (code !== 0) {
         console.log("Error from " + VG_PATH + "vg " + vgChunkParams.join(" "));
         // Execution failed
@@ -627,6 +650,49 @@ async function getChunkedData(req, res, next) {
       }
     });
 
+    // vg simplify
+    if (req.simplify){
+      vgSimplifyCall.on("error", function (err) {
+        console.log(
+          "Error executing " +
+            VG_PATH +
+            "vg " +
+            "simplify " + 
+            "- " + 
+            ": " +
+            err
+        );
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("vg simplify failed"));
+        }
+        return;
+      });
+
+      vgSimplifyCall.stderr.on("data", (data) => {
+        console.log(`vg simplify err data: ${data}`);
+        req.error += data;
+      });
+
+      vgSimplifyCall.stdout.on("data", function (data) {
+        vgViewCall.stdin.write(data);
+      });
+
+      vgSimplifyCall.on("close", (code) => {
+        console.log(`vg simplify exited with code ${code}`);
+        vgViewCall.stdin.end();
+        if (code !== 0) {
+          console.log("Error from " + VG_PATH + "vg " + "simplify - ");
+          // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg simplify failed"));
+          }
+        }
+      });
+    }
+
+    // vg view
     vgViewCall.on("error", function (err) {
       console.log('Error executing "vg view": ' + err);
       if (!sentResponse) {
@@ -676,13 +742,65 @@ async function getChunkedData(req, res, next) {
     // We're using a shared directory for this request, so leave it in place
     // when the request finishes.
     req.rmChunk = false;
-    const vgViewCall = spawn(`${VG_PATH}vg`, [
-      "view",
-      "-j",
-      `${req.chunkDir}/chunk.vg`,
-    ]);
+    let filename = `${req.chunkDir}/chunk.vg`;
+    // vg simplify for bed files
+    let vgSimplifyCall = null;
+    let vgViewArguments = ["view", "-j"];
+    if (req.simplify){
+      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", filename,]);
+      vgViewArguments.push("-");
+      console.log("Spawning vg simplify call");
+    } else {
+      vgViewArguments.push(filename);
+    }
+     
+    let vgViewCall = spawn(`${VG_PATH}vg`, vgViewArguments);
+
     let graphAsString = "";
     req.error = Buffer.alloc(0);
+
+    // vg simplify
+    if (req.simplify){
+      vgSimplifyCall.on("error", function (err) {
+        console.log(
+          "Error executing " +
+            VG_PATH +
+            "vg " +
+            "simplify " + 
+            filename + 
+            ": " +
+            err
+        );
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("vg simplify failed"));
+        }
+        return;
+      });
+
+      vgSimplifyCall.stderr.on("data", (data) => {
+        console.log(`vg simplify err data: ${data}`);
+        req.error += data;
+      });
+
+      vgSimplifyCall.stdout.on("data", function (data) {
+        vgViewCall.stdin.write(data);
+      });
+
+      vgSimplifyCall.on("close", (code) => {
+        console.log(`vg simplify exited with code ${code}`);
+        vgViewCall.stdin.end();
+        if (code !== 0) {
+          console.log("Error from " + VG_PATH + "vg " + "simplify " + filename);
+          // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg simplify failed"));
+          }
+        }
+      });
+    }
+
     vgViewCall.on("error", function (err) {
       console.log('Error executing "vg view": ' + err);
       if (!sentResponse) {
