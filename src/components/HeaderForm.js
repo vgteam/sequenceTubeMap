@@ -10,6 +10,7 @@ import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
+import FormHelperText from "@mui/material/FormHelperText";
 import { parseRegion, stringifyRegion, isEmpty, readsExist } from "../common.mjs";
 
 
@@ -37,6 +38,9 @@ const CLEAR_STATE = {
   // dropdown. From the corresponding SelectOptions list.
   // File: The file name actually used (or undefined)
   bedSelect: "none",
+
+  // Description for the selected region, is not displayed when empty
+  desc: "",
 
   // This tracks several arrays of BED region data, stored by data type, with
   // one entry in each array per region.
@@ -519,7 +523,10 @@ class HeaderForm extends Component {
   // Update current track if the new tracks are valid
   // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
   // Tracks remain unchanged if neither condition is met
-  handleRegionChange = async (value) => {
+  handleRegionChange = async (value, desc) => {
+    // Update region description
+    this.setState({ desc: desc });
+
     // After user selects a region name or coordinates,
     // update path, region, and associated tracks(if applicable)
 
@@ -761,6 +768,7 @@ toggleSimplify = () => {
     const customFilesFlag = this.state.dataType === dataTypes.CUSTOM_FILES;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
     const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
+    const displayDescription = this.state.desc;
 
 
     console.log(
@@ -883,6 +891,12 @@ toggleSimplify = () => {
                   !customFilesFlag && DataPositionFormRowComponent 
                 )}
               </Row>
+              {displayDescription ?
+                <div style={{marginTop: "10px"}}>
+                  <FormHelperText> {"Region Description: "} </FormHelperText>
+                  <FormHelperText style={{fontWeight: "bold"}}>{this.state.desc}</FormHelperText>
+                </div> 
+               : null }
             </Col>
           </Row>
         </Container>
