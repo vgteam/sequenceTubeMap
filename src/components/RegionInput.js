@@ -40,7 +40,7 @@ export const RegionInput = ({
   }
 
   // Autocomplete selectable options
-  const displayRegions = [...pathsWithRegion, ...pathNamesColon].filter(option => option.label !== "none:");
+  const displayRegions = [...pathsWithRegion, ...pathNamesColon];
 
   let descLabel = "Region";
   if (regionToDesc.get(region)) {

@@ -42,7 +42,7 @@ const CLEAR_STATE = {
   // one entry in each array per region.
   regionInfo: {},
 
-  pathNames: ["none"],
+  pathNames: [],
 
   tracks: {},
   bedFile: undefined,
