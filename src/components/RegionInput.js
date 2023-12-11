@@ -30,7 +30,7 @@ export const RegionInput = ({
   if (regionInfo && !isEmpty(regionInfo)) {
     // Stitch path name + region start and end
     for (const [index, path] of regionInfo["chr"].entries()) {
-      const pathWithRegion = path + ":" + regionInfo.start[index] + "-" + regionInfo.end[index]
+      const pathWithRegion = path + ":" + regionInfo.start[index] + "-" + regionInfo.end[index];
       pathsWithRegion.push({
         label: pathWithRegion + " " + regionInfo.desc[index],
         value: pathWithRegion
