@@ -20,7 +20,9 @@ export const RegionInput = ({
   // Generate autocomplete options for regions from regionInfo
   // Add : to pathNames
   console.log("rendering with pathnames: ", pathNames);
-  const pathNamesColon = pathNames.map((name) => name + ":");
+  const pathNamesColon = pathNames.map((name) => {
+    return {label: name + ":", value: name + ":"};
+  });
   const pathsWithRegion = [];
 
   const regionToDesc = new Map();
@@ -29,13 +31,12 @@ export const RegionInput = ({
     // Stitch path name + region start and end
     for (const [index, path] of regionInfo["chr"].entries()) {
       const pathWithRegion = path + ":" + regionInfo.start[index] + "-" + regionInfo.end[index];
-      pathsWithRegion.push(pathWithRegion);
+      pathsWithRegion.push({
+        label: pathWithRegion + " " + regionInfo.desc[index],
+        value: pathWithRegion
+      });
       regionToDesc.set(pathWithRegion, regionInfo.desc[index]);
     }
-
-    // Add descriptions
-    pathsWithRegion.push(...regionInfo["desc"]);
-
   }
 
   // Autocomplete selectable options
@@ -52,14 +53,20 @@ export const RegionInput = ({
         <Autocomplete
           disablePortal
           freeSolo // Allows custom input outside of the options
-          getOptionLabel={(option) => option.title || option.toString()}
+          getOptionLabel={(option) => option.label || option.toString()}
           value={region}
           inputValue={region}
           data-testid="autocomplete"
           id="regionInput" 
 
-          onInputChange={(event, newInputValue) => {
-            handleRegionChange(newInputValue);
+          onInputChange={(event, newInput) => {
+            let regionValue = newInput;
+            const regionObject = displayRegions.find((option) => option.label === newInput);
+            // IF input is selected from one of the options
+            if (regionObject) {
+              regionValue = regionObject.value
+            }
+            handleRegionChange(regionValue);
           }}
 
           options={displayRegions}
