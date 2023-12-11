@@ -26,7 +26,7 @@ import App from "./App";
 
 const getRegionInput = () => {
   // Helper function to select the Region input box
-  return screen.getByRole("combobox", { name: /Region/i });
+  return screen.getByTestId("autocomplete").querySelector("input");
 };
 // This holds the running server for the duration of each test.
 let serverState = undefined;
@@ -216,6 +216,7 @@ describe("When we wait for it to load", () => {
     await act(async () => {
       userEvent.click(getRegionInput());
     });
+
     // Make sure that option in RegionInput dropdown (17_1_100) is visible
     expect(screen.getByText("17:1-100 17_1_100")).toBeInTheDocument();
   });
@@ -342,7 +343,7 @@ describe("When we wait for it to load", () => {
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
   const expectedLinkBRCA1 =
-    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in";
+    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in&simplify=false";
   // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -376,7 +377,7 @@ it("produces correct link for view before & after go is pressed", async () => {
   await clickCopyLink();
 
   const expectedLinkCactus =
-    "http://localhost?tracks[0][trackFile]=exampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=exampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=exampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in";
+    "http://localhost?tracks[0][trackFile]=exampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=exampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=exampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in&simplify=false";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
 }, 20000);

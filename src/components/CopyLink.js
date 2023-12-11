@@ -81,9 +81,15 @@ export const urlParamsToViewTarget = (url) => {
     result = qs.parse(s[1]);
   }
 
-  // TODO: qs can't tell the difference between false and "false", and "false"
-  // is truthy. So we need to go through and coerce things to real booleans at
-  // some point.
+  // Ensures that the simplify field is a boolean, as the qs module can't tell 
+  // the difference between false and "false" 
+  if (result != null){
+    if (result.simplify === "true"){
+      result.simplify = true;
+    } else if (result.simplify === "false"){
+      result.simplify = false;
+    }
+  }
 
   return result;
 };
