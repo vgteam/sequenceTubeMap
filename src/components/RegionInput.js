@@ -62,11 +62,11 @@ export const RegionInput = ({
           onInputChange={(event, newInput) => {
             let regionValue = newInput;
             const regionObject = displayRegions.find((option) => option.label === newInput);
-            // IF input is selected from one of the options
+            // If input is selected from one of the options
             if (regionObject) {
               regionValue = regionObject.value
             }
-            handleRegionChange(regionValue);
+            handleRegionChange(regionValue, regionToDesc.get(regionValue));
           }}
 
           options={displayRegions}

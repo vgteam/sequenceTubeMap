@@ -26,7 +26,7 @@ import App from "./App";
 
 const getRegionInput = () => {
   // Helper function to select the Region input box
-  return screen.getByTestId("autocomplete").querySelector("input");
+  return screen.getByRole("combobox", { name: /Region/i });
 };
 // This holds the running server for the duration of each test.
 let serverState = undefined;
@@ -216,7 +216,6 @@ describe("When we wait for it to load", () => {
     await act(async () => {
       userEvent.click(getRegionInput());
     });
-
     // Make sure that option in RegionInput dropdown (17_1_100) is visible
     expect(screen.getByText("17:1-100 17_1_100")).toBeInTheDocument();
   });
