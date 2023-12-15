@@ -63,7 +63,9 @@ it("renders with error when api call to server throws", async () => {
     throw new Error("Mock Server Error");
   });
   render(<App />);
-  expect(screen.getAllByText(/Mock Server Error/i)[0]).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getAllByText(/Mock Server Error/i)[0]).toBeInTheDocument();
+  });
 });
 
 it("renders without crashing when sent bad fetch data from server", async () => {
