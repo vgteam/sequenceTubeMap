@@ -6,8 +6,8 @@ import isEqual from "react-fast-compare";
 import TubeMap from "./TubeMap";
 import * as tubeMap from "../util/tubemap";
 import { dataOriginTypes } from "../enums";
-import { fetchAndParse } from "../fetchAndParse";
 import PopUpInfoDialog from "./PopUpInfoDialog";
+import APIInterface from "./APIInterface";
 
 
 class TubeMapContainer extends Component {
@@ -20,6 +20,7 @@ class TubeMapContainer extends Component {
   componentDidMount() {
     this.fetchCanceler = new AbortController();
     this.cancelSignal = this.fetchCanceler.signal;
+    this.api = new APIInterface(this.props.apiUrl, this.cancelSignal);
     this.getRemoteTubeMapData();
   }
 
@@ -129,14 +130,7 @@ class TubeMapContainer extends Component {
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkedData`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(this.props.viewTarget),
-      });
+      const json = await this.api.getChunkedData(this.props.viewTarget);
       if (json.graph === undefined) {
         // We did not get back a graph, even if we didn't get an error either.
         const error = "Fetching remote data returned error";
