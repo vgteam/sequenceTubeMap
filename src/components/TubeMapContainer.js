@@ -7,7 +7,6 @@ import TubeMap from "./TubeMap";
 import * as tubeMap from "../util/tubemap";
 import { dataOriginTypes } from "../enums";
 import PopUpInfoDialog from "./PopUpInfoDialog";
-import APIInterface from "./APIInterface";
 
 
 class TubeMapContainer extends Component {
@@ -18,19 +17,19 @@ class TubeMapContainer extends Component {
   };
 
   componentDidMount() {
-    this.fetchCanceler = new AbortController();
-    this.cancelSignal = this.fetchCanceler.signal;
-    this.api = new APIInterface(this.props.apiUrl, this.cancelSignal);
+    this.fetchCanceled = false;
+    this.api = this.props.APIInterface;
     this.getRemoteTubeMapData();
   }
 
   componentWillUnmount() {
     // Cancel the requests since we may have long running requests pending.
-    this.fetchCanceler.abort();
+    this.api.abortRequests();
+    this.fetchCanceled = true;
   }
 
   handleFetchError(error, message) {
-    if (!this.cancelSignal.aborted) {
+    if (!this.fetchCanceled) {
       console.error(message, error);
       this.setState({ error: error, isLoading: false });
     } else {
@@ -278,6 +277,7 @@ TubeMapContainer.propTypes = {
   dataOrigin: PropTypes.oneOf(Object.values(dataOriginTypes)).isRequired,
   viewTarget: PropTypes.object.isRequired,
   visOptions: PropTypes.object.isRequired,
+  APIInterface: PropTypes.object.isRequired,
 };
 
 export default TubeMapContainer;

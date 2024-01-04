@@ -11,7 +11,6 @@ import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
 import FormHelperText from "@mui/material/FormHelperText";
 import { parseRegion, stringifyRegion, isEmpty, readsExist } from "../common.mjs";
-import APIInterface from "./APIInterface";
 
 
 // See src/Types.ts
@@ -170,19 +169,19 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
 class HeaderForm extends Component {
   state = EMPTY_STATE;
   componentDidMount() {
-    this.fetchCanceler = new AbortController();
-    this.cancelSignal = this.fetchCanceler.signal;
-    this.api = new APIInterface(this.props.apiUrl, this.cancelSignal);
+    this.fetchCanceled = false;
+    this.api = this.props.APIInterface;
     this.initState();
     this.getMountedFilenames();
     this.setUpWebsocket();
   }
   componentWillUnmount() {
     // Cancel the requests since we may have long running requests pending.
-    this.fetchCanceler.abort();
+    this.api.abortRequests();
+    this.fetchCanceled = true;
   }
   handleFetchError(error, message) {
-    if (!this.cancelSignal.aborted) {
+    if (!this.fetchCanceled) {
       console.log(message, error.name, error.message);
       this.setState({ error: error });
     } else {
@@ -887,6 +886,7 @@ HeaderForm.propTypes = {
   setDataOrigin: PropTypes.func.isRequired,
   setCurrentViewTarget: PropTypes.func.isRequired,
   defaultViewTarget: PropTypes.any, // Header Form State, may be null if no params in URL. see Types.ts
+  APIInterface: PropTypes.object.isRequired,
 };
 
 export default HeaderForm;
