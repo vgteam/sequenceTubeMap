@@ -5,13 +5,13 @@ export class ServerAPI extends APIInterface {
     constructor(apiUrl) {
         super();
         this.apiUrl = apiUrl;
-        this.fetchCanceler = new AbortController();
-        this.cancelSignal = this.fetchCanceler.signal;
     }
 
-    async getChunkedData(viewTarget) {
+    // Each function takes a cancelSignal to cancel the fetch request if we will unmount component
+
+    async getChunkedData(viewTarget, cancelSignal) {
         const json = await fetchAndParse(`${this.apiUrl}/getChunkedData`, {
-            signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
+            signal: cancelSignal,
             method: "POST",
             headers: {
             "Content-Type": "application/json",
@@ -21,9 +21,9 @@ export class ServerAPI extends APIInterface {
         return json;
     }
 
-    async getFilenames() {
+    async getFilenames(cancelSignal) {
         const json = await fetchAndParse(`${this.apiUrl}/getFilenames`, {
-            signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
+            signal: cancelSignal,
             method: "GET",
             headers: {
             "Content-Type": "application/json",
@@ -32,9 +32,9 @@ export class ServerAPI extends APIInterface {
         return json;
     }
 
-    async getBedRegions(bedFile) {
+    async getBedRegions(bedFile, cancelSignal) {
         const json = await fetchAndParse(`${this.apiUrl}/getBedRegions`, {
-            signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
+            signal: cancelSignal,
             method: "POST",
             headers: {
             "Content-Type": "application/json",
@@ -44,9 +44,9 @@ export class ServerAPI extends APIInterface {
         return json;
     }
 
-    async getPathNames(graphFile) {
+    async getPathNames(graphFile, cancelSignal) {
         const json = await fetchAndParse(`${this.apiUrl}/getPathNames`, {
-            signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
+            signal: cancelSignal,
             method: "POST",
             headers: {
             "Content-Type": "application/json",
@@ -56,8 +56,9 @@ export class ServerAPI extends APIInterface {
         return json
     }
 
-    async getChunkTracks(bedFile, chunk) {
+    async getChunkTracks(bedFile, chunk, cancelSignal) {
         const json = await fetchAndParse(`${this.apiUrl}/getChunkTracks`, {
+            signal: cancelSignal,
             method: "POST",
             headers: {
             "Content-Type": "application/json",
@@ -65,10 +66,6 @@ export class ServerAPI extends APIInterface {
             body: JSON.stringify({ bedFile: bedFile, chunk: chunk }),
         });
         return json;
-    }
-
-    abortRequests() {
-        this.fetchCanceler.abort();
     }
 }
 

@@ -169,7 +169,8 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
 class HeaderForm extends Component {
   state = EMPTY_STATE;
   componentDidMount() {
-    this.fetchCanceled = false;
+    this.fetchCanceler = new AbortController();
+    this.cancelSignal = this.fetchCanceler.signal;
     this.api = this.props.APIInterface;
     this.initState();
     this.getMountedFilenames();
@@ -177,11 +178,10 @@ class HeaderForm extends Component {
   }
   componentWillUnmount() {
     // Cancel the requests since we may have long running requests pending.
-    this.api.abortRequests();
-    this.fetchCanceled = true;
+    this.fetchCanceler.abort();
   }
   handleFetchError(error, message) {
-    if (!this.fetchCanceled) {
+    if (!this.cancelSignal.aborted) {
       console.log(message, error.name, error.message);
       this.setState({ error: error });
     } else {
@@ -298,7 +298,7 @@ class HeaderForm extends Component {
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getFilenames();
+      const json = await this.api.getFilenames(this.cancelSignal);
       if (!json.files || json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
@@ -349,7 +349,7 @@ class HeaderForm extends Component {
   getBedRegions = async (bedFile) => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getBedRegions(bedFile);
+      const json = await this.api.getBedRegions(bedFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       if (!json.bedRegions || !(json.bedRegions["desc"] instanceof Array)) {
         throw new Error(
@@ -379,7 +379,7 @@ class HeaderForm extends Component {
   getPathNames = async (graphFile) => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getPathNames(graphFile);
+      const json = await this.api.getPathNames(graphFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
       if (!(pathNames instanceof Array)) {
@@ -545,7 +545,7 @@ class HeaderForm extends Component {
       console.log("New tracks have been applied");
     } else if (this.state.bedFile && chunk) {
       // Try to retrieve tracks from the server
-      const json = await this.api.getChunkTracks(this.state.bedFile, chunk);
+      const json = await this.api.getChunkTracks(this.state.bedFile, chunk, this.cancelSignal);
 
       // Replace tracks if request returns non-falsey value
       if (json.tracks) {

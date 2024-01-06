@@ -17,19 +17,19 @@ class TubeMapContainer extends Component {
   };
 
   componentDidMount() {
-    this.fetchCanceled = false;
+    this.fetchCanceler = new AbortController();
+    this.cancelSignal = this.fetchCanceler.signal;
     this.api = this.props.APIInterface;
     this.getRemoteTubeMapData();
   }
 
   componentWillUnmount() {
     // Cancel the requests since we may have long running requests pending.
-    this.api.abortRequests();
-    this.fetchCanceled = true;
+    this.fetchCanceler.abort();
   }
 
   handleFetchError(error, message) {
-    if (!this.fetchCanceled) {
+    if (!this.cancelSignal.aborted) {
       console.error(message, error);
       this.setState({ error: error, isLoading: false });
     } else {
@@ -129,7 +129,7 @@ class TubeMapContainer extends Component {
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
     try {
-      const json = await this.api.getChunkedData(this.props.viewTarget);
+      const json = await this.api.getChunkedData(this.props.viewTarget, this.cancelSignal);
       if (json.graph === undefined) {
         // We did not get back a graph, even if we didn't get an error either.
         const error = "Fetching remote data returned error";
