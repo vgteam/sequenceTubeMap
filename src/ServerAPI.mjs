@@ -1,6 +1,9 @@
 import { fetchAndParse } from "./fetchAndParse.js";
 import { APIInterface } from "./APIInterface.mjs";
 
+/**
+ * API implementation that uses vg running on the server to manipulate files.
+ */
 export class ServerAPI extends APIInterface {
     constructor(apiUrl) {
         super();

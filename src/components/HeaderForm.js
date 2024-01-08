@@ -341,7 +341,7 @@ class HeaderForm extends Component {
     } catch (error) {
       this.handleFetchError(
         error,
-        `GET to ${this.props.apiUrl}/getFilenames failed:`
+        `API getFilenames failed:`
       );
     }
   };
@@ -365,7 +365,7 @@ class HeaderForm extends Component {
     } catch (error) {
       this.handleFetchError(
         error,
-        `POST to ${this.props.apiUrl}/getBedRegions failed:`
+        `API getBedRegions failed:`
       );
     }
   };
@@ -393,7 +393,7 @@ class HeaderForm extends Component {
     } catch (error) {
       this.handleFetchError(
         error,
-        `POST to ${this.props.apiUrl}/getPathNames failed:`
+        `API getPathNames failed:`
       );
     }
   };
@@ -689,10 +689,16 @@ class HeaderForm extends Component {
   setUpWebsocket = () => {
     this.ws = new WebSocket(this.props.apiUrl.replace(/^http/, "ws"));
     this.ws.onmessage = (message) => {
-      this.getMountedFilenames();
+      if (!this.cancelSignal.aborted) {
+        this.getMountedFilenames();
+      } else {
+        this.ws.close();
+      }
     };
     this.ws.onclose = (event) => {
-      setTimeout(this.setUpWebsocket, 1000);
+      if (!this.cancelSignal.aborted) {
+        setTimeout(this.setUpWebsocket, 1000);
+      }
     };
     this.ws.onerror = (event) => {
       this.ws.close();
