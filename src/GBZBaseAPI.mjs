@@ -9,23 +9,41 @@ export class GBZBaseAPI extends APIInterface {
   }
 
   async getChunkedData(viewTarget, cancelSignal) {
-    return {};
+    return {
+      graph: {},
+      gam: {},
+      region: null,
+      coloredNodes: []
+    };
   }
 
   async getFilenames(cancelSignal) {
-    return [];
+    return {
+      files: [],
+      bedFiles: []
+    };
+  }
+
+  subscribeToFilenameChanges(handler, cancelSignal) {
+    return {};
   }
 
   async getBedRegions(bedFile, cancelSignal) {
-    return [];
+    return {
+      bedRegions: []
+    };
   }
 
   async getPathNames(graphFile, cancelSignal) {
-    return [];
+    return {
+      pathNames: []
+    };
   }
 
   async getChunkTracks(bedFile, chunk, cancelSignal) {
-    return [];
+    return {
+      tracks: []
+    };
   }
 }
 

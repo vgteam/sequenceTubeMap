@@ -704,22 +704,7 @@ class HeaderForm extends Component {
   };
 
   setUpWebsocket = () => {
-    this.ws = new WebSocket(this.props.apiUrl.replace(/^http/, "ws"));
-    this.ws.onmessage = (message) => {
-      if (!this.cancelSignal.aborted) {
-        this.getMountedFilenames();
-      } else {
-        this.ws.close();
-      }
-    };
-    this.ws.onclose = (event) => {
-      if (!this.cancelSignal.aborted) {
-        setTimeout(this.setUpWebsocket, 1000);
-      }
-    };
-    this.ws.onerror = (event) => {
-      this.ws.close();
-    };
+    this.subscription = this.api.subscribeToFilenameChanges(this.getMountedFilenames, this.cancelSignal);
   };
 
   /* Function for toggling simplify button, enabling vg simplify to be turned on or off */

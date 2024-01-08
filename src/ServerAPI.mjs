@@ -35,6 +35,41 @@ export class ServerAPI extends APIInterface {
     return json;
   }
 
+  subscribeToFilenameChanges(handler, cancelSignal) {
+    // We need something to hold the one currently active websocket.
+    subscription = {};
+
+    // We make a function to connect the websocket, which we can call to reconnect.
+    function connect() {
+      subscription.ws = new WebSocket(this.apiUrl.replace(/^http/, "ws"));
+      subscription.ws.onmessage = (message) => {
+        if (!cancelSignal.aborted) {
+          // Tell the user that something changed
+          handler();
+        } else {
+          subscription.ws.close();
+        }
+      };
+      subscription.ws.onclose = (event) => {
+        if (!cancelSignal.aborted) {
+          // Reconnect if the socket closed
+          setTimeout(connect, 1000);
+        }
+      };
+      subscription.ws.onerror = (event) => {
+        // Close the socket if something went wrong
+        subscription.ws.close();
+      };
+    }
+
+    connect();
+
+    // Give the subscription back to the caller to hold.
+    // TODO: Do we really need to hold the web socket in scope?
+    // TODO: How does the user close the socket without a message arriving after cancelation?
+    return subscription;
+  }
+
   async getBedRegions(bedFile, cancelSignal) {
     const json = await fetchAndParse(`${this.apiUrl}/getBedRegions`, {
       signal: cancelSignal,

@@ -17,6 +17,13 @@ export class APIInterface {
     throw new Error("getFilenames function not implemented");
   }
 
+  // Get notifications (via calls to handler()) when the set of filenames available from getFilenames() has changed.
+  // Returns a subscription object that should be kept around as long as you still want updates.
+  // cancelSignal is an AbortSignal that can be used to cancel the stream of notifications.
+  subscribeToFilenameChanges(handler, cancelSignal) {
+    throw new Error("subscribeToFilenameChanges function not implemented");
+  }
+
   // Takes in a bedfile path or a url pointing to a raw bed file.
   // Returns object with key: bedRegions.
   // bedRegions contains information extrapolated from each line of the bedfile.
