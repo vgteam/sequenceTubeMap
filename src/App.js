@@ -14,6 +14,7 @@ import Footer from "./components/Footer";
 import { dataOriginTypes } from "./enums";
 import "./config-client.js";
 import { config } from "./config-global.mjs";
+import ServerAPI from "./ServerAPI.mjs";
 
 const EXAMPLE_TRACKS = [
   // Fake tracks for the generated examples.
@@ -45,6 +46,8 @@ function getColorSchemesFromTracks(tracks) {
 class App extends Component {
   constructor(props) {
     super(props);
+
+    this.APIInterface = new ServerAPI(props.apiUrl);
 
     console.log('App component starting up with API URL: ' + props.apiUrl)
 
@@ -186,12 +189,14 @@ class App extends Component {
           apiUrl={this.props.apiUrl}
           defaultViewTarget={this.defaultViewTarget}
           getCurrentViewTarget={this.getCurrentViewTarget}
+          APIInterface={this.APIInterface}
         />
         <TubeMapContainer
           viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}
           apiUrl={this.props.apiUrl}
           visOptions={this.state.visOptions}
+          APIInterface={this.APIInterface}
         />
         <CustomizationAccordion
           visOptions={this.state.visOptions}

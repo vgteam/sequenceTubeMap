@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Container, Row, Col, Label, Alert, Button } from "reactstrap";
 import { dataOriginTypes } from "../enums";
-import { fetchAndParse } from "../fetchAndParse";
 import "../config-client.js";
 import { config } from "../config-global.mjs";
 import DataPositionFormRow from "./DataPositionFormRow";
@@ -172,6 +171,7 @@ class HeaderForm extends Component {
   componentDidMount() {
     this.fetchCanceler = new AbortController();
     this.cancelSignal = this.fetchCanceler.signal;
+    this.api = this.props.APIInterface;
     this.initState();
     this.getMountedFilenames();
     this.setUpWebsocket();
@@ -298,13 +298,7 @@ class HeaderForm extends Component {
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const json = await this.api.getFilenames(this.cancelSignal);
       if (!json.files || json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
@@ -355,14 +349,7 @@ class HeaderForm extends Component {
   getBedRegions = async (bedFile) => {
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bedFile }),
-      });
+      const json = await this.api.getBedRegions(bedFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       if (!json.bedRegions || !(json.bedRegions["desc"] instanceof Array)) {
         throw new Error(
@@ -392,14 +379,7 @@ class HeaderForm extends Component {
   getPathNames = async (graphFile) => {
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ graphFile }),
-      });
+      const json = await this.api.getPathNames(graphFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
       if (!(pathNames instanceof Array)) {
@@ -565,13 +545,7 @@ class HeaderForm extends Component {
       console.log("New tracks have been applied");
     } else if (this.state.bedFile && chunk) {
       // Try to retrieve tracks from the server
-      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkTracks`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bedFile: this.state.bedFile, chunk: chunk }),
-      });
+      const json = await this.api.getChunkTracks(this.state.bedFile, chunk, this.cancelSignal);
 
       // Replace tracks if request returns non-falsey value
       if (json.tracks) {
@@ -912,6 +886,7 @@ HeaderForm.propTypes = {
   setDataOrigin: PropTypes.func.isRequired,
   setCurrentViewTarget: PropTypes.func.isRequired,
   defaultViewTarget: PropTypes.any, // Header Form State, may be null if no params in URL. see Types.ts
+  APIInterface: PropTypes.object.isRequired,
 };
 
 export default HeaderForm;
