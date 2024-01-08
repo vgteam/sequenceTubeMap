@@ -24,6 +24,15 @@ export class APIInterface {
     throw new Error("subscribeToFilenameChanges function not implemented");
   }
 
+  // Upload a file.
+  // fileType is a track type like "graph" or "read".
+  // file is the file data (Blob or File).
+  // cancelSignal is an AbortSignal that can be used to cancel the upload.
+  // Resolves with the file name that can be used to refer to the uploaded file.
+  async putFile(fileType, file, cancelSignal) {
+    throw new Error("putFile function not implemented");
+  }
+
   // Takes in a bedfile path or a url pointing to a raw bed file.
   // Returns object with key: bedRegions.
   // bedRegions contains information extrapolated from each line of the bedfile.
