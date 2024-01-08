@@ -12,7 +12,7 @@ import * as d3 from "d3";
 import "d3-selection-multi";
 import "../config-client.js";
 import externalConfig from "../config-global.mjs";
-import {defaultTrackColors} from "../common.mjs"
+import { defaultTrackColors } from "../common.mjs";
 
 const deepEqual = require("deep-equal");
 
@@ -157,10 +157,6 @@ const config = {
     alert(info);
   },
 };
-
-
-
-
 
 // variables for storing info which can be directly translated into drawing instructions
 let trackRectangles = [];
@@ -392,7 +388,7 @@ export function setNodeWidthOption(value) {
   }
 }
 
-export function setColoredNodes(value){
+export function setColoredNodes(value) {
   config.coloredNodes = value;
 }
 
@@ -522,21 +518,31 @@ function createTubeMap() {
   alignSVG(nodes, tracks);
   defineSVGPatterns();
 
-  // all drawn tracks are grouped 
-  let trackGroup = svg.append("g").attr("class", "track")
+  // all drawn tracks are grouped
+  let trackGroup = svg.append("g").attr("class", "track");
   drawTrackRectangles(trackRectangles, "haplo", trackGroup);
   drawTrackCurves("haplo", trackGroup);
-  drawReversalsByColor(trackCorners, trackVerticalRectangles, "haplo", trackGroup);
+  drawReversalsByColor(
+    trackCorners,
+    trackVerticalRectangles,
+    "haplo",
+    trackGroup
+  );
   drawTrackRectangles(trackRectanglesStep3, "haplo", trackGroup);
   drawTrackRectangles(trackRectangles, "read", trackGroup);
   drawTrackCurves("read", trackGroup);
 
   // draw only those nodes which have coords assigned to them
   const dNodes = removeUnusedNodes(nodes);
-  drawReversalsByColor(trackCorners, trackVerticalRectangles, "read", trackGroup);
-  
-  // all drawn nodes are grouped 
-  let nodeGroup = svg.append("g").attr("class", "node")
+  drawReversalsByColor(
+    trackCorners,
+    trackVerticalRectangles,
+    "read",
+    trackGroup
+  );
+
+  // all drawn nodes are grouped
+  let nodeGroup = svg.append("g").attr("class", "node");
   drawNodes(dNodes, nodeGroup);
   if (config.nodeWidthOption === 0) drawLabels(dNodes);
   if (trackForRuler !== undefined) drawRuler();
@@ -1234,29 +1240,28 @@ function alignSVG() {
       1,
       parentElement.clientWidth / (maxXCoordinate + 10)
     );
-    
+
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
-    zoom.extent([
-      [0, 0],
-      [parentElement.clientWidth, parentElement.clientHeight],
-    ])
-    .scaleExtent([minZoom, 8])
-    .translateExtent([
-      [0, minYCoordinate - RAIL_SPACE],
-      [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
+    zoom
+      .extent([
+        [0, 0],
+        [parentElement.clientWidth, parentElement.clientHeight],
+      ])
+      .scaleExtent([minZoom, 8])
+      .translateExtent([
+        [0, minYCoordinate - RAIL_SPACE],
+        [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
       ]);
   }
 
-
-
   // Initially configure panning and zooming
   configureZoomBounds();
-  svg = svg.call(zoom)
-    .on("dblclick.zoom", null)
-    .append("g");
+  svg = svg.call(zoom).on("dblclick.zoom", null).append("g");
   // Don't let scrolling bubble up from the visualization
-  parentElement.addEventListener("wheel", (e) => { e.preventDefault(); })
+  parentElement.addEventListener("wheel", (e) => {
+    e.preventDefault();
+  });
 
   // If the view area resizes, reconfigure the zoom
   if (window.ResizeObserver) {
@@ -2504,11 +2509,13 @@ function generateTrackColor(track, highlight) {
       // TODO: Allow using color 0 for other schemes not the same as the one for the reference path.
       // TODO: Stop reads from taking this color?
       const auxColorSet = getColorSet(config.colorSchemes[sourceID].auxPalette);
-      const primaryColorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
+      const primaryColorSet = getColorSet(
+        config.colorSchemes[sourceID].mainPalette
+      );
       if (track.id === 0) {
         trackColor = primaryColorSet[0];
       } else {
-        trackColor = auxColorSet[((track.id - 1) % (auxColorSet.length))];
+        trackColor = auxColorSet[(track.id - 1) % auxColorSet.length];
       }
     } else {
       const colorSet = getColorSet(config.exonColors);
@@ -3077,7 +3084,11 @@ function drawReversalsByColor(corners, rectangles, type, groupTrack) {
       type,
       groupTrack
     );
-    drawTrackCorners(corners.filter(filterObjectByAttribute("color", c)), type, groupTrack);
+    drawTrackCorners(
+      corners.filter(filterObjectByAttribute("color", c)),
+      type,
+      groupTrack
+    );
   });
 }
 
@@ -3135,7 +3146,7 @@ function drawNodes(dNodes, groupNode) {
     }
   });
 
-  console.log("config:", config)
+  console.log("config:", config);
 
   groupNode
     .selectAll("node")
@@ -3158,16 +3169,16 @@ function drawNodes(dNodes, groupNode) {
 
 // Given a node name, return an object with "fill", "fill-opacity", and "outline"
 // keys describing what colors should be used to draw it.
-function colorNodes(nodeName){
+function colorNodes(nodeName) {
   let nodesColors = {};
-  if (config.coloredNodes.includes(nodeName)){
-    nodesColors["fill"] = "#ffc0cb"
-    nodesColors["fill-opacity"] = "0.4"
-    nodesColors["outline"] = "#ff0000"
+  if (config.coloredNodes.includes(nodeName)) {
+    nodesColors["fill"] = "#ffc0cb";
+    nodesColors["fill-opacity"] = "0.4";
+    nodesColors["outline"] = "#ff0000";
   } else {
-    nodesColors["fill"] = "#ffffff"
-    nodesColors["fill-opacity"] = "0.4"
-    nodesColors["outline"] = "#000000"
+    nodesColors["fill"] = "#ffffff";
+    nodesColors["fill-opacity"] = "0.4";
+    nodesColors["outline"] = "#000000";
   }
   return nodesColors;
 }
@@ -3216,10 +3227,7 @@ function nodeSingleClick() {
       currentNode.internalReads.length +
       currentNode.outgoingReads.length,
   ]);
-  nodeAttributes.push([
-    "Total Visits:",
-    numReadsVisitNode(currentNode),
-  ]);
+  nodeAttributes.push(["Total Visits:", numReadsVisitNode(currentNode)]);
   nodeAttributes.push(["Coverage:", coverage(currentNode, reads)]);
 
   console.log("Single Click");
@@ -3265,11 +3273,11 @@ export function coverage(node, allReads) {
     for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
       currRead.sequenceNew[i].mismatches.forEach((mm) => {
         if (mm.type === "deletion") {
-          console.log ("this read has a deletion", currRead)
+          console.log("this read has a deletion", currRead);
           countBases -= mm.length;
         }
-      })
-    };
+      });
+    }
     //  if current node is the last node on the read path, add the finalNodeCoverLength number of bases
     if (numNodes === readPathIndex + 1) {
       countBases += currRead.finalNodeCoverLength;
@@ -3288,11 +3296,11 @@ export function coverage(node, allReads) {
     for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
       currRead.sequenceNew[i].mismatches.forEach((mm) => {
         if (mm.type === "deletion") {
-          console.log ("this read has a deletion", currRead)
+          console.log("this read has a deletion", currRead);
           countBases -= mm.length;
         }
-      })
-    };
+      });
+    }
     countBases += currRead.finalNodeCoverLength - currRead.firstNodeOffset;
   }
   // outgoing reads
@@ -3303,11 +3311,11 @@ export function coverage(node, allReads) {
     for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
       currRead.sequenceNew[i].mismatches.forEach((mm) => {
         if (mm.type === "deletion") {
-          console.log ("this read has a deletion", currRead)
+          console.log("this read has a deletion", currRead);
           countBases -= mm.length;
         }
-      })
-    };
+      });
+    }
     // coverage of outgoing read would be the the distance between the end of the node and the
     //  starting point of the read within the node
     countBases += node.sequenceLength - currRead.firstNodeOffset;

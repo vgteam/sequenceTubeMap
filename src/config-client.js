@@ -8,4 +8,4 @@ const GLOBAL_NAME = "__sequence_tube_map_config";
 const GLOBAL_HOME = globalThis || window || global;
 
 // Hide the config in the globals object when we run.
-GLOBAL_HOME[GLOBAL_NAME] = config
+GLOBAL_HOME[GLOBAL_NAME] = config;

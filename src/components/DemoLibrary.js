@@ -8,11 +8,11 @@
 /// 2. Make a demo file, Whatever.demo.js
 /// 3. In the demo file, import your component, import Demo from 'react-demo',
 ///    and make the default export be a <Demo> component:
-///    
+///
 ///    import { Whatever } from './Whatever'
 ///    import { Demo, props as P } from 'react-demo'
 ///    export default (<Demo target={Whatever} />)
-///    
+///
 /// 4. If the component needs props, pass a "props" attribute to the Demo
 ///    component, with the props to use. See
 ///    <https://github.com/rpominov/react-demo#available-demoprops>.
@@ -30,8 +30,8 @@
 ///
 /// (Assuming this component is mounted there in the React router.)
 
-import Library from 'react-demo-library'
-import { SafeLink } from "./SafeLink"
+import Library from "react-demo-library";
+import { SafeLink } from "./SafeLink";
 
 // To auto-magically pick up demos, we use this magic to tell Webpack what we
 // want it to grab (*.demo.js, recursively), which it can work out at bundle
@@ -39,7 +39,7 @@ import { SafeLink } from "./SafeLink"
 // <https://webpack.js.org/guides/dependency-management/#requirecontext>.
 // Can't use constandt here, arguments *MUST* be literals for the magic to
 // work.
-const getFromContext = require.context('.', true, /\.demo\.js$/)
+const getFromContext = require.context(".", true, /\.demo\.js$/);
 
 // Each demo gets an object in this array with fields:
 // location: array of path components to mount at, after a hashbang
@@ -48,23 +48,27 @@ const getFromContext = require.context('.', true, /\.demo\.js$/)
 // importPath: hint about where to find the component to use it
 // fullWidth: boolean, true if we want to hide the demo picker
 // files: array of name and content objects to show along with the demo.
-// 
+//
 // Really we just need location and demo set.
-let demoList = []
+let demoList = [];
 
 for (let moduleName of getFromContext.keys()) {
   // Load all the demos available.
-  
+
   // Work out what import this should be a demo for (drop the whole extension)
-  let componentFile = moduleName.replace(/\.demo\.js$/, '') 
+  let componentFile = moduleName.replace(/\.demo\.js$/, "");
   // Work out what this should be a demo for (drop './' and extension and split
   // path segments).
   // Last one will be the component name.
-  let componentPathSegments = componentFile.replace(/^\.\//, '').split('/')
-  
+  let componentPathSegments = componentFile.replace(/^\.\//, "").split("/");
+
   // We need to fetch out the default export manually by its magic name. See
   // <https://stackoverflow.com/a/33705077>
-  demoList.push({location: componentPathSegments, importPath: componentFile, demo: getFromContext(moduleName).default})
+  demoList.push({
+    location: componentPathSegments,
+    importPath: componentFile,
+    demo: getFromContext(moduleName).default,
+  });
 }
 
 export const DemoLibrary = () => {
@@ -73,10 +77,17 @@ export const DemoLibrary = () => {
       {
         // Because the demo UI does a bunch of full-browser-size stuff we have to float our back link over it
       }
-      <div style={{position: "absolute", left: "0.5em", bottom: "0.5em", zIndex: 1001}}>
+      <div
+        style={{
+          position: "absolute",
+          left: "0.5em",
+          bottom: "0.5em",
+          zIndex: 1001,
+        }}
+      >
         <SafeLink to="/">Back to Tube Map</SafeLink>
       </div>
-      <Library demos={demoList}/>
+      <Library demos={demoList} />
     </>
-  )
-}
+  );
+};

@@ -3,7 +3,7 @@
 // This file needs to be valid for Node but also for Jest to load, so we still
 // can't just import the config weith a filetype assert.
 
-import { readFileSync } from 'fs';
+import { readFileSync } from "fs";
 import dirname from "es-dirname";
 
 // Now we want to load config.json.
@@ -32,7 +32,7 @@ import dirname from "es-dirname";
 // Luckily the es-dirname module exists which can find *our* directory by
 // looking at the stack. See
 // https://github.com/vdegenne/es-dirname/blob/master/es-dirname.js
-const config = JSON.parse(readFileSync(dirname() + '/config.json'));
+const config = JSON.parse(readFileSync(dirname() + "/config.json"));
 
 const GLOBAL_NAME = "__sequence_tube_map_config";
 // Tell eslint that globalThis might exist.
@@ -40,4 +40,4 @@ const GLOBAL_NAME = "__sequence_tube_map_config";
 const GLOBAL_HOME = globalThis || window || global;
 
 // Hide the config in the globals object when we run.
-GLOBAL_HOME[GLOBAL_NAME] = config
+GLOBAL_HOME[GLOBAL_NAME] = config;

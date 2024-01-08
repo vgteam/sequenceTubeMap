@@ -39,7 +39,7 @@ class VisualizationOptions extends Component {
     return (key, value) => {
       this.props.setColorSetting(key, index, value);
     };
-  }
+  };
 
   render() {
     const { visOptions, toggleFlag } = this.props;
@@ -64,14 +64,26 @@ class VisualizationOptions extends Component {
       let type = track.trackType;
       if (type === "graph") {
         trackSettingsList.push(
-          <TrackSettings key={key} label="Graph Paths" fileType={type} trackColorSettings={visOptions.colorSchemes[key]} setTrackColorSetting={this.setColorWithIndex(key)} />
+          <TrackSettings
+            key={key}
+            label="Graph Paths"
+            fileType={type}
+            trackColorSettings={visOptions.colorSchemes[key]}
+            setTrackColorSetting={this.setColorWithIndex(key)}
+          />
         );
       } else if (type === "haplotype") {
         // TODO: Do nothing for now. Haplotypes get assigned to the graph as their source track right now.
       } else if (type === "read") {
         if (visOptions.showReads) {
           trackSettingsList.push(
-            <TrackSettings key={key} label={"Read Track " + readTrackNumber} fileType={type} trackColorSettings={visOptions.colorSchemes[key]} setTrackColorSetting={this.setColorWithIndex(key)} />
+            <TrackSettings
+              key={key}
+              label={"Read Track " + readTrackNumber}
+              fileType={type}
+              trackColorSettings={visOptions.colorSchemes[key]}
+              setTrackColorSetting={this.setColorWithIndex(key)}
+            />
           );
           readTrackNumber++;
         }

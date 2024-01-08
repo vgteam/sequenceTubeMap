@@ -92,15 +92,15 @@ async function waitForLoadStart() {
 
 // Wait for the loading throbber to disappear
 async function waitForLoadEnd() {
-  console.log("Waiting for load end")
+  console.log("Waiting for load end");
   return new Promise((resolve, reject) => {
     function waitAround() {
       let loader = document.getElementById("loader");
       if (loader) {
-        console.log("Still loading...")
+        console.log("Still loading...");
         setTimeout(waitAround, 100);
       } else {
-        console.log("Loading over!")
+        console.log("Loading over!");
         resolve();
       }
     }
@@ -297,13 +297,13 @@ describe("When we wait for it to load", () => {
     expect(svg.getElementsByTagName("title").length).toEqual(65);
   });
 
-  it('draws the right SVG for cactus multiple reads', async () => {
+  it("draws the right SVG for cactus multiple reads", async () => {
     let dropdown = document.getElementById("dataSourceSelect");
 
     // Input data dropdown
     await userEvent.selectOptions(
       screen.getByLabelText(/Data/i),
-      'cactus multiple reads'
+      "cactus multiple reads"
     );
     const autocomplete = screen.getByTestId("autocomplete");
     const input = autocomplete.querySelector("input");
@@ -334,10 +334,7 @@ describe("When we wait for it to load", () => {
     expect(svg).toBeTruthy();
     expect(svg.getElementsByTagName("title").length).toEqual(23);
   });
-
 });
-
-
 
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
@@ -388,10 +385,7 @@ it("can retrieve the list of mounted graph files", async () => {
   // Swap over to the custom files mode
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
-    await userEvent.selectOptions(
-      screen.getByLabelText(/Data/i),
-      "custom"
-    );
+    await userEvent.selectOptions(screen.getByLabelText(/Data/i), "custom");
   });
 
   // Find the select box's input
@@ -404,22 +398,22 @@ it("can retrieve the list of mounted graph files", async () => {
     userEvent.click(trackSelectButton);
   });
 
-
   // add a new track
   await waitFor(() => {
     fireEvent.click(screen.queryByTestId("track-add-button-component"));
   });
 
-
   // We shouldn't see the option before we open the dropdown
   expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
-
 
   // Make sure the right entry eventually shows up (since we could be racing
   // the initial load from the component mounting)
   await waitFor(() => {
     // try to select a graph file
-    fireEvent.keyDown(screen.queryByTestId('file-select-component1').firstChild, {key: "ArrowDown"});
+    fireEvent.keyDown(
+      screen.queryByTestId("file-select-component1").firstChild,
+      { key: "ArrowDown" }
+    );
   });
 
   expect(screen.queryByText("cactus.vg.xg")).toBeTruthy();
@@ -432,10 +426,7 @@ it("can accept uploaded files", async () => {
   // Swap over to the custom files mode
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
-    await userEvent.selectOptions(
-      screen.getByLabelText(/Data/i),
-      "custom"
-    );
+    await userEvent.selectOptions(screen.getByLabelText(/Data/i), "custom");
   });
 
   // Find the select box's input
@@ -447,7 +438,6 @@ it("can accept uploaded files", async () => {
     userEvent.click(trackSelectButton);
   });
 
-
   // add a new track
   await waitFor(() => {
     fireEvent.click(screen.queryByTestId("track-add-button-component"));
@@ -455,7 +445,10 @@ it("can accept uploaded files", async () => {
 
   await waitFor(() => {
     // wait for picker type dropdown
-    fireEvent.keyDown(screen.queryByTestId('picker-type-select-component1').firstChild, {key: "ArrowDown"});
+    fireEvent.keyDown(
+      screen.queryByTestId("picker-type-select-component1").firstChild,
+      { key: "ArrowDown" }
+    );
   });
 
   // select the upload option
@@ -476,8 +469,10 @@ it("can accept uploaded files", async () => {
   // We need to put the data block in an enclosing array, or else the block
   // will be iterated and each byte will be stringified and *those* bytes will
   // be uploaded.
-  const file = new window.File([fileData], "cactus.vg", { type: "application/octet-stream" });
-  
+  const file = new window.File([fileData], "cactus.vg", {
+    type: "application/octet-stream",
+  });
+
   console.log("Adding file:", file);
   await act(async () => {
     await waitFor(() => {
@@ -505,7 +500,7 @@ it("can accept uploaded files", async () => {
   // try to compute the svg
   const autocomplete = screen.getByTestId("autocomplete");
   const input = autocomplete.querySelector("input");
-  
+
   console.log("Clearing input");
   await userEvent.clear(input);
 

@@ -1,19 +1,19 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 //import Select from "react-select";
-import CreatableSelect from 'react-select/creatable';
+import CreatableSelect from "react-select/creatable";
 
 /**
  * A searchable selection dropdown component.
  * Expects a two-way-binding where "value" is the selected value (out of the
  * array in "options"), and calling "onChange" with an event-like object
  * updates the value.
- * 
+ *
  * The onChange argument is meant to look enough like a DOM change event on a
  * "real" <select> to fool most people. It is an object with a "target"
  * property, which then has an "id" property with this component's "id" prop,
  * and a "value" property with the new value.
- * 
+ *
  * So for example:
  * <SelectionDropdown id="box1" value="a" options={["a", "b"]} onChange={(e) => {
  *   // Here e is {"target": {"id": "box1", "value": "b"}}
@@ -78,7 +78,9 @@ export class BedFileDropdown extends Component {
         inputId={this.props.inputId}
         className={this.props.className}
         value={
-          dropdownOptions.find((option) => option.value === this.props.value) || {label: getFilename(this.props.value) , value: this.props.value}
+          dropdownOptions.find(
+            (option) => option.value === this.props.value
+          ) || { label: getFilename(this.props.value), value: this.props.value }
         }
         styles={styles}
         isSearchable={true}

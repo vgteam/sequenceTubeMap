@@ -17,22 +17,33 @@ if (package_json.homepage) {
 
 console.log("Configuring router with basename " + basename);
 
-ReactDOM.render((
-<BrowserRouter basename={basename}>
-  <Routes>
-    <Route path="/">
-      {
-        // Main application renders at the root
-      }
-      <Route index element={<App />} />
-      {
-        // Demos for custom controls show up at /demo
-        // Each demo gets a nice hashbang URL.
-      }
-      <Route path="demo" element={<DemoLibrary />} />
-      <Route path="*" element={() => {<p>No React route found for current path</p>}}/>
-    </Route>
-    <Route path="*" element={() => {<p>No React route found for current path</p>}}/>
-  </Routes>
-</BrowserRouter>
-), document.getElementById("root"));
+ReactDOM.render(
+  <BrowserRouter basename={basename}>
+    <Routes>
+      <Route path="/">
+        {
+          // Main application renders at the root
+        }
+        <Route index element={<App />} />
+        {
+          // Demos for custom controls show up at /demo
+          // Each demo gets a nice hashbang URL.
+        }
+        <Route path="demo" element={<DemoLibrary />} />
+        <Route
+          path="*"
+          element={() => {
+            <p>No React route found for current path</p>;
+          }}
+        />
+      </Route>
+      <Route
+        path="*"
+        element={() => {
+          <p>No React route found for current path</p>;
+        }}
+      />
+    </Routes>
+  </BrowserRouter>,
+  document.getElementById("root")
+);

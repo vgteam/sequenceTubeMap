@@ -60,5 +60,8 @@ test("it calls handleRegionChange when region is changed with new region", async
   await userEvent.clear(input);
   await userEvent.type(input, NEW_REGION);
 
-  expect(handleRegionChangeMock).toHaveBeenLastCalledWith(NEW_REGION, undefined);
+  expect(handleRegionChangeMock).toHaveBeenLastCalledWith(
+    NEW_REGION,
+    undefined
+  );
 });

@@ -1,7 +1,6 @@
-
 // Interface for handling function called from the tubemap frontend
 // Abstract class expecting different implmentations of the following functions
-// Substituting different subclasses should allow the functions to give the same result 
+// Substituting different subclasses should allow the functions to give the same result
 export class APIInterface {
   // Takes in and process a tube map view(viewTarget) from the tubemap container.
   // Expects a object to be returned with the necessary information to draw a tubemap from vg
