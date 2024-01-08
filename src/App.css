@@ -126,7 +126,6 @@ input[type="file"] {
   border-color: #b61515;
 }
 
-
 .btn-secondary {
   background-color: #868e96;
   border-color: #868e96;
@@ -218,7 +217,7 @@ input[type="file"] {
 
 /* Close Popup */
 
-.closePopup{
+.closePopup {
   align-items: center;
   scale: 0.7;
   border-radius: 50%;

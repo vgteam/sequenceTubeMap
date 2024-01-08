@@ -8,7 +8,6 @@ import App from "./App";
 
 import { fetchAndParse } from "./fetchAndParse";
 
-
 // We want to be able to replace the `fetchAndParse` that *other* files see,
 // and we want to use *different* implementations for different tests in this
 // file. We can mock it with Jest, but Jest will move this call before the
@@ -17,12 +16,12 @@ import { fetchAndParse } from "./fetchAndParse";
 
 // Register the given replacement function to be called instead of fetchAndParse.
 function setFetchAndParseMock(replacement) {
-  globalThis["__App.test.js_fetchAndParse_mock"] = replacement 
+  globalThis["__App.test.js_fetchAndParse_mock"] = replacement;
 }
 
 // Remove any replacement function and go back to the real fetchAndParse.
 function clearFetchAndParseMock() {
-  globalThis["__App.test.js_fetchAndParse_mock"] = undefined 
+  globalThis["__App.test.js_fetchAndParse_mock"] = undefined;
 }
 
 jest.mock("./fetchAndParse", () => {
@@ -31,14 +30,15 @@ jest.mock("./fetchAndParse", () => {
     // Ge tthe real fetchAndParse
     const { fetchAndParse } = jest.requireActual("./fetchAndParse");
     // Grab the replacement or the real one if no replacement is set
-    let functionToUse = globalThis["__App.test.js_fetchAndParse_mock"] ?? fetchAndParse;
+    let functionToUse =
+      globalThis["__App.test.js_fetchAndParse_mock"] ?? fetchAndParse;
     // Give it any arguments we got and return its return value.
     return functionToUse.apply(this, arguments);
-  };
+  }
   // When someone asks for this module, hand them these contents instead.
   return {
     __esModule: true,
-    fetchAndParse: fetchAndParseDispatcher
+    fetchAndParse: fetchAndParseDispatcher,
   };
 });
 

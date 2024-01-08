@@ -113,314 +113,314 @@ export const demoReads = `
 `;
 
 export const reverseAlignmentGraph = {
-    "edge": [
+  edge: [
+    {
+      from: "60080783",
+      from_start: true,
+      to: "60080786",
+      to_end: true,
+    },
+    {
+      from: "60080783",
+      from_start: true,
+      to: "60080785",
+    },
+    {
+      from: "60080783",
+      to: "60080785",
+    },
+    {
+      from: "60080786",
+      to: "60080785",
+    },
+    {
+      from: "60080786",
+      to: "60080785",
+      to_end: true,
+    },
+  ],
+  node: [
+    {
+      id: "60080785",
+      sequence: "AC",
+    },
+    {
+      id: "60080783",
+      sequence: "TT",
+    },
+    {
+      id: "60080786",
+      sequence: "GT",
+    },
+  ],
+  path: [
+    {
+      mapping: [
         {
-            "from": "60080783",
-            "from_start": true,
-            "to": "60080786",
-            "to_end": true
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "1",
         },
         {
-            "from": "60080783",
-            "from_start": true,
-            "to": "60080785"
+          edit: [
+            {
+              from_length: 21,
+              to_length: 21,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "2",
         },
-        {
-            "from": "60080783",
-            "to": "60080785",
-        },
-        {
-            "from": "60080786",
-            "to": "60080785"
-        },
-        {
-            "from": "60080786",
-            "to": "60080785",
-            "to_end": true
-        }
-    ],
-    "node": [
-        {
-            "id": "60080785",
-            "sequence": "AC"
-        },
-        {
-            "id": "60080783",
-            "sequence": "TT"
-        },
-        {
-            "id": "60080786",
-            "sequence": "GT"
-        }
-    ],
-    "path": [
-        {
-            "mapping": [
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080786"
-                    },
-                    "rank": "1"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 21,
-                            "to_length": 21
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080783"
-                    },
-                    "rank": "2"
-                }
-            ],
-            "name": "GRCh38.chr14",
-            "indexOfFirstBase": "0"
-        }
-    ]
+      ],
+      name: "GRCh38.chr14",
+      indexOfFirstBase: "0",
+    },
+  ],
 };
 
 export const mixedAlignmentReads = [
-    {
-        "identity": 1,
-        "name": "Read0",
-        "path": {
-            "mapping": [
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080786"
-                    },
-                    "rank": "1"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "is_reverse": true,
-                        "node_id": "60080785"
-                    },
-                    "rank": "2"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080783"
-                    },
-                    "rank": "3"
-                },
-            ]
+  {
+    identity: 1,
+    name: "Read0",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "1",
         },
-        "score": 110,
-        "sequence": "GTGTTT"
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            is_reverse: true,
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+      ],
     },
-    {
-        "identity": 1,
-        "name": "Read1",
-        "path": {
-            "mapping": [
-                {
-                    "edit": [
-                        {
-                            "from_length": 1,
-                            "to_length": 1
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080786",
-                        "offset": 1
-                    },
-                    "rank": "1"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "is_reverse": true,
-                        "node_id": "60080785"
-                    },
-                    "rank": "2"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080783"
-                    },
-                    "rank": "3"
-                },
-            ]
+    score: 110,
+    sequence: "GTGTTT",
+  },
+  {
+    identity: 1,
+    name: "Read1",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 1,
+              to_length: 1,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+            offset: 1,
+          },
+          rank: "1",
         },
-        "score": 110,
-        "sequence": "TGTTT"
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            is_reverse: true,
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+      ],
     },
-    {
-        "identity": 1,
-        "name": "Read2",
-        "path": {
-            "mapping": [
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080786"
-                    },
-                    "rank": "1"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "is_reverse": true,
-                        "node_id": "60080785"
-                    },
-                    "rank": "2"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080783"
-                    },
-                    "rank": "3"
-                },
-            ]
+    score: 110,
+    sequence: "TGTTT",
+  },
+  {
+    identity: 1,
+    name: "Read2",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "1",
         },
-        "score": 110,
-        "sequence": "GTGTTT"
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            is_reverse: true,
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+      ],
     },
-    {
-        "identity": 1,
-        "name": "Read3",
-        "path": {
-            "mapping": [
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080786"
-                    },
-                    "rank": "1"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080785"
-                    },
-                    "rank": "2"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080783"
-                    },
-                    "rank": "3"
-                },
-            ]
+    score: 110,
+    sequence: "GTGTTT",
+  },
+  {
+    identity: 1,
+    name: "Read3",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "1",
         },
-        "score": 110,
-        "sequence": "GTACTT"
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+      ],
     },
-    {
-        "identity": 1,
-        "name": "Read4",
-        "path": {
-            "mapping": [
-                {
-                    "edit": [
-                        {
-                            "from_length": 1,
-                            "to_length": 1
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080786",
-                        "offset": 1
-                    },
-                    "rank": "1"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080785"
-                    },
-                    "rank": "2"
-                },
-                {
-                    "edit": [
-                        {
-                            "from_length": 2,
-                            "to_length": 2
-                        }
-                    ],
-                    "position": {
-                        "node_id": "60080783"
-                    },
-                    "rank": "3"
-                },
-            ]
+    score: 110,
+    sequence: "GTACTT",
+  },
+  {
+    identity: 1,
+    name: "Read4",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 1,
+              to_length: 1,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+            offset: 1,
+          },
+          rank: "1",
         },
-        "score": 110,
-        "sequence": "TACTT"
-    }
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+      ],
+    },
+    score: 110,
+    sequence: "TACTT",
+  },
 ];

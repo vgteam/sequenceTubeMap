@@ -1,12 +1,11 @@
 import PropTypes from "prop-types";
-import {TrackListItem} from './TrackListItem';
-
+import { TrackListItem } from "./TrackListItem";
 
 export const TrackList = ({
   // tracks expects an object mapping an trackID to trackProps, which includes
-      // * trackType: string
-      // * trackFile: file object / undefined
-      // * trackColorSettings: object(aka. colorScheme)
+  // * trackType: string
+  // * trackFile: file object / undefined
+  // * trackColorSettings: object(aka. colorScheme)
   tracks,
   // availableTracks: array of tracks(see types.ts)
   availableTracks,
@@ -16,43 +15,38 @@ export const TrackList = ({
   onDelete,
   handleFileUpload,
 }) => {
-
   function trackItemOnChange(trackID, trackProps) {
-      let newTracks = {...tracks};
-      newTracks[trackID] = trackProps;
-      if (JSON.stringify(newTracks) !== JSON.stringify(tracks)) {
-          onChange(newTracks);
-      }
-
+    let newTracks = { ...tracks };
+    newTracks[trackID] = trackProps;
+    if (JSON.stringify(newTracks) !== JSON.stringify(tracks)) {
+      onChange(newTracks);
+    }
   }
-
 
   function renderTracks() {
-      let trackHTML = [];
+    let trackHTML = [];
 
-      Object.keys(tracks).forEach((trackID, index) => {
-          const trackProps = tracks[trackID]
-          trackHTML.push(          
-              <TrackListItem 
-              trackProps={trackProps}
-              availableTracks={availableTracks}
-              availableColors={availableColors}
-              onChange={trackItemOnChange}
-              onDelete={onDelete}
-              trackID={parseInt(trackID)}
-              key={trackID}
-              handleFileUpload={handleFileUpload}/>
-          );
-      })
+    Object.keys(tracks).forEach((trackID, index) => {
+      const trackProps = tracks[trackID];
+      trackHTML.push(
+        <TrackListItem
+          trackProps={trackProps}
+          availableTracks={availableTracks}
+          availableColors={availableColors}
+          onChange={trackItemOnChange}
+          onDelete={onDelete}
+          trackID={parseInt(trackID)}
+          key={trackID}
+          handleFileUpload={handleFileUpload}
+        />
+      );
+    });
 
-      return trackHTML;
+    return trackHTML;
   }
 
-  return(<div>
-            {renderTracks()}
-         </div>);
-  
-}
+  return <div>{renderTracks()}</div>;
+};
 
 TrackList.propTypes = {
   tracks: PropTypes.object.isRequired,
@@ -61,7 +55,6 @@ TrackList.propTypes = {
   onChange: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   handleFileUpload: PropTypes.func.isRequired,
-}
-  
+};
 
 export default TrackList;

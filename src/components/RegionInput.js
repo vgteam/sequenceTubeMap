@@ -21,7 +21,7 @@ export const RegionInput = ({
   // Add : to pathNames
   console.log("rendering with pathnames: ", pathNames);
   const pathNamesColon = pathNames.map((name) => {
-    return {label: name + ":", value: name + ":"};
+    return { label: name + ":", value: name + ":" };
   });
   const pathsWithRegion = [];
 
@@ -30,10 +30,11 @@ export const RegionInput = ({
   if (regionInfo && !isEmpty(regionInfo)) {
     // Stitch path name + region start and end
     for (const [index, path] of regionInfo["chr"].entries()) {
-      const pathWithRegion = path + ":" + regionInfo.start[index] + "-" + regionInfo.end[index];
+      const pathWithRegion =
+        path + ":" + regionInfo.start[index] + "-" + regionInfo.end[index];
       pathsWithRegion.push({
         label: pathWithRegion + " " + regionInfo.desc[index],
-        value: pathWithRegion
+        value: pathWithRegion,
       });
       regionToDesc.set(pathWithRegion, regionInfo.desc[index]);
     }
@@ -57,18 +58,18 @@ export const RegionInput = ({
           value={region}
           inputValue={region}
           data-testid="autocomplete"
-          id="regionInput" 
-
+          id="regionInput"
           onInputChange={(event, newInput) => {
             let regionValue = newInput;
-            const regionObject = displayRegions.find((option) => option.label === newInput);
+            const regionObject = displayRegions.find(
+              (option) => option.label === newInput
+            );
             // If input is selected from one of the options
             if (regionObject) {
-              regionValue = regionObject.value
+              regionValue = regionObject.value;
             }
             handleRegionChange(regionValue, regionToDesc.get(regionValue));
           }}
-
           options={displayRegions}
           renderInput={(params) => (
             <TextField
