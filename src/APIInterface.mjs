@@ -12,6 +12,8 @@ export class APIInterface {
 
   // Returns files used to determine what options are available in the track picker.
   // Returns object with keys: files, bedFiles.
+  // files holds an array of objects like {  name: string; type: filetype;}, where filetype is a file type like "graph".
+  // bedFiles just holds an array of strings.
   // cancelSignal is an AbortSignal that can be used to cancel the request.
   async getFilenames(cancelSignal) {
     throw new Error("getFilenames function not implemented");
