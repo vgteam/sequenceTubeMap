@@ -15,6 +15,7 @@ import { dataOriginTypes } from "./enums";
 import "./config-client.js";
 import { config } from "./config-global.mjs";
 import ServerAPI from "./ServerAPI.mjs";
+import { GBZBaseAPI } from "./GBZBaseAPI.mjs";
 
 const EXAMPLE_TRACKS = [
   // Fake tracks for the generated examples.
@@ -45,6 +46,17 @@ function getColorSchemesFromTracks(tracks) {
 class App extends Component {
   constructor(props) {
     super(props);
+
+    // See if the WASM API is available.
+    // Right now this just tests and logs, but eventually we will be able to use it.
+    let gbzApi = new GBZBaseAPI();
+    gbzApi.available().then((working) => {
+      if (working) {
+        console.log("WASM API implementation available!");
+      } else {
+        console.error("WASM API implementation not available!");
+      }
+    });
 
     this.APIInterface = new ServerAPI(props.apiUrl);
 

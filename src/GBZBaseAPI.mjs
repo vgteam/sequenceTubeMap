@@ -1,6 +1,5 @@
 import { APIInterface } from "./APIInterface.mjs";
-import { readFile } from "fs-extra";
-import { WASI, File, OpenFile, PreopenDirectory } from "@bjorn3/browser_wasi_shim";
+import { WASI, File, OpenFile } from "@bjorn3/browser_wasi_shim";
 
 // TODO: The Webpack way to get the WASM would be something like:
 //import QueryWasm from "gbz-base/target/wasm32-wasi/release/query.wasm";
@@ -14,14 +13,16 @@ import { WASI, File, OpenFile, PreopenDirectory } from "@bjorn3/browser_wasi_shi
 // fetch the WASM on either Webpack or Jest with its own strategies/by being
 // swapped out.
 
-// Resolve with the bytes of the WASM query blob, on Jest or Webpack.
+// Resolve with the bytes or Response of the WASM query blob, on Jest or Webpack.
 async function getWasmBytes() {
   let blobBytes = null;
 
-  if (!jest) {
-    // Not running on Jest, we should be able to dynamic import a binary asset and get the bytes, and Webpack will handle it.
+  if (!window["jest"]) {
+    // Not running on Jest, we should be able to dynamic import a binary asset
+    // by export name and get the bytes, and Webpack will handle it.
     try {
-      blobBytes = await import("gbz-base/target/wasm32-wasi/release/query.wasm");
+      let blobImport = await import("gbz-base/query.wasm");
+      return fetch(blobImport.default);
     } catch (e) {
       console.error("Could not dynamically import WASM blob.", e);
       // Leave blobBytes unset to try a fallback method.
@@ -29,9 +30,15 @@ async function getWasmBytes() {
   }
 
   if (!blobBytes) {
-    // Either we're on Jest, or the dynamic import didn't work (maybe we're on plain Node?).
+    // Either we're on Jest, or the dynamic import didn't work (maybe we're on
+    // plain Node?).
+    //
     // Try to open the file from the filesystem.
-    blobBytes = await readFile("node_modules/gbz-base/target/wasm32-wasi/release/query.wasm");
+    //
+    // Don't actually try and ship the filesystem module in the browser though:
+    // see <https://webpack.js.org/api/module-methods/#webpackignore>
+    let fs = await import(/* webpackIgnore: true */ "fs-extra");
+    blobBytes = await fs.readFile("node_modules/gbz-base/target/wasm32-wasi/release/query.wasm");
   } 
 
   console.log("Got blob bytes: ", blobBytes);
@@ -60,7 +67,16 @@ export class GBZBaseAPI extends APIInterface {
   async setUp() {
     if (this.compiledWasm === undefined) {
       // Kick off and save exactly one request to get and load the WASM bytes.
-      this.compiledWasm = WebAssembly.compile(await getWasmBytes());
+      this.compiledWasm = getWasmBytes().then((result) => {
+        if (result instanceof Response) {
+          // If a fetch request was made, compile as it streams in
+          return WebAssembly.compileStreaming(result);
+        } else {
+          // We have all the bytes, so compile right away.
+          // TODO: Put this logic in the function?
+          return WebAssembly.compile(result);
+        }
+      });
     }
 
     // Wait for the bytes to be available.
@@ -73,10 +89,11 @@ export class GBZBaseAPI extends APIInterface {
       // We need at least one command line argument to be the program name.
       throw new Error("Not safe to invoke main() without program name");
     }
-
+    
+    // Make sure this.compiledWasm is set.
+    // TODO: Change to an accessor method?
     await this.setUp();
-    let wasm = this.compiledWasm;
-
+    
     // Define the places to store program input and output
     let stdin = new File([]);
     let stdout = new File([]);
@@ -106,6 +123,16 @@ export class GBZBaseAPI extends APIInterface {
       console.log("Standard Error:", new TextDecoder().decode(stderr.data));
     }
   }
+  
+  // Return true if the WASM setup is working, and false otherwise.
+  async available() {
+    try {
+      await this.callWasm(["query", "--help"]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   /////////
   // Tube Map API implementation
@@ -128,7 +155,7 @@ export class GBZBaseAPI extends APIInterface {
     };
 
     for (let type of this.filesByType) {
-      if (type == "bed") {
+      if (type === "bed") {
         // Just send all these files in bedFiles.
         response.bedFiles = this.filesByType[type];
       } else {

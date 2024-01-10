@@ -6,9 +6,10 @@ it("can be constructed", () => {
   let api = new GBZBaseAPI();
 });
 
-it("can run the WASM blob", async () => {
+it("can self-test its WASM setup", async () => {
   let api = new GBZBaseAPI();
-  await api.callWasm(["query", "--help"]);
+  let working = await api.available();
+  expect(working).toBeTruthy();
 });
 
 it("can have a file uploaded", async () => {
