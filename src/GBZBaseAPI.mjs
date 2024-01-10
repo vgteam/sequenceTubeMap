@@ -69,6 +69,11 @@ export class GBZBaseAPI extends APIInterface {
 
   // Make a call into the WebAssembly code and return the result.
   async callWasm(argv) {
+    if (argv.length < 1) {
+      // We need at least one command line argument to be the program name.
+      throw new Error("Not safe to invoke main() without program name");
+    }
+
     await this.setUp();
     let wasm = this.compiledWasm;
 
@@ -78,7 +83,7 @@ export class GBZBaseAPI extends APIInterface {
     let stderr = new File([]);
 
     // Environment variables as NAME=value strings
-    const environment = [];
+    const environment = ["RUST_BACKTRACE=full"];
     
     // File descriptors for the process in number order
     let file_descriptors = [new OpenFile(stdin), new OpenFile(stdout), new OpenFile(stderr)];
@@ -91,12 +96,15 @@ export class GBZBaseAPI extends APIInterface {
         "wasi_snapshot_preview1": wasi.wasiImport,
     });
     
-    // Make the WASI system call main
-    let returnCode = wasi.start(instantiation);
-
-    console.log("Return code:", returnCode);
-    console.log("Standard Output:", stdout);
-    console.log("Standard Error:", stderr);
+    try {
+      // Make the WASI system call main
+      let returnCode = wasi.start(instantiation);
+      console.log("Return code:", returnCode);
+    } finally {
+      // The WASM code can throw right out of the WASI shim if Rust panics.
+      console.log("Standard Output:", new TextDecoder().decode(stdout.data));
+      console.log("Standard Error:", new TextDecoder().decode(stderr.data));
+    }
   }
 
   /////////

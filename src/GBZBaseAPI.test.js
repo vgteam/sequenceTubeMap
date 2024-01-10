@@ -8,7 +8,7 @@ it("can be constructed", () => {
 
 it("can run the WASM blob", async () => {
   let api = new GBZBaseAPI();
-  await api.callWasm([]);
+  await api.callWasm(["query", "--help"]);
 });
 
 it("can have a file uploaded", async () => {
