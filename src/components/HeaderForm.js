@@ -542,15 +542,27 @@ class HeaderForm extends Component {
     17:2000-3000 - cannot be found - return null
   */
 
-    /*
-    function (region string){
-      parse(region string) -> return {contig, start, end}
-      loop over chr in region info
-        determine if contig, start, end are present at the current index
-        if present: return index
-      return null
+  /*
+  function (region string){
+    parse(region string) -> return {contig, start, end}
+    loop over chr in region info
+      determine if contig, start, end are present at the current index
+      if present: return index
+    return null
+  }
+  */
+
+  determineRegionIndex = (regionString) => {
+    let parsedRegion = parseRegion(regionString);
+    for (let i = 0; i < this.state.regionInfo["chr"].length; i++){
+      if ((this.state.regionInfo["start"][i] === parsedRegion[start]) 
+          && (this.state.regionInfo["end"][i] === parsedRegion[end])
+          && (this.state.regionInfo["chr"][i] === parsedRegion[contig])){
+            return i;
+      }
     }
-    */
+    return null;
+  }
 
 
   
