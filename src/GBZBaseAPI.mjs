@@ -1,4 +1,6 @@
 import { APIInterface } from "./APIInterface.mjs";
+import { readFile } from "fs-extra";
+import { WASI, File, OpenFile, PreopenDirectory } from "@bjorn3/browser_wasi_shim";
 
 // TODO: The Webpack way to get the WASM would be something like:
 //import QueryWasm from "gbz-base/target/wasm32-wasi/release/query.wasm";
@@ -11,6 +13,30 @@ import { APIInterface } from "./APIInterface.mjs";
 // can fetch it. Or else we need to hide that all behind something that can
 // fetch the WASM on either Webpack or Jest with its own strategies/by being
 // swapped out.
+
+// Resolve with the bytes of the WASM query blob, on Jest or Webpack.
+async function getWasmBytes() {
+  let blobBytes = null;
+
+  if (!jest) {
+    // Not running on Jest, we should be able to dynamic import a binary asset and get the bytes, and Webpack will handle it.
+    try {
+      blobBytes = await import("gbz-base/target/wasm32-wasi/release/query.wasm");
+    } catch (e) {
+      console.error("Could not dynamically import WASM blob.", e);
+      // Leave blobBytes unset to try a fallback method.
+    }
+  }
+
+  if (!blobBytes) {
+    // Either we're on Jest, or the dynamic import didn't work (maybe we're on plain Node?).
+    // Try to open the file from the filesystem.
+    blobBytes = await readFile("node_modules/gbz-base/target/wasm32-wasi/release/query.wasm");
+  } 
+
+  console.log("Got blob bytes: ", blobBytes);
+  return blobBytes;
+}
 
 /**
  * API implementation that uses tools compiled to WebAssembly, client-side.
@@ -26,8 +52,56 @@ export class GBZBaseAPI extends APIInterface {
     // We need to index all their names by type.
     this.filesByType = {};
 
-    // We need to set up our WASM
+    // This is a promise for the compiled WebAssembly blob.
+    this.compiledWasm = undefined;
   }
+
+  // Make sure our WASM backend is ready.
+  async setUp() {
+    if (this.compiledWasm === undefined) {
+      // Kick off and save exactly one request to get and load the WASM bytes.
+      this.compiledWasm = WebAssembly.compile(await getWasmBytes());
+    }
+
+    // Wait for the bytes to be available.
+    this.compiledWasm = await this.compiledWasm;
+  }
+
+  // Make a call into the WebAssembly code and return the result.
+  async callWasm(argv) {
+    await this.setUp();
+    let wasm = this.compiledWasm;
+
+    // Define the places to store program input and output
+    let stdin = new File([]);
+    let stdout = new File([]);
+    let stderr = new File([]);
+
+    // Environment variables as NAME=value strings
+    const environment = [];
+    
+    // File descriptors for the process in number order
+    let file_descriptors = [new OpenFile(stdin), new OpenFile(stdout), new OpenFile(stderr)];
+   
+    // Set up the WASI interface
+    let wasi = new WASI(argv, environment, file_descriptors);
+    
+    // Set up the WebAssembly run
+    let instantiation = await WebAssembly.instantiate(this.compiledWasm, {
+        "wasi_snapshot_preview1": wasi.wasiImport,
+    });
+    
+    // Make the WASI system call main
+    let returnCode = wasi.start(instantiation);
+
+    console.log("Return code:", returnCode);
+    console.log("Standard Output:", stdout);
+    console.log("Standard Error:", stderr);
+  }
+
+  /////////
+  // Tube Map API implementation
+  /////////
 
   async getChunkedData(viewTarget, cancelSignal) {
     return {
