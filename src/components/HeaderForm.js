@@ -860,7 +860,6 @@ class HeaderForm extends Component {
 }
 
 HeaderForm.propTypes = {
-  apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,

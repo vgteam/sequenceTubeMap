@@ -183,7 +183,6 @@ class App extends Component {
           setDataOrigin={this.setDataOrigin}
           setColorSetting={this.setColorSetting}
           dataOrigin={this.state.dataOrigin}
-          apiUrl={this.props.apiUrl}
           defaultViewTarget={this.defaultViewTarget}
           getCurrentViewTarget={this.getCurrentViewTarget}
           APIInterface={this.APIInterface}
@@ -191,7 +190,6 @@ class App extends Component {
         <TubeMapContainer
           viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}
-          apiUrl={this.props.apiUrl}
           visOptions={this.state.visOptions}
           APIInterface={this.APIInterface}
         />

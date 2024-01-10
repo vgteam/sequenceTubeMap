@@ -218,7 +218,7 @@ class TubeMapContainer extends Component {
     } catch (error) {
       this.handleFetchError(
         error,
-        `Fetching and parsing POST to ${this.props.apiUrl}/getChunkedData failed:`
+        "Fetching and parsing getChunkedData failed:"
       );
     }
   };
@@ -296,7 +296,6 @@ class TubeMapContainer extends Component {
 }
 
 TubeMapContainer.propTypes = {
-  apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.oneOf(Object.values(dataOriginTypes)).isRequired,
   viewTarget: PropTypes.object.isRequired,
   visOptions: PropTypes.object.isRequired,
