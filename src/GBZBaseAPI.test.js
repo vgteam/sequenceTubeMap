@@ -1,4 +1,4 @@
-import { GBZBaseAPI } from './GBZBaseAPI.mjs';
+import { GBZBaseAPI } from "./GBZBaseAPI.mjs";
 
 import fs from "fs-extra";
 
@@ -22,12 +22,11 @@ it("can have a file uploaded", async () => {
   const file = new window.File([fileData], "cactus.vg", {
     type: "application/octet-stream",
   });
-  
+
   // Set up for canceling the upload
   let controller = new AbortController();
 
   let uploadName = await api.putFile("graph", file, controller.signal);
 
-  expect(uploadName).toBeTruthy(); 
-  
+  expect(uploadName).toBeTruthy();
 });

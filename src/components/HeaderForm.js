@@ -651,7 +651,7 @@ class HeaderForm extends Component {
     }
 
     this.setUploadInProgress(true);
-    
+
     try {
       let fileName = await this.api.putFile(fileType, file, this.cancelSignal);
       if (fileType === "graph") {
@@ -669,7 +669,10 @@ class HeaderForm extends Component {
   };
 
   setUpWebsocket = () => {
-    this.subscription = this.api.subscribeToFilenameChanges(this.getMountedFilenames, this.cancelSignal);
+    this.subscription = this.api.subscribeToFilenameChanges(
+      this.getMountedFilenames,
+      this.cancelSignal
+    );
   };
 
   /* Function for toggling simplify button, enabling vg simplify to be turned on or off */

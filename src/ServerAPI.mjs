@@ -60,7 +60,7 @@ export class ServerAPI extends APIInterface {
         // Close the socket if something went wrong
         subscription.ws.close();
       };
-    }
+    };
 
     connect();
 
@@ -71,7 +71,6 @@ export class ServerAPI extends APIInterface {
   }
 
   async putFile(fileType, file, cancelSignal) {
-    
     // Prepare the form data for upload
     const formData = new FormData();
     // If the file is anything other than a Blob, it will be turned into a
@@ -108,7 +107,7 @@ export class ServerAPI extends APIInterface {
           // First time we have noticed we are aborted. Stop the request.
           xhr.abort();
           reject(new Error("Upload aborted"));
-          return
+          return;
         }
 
         if (xhr.readyState === 4) {
@@ -117,7 +116,14 @@ export class ServerAPI extends APIInterface {
             resolve(xhr.response.path);
           } else {
             // Something weird happened.
-            reject(new Error("Failed to upload file: status " + xhr.status + " and response: " + xhr.response));
+            reject(
+              new Error(
+                "Failed to upload file: status " +
+                  xhr.status +
+                  " and response: " +
+                  xhr.response
+              )
+            );
           }
         }
       };

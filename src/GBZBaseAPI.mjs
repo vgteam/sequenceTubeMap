@@ -34,7 +34,7 @@ export class GBZBaseAPI extends APIInterface {
       graph: {},
       gam: {},
       region: null,
-      coloredNodes: []
+      coloredNodes: [],
     };
   }
 
@@ -42,7 +42,7 @@ export class GBZBaseAPI extends APIInterface {
     // Set up an empty response.
     let response = {
       files: [],
-      bedFiles: []
+      bedFiles: [],
     };
 
     for (let type of this.filesByType) {
@@ -52,7 +52,7 @@ export class GBZBaseAPI extends APIInterface {
       } else {
         for (let fileName of this.filesByType[type]) {
           // We sens a name/type record for each non-BED file
-          response.files.push({name: fileName, type: type});
+          response.files.push({ name: fileName, type: type });
         }
       }
     }
@@ -81,19 +81,19 @@ export class GBZBaseAPI extends APIInterface {
 
   async getBedRegions(bedFile, cancelSignal) {
     return {
-      bedRegions: []
+      bedRegions: [],
     };
   }
 
   async getPathNames(graphFile, cancelSignal) {
     return {
-      pathNames: []
+      pathNames: [],
     };
   }
 
   async getChunkTracks(bedFile, chunk, cancelSignal) {
     return {
-      tracks: []
+      tracks: [],
     };
   }
 }
