@@ -654,7 +654,7 @@ class HeaderForm extends Component {
     
     try {
       let fileName = await this.api.putFile(fileType, file, this.cancelSignal);
-      if (fileType == "graph") {
+      if (fileType === "graph") {
         // Refresh the graphs right away
         this.getMountedFilenames();
       }

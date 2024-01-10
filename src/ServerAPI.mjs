@@ -104,7 +104,7 @@ export class ServerAPI extends APIInterface {
       const xhr = new XMLHttpRequest();
       xhr.responseType = "json";
       xhr.onreadystatechange = () => {
-        if (cancelSignal.aborted && xhr.readyState != 0) {
+        if (cancelSignal.aborted && xhr.readyState !== 0) {
           // First time we have noticed we are aborted. Stop the request.
           xhr.abort();
           reject(new Error("Upload aborted"));
