@@ -3921,21 +3921,21 @@ function trackDoubleClick() {
 // Takes a track and returns a string describing the nodes it passes through
 // In the format of >1>2<3>4, with the intergers being nodeIDs
 function getPathInfo(track) {
-  let result = "";
+  let result = [];
   if (!track.sequence) {
     return result;
   }
 
   for (const nodeID of track.sequence) {
     // Node is approached backwards if "-" is present
-    if (Array.from(nodeID)[0] === "-") {
-      result = result.concat("<", nodeID.substring(1));
+    if (nodeID.startsWith("-")) {
+      result.push("<", nodeID.substring(1));
     } else {
-      result = result.concat(">", nodeID);
+      result.push(">", nodeID);
     }
   }
   
-  return result;
+  return result.join("");
 }
 
 function trackSingleClick() {
