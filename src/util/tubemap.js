@@ -3926,6 +3926,26 @@ function trackDoubleClick() {
   createTubeMap();
 }
 
+// Takes a track and returns a string describing the nodes it passes through
+// In the format of >1>2<3>4, with the intergers being nodeIDs
+function getPathInfo(track) {
+  let result = [];
+  if (!track.sequence) {
+    return result;
+  }
+
+  for (const nodeID of track.sequence) {
+    // Node is approached backwards if "-" is present
+    if (nodeID.startsWith("-")) {
+      result.push("<", nodeID.substring(1));
+    } else {
+      result.push(">", nodeID);
+    }
+  }
+  
+  return result.join("");
+}
+
 function trackSingleClick() {
   /* jshint validthis: true */
   // Get the track ID as a number
@@ -3948,6 +3968,7 @@ function trackSingleClick() {
     track_attributes.push(["Score", current_track.score]);
     track_attributes.push(["CIGAR string", current_track.cigar_string]);
     track_attributes.push(["Mapping Quality", current_track.mapping_quality]);
+    track_attributes.push(["Path Info", getPathInfo(current_track)]);
   }
   console.log("Single Click");
   console.log("read path");
