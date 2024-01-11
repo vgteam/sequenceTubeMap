@@ -564,6 +564,16 @@ class HeaderForm extends Component {
     return null;
   }
 
+  // reverse of previous function
+  // assumes that index is valid in regionInfo
+  regionStringFromRegionIndex = (regionIndex) => {
+    let regionStart = this.state.regionInfo["start"][regionIndex];
+    let regionEnd = this.state.regionInfo["start"][regionIndex];
+    let regionContig = this.state.regionInfo["chr"][regionIndex];
+    return regionContig + ":" + regionStart + "-" + regionEnd;
+  }
+
+  // if null: use old behavior
 
   
 
