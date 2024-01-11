@@ -1,4 +1,14 @@
-diff --git a/node_modules/@bjorn3/browser_wasi_shim/.package.json.swp b/node_modules/@bjorn3/browser_wasi_shim/.package.json.swp
-new file mode 100644
-index 0000000..334b4b6
-Binary files /dev/null and b/node_modules/@bjorn3/browser_wasi_shim/.package.json.swp differ
+diff --git a/node_modules/@bjorn3/browser_wasi_shim/package.json b/node_modules/@bjorn3/browser_wasi_shim/package.json
+index af9de55..2e7a121 100644
+--- a/node_modules/@bjorn3/browser_wasi_shim/package.json
++++ b/node_modules/@bjorn3/browser_wasi_shim/package.json
+@@ -21,7 +21,8 @@
+   "exports": {
+     ".": {
+       "types": "./typings/index.d.ts",
+-      "import": "./dist/index.js"
++      "import": "./dist/index.js",
++      "default": "./dist/index.js"
+     }
+   },
+   "typings": "./typings/index.d.ts",
