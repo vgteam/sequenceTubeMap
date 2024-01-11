@@ -12,9 +12,27 @@ export class APIInterface {
 
   // Returns files used to determine what options are available in the track picker.
   // Returns object with keys: files, bedFiles.
+  // files holds an array of objects like {  name: string; type: filetype;}, where filetype is a file type like "graph".
+  // bedFiles just holds an array of strings.
   // cancelSignal is an AbortSignal that can be used to cancel the request.
   async getFilenames(cancelSignal) {
     throw new Error("getFilenames function not implemented");
+  }
+
+  // Get notifications (via calls to handler()) when the set of filenames available from getFilenames() has changed.
+  // Returns a subscription object that should be kept around as long as you still want updates.
+  // cancelSignal is an AbortSignal that can be used to cancel the stream of notifications.
+  subscribeToFilenameChanges(handler, cancelSignal) {
+    throw new Error("subscribeToFilenameChanges function not implemented");
+  }
+
+  // Upload a file.
+  // fileType is a track type like "graph" or "read".
+  // file is the file data (Blob or File).
+  // cancelSignal is an AbortSignal that can be used to cancel the upload.
+  // Resolves with the file name that can be used to refer to the uploaded file.
+  async putFile(fileType, file, cancelSignal) {
+    throw new Error("putFile function not implemented");
   }
 
   // Takes in a bedfile path or a url pointing to a raw bed file.
