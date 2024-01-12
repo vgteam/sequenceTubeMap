@@ -553,11 +553,19 @@ class HeaderForm extends Component {
   */
 
   determineRegionIndex = (regionString) => {
-    let parsedRegion = parseRegion(regionString);
+    let parsedRegion;
+    try {
+      parsedRegion = parseRegion(regionString);
+    } catch(error) {
+      return null;
+    }
+    if (!this.state.regionInfo["chr"]){
+      return null;
+    }
     for (let i = 0; i < this.state.regionInfo["chr"].length; i++){
-      if ((this.state.regionInfo["start"][i] === parsedRegion[start]) 
-          && (this.state.regionInfo["end"][i] === parsedRegion[end])
-          && (this.state.regionInfo["chr"][i] === parsedRegion[contig])){
+      if ((this.state.regionInfo["start"][i] === parsedRegion.start) 
+          && (this.state.regionInfo["end"][i] === parsedRegion.end)
+          && (this.state.regionInfo["chr"][i] === parsedRegion.contig)){
             return i;
       }
     }
@@ -568,7 +576,7 @@ class HeaderForm extends Component {
   // assumes that index is valid in regionInfo
   regionStringFromRegionIndex = (regionIndex) => {
     let regionStart = this.state.regionInfo["start"][regionIndex];
-    let regionEnd = this.state.regionInfo["start"][regionIndex];
+    let regionEnd = this.state.regionInfo["end"][regionIndex];
     let regionContig = this.state.regionInfo["chr"][regionIndex];
     return regionContig + ":" + regionStart + "-" + regionEnd;
   }
@@ -696,12 +704,57 @@ class HeaderForm extends Component {
     );
   }
 
+
+  /* Offset the region left or right by the given negative or positive fraction*/
+  // offset: +1 or -1
+  jumpRegion(offset) {
+    let regionIndex = this.determineRegionIndex(this.state.region) ?? 0;
+    if ((offset === -1 && this.canGoLeft(regionIndex)) || (offset === 1 && this.canGoRight(regionIndex))){
+      regionIndex += offset;
+    }
+    let regionString = this.regionStringFromRegionIndex(regionIndex);
+    this.setState(
+      (state) => ({
+        region: regionString,
+      }),
+      () => this.handleGoButton()
+    );
+  }
+
+  canGoLeft = (regionIndex) => {
+    if (this.state.bedFile){
+      return (regionIndex > 0);
+    } else {
+      return true;
+    }
+  }
+
+  canGoRight = (regionIndex) => {
+    if (this.state.bedFile){
+      if (!this.state.regionInfo["chr"]){
+        return false;
+      }
+      return (regionIndex < ((this.state.regionInfo["chr"].length) - 1));
+    } else {
+      return true;
+    }
+  }
+
+
   handleGoRight = () => {
-    this.budgeRegion(0.5);
+    if (this.state.bedFile){
+      this.jumpRegion(1);
+    } else {
+      this.budgeRegion(0.5);
+    }
   };
 
   handleGoLeft = () => {
-    this.budgeRegion(-0.5);
+    if (this.state.bedFile){
+      this.jumpRegion(-1);
+    } else {
+      this.budgeRegion(-0.5);
+    }
   };
 
   showFileSizeAlert = () => {
@@ -831,6 +884,8 @@ class HeaderForm extends Component {
       uploadInProgress={this.state.uploadInProgress}
       getCurrentViewTarget={this.props.getCurrentViewTarget}
       viewTargetHasChange={viewTargetHasChange}
+      canGoLeft={this.canGoLeft(this.determineRegionIndex(this.state.region))}
+      canGoRight={this.canGoRight(this.determineRegionIndex(this.state.region))}
     />
 
     return (
