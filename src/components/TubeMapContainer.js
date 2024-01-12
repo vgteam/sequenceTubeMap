@@ -6,9 +6,7 @@ import isEqual from "react-fast-compare";
 import TubeMap from "./TubeMap";
 import * as tubeMap from "../util/tubemap";
 import { dataOriginTypes } from "../enums";
-import { fetchAndParse } from "../fetchAndParse";
 import PopUpInfoDialog from "./PopUpInfoDialog";
-
 
 class TubeMapContainer extends Component {
   state = {
@@ -20,6 +18,7 @@ class TubeMapContainer extends Component {
   componentDidMount() {
     this.fetchCanceler = new AbortController();
     this.cancelSignal = this.fetchCanceler.signal;
+    this.api = this.props.APIInterface;
     this.getRemoteTubeMapData();
   }
 
@@ -58,10 +57,10 @@ class TubeMapContainer extends Component {
       }
     }
     // updating visOptions will cause an error if the tubemap is not in place yet.
-    if(!this.state.isLoading) {
+    if (!this.state.isLoading) {
       // Hook into item clicks form the tube map
       tubeMap.setInfoCallback((text) => {
-        this.setState({infoDialogContent: text});
+        this.setState({ infoDialogContent: text });
       });
     }
   }
@@ -102,24 +101,31 @@ class TubeMapContainer extends Component {
     // TubeMapContainer instance, so we can have a shorter name for it.
     let attributes = this.state.infoDialogContent;
     let isOpen;
-    if (attributes === undefined){
+    if (attributes === undefined) {
       isOpen = false;
     } else {
       isOpen = true;
     }
     // resets value of infoDialogContent upon close
-    const closePopup = () => this.setState({infoDialogContent: undefined});
+    const closePopup = () => this.setState({ infoDialogContent: undefined });
 
     return (
       <div id="tubeMapContainer">
-        <PopUpInfoDialog open={isOpen} attributes={attributes} close={closePopup} />
+        <PopUpInfoDialog
+          open={isOpen}
+          attributes={attributes}
+          close={closePopup}
+        />
         <div id="tubeMapSVG">
           <TubeMap
             nodes={this.state.nodes}
             tracks={this.state.tracks}
             reads={this.state.reads}
             region={this.state.region}
-            visOptions={{coloredNodes: this.state.coloredNodes, ...this.props.visOptions}}
+            visOptions={{
+              coloredNodes: this.state.coloredNodes,
+              ...this.props.visOptions,
+            }}
           />
         </div>
       </div>
@@ -129,14 +135,10 @@ class TubeMapContainer extends Component {
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkedData`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(this.props.viewTarget),
-      });
+      const json = await this.api.getChunkedData(
+        this.props.viewTarget,
+        this.cancelSignal
+      );
       if (json.graph === undefined) {
         // We did not get back a graph, even if we didn't get an error either.
         const error = "Fetching remote data returned error";
@@ -166,10 +168,19 @@ class TubeMapContainer extends Component {
           }
         }
 
-        console.log("Graph track: " + graphTrackID + " Haplotype track: " + haplotypeTrackID);
+        console.log(
+          "Graph track: " +
+            graphTrackID +
+            " Haplotype track: " +
+            haplotypeTrackID
+        );
 
         const nodes = tubeMap.vgExtractNodes(json.graph);
-        const tracks = tubeMap.vgExtractTracks(json.graph, graphTrackID, haplotypeTrackID);
+        const tracks = tubeMap.vgExtractTracks(
+          json.graph,
+          graphTrackID,
+          haplotypeTrackID
+        );
 
         // Call vgExtractReads on each file of reads and store in readsArr
         let readsArr = [];
@@ -179,11 +190,17 @@ class TubeMapContainer extends Component {
           // For each returned list of reads from a file, convert all those reads to tube map format.
           // Include total read count to prevent duplicate ids.
           // Also include the source track's ID.
-          let newReads = tubeMap.vgExtractReads(nodes, tracks, gam, totalReads, readTrackIDs[readsArr.length]);
+          let newReads = tubeMap.vgExtractReads(
+            nodes,
+            tracks,
+            gam,
+            totalReads,
+            readTrackIDs[readsArr.length]
+          );
           readsArr.push(newReads);
           totalReads += newReads.length;
         }
-        
+
         // concatenate all reads together
         const reads = readsArr.flat();
 
@@ -195,14 +212,13 @@ class TubeMapContainer extends Component {
           tracks,
           reads,
           region,
-          coloredNodes
+          coloredNodes,
         });
-        
       }
     } catch (error) {
       this.handleFetchError(
         error,
-        `Fetching and parsing POST to ${this.props.apiUrl}/getChunkedData failed:`
+        "Fetching and parsing getChunkedData failed:"
       );
     }
   };
@@ -280,10 +296,10 @@ class TubeMapContainer extends Component {
 }
 
 TubeMapContainer.propTypes = {
-  apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.oneOf(Object.values(dataOriginTypes)).isRequired,
   viewTarget: PropTypes.object.isRequired,
   visOptions: PropTypes.object.isRequired,
+  APIInterface: PropTypes.object.isRequired,
 };
 
 export default TubeMapContainer;

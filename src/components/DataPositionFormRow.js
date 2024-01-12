@@ -9,7 +9,7 @@ import {
   faSearchPlus,
   faSearchMinus,
 } from "@fortawesome/free-solid-svg-icons";
-import HelpButton from "./HelpButton.js"
+import HelpButton from "./HelpButton.js";
 import * as tubeMap from "../util/tubemap";
 
 const ZOOM_FACTOR = 2.0;
@@ -65,13 +65,15 @@ class DataPositionFormRow extends Component {
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
-
         {/* Help Button */}
         <HelpButton file="./help/help.md"></HelpButton>
-        
         <Button
           color={this.props.viewTargetHasChange ? "alert" : "primary"}
-          title={this.props.viewTargetHasChange ? "Click to apply pending changes." : "No changes to apply; view is up to date."}
+          title={
+            this.props.viewTargetHasChange
+              ? "Click to apply pending changes."
+              : "No changes to apply; view is up to date."
+          }
           id="goButton"
           onClick={this.props.handleGoButton}
           disabled={this.props.uploadInProgress}

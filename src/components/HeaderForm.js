@@ -1,8 +1,7 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Container, Row, Col, Label, Alert } from "reactstrap";
+import { Container, Row, Col, Label, Alert, Button } from "reactstrap";
 import { dataOriginTypes } from "../enums";
-import { fetchAndParse } from "../fetchAndParse";
 import "../config-client.js";
 import { config } from "../config-global.mjs";
 import DataPositionFormRow from "./DataPositionFormRow";
@@ -10,8 +9,13 @@ import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
-import { parseRegion, stringifyRegion, isEmpty } from "../common.mjs";
-
+import FormHelperText from "@mui/material/FormHelperText";
+import {
+  parseRegion,
+  stringifyRegion,
+  isEmpty,
+  readsExist,
+} from "../common.mjs";
 
 // See src/Types.ts
 
@@ -26,9 +30,8 @@ const fileTypes = {
   GRAPH: "graph",
   HAPLOTYPE: "haplotype",
   READ: "read",
-  BED:"bed",
+  BED: "bed",
 };
-
 
 // We define the subset of the empty state that is safe to apply without
 // clobbering downloaded data from the server which we need
@@ -37,6 +40,9 @@ const CLEAR_STATE = {
   // dropdown. From the corresponding SelectOptions list.
   // File: The file name actually used (or undefined)
   bedSelect: "none",
+
+  // Description for the selected region, is not displayed when empty
+  desc: "",
 
   // This tracks several arrays (desc, chr, start, end) of BED region data, with
   // one entry in each array per region.
@@ -59,7 +65,7 @@ const CLEAR_STATE = {
   */
   regionInfo: {},
 
-  pathNames: ["none"],
+  pathNames: [],
 
   tracks: {},
   bedFile: undefined,
@@ -85,7 +91,7 @@ const EMPTY_STATE = {
   fileSelectOptions: [],
   // This one is for the BED files. It needs to exist when we start up or we
   // will try and draw the BED dropdown without an array of options.
-  bedSelectOptions: []
+  bedSelectOptions: [],
 };
 
 // Creates track to be stored in ViewTarget
@@ -93,7 +99,7 @@ const EMPTY_STATE = {
 // INPUT: file structure, see Types.ts
 function createTrack(file) {
   //track properties
-  const files = [file]
+  const files = [file];
 
   //remove empty files here?
 
@@ -115,35 +121,38 @@ function tracksEqual(curr, next) {
 
   const curr_settings = curr.trackColorSettings;
   const next_settings = next.trackColorSettings;
-  
+
   // check if color settings are equal
-  if (curr_settings && next_settings){
-    if (curr_settings.mainPalette !== next_settings.mainPalette || 
-        curr_settings.auxPalette !== next_settings.auxPalette ||
-        curr_settings.colorReadsByMappingQuality !== next_settings.colorReadsByMappingQuality) {
-          
-        return false;
+  if (curr_settings && next_settings) {
+    if (
+      curr_settings.mainPalette !== next_settings.mainPalette ||
+      curr_settings.auxPalette !== next_settings.auxPalette ||
+      curr_settings.colorReadsByMappingQuality !==
+        next_settings.colorReadsByMappingQuality
+    ) {
+      return false;
     }
   }
-  //count falsy file names as the same
+  // count falsy file names as the same
   if ((!curr_file && !next_file) || curr_file === next_file) {
     return true;
   }
   return false;
-
 }
 
 // Checks if two view targets are the same. They are the same if they have the
 // same tracks and the same region.
 function viewTargetsEqual(currViewTarget, nextViewTarget) {
-
   // Update if one is undefined and the other isn't
   if ((currViewTarget === undefined) !== (nextViewTarget === undefined)) {
     return false;
   }
 
   // Update if view target tracks are not equal
-  if (Object.keys(currViewTarget.tracks).length !== Object.keys(nextViewTarget.tracks).length) {
+  if (
+    Object.keys(currViewTarget.tracks).length !==
+    Object.keys(nextViewTarget.tracks).length
+  ) {
     // Different lengths so not equal
     return false;
   }
@@ -169,19 +178,22 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
 
   // Update if regions are not equal
   if (currViewTarget.region !== nextViewTarget.region) {
-     return false;
+    return false;
+  }
+
+  if (currViewTarget.simplify !== nextViewTarget.simplify) {
+    return false;
   }
 
   return true;
-
 }
-
 
 class HeaderForm extends Component {
   state = EMPTY_STATE;
   componentDidMount() {
     this.fetchCanceler = new AbortController();
     this.cancelSignal = this.fetchCanceler.signal;
+    this.api = this.props.APIInterface;
     this.initState();
     this.getMountedFilenames();
     this.setUpWebsocket();
@@ -225,6 +237,7 @@ class HeaderForm extends Component {
         region: ds.region,
         dataType: ds.dataType,
         name: ds.name,
+        simplify: ds.simplify,
       };
       return stateVals;
     });
@@ -235,7 +248,16 @@ class HeaderForm extends Component {
     // If there is no nth track of that type, create one.
     // If the file is "none", remove that track.
     this.setState((state) => {
-      console.log('Set file ' + type + ' index ' + index + ' to ' + file + ' over ' + JSON.stringify(state.tracks));
+      console.log(
+        "Set file " +
+          type +
+          " index " +
+          index +
+          " to " +
+          file +
+          " over " +
+          JSON.stringify(state.tracks)
+      );
 
       // Make a modified copy of the tracks
       let newTracks = [];
@@ -267,21 +289,23 @@ class HeaderForm extends Component {
           maxKey = parseInt(key);
         }
       }
-      
-      console.log('Saw ' + seenTracksOfType + ' tracks of type vs index ' + index)
+
+      console.log(
+        "Saw " + seenTracksOfType + " tracks of type vs index " + index
+      );
       if (seenTracksOfType === index && file !== "none") {
         // We need to add this track
-        console.log('Create track at index ' + (maxKey + 1))
-        newTracks[maxKey + 1] = createTrack({"type": type, "name": file});
+        console.log("Create track at index " + (maxKey + 1));
+        newTracks[maxKey + 1] = createTrack({ type: type, name: file });
       }
 
       // Add the new tracks to the state
       let newState = Object.assign({}, state);
       newState.tracks = newTracks;
-      console.log('Set result: ' + JSON.stringify(newTracks));
+      console.log("Set result: " + JSON.stringify(newTracks));
       return newState;
     });
-  }
+  };
 
   getTrackFile = (tracks, type, index) => {
     // Get the file used in the nth track of the gicen type, or "none" if no
@@ -298,22 +322,16 @@ class HeaderForm extends Component {
           return track.trackFile;
         }
         seenTracksOfType++;
-      } 
+      }
     }
     // Not found
     return "none";
-  }
+  };
 
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const json = await this.api.getFilenames(this.cancelSignal);
       if (!json.files || json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
@@ -337,7 +355,7 @@ class HeaderForm extends Component {
                 console.log("Get path names for track: ", state.tracks[key]);
                 this.getPathNames(state.tracks[key].trackFile);
               }
-            } 
+            }
             return {
               fileSelectOptions: json.files,
               bedSelectOptions: json.bedFiles,
@@ -354,24 +372,14 @@ class HeaderForm extends Component {
         }
       }
     } catch (error) {
-      this.handleFetchError(
-        error,
-        `GET to ${this.props.apiUrl}/getFilenames failed:`
-      );
+      this.handleFetchError(error, `API getFilenames failed:`);
     }
   };
 
   getBedRegions = async (bedFile) => {
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bedFile }),
-      });
+      const json = await this.api.getBedRegions(bedFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       if (!json.bedRegions || !(json.bedRegions["desc"] instanceof Array)) {
         throw new Error(
@@ -385,10 +393,7 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      this.handleFetchError(
-        error,
-        `POST to ${this.props.apiUrl}/getBedRegions failed:`
-      );
+      this.handleFetchError(error, `API getBedRegions failed:`);
     }
   };
 
@@ -401,14 +406,7 @@ class HeaderForm extends Component {
   getPathNames = async (graphFile) => {
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ graphFile }),
-      });
+      const json = await this.api.getPathNames(graphFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
       if (!(pathNames instanceof Array)) {
@@ -420,10 +418,7 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      this.handleFetchError(
-        error,
-        `POST to ${this.props.apiUrl}/getPathNames failed:`
-      );
+      this.handleFetchError(error, `API getPathNames failed:`);
     }
   };
 
@@ -464,7 +459,7 @@ class HeaderForm extends Component {
             }
           }
           this.setState({
-            tracks: ds.tracks, 
+            tracks: ds.tracks,
             bedFile: ds.bedFile,
             bedSelect: bedSelect,
             region: ds.region,
@@ -482,6 +477,7 @@ class HeaderForm extends Component {
     name: this.state.name,
     region: this.state.region,
     dataType: this.state.dataType,
+    simplify: this.state.simplify && !readsExist(this.state.tracks),
   });
 
   handleGoButton = () => {
@@ -501,12 +497,10 @@ class HeaderForm extends Component {
       return;
     }
 
-    
     if (!viewTargetsEqual(currViewTarget, nextViewTarget)) {
       // Update the view if the view target has changed.
       this.props.setCurrentViewTarget(nextViewTarget);
     }
-
   };
 
   getRegionCoords = (desc) => {
@@ -589,7 +583,10 @@ class HeaderForm extends Component {
   // Update current track if the new tracks are valid
   // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
   // Tracks remain unchanged if neither condition is met
-  handleRegionChange = async (value) => {
+  handleRegionChange = async (value, desc) => {
+    // Update region description
+    this.setState({ desc: desc });
+
     // After user selects a region name or coordinates,
     // update path, region, and associated tracks(if applicable)
 
@@ -603,18 +600,23 @@ class HeaderForm extends Component {
       coords = this.getRegionCoords(value);
     }
     this.setState({ region: coords });
-    
-    let coordsToMetaData = {}
+
+    let coordsToMetaData = {};
 
     // Construct a concatenated string of possible coords
     // Set relative meta data to each coord
     if (this.state.regionInfo && !isEmpty(this.state.regionInfo)) {
       for (const [index, path] of this.state.regionInfo["chr"].entries()) {
-        const pathWithRegion = path + ":" + this.state.regionInfo.start[index] + "-" + this.state.regionInfo.end[index];
+        const pathWithRegion =
+          path +
+          ":" +
+          this.state.regionInfo.start[index] +
+          "-" +
+          this.state.regionInfo.end[index];
         coordsToMetaData[pathWithRegion] = {
-          "tracks": this.state.regionInfo.tracks[index],
-          "chunk": this.state.regionInfo.chunk[index]
-        }
+          tracks: this.state.regionInfo.tracks[index],
+          chunk: this.state.regionInfo.chunk[index],
+        };
       }
     }
 
@@ -628,13 +630,11 @@ class HeaderForm extends Component {
       console.log("New tracks have been applied");
     } else if (this.state.bedFile && chunk) {
       // Try to retrieve tracks from the server
-      const json = await fetchAndParse(`${this.props.apiUrl}/getChunkTracks`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bedFile: this.state.bedFile, chunk: chunk }),
-      });
+      const json = await this.api.getChunkTracks(
+        this.state.bedFile,
+        chunk,
+        this.cancelSignal
+      );
 
       // Replace tracks if request returns non-falsey value
       if (json.tracks) {
@@ -654,16 +654,15 @@ class HeaderForm extends Component {
     this.setState((state) => {
       let newState = Object.assign({}, state);
       newState.tracks = newTracks;
-      console.log('Set result: ' + JSON.stringify(newTracks));
+      console.log("Set result: " + JSON.stringify(newTracks));
       return newState;
     });
 
     // update path names
     const graphFile = this.getTrackFile(newTracks, fileTypes.GRAPH, 0);
-    if (graphFile && graphFile !== "none"){
+    if (graphFile && graphFile !== "none") {
       this.getPathNames(graphFile);
     }
-
   };
 
   handleBedChange = (event) => {
@@ -675,8 +674,7 @@ class HeaderForm extends Component {
       this.getBedRegions(value);
     }
     this.setState({ bedFile: value });
-
-  }
+  };
 
   // Budge the region left or right by the given negative or positive fraction
   // of its width.
@@ -695,7 +693,7 @@ class HeaderForm extends Component {
       parsedRegion.start = Math.max(0, Math.round(parsedRegion.start + shift));
       parsedRegion.end = Math.max(0, Math.round(parsedRegion.end + shift));
     }
-   
+
     this.setState(
       (state) => ({
         region: stringifyRegion(parsedRegion),
@@ -767,70 +765,39 @@ class HeaderForm extends Component {
 
   // Sends uploaded file to server and returns a path to the file
   handleFileUpload = async (fileType, file) => {
-    return new Promise(function (resolve, reject) {
-      if (file.size > config.MAXUPLOADSIZE) {
-        this.showFileSizeAlert();
-        return;
-      }
-  
-      this.setUploadInProgress(true);
-  
-      const formData = new FormData();
-      // If the file is anything other than a Blob, it will be turned into a
-      // string and added as a normal form value. If it is a Blob it will
-      // become a file upload. Note that a File is a kind of Blob. See
-      // <https://developer.mozilla.org/en-US/docs/Web/API/FormData/append#value>
-      //
-      // But in jsdom in the test environment there are two Blob types: Node's
-      // and jdsom's, and only jsdom's will work. Node's will turn into a
-      // string. And it seems hard to get at both types in a way that makes
-      // sense in a browser. So we will add the file and make sure it added OK
-      // and didn't stringify.
-      
-      // According to <https://stackoverflow.com/a/43914175>, we *must* set a filename for uploads.
-      // In jsdom it turns on jsdom's own type checking support.
-      let fileName = file.name || "upload.dat";
-      formData.append("trackFile", file, fileName);
-      if (typeof formData.get("trackFile") == "string") {
-        // Catch stringification in case jsdom didn't.
-        console.error("Cannot upload file because it is not the appropriate type:", file);
-        throw new Error("File is not an appropriate type to upload");
-      }
-      // Make sure server can identify a Read file
-      formData.append("fileType", fileType); 
-      const xhr = new XMLHttpRequest();
-      xhr.responseType = "json";
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          // Every thing ok, file uploaded
-          this.setUploadInProgress(false);
-          if (fileType === "graph") {
-            this.getPathNames(xhr.response.path);
-          }
+    if (file.size > config.MAXUPLOADSIZE) {
+      this.showFileSizeAlert();
+      return;
+    }
 
-          resolve(xhr.response.path);
-        }
-      };
-      
-      console.log("Uploading file", file);
-      console.log("Sending form data", formData);
-      console.log("Form file is a " + typeof formData.get("trackFile"));
-      xhr.open("POST", `${this.props.apiUrl}/trackFileSubmission`, true);
-      xhr.send(formData);
-    }.bind(this));
+    this.setUploadInProgress(true);
+
+    try {
+      let fileName = await this.api.putFile(fileType, file, this.cancelSignal);
+      if (fileType === "graph") {
+        // Refresh the graphs right away
+        this.getMountedFilenames();
+      }
+      this.setUploadInProgress(false);
+      return fileName;
+    } catch (e) {
+      if (!this.cancelSignal.aborted) {
+        // Only pass along errors if we haven't canceled our fetches.
+        throw e;
+      }
+    }
   };
 
   setUpWebsocket = () => {
-    this.ws = new WebSocket(this.props.apiUrl.replace(/^http/, "ws"));
-    this.ws.onmessage = (message) => {
-      this.getMountedFilenames();
-    };
-    this.ws.onclose = (event) => {
-      setTimeout(this.setUpWebsocket, 1000);
-    };
-    this.ws.onerror = (event) => {
-      this.ws.close();
-    };
+    this.subscription = this.api.subscribeToFilenameChanges(
+      this.getMountedFilenames,
+      this.cancelSignal
+    );
+  };
+
+  /* Function for toggling simplify button, enabling vg simplify to be turned on or off */
+  toggleSimplify = () => {
+    this.setState({ simplify: !this.state.simplify });
   };
 
   render() {
@@ -870,31 +837,35 @@ class HeaderForm extends Component {
 
     const customFilesFlag = this.state.dataType === dataTypes.CUSTOM_FILES;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
-    const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
+    const viewTargetHasChange = !viewTargetsEqual(
+      this.getNextViewTarget(),
+      this.props.getCurrentViewTarget()
+    );
+    const displayDescription = this.state.desc;
 
     console.log(
       "Rendering header form with fileSelectOptions: ",
       this.state.fileSelectOptions
     );
 
-    const DataPositionFormRowComponent = <DataPositionFormRow
-      handleGoLeft={this.handleGoLeft}
-      handleGoRight={this.handleGoRight}
-      handleGoButton={this.handleGoButton}
-      uploadInProgress={this.state.uploadInProgress}
-      getCurrentViewTarget={this.props.getCurrentViewTarget}
-      viewTargetHasChange={viewTargetHasChange}
-      canGoLeft={this.canGoLeft(this.determineRegionIndex(this.state.region))}
-      canGoRight={this.canGoRight(this.determineRegionIndex(this.state.region))}
-    />
+    const DataPositionFormRowComponent = (
+      <DataPositionFormRow
+        handleGoLeft={this.handleGoLeft}
+        handleGoRight={this.handleGoRight}
+        handleGoButton={this.handleGoButton}
+        uploadInProgress={this.state.uploadInProgress}
+        getCurrentViewTarget={this.props.getCurrentViewTarget}
+        viewTargetHasChange={viewTargetHasChange}
+        canGoLeft={this.canGoLeft(this.determineRegionIndex(this.state.region))}
+        canGoRight={this.canGoRight(this.determineRegionIndex(this.state.region))}
+      />
+    );
 
     return (
       <div>
         <Container>
           <Row>
-            <Col>
-              {errorDiv}
-            </Col>
+            <Col>{errorDiv}</Col>
           </Row>
           <Row>
             <Col md="auto">
@@ -907,7 +878,6 @@ class HeaderForm extends Component {
               >
                 Data:
               </Label>
-
               <select
                 type="select"
                 value={
@@ -942,9 +912,7 @@ class HeaderForm extends Component {
                   />
                   &nbsp;
                 </React.Fragment>
-
               )}
-
               {!examplesFlag && (
                 <RegionInput
                   pathNames={this.state.pathNames}
@@ -953,9 +921,8 @@ class HeaderForm extends Component {
                   region={this.state.region}
                 />
               )}
-
-              {customFilesFlag && 
-                <div style={{display: "flex"}}>
+              {customFilesFlag && (
+                <div style={{ display: "flex" }}>
                   {DataPositionFormRowComponent}
                   <TrackPicker
                     tracks={this.state.tracks}
@@ -963,9 +930,18 @@ class HeaderForm extends Component {
                     onChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
+                  {/* Button for simplify */}
+                  {!readsExist(this.state.tracks) && (
+                    <Button
+                      onClick={this.toggleSimplify}
+                      outline
+                      active={this.state.simplify}
+                    >
+                      {this.state.simplify ? "Simplify On" : "Simplify Off"}
+                    </Button>
+                  )}
                 </div>
-              }
-
+              )}
               <Row>
                 <Alert
                   color="danger"
@@ -986,9 +962,17 @@ class HeaderForm extends Component {
                     setColorSetting={this.props.setColorSetting}
                   />
                 ) : (
-                  !customFilesFlag && DataPositionFormRowComponent 
+                  !customFilesFlag && DataPositionFormRowComponent
                 )}
               </Row>
+              {displayDescription ? (
+                <div style={{ marginTop: "10px" }}>
+                  <FormHelperText> {"Region Description: "} </FormHelperText>
+                  <FormHelperText style={{ fontWeight: "bold" }}>
+                    {this.state.desc}
+                  </FormHelperText>
+                </div>
+              ) : null}
             </Col>
           </Row>
         </Container>
@@ -998,12 +982,12 @@ class HeaderForm extends Component {
 }
 
 HeaderForm.propTypes = {
-  apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
   setCurrentViewTarget: PropTypes.func.isRequired,
   defaultViewTarget: PropTypes.any, // Header Form State, may be null if no params in URL. see Types.ts
+  APIInterface: PropTypes.object.isRequired,
 };
 
 export default HeaderForm;

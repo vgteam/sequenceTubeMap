@@ -26,7 +26,7 @@ import App from "./App";
 
 const getRegionInput = () => {
   // Helper function to select the Region input box
-  return screen.getByTestId("autocomplete").querySelector("input");
+  return screen.getByRole("combobox", { name: /Region/i });
 };
 // This holds the running server for the duration of each test.
 let serverState = undefined;
@@ -92,15 +92,15 @@ async function waitForLoadStart() {
 
 // Wait for the loading throbber to disappear
 async function waitForLoadEnd() {
-  console.log("Waiting for load end")
+  console.log("Waiting for load end");
   return new Promise((resolve, reject) => {
     function waitAround() {
       let loader = document.getElementById("loader");
       if (loader) {
-        console.log("Still loading...")
+        console.log("Still loading...");
         setTimeout(waitAround, 100);
       } else {
-        console.log("Loading over!")
+        console.log("Loading over!");
         resolve();
       }
     }
@@ -216,10 +216,8 @@ describe("When we wait for it to load", () => {
     await act(async () => {
       userEvent.click(getRegionInput());
     });
-
     // Make sure that option in RegionInput dropdown (17_1_100) is visible
-    const text = screen.getAllByText("17_1_100");
-    expect(text[0]).toBeInTheDocument();
+    expect(screen.getByText("17:1-100 17_1_100")).toBeInTheDocument();
   });
   it("the region options in autocomplete are cleared after selecting new data", async () => {
     // Input data dropdown
@@ -232,7 +230,7 @@ describe("When we wait for it to load", () => {
       userEvent.click(getRegionInput());
     });
     // Make sure that old option in RegionInput dropdown (17_...) is not visible
-    expect(screen.queryByText("17_1_100")).not.toBeInTheDocument();
+    expect(screen.queryByText("1-100 17_1_100")).not.toBeInTheDocument();
     await act(async () => {
       userEvent.click(regionInput);
     });
@@ -299,13 +297,13 @@ describe("When we wait for it to load", () => {
     expect(svg.getElementsByTagName("title").length).toEqual(65);
   });
 
-  it('draws the right SVG for cactus multiple reads', async () => {
+  it("draws the right SVG for cactus multiple reads", async () => {
     let dropdown = document.getElementById("dataSourceSelect");
 
     // Input data dropdown
     await userEvent.selectOptions(
       screen.getByLabelText(/Data/i),
-      'cactus multiple reads'
+      "cactus multiple reads"
     );
     const autocomplete = screen.getByTestId("autocomplete");
     const input = autocomplete.querySelector("input");
@@ -336,15 +334,12 @@ describe("When we wait for it to load", () => {
     expect(svg).toBeTruthy();
     expect(svg.getElementsByTagName("title").length).toEqual(23);
   });
-
 });
-
-
 
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
   const expectedLinkBRCA1 =
-    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in";
+    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in&simplify=false";
   // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -378,7 +373,7 @@ it("produces correct link for view before & after go is pressed", async () => {
   await clickCopyLink();
 
   const expectedLinkCactus =
-    "http://localhost?tracks[0][trackFile]=exampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=exampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=exampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in";
+    "http://localhost?tracks[0][trackFile]=exampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=exampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=exampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in&simplify=false";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
 }, 20000);
@@ -390,10 +385,7 @@ it("can retrieve the list of mounted graph files", async () => {
   // Swap over to the custom files mode
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
-    await userEvent.selectOptions(
-      screen.getByLabelText(/Data/i),
-      "custom"
-    );
+    await userEvent.selectOptions(screen.getByLabelText(/Data/i), "custom");
   });
 
   // Find the select box's input
@@ -406,22 +398,22 @@ it("can retrieve the list of mounted graph files", async () => {
     userEvent.click(trackSelectButton);
   });
 
-
   // add a new track
   await waitFor(() => {
     fireEvent.click(screen.queryByTestId("track-add-button-component"));
   });
 
-
   // We shouldn't see the option before we open the dropdown
   expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
-
 
   // Make sure the right entry eventually shows up (since we could be racing
   // the initial load from the component mounting)
   await waitFor(() => {
     // try to select a graph file
-    fireEvent.keyDown(screen.queryByTestId('file-select-component1').firstChild, {key: "ArrowDown"});
+    fireEvent.keyDown(
+      screen.queryByTestId("file-select-component1").firstChild,
+      { key: "ArrowDown" }
+    );
   });
 
   expect(screen.queryByText("cactus.vg.xg")).toBeTruthy();
@@ -434,10 +426,7 @@ it("can accept uploaded files", async () => {
   // Swap over to the custom files mode
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
-    await userEvent.selectOptions(
-      screen.getByLabelText(/Data/i),
-      "custom"
-    );
+    await userEvent.selectOptions(screen.getByLabelText(/Data/i), "custom");
   });
 
   // Find the select box's input
@@ -449,7 +438,6 @@ it("can accept uploaded files", async () => {
     userEvent.click(trackSelectButton);
   });
 
-
   // add a new track
   await waitFor(() => {
     fireEvent.click(screen.queryByTestId("track-add-button-component"));
@@ -457,7 +445,10 @@ it("can accept uploaded files", async () => {
 
   await waitFor(() => {
     // wait for picker type dropdown
-    fireEvent.keyDown(screen.queryByTestId('picker-type-select-component1').firstChild, {key: "ArrowDown"});
+    fireEvent.keyDown(
+      screen.queryByTestId("picker-type-select-component1").firstChild,
+      { key: "ArrowDown" }
+    );
   });
 
   // select the upload option
@@ -478,8 +469,10 @@ it("can accept uploaded files", async () => {
   // We need to put the data block in an enclosing array, or else the block
   // will be iterated and each byte will be stringified and *those* bytes will
   // be uploaded.
-  const file = new window.File([fileData], "cactus.vg", { type: "application/octet-stream" });
-  
+  const file = new window.File([fileData], "cactus.vg", {
+    type: "application/octet-stream",
+  });
+
   console.log("Adding file:", file);
   await act(async () => {
     await waitFor(() => {
@@ -507,7 +500,7 @@ it("can accept uploaded files", async () => {
   // try to compute the svg
   const autocomplete = screen.getByTestId("autocomplete");
   const input = autocomplete.querySelector("input");
-  
+
   console.log("Clearing input");
   await userEvent.clear(input);
 

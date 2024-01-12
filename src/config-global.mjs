@@ -6,15 +6,13 @@ const GLOBAL_NAME = "__sequence_tube_map_config";
 /*global globalThis*/
 const GLOBAL_HOME = globalThis || window || global;
 
-
-
 // Find the config in the globals.
 export const config = GLOBAL_HOME[GLOBAL_NAME];
 
 if (!config) {
-  throw new Error("config-global.mjs loaded before either config-client.js or config-server.mjs");
+  throw new Error(
+    "config-global.mjs loaded before either config-client.js or config-server.mjs"
+  );
 }
 
 export default config;
-
-

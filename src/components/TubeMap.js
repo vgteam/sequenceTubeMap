@@ -15,11 +15,11 @@ class TubeMap extends Component {
     console.log("Old node count:", (prevProps.nodes || []).length);
     console.log("Old read count:", (prevProps.reads || []).length);
     if (!isEqual(this.props, prevProps)) {
-      console.log('Props have changed so re-creating tube map');
+      console.log("Props have changed so re-creating tube map");
       this.updateVisOptions();
       this.createTubeMap();
     } else {
-      console.log('Props have not changed so leaving existing tube map');
+      console.log("Props have not changed so leaving existing tube map");
     }
   }
 
@@ -48,12 +48,15 @@ class TubeMap extends Component {
     for (let key of Object.keys(visOptions.colorSchemes)) {
       // Apply color-by-mapping-quality parameter to all the schemes.
       // TODO: When we get individual controls, pass through individual track options.
-      let colorScheme = {...visOptions.colorSchemes[key], colorReadsByMappingQuality: visOptions.colorReadsByMappingQuality};
+      let colorScheme = {
+        ...visOptions.colorSchemes[key],
+        colorReadsByMappingQuality: visOptions.colorReadsByMappingQuality,
+      };
       // update tubemap colors
       tubeMap.setColorSet(key, colorScheme);
     }
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
-  }  
+  }
 
   render() {
     return <svg id="svg" alt="Rendered sequence tube map visualization" />;
@@ -65,7 +68,7 @@ TubeMap.propTypes = {
   tracks: PropTypes.array.isRequired,
   reads: PropTypes.array.isRequired,
   region: PropTypes.array.isRequired,
-  visOptions: PropTypes.object.isRequired
+  visOptions: PropTypes.object.isRequired,
 };
 
 export default TubeMap;
