@@ -554,11 +554,14 @@ class HeaderForm extends Component {
       return null;
     }
     if (!this.state.regionInfo["chr"]){
+      console.log("this.state.regionInfo is null");
       return null;
     }
+    console.log("Should be: ", parsedRegion);
     for (let i = 0; i < this.state.regionInfo["chr"].length; i++){
-      if ((this.state.regionInfo["start"][i] === parsedRegion.start) 
-          && (this.state.regionInfo["end"][i] === parsedRegion.end)
+      console.log("Current: start: ", this.state.regionInfo["start"][i], "end: ", this.state.regionInfo["end"][i], "chr: ", this.state.regionInfo["chr"][i]);
+      if ((parseInt(this.state.regionInfo["start"][i]) === parsedRegion.start) 
+          && (parseInt(this.state.regionInfo["end"][i]) === parsedRegion.end)
           && (this.state.regionInfo["chr"][i] === parsedRegion.contig)){
             return i;
       }
