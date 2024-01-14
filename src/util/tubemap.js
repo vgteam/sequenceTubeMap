@@ -674,6 +674,8 @@ function placeReads() {
   reads.forEach((read, idx) => {
     read.path.forEach((element, pathIdx) => {
       if (!element.hasOwnProperty("y")) {
+        // previous y value from pathIdx - 1 might not exist yet if that segment is also without node 
+        // use previous y value from last segment with node instead 
         let previousValidY = null;
         let lastIndex = pathIdx - 1;
         while (!previousValidY && lastIndex >= 0) {
