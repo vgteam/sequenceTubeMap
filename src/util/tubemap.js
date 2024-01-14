@@ -688,8 +688,8 @@ function placeReads() {
       }
     });
   });
-  
-  console.log("elementsWithoutNode", elementsWithoutNode);
+
+  elementsWithoutNode.sort(compareNoNodeReadsByPreviousY);
   elementsWithoutNode.forEach((element) => {
     const segment = reads[element.readIndex].path[element.pathIndex];
     segment.y = bottomY[segment.order];
