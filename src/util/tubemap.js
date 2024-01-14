@@ -674,15 +674,22 @@ function placeReads() {
   reads.forEach((read, idx) => {
     read.path.forEach((element, pathIdx) => {
       if (!element.hasOwnProperty("y")) {
+        let previousValidY = null;
+        let lastIndex = pathIdx - 1;
+        while (!previousValidY && lastIndex >= 0) {
+          previousValidY = reads[idx].path[lastIndex].y;
+          lastIndex = lastIndex - 1;
+        }
         elementsWithoutNode.push({
           readIndex: idx,
           pathIndex: pathIdx,
-          previousY: reads[idx].path[pathIdx - 1].y,
+          previousY: previousValidY,
         });
       }
     });
   });
-  elementsWithoutNode.sort(compareNoNodeReadsByPreviousY);
+  
+  console.log("elementsWithoutNode", elementsWithoutNode);
   elementsWithoutNode.forEach((element) => {
     const segment = reads[element.readIndex].path[element.pathIndex];
     segment.y = bottomY[segment.order];
