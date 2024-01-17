@@ -678,7 +678,7 @@ function placeReads() {
         // use previous y value from last segment with node instead 
         let previousValidY = null;
         let lastIndex = pathIdx - 1;
-        while (!previousValidY && lastIndex >= 0) {
+        while (previousValidY === null && lastIndex >= 0) {
           previousValidY = reads[idx].path[lastIndex].y;
           lastIndex = lastIndex - 1;
         }
