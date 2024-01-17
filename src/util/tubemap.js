@@ -674,14 +674,23 @@ function placeReads() {
   reads.forEach((read, idx) => {
     read.path.forEach((element, pathIdx) => {
       if (!element.hasOwnProperty("y")) {
+        // previous y value from pathIdx - 1 might not exist yet if that segment is also without node 
+        // use previous y value from last segment with node instead 
+        let previousValidY = null;
+        let lastIndex = pathIdx - 1;
+        while (previousValidY === null && lastIndex >= 0) {
+          previousValidY = reads[idx].path[lastIndex].y;
+          lastIndex = lastIndex - 1;
+        }
         elementsWithoutNode.push({
           readIndex: idx,
           pathIndex: pathIdx,
-          previousY: reads[idx].path[pathIdx - 1].y,
+          previousY: previousValidY,
         });
       }
     });
   });
+
   elementsWithoutNode.sort(compareNoNodeReadsByPreviousY);
   elementsWithoutNode.forEach((element) => {
     const segment = reads[element.readIndex].path[element.pathIndex];
