@@ -547,6 +547,7 @@ class HeaderForm extends Component {
   */
 
   determineRegionIndex = (regionString) => {
+    console.log("state:", this.state);
     let parsedRegion;
     try {
       parsedRegion = parseRegion(regionString);
@@ -554,12 +555,9 @@ class HeaderForm extends Component {
       return null;
     }
     if (!this.state.regionInfo["chr"]){
-      console.log("this.state.regionInfo is null");
       return null;
     }
-    console.log("Should be: ", parsedRegion);
     for (let i = 0; i < this.state.regionInfo["chr"].length; i++){
-      console.log("Current: start: ", this.state.regionInfo["start"][i], "end: ", this.state.regionInfo["end"][i], "chr: ", this.state.regionInfo["chr"][i]);
       if ((parseInt(this.state.regionInfo["start"][i]) === parsedRegion.start) 
           && (parseInt(this.state.regionInfo["end"][i]) === parsedRegion.end)
           && (this.state.regionInfo["chr"][i] === parsedRegion.contig)){
@@ -578,10 +576,7 @@ class HeaderForm extends Component {
     return regionContig + ":" + regionStart + "-" + regionEnd;
   }
 
-  // if null: use old behavior
-
   
-
   // In addition to a new region value, also takes tracks and chunk associated with the region
   // Update current track if the new tracks are valid
   // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
