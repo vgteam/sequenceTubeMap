@@ -188,6 +188,77 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
   return true;
 }
 
+/* determine the current region: accepts a region string and returns the region index
+
+  example of regionInfo:
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+
+  examples: 
+  if the regionString is "17:1-100", it would be parsed into {contig: "17", start: 1, end: 100} -> 0
+  if the regionString is "17:1000-1200", it would be parsed into {contig: "17", start: 1000, end: 1200} -> 1
+  if the regionString is "17:2000-3000", it cannot be found - return null
+
+  The function uses this approach to find the regionIndex given regionString and regionInfo:
+  function (region string){
+    parse(region string) -> return {contig, start, end}
+    loop over chr in region info
+      determine if contig, start, end are present at the current index
+      if present: return index
+    return null
+  }
+*/
+export const determineRegionIndex = (regionString, regionInfo) => {
+  let parsedRegion;
+  try {
+    parsedRegion = parseRegion(regionString);
+  } catch(error) {
+    return null;
+  }
+  if (!regionInfo["chr"]){
+    return null;
+  }
+  for (let i = 0; i < regionInfo["chr"].length; i++){
+    if ((parseInt(regionInfo["start"][i]) === parsedRegion.start) 
+        && (parseInt(regionInfo["end"][i]) === parsedRegion.end)
+        && (regionInfo["chr"][i] === parsedRegion.contig)){
+          return i;
+    }
+  }
+  return null;
+}
+
+/*
+  This function takes in a regionIndex and regionInfo, and reconstructs a regionString from them
+  assumes that index is valid in regionInfo
+
+  example of regionInfo:
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+
+  example of regionIndex: 0
+
+  example of regionString: "17:1-100"
+*/
+export const regionStringFromRegionIndex = (regionIndex, regionInfo) => {
+  let regionStart = regionInfo["start"][regionIndex];
+  let regionEnd = regionInfo["end"][regionIndex];
+  let regionContig = regionInfo["chr"][regionIndex];
+  return regionContig + ":" + regionStart + "-" + regionEnd;
+}
+
 class HeaderForm extends Component {
   state = EMPTY_STATE;
   componentDidMount() {
@@ -521,61 +592,8 @@ class HeaderForm extends Component {
     return regionString;
   };
 
-  // determine the current region: accepts a region string and returns the region index
-  /*
-    {
-      chr: [ '17', '17' ],
-      start: [ '1', '1000' ],
-      end: [ '100', '1200' ],
-      desc: [ '17_1_100', '17_1000_1200' ],
-      chunk: [ '', '' ],
-      tracks: [ null, null ]
-    }
-    17:1-100 -> parse -> {contig: "17", start: 1, end: 100} -> 0
-    17:1000-1200 -> parse -> {contig: "17", start: 1000, end: 1200} -> 1
-    17:2000-3000 - cannot be found - return null
-  */
-
-  /*
-  function (region string){
-    parse(region string) -> return {contig, start, end}
-    loop over chr in region info
-      determine if contig, start, end are present at the current index
-      if present: return index
-    return null
-  }
-  */
-
-  determineRegionIndex = (regionString) => {
-    console.log("state:", this.state);
-    let parsedRegion;
-    try {
-      parsedRegion = parseRegion(regionString);
-    } catch(error) {
-      return null;
-    }
-    if (!this.state.regionInfo["chr"]){
-      return null;
-    }
-    for (let i = 0; i < this.state.regionInfo["chr"].length; i++){
-      if ((parseInt(this.state.regionInfo["start"][i]) === parsedRegion.start) 
-          && (parseInt(this.state.regionInfo["end"][i]) === parsedRegion.end)
-          && (this.state.regionInfo["chr"][i] === parsedRegion.contig)){
-            return i;
-      }
-    }
-    return null;
-  }
-
-  // reverse of previous function
-  // assumes that index is valid in regionInfo
-  regionStringFromRegionIndex = (regionIndex) => {
-    let regionStart = this.state.regionInfo["start"][regionIndex];
-    let regionEnd = this.state.regionInfo["end"][regionIndex];
-    let regionContig = this.state.regionInfo["chr"][regionIndex];
-    return regionContig + ":" + regionStart + "-" + regionEnd;
-  }
-
+  
+  
   
   // In addition to a new region value, also takes tracks and chunk associated with the region
   // Update current track if the new tracks are valid
@@ -704,11 +722,11 @@ class HeaderForm extends Component {
   /* Offset the region left or right by the given negative or positive fraction*/
   // offset: +1 or -1
   jumpRegion(offset) {
-    let regionIndex = this.determineRegionIndex(this.state.region) ?? 0;
+    let regionIndex = determineRegionIndex(this.state.region, this.state.regionInfo) ?? 0;
     if ((offset === -1 && this.canGoLeft(regionIndex)) || (offset === 1 && this.canGoRight(regionIndex))){
       regionIndex += offset;
     }
-    let regionString = this.regionStringFromRegionIndex(regionIndex);
+    let regionString = regionStringFromRegionIndex(regionIndex, this.state.regionInfo);
     this.setState(
       (state) => ({
         region: regionString,
@@ -854,10 +872,12 @@ class HeaderForm extends Component {
         uploadInProgress={this.state.uploadInProgress}
         getCurrentViewTarget={this.props.getCurrentViewTarget}
         viewTargetHasChange={viewTargetHasChange}
-        canGoLeft={this.canGoLeft(this.determineRegionIndex(this.state.region))}
-        canGoRight={this.canGoRight(this.determineRegionIndex(this.state.region))}
+        canGoLeft={this.canGoLeft(determineRegionIndex(this.state.region, this.state.regionInfo))}
+        canGoRight={this.canGoRight(determineRegionIndex(this.state.region, this.state.regionInfo))}
       />
     );
+
+    
 
     return (
       <div>
