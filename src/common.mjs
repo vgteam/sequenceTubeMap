@@ -26,6 +26,8 @@ const removeCommas = (input) => {
 // or
 // { contig, start, distance }
 //
+// a region string could look like: "17:1-100"
+// 
 // For distance, + is used as the coordinate separator. For start/end ranges, - is used.
 // The coordinates are set off from the contig by the last colon.
 // Commas in coordinates are removed.
