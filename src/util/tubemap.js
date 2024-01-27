@@ -488,7 +488,7 @@ function createTubeMap() {
   generateLaneAssignment();
 
   if (config.showExonsFlag === true && bed !== null) addTrackFeatures();
-  generateNodeXCoords();
+  //generateNodeXCoords();
 
   if (reads && config.showReads) {
     generateReadOnlyNodeAttributes();
@@ -504,6 +504,8 @@ function createTubeMap() {
       node.internalReads = [];
     });
   }
+
+  generateNodeXCoords();
 
   generateSVGShapesFromPath(nodes, tracks);
   if (DEBUG) {
@@ -1832,6 +1834,8 @@ function generateNodeXCoords() {
   const sortedNodes = nodes.slice();
   sortedNodes.sort(compareNodesByOrder);
   const extra = calculateExtraSpace();
+  console.log("TRACKS", tracks);
+  console.log("EXTRA SPACE", extra);
 
   sortedNodes.forEach((node) => {
     if (node.hasOwnProperty("order")) {
