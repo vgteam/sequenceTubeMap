@@ -718,6 +718,9 @@ function placeReadSet(readIDs, node, topMargin) {
   // Turn the read IDs into a set
   let toPlace = new Set(readIDs);
 
+  if (node.name === "1") {
+    console.log("NODE", node);
+  }
   // Get arrays of the read entry/exit/internal-ness records we want to work on
   let incomingReads = node.incomingReads.filter(([readID, pathIndex]) =>
     toPlace.has(readID)
@@ -728,6 +731,11 @@ function placeReadSet(readIDs, node, topMargin) {
   let internalReads = node.internalReads.filter((readID) =>
     toPlace.has(readID)
   );
+
+  if (node.name === "1") {
+    console.log("incomingReads", incomingReads);
+    console.log("ioutgoingReads", outgoingReads);
+  }
 
   // Only actually use the top margin if we have any reads on the node.
   if (
@@ -848,24 +856,31 @@ function compareNoNodeReadsByPreviousY(a, b) {
 
 // compare read segments by where they are going to
 function compareReadOutgoingSegmentsByGoingTo(a, b) {
+  // Expect two arrays both containing 2 integers.
+  // The first index of each array contains the read index
+  // The second index of each array contains the path index
   let pathIndexA = a[1];
   let pathIndexB = b[1];
+  let readIndexA = a[0];
+  let readIndexB = b[0];
   // let readA = reads[a[0]]
   // let nodeIndexA = readA.path[pathIndexA].node;
-  let nodeA = nodes[reads[a[0]].path[pathIndexA].node];
+  let nodeA = nodes[reads[readIndexA].path[pathIndexA].node];
   let nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+  // Follow the reads' paths until we find the node they diverge at
+  // Or, they go through all the same nodes and we do a tiebreaker at the end
   while (nodeA !== null && nodeB !== null && nodeA === nodeB) {
-    if (pathIndexA < reads[a[0]].path.length - 1) {
+    if (pathIndexA < reads[readIndexA].path.length - 1) {
       pathIndexA += 1;
-      while (reads[a[0]].path[pathIndexA].node === null) pathIndexA += 1; // skip null nodes in path
-      nodeA = nodes[reads[a[0]].path[pathIndexA].node];
+      while (reads[readIndexA].path[pathIndexA].node === null) pathIndexA += 1; // skip null nodes in path
+      nodeA = nodes[reads[readIndexA].path[pathIndexA].node]; // the next node a is going to
     } else {
       nodeA = null;
     }
-    if (pathIndexB < reads[b[0]].path.length - 1) {
+    if (pathIndexB < reads[readIndexB].path.length - 1) {
       pathIndexB += 1;
-      while (reads[b[0]].path[pathIndexB].node === null) pathIndexB += 1; // skip null nodes in path
-      nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+      while (reads[readIndexB].path[pathIndexB].node === null) pathIndexB += 1; // skip null nodes in path
+      nodeB = nodes[reads[readIndexB].path[pathIndexB].node]; // the next node b is going to
     } else {
       nodeB = null;
     }
@@ -876,10 +891,29 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
   }
   if (nodeB !== null) return -1; // nodeB not null, nodeA null
   // both nodes are null -> both end in the same node
-  const beginDiff = reads[a[0]].firstNodeOffset - reads[b[0]].firstNodeOffset;
+  const beginDiff = reads[readIndexA].firstNodeOffset - reads[readIndexB].firstNodeOffset;
   if (beginDiff !== 0) return beginDiff;
-  // break tie: both reads cover the same nodes and begin at the same position -> compare by endPosition
-  return reads[a[0]].finalNodeCoverLength - reads[b[0]].finalNodeCoverLength;
+
+  // break tie: both reads cover the same nodes and begin at the same position
+  // if we've placed some incoming reads first, we can sort the reads based on where they were placed last
+  let previousValidYA = null;
+  let previousValidYB = null;
+  let lastPathIndexA = pathIndexA - 1;
+  let lastPathIndexB = pathIndexB - 1;
+  while (previousValidYA === null && pathIndexA >= 0) {
+    previousValidYA = reads[readIndexA].path[lastPathIndexA].y;
+    lastPathIndexA -= 1;
+  }
+  while (previousValidYB === null && pathIndexB >= 0) {
+    previousValidYB = reads[readIndexB].path[lastPathIndexB].y;
+    lastPathIndexB -= 1;
+  }
+  if (previousValidYA && previousValidYB) {
+    return previousValidYA - previousValidYB;
+  }
+
+  // One or both reads didn't have a previously valid Y value, compare by the endPosition of the read
+  return reads[readIndexA].finalNodeCoverLength - reads[readIndexB].finalNodeCoverLength;
 }
 
 // compare read segments by (y-coord of) where they are coming from
