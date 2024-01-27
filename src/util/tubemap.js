@@ -718,9 +718,6 @@ function placeReadSet(readIDs, node, topMargin) {
   // Turn the read IDs into a set
   let toPlace = new Set(readIDs);
 
-  if (node.name === "1") {
-    console.log("NODE", node);
-  }
   // Get arrays of the read entry/exit/internal-ness records we want to work on
   let incomingReads = node.incomingReads.filter(([readID, pathIndex]) =>
     toPlace.has(readID)
@@ -731,11 +728,6 @@ function placeReadSet(readIDs, node, topMargin) {
   let internalReads = node.internalReads.filter((readID) =>
     toPlace.has(readID)
   );
-
-  if (node.name === "1") {
-    console.log("incomingReads", incomingReads);
-    console.log("ioutgoingReads", outgoingReads);
-  }
 
   // Only actually use the top margin if we have any reads on the node.
   if (
