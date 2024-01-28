@@ -886,10 +886,13 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
   let pathIndexB = b[1];
   let readIndexA = a[0];
   let readIndexB = b[0];
-  // let readA = reads[a[0]]
-  // let nodeIndexA = readA.path[pathIndexA].node;
+
+  // Segments are first sorted by the the node they end on,
+  // then by a coming-from tiebreaker,
+  // then by length in final node
+  // TODO: Perhaps we should make an exception to first sort by a coming-from when a cycle is involved
   let nodeA = nodes[reads[readIndexA].path[pathIndexA].node];
-  let nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+  let nodeB = nodes[reads[readIndexB].path[pathIndexB].node];
   // Follow the reads' paths until we find the node they diverge at
   // Or, they go through all the same nodes and we do a tiebreaker at the end
   while (nodeA !== null && nodeB !== null && nodeA === nodeB) {
@@ -919,6 +922,7 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
 
   // break tie: both reads cover the same nodes and begin at the same position
   // if we've placed some incoming reads first, we can sort the reads based on where they were placed last
+
   let previousValidYA = null;
   let previousValidYB = null;
   let lastPathIndexA = pathIndexA - 1;
