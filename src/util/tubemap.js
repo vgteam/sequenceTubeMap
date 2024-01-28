@@ -684,10 +684,32 @@ function placeReads() {
           previousValidY = reads[idx].path[lastIndex].y;
           lastIndex = lastIndex - 1;
         }
+
+        // sometimes, elements without nodes are between 2 segments going to the same node, from the same direction
+        // this means we're looping back to the same node, which constitutes a different sorting priority
+        
+        let previousNodeOrder = reads[idx].path[pathIdx - 1]?.order;
+        let nextNodeOrder = reads[idx].path[pathIdx + 1]?.order;
+
+        let previousNodeIsForward = reads[idx].path[pathIdx - 1]?.isForward;
+        let nextNodeIsForward = reads[idx].path[pathIdx + 1]?.isForward
+
+        // if the previous segment and the next segment is going to the same node
+        let sameNode = previousNodeOrder !== null && nextNodeOrder !== null && previousNodeOrder === nextNodeOrder;
+        // if the previous semgne tnad the next segment is going in the same direction
+        let sameDirection = previousNodeIsForward !== null && nextNodeIsForward !== null && previousNodeIsForward === nextNodeIsForward
+
+        let betweenCycle = false;
+        // if the previous segment and the next segment is going to the same node
+        if (sameNode && sameDirection) {
+          betweenCycle = true;
+        }
+
         elementsWithoutNode.push({
           readIndex: idx,
           pathIndex: pathIdx,
           previousY: previousValidY,
+          betweenCycle: betweenCycle,
         });
       }
     });
@@ -843,7 +865,14 @@ function compareNoNodeReadsByPreviousY(a, b) {
   const segmentA = reads[a.readIndex].path[a.pathIndex];
   const segmentB = reads[b.readIndex].path[b.pathIndex];
   if (segmentA.order === segmentB.order) {
-    return a.previousY - b.previousY;
+    // we want to sort of the reverse when the segment is between a cycle
+    // this ensures a loop that starts on the outside, stays on the outside
+    // and loops are rolled in order
+    if (a.betweenCycle && b.betweenCycle) {
+      return b.previousY - a.previousY;
+    } else {
+      return a.previousY - b.previousY;
+    }
   }
   return segmentA.order - segmentB.order;
 }
@@ -1834,8 +1863,6 @@ function generateNodeXCoords() {
   const sortedNodes = nodes.slice();
   sortedNodes.sort(compareNodesByOrder);
   const extra = calculateExtraSpace();
-  console.log("TRACKS", tracks);
-  console.log("EXTRA SPACE", extra);
 
   sortedNodes.forEach((node) => {
     if (node.hasOwnProperty("order")) {
