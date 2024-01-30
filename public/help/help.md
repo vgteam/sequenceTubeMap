@@ -33,18 +33,45 @@ The following procedure describes adding and updating settings of custom tracks.
 ![Go Button](helpGuideImages/img9.png)
 
 ##### How to make link-to-view URLs
-Users can compose URLs that link to a specific view. To do so, users will require specific information about files and tracks.
+Users can compose URLs that link to a specific view. To do so, users will require specific information about files and tracks. The link has a [query string](https://en.wikipedia.org/wiki/Query_string#Structure) that consists of key-value pairs separated by ampersands, where the keys are not URL-econded and the values are URL-encoded. Keys can use brackets to encode hierarchical structures such as arrays and objects. For arrays, put a number in brackets to assign a new value to or access a value in that entry in the array, and for objects, put the key's name in brackets to assign a new value to or access a value in that entry in the object. The key's name should **not** be in quotes.
 
+These are the fields that can be included in the URL:
 1. Name of Data. Example: name=snp1kg-BRCA1
 2. Information about tracks. Tracks are objects consisting of trackFile, trackType, and trackColorSettings. To retrieve this information, index the tracks array to access the object and respective keys.
-   - trackFile: name of track file
-     Example: tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg
-   - trackType: type of track, can be "graph," "haplotype," "read," or "bed"
-     Example: tracks[0][trackType]=graph
-   - trackColorSettings: color settings for Main and Aux Palettes. It has default values, so it does not required to be user-specified.   
-     Example: tracks[0][trackColorSettings][mainPalette]=greys
-         tracks[0][trackColorSettings][auxPalette]=ygreys
-         colorReadsByMappingQuality = Boolean
+
+A track JSON object might look like this:
+```
+{
+   "trackFile": "exampleData/internal/snp1kg-BRCA1.vg.xg",
+   "trackType": "graph",
+   "trackColorSettings": {
+      "mainPalette": "greys",
+      "auxPalette": "ygreys",
+      "colorReadsByMappingQuality": false
+   }
+}
+```
+
+   - The `trackFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the track file 
+     Examples:
+      - `exampleData/internal/snp1kg-BRCA1.vg.xg`
+      - `https://public.gi.ucsc.edu/~anovak/graphs/trivial-brca1.vg`
+   - The `trackType` specifies the type of the track, which can be "graph", "haplotype", "read"
+   - The `trackColorSettings` provides color information and is an optional setting.
+      - The color palettes are `mainPalette` and `auxPalette`. 
+         - The colors for the palettes can be hex codes starting with a `#`, or premade palettes: `greys`, `ygreys`, `blues`, `reds`, `plainColors`, or `lightColors`. 
+         - The palettes are used differently for different track types
+            - For graphs, the `mainPalette` colors the primary reference path while `auxPalette` is used for the other paths. 
+            - For haplotypes, only the `mainPalette` is used. 
+            - For reads, the `mainPalette` colors the forward-strand reads and the `auxPalette` colors the backward-strand reads. 
+      - `colorReadsByMappingQuality` is a boolean value that determines if reads are colored based on their mapping quality or not. It is an optional field that has a default of `false`. 
+   
+      Examples 
+         - tracks[0][trackColorSettings][mainPalette]=greys
+         - tracks[0][trackColorSettings][auxPalette]=ygreys
+         - colorReadsByMappingQuality = false   
+
+   
 3. Region input, Example: region=17%3A1-100
 4. DataPath: Types of datapaths, can be "mounted," "default," or "upload". Example: dataPath=default
 5. BedFile: Name of bedfile, ex: bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed
