@@ -685,25 +685,31 @@ function placeReads() {
           lastIndex = lastIndex - 1;
         }
 
-        // sometimes, elements without nodes are between 2 segments going to the same node, from the same direction
-        // this means we're looping back to the same node, which constitutes a different sorting priority
+        // sometimes, elements without nodes are between 2 segments going to a node we've already visited, from the same direction
+        // this means we're looping back to a node we've already been to, and we should sort in reverse
         
-        let previousNodeOrder = reads[idx].path[pathIdx - 1]?.order;
         let nextNodeOrder = reads[idx].path[pathIdx + 1]?.order;
+        let previousNodeOrders = reads[idx].path.map(p => p.order).slice(0, pathIdx);
 
-        let previousNodeIsForward = reads[idx].path[pathIdx - 1]?.isForward;
-        let nextNodeIsForward = reads[idx].path[pathIdx + 1]?.isForward
 
         // if the previous segment and the next segment is going to the same node
-        let sameNode = previousNodeOrder !== null && nextNodeOrder !== null && previousNodeOrder === nextNodeOrder;
-        // if the previous semgne tnad the next segment is going in the same direction
-        let sameDirection = previousNodeIsForward !== null && nextNodeIsForward !== null && previousNodeIsForward === nextNodeIsForward
+        let nextNodeVisited = previousNodeOrders !== null && nextNodeOrder !== null && previousNodeOrders.includes(nextNodeOrder);
 
         let betweenCycle = false;
-        // if the previous segment and the next segment is going to the same node
-        if (sameNode && sameDirection) {
-          betweenCycle = true;
+        if (nextNodeVisited) {
+          // check the forward status of the last time we visited the node we're about to visit
+          let previousNodeIsForward = reads[idx].path[previousNodeOrders.lastIndexOf(nextNodeOrder)]?.isForward;
+          let nextNodeIsForward = reads[idx].path[pathIdx + 1]?.isForward
+
+          // if the next segment and the one we've previously visited is going in the same direction
+          let sameDirection = previousNodeIsForward !== null && nextNodeIsForward !== null && previousNodeIsForward === nextNodeIsForward
+
+          // we've already visited the next node and we're going the same direction as the last time we've visited it
+          if (sameDirection) {
+            betweenCycle = true;
+          }
         }
+
 
         elementsWithoutNode.push({
           readIndex: idx,
@@ -887,10 +893,28 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
   let readIndexA = a[0];
   let readIndexB = b[0];
 
-  // Segments are first sorted by the the node they end on,
-  // then by a coming-from tiebreaker,
+
+  // Segments are first sorted by the y value of their last node,
+  // then by the node they end on,
   // then by length in final node
-  // TODO: Perhaps we should make an exception to first sort by a coming-from when a cycle is involved
+  let previousValidYA = null;
+  let previousValidYB = null;
+  let lastPathIndexA = reads[readIndexA].path.length - 1;
+  let lastPathIndexB = reads[readIndexB].path.length - 1;
+  while ((previousValidYA === null || !previousValidYA) && lastPathIndexA >= 0) {
+    previousValidYA = reads[readIndexA].path[lastPathIndexA].y;
+    lastPathIndexA -= 1;
+  }
+  while ((previousValidYB === null || !previousValidYB) && lastPathIndexB >= 0) {
+    previousValidYB = reads[readIndexB].path[lastPathIndexB].y;
+    lastPathIndexB -= 1;
+  }
+  
+  if (previousValidYA && previousValidYB) {
+    return previousValidYA - previousValidYB;
+  }
+
+  // Couldn't find a valid y value for at least one of the reads, sort by which node reads end on
   let nodeA = nodes[reads[readIndexA].path[pathIndexA].node];
   let nodeB = nodes[reads[readIndexB].path[pathIndexB].node];
   // Follow the reads' paths until we find the node they diverge at
@@ -921,23 +945,6 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
   if (beginDiff !== 0) return beginDiff;
 
   // break tie: both reads cover the same nodes and begin at the same position
-  // if we've placed some incoming reads first, we can sort the reads based on where they were placed last
-
-  let previousValidYA = null;
-  let previousValidYB = null;
-  let lastPathIndexA = pathIndexA - 1;
-  let lastPathIndexB = pathIndexB - 1;
-  while (previousValidYA === null && pathIndexA >= 0) {
-    previousValidYA = reads[readIndexA].path[lastPathIndexA].y;
-    lastPathIndexA -= 1;
-  }
-  while (previousValidYB === null && pathIndexB >= 0) {
-    previousValidYB = reads[readIndexB].path[lastPathIndexB].y;
-    lastPathIndexB -= 1;
-  }
-  if (previousValidYA && previousValidYB) {
-    return previousValidYA - previousValidYB;
-  }
 
   // One or both reads didn't have a previously valid Y value, compare by the endPosition of the read
   return reads[readIndexA].finalNodeCoverLength - reads[readIndexB].finalNodeCoverLength;
