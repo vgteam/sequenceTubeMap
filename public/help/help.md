@@ -36,8 +36,8 @@ The following procedure describes adding and updating settings of custom tracks.
 Users can compose URLs that link to a specific view. To do so, users will require specific information about files and tracks. The link has a [query string](https://en.wikipedia.org/wiki/Query_string#Structure) that consists of key-value pairs separated by ampersands, where the keys are not URL-econded and the values are URL-encoded. Keys can use brackets to encode hierarchical structures such as arrays and objects. For arrays, put a number in brackets to assign a new value to or access a value in that entry in the array, and for objects, put the key's name in brackets to assign a new value to or access a value in that entry in the object. The key's name should **not** be in quotes.
 
 These are the fields that can be included in the URL:
-1. Name of Data. Example: name=snp1kg-BRCA1
-2. Information about tracks. Tracks are objects consisting of trackFile, trackType, and trackColorSettings. To retrieve this information, index the tracks array to access the object and respective keys.
+1. `tracks` 
+Information about tracks. Tracks are objects consisting of trackFile, trackType, and trackColorSettings. To retrieve this information, index the tracks array to access the object and respective keys.
 
 A track JSON object might look like this:
 ```
@@ -72,38 +72,22 @@ A track JSON object might look like this:
          - colorReadsByMappingQuality = false   
 
    
-3. Region input, Example: region=17%3A1-100
-4. DataPath: Types of datapaths, can be "mounted," "default," or "upload". Example: dataPath=default
-5. BedFile: Name of bedfile, ex: bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed
-6. dataType: Describes type of data as "built-in", "file-upload," "mounted files", or synthetic "examples", Example: dataType=built-in
-7. Simplify, determines whether vg-simplify view is turned on or off. Example: simplify=false
+2. `region`
+   This is a region input that is documented at
+   [Displaying Visualizations](#displaying-visualizations) step 3. This region will be loaded in the tubemap visualization once the link is followed.
+   Example: region=17:3A1-100
+3. Name of bedfile. Example: exampleData/internal/snp1kg-BRCA1.bed
+4. `datatype`
+   Describes type of data as `built-in`, `mounted files`, or synthetic `examples`.
+      - `built-in`: If the `datatype` field is set to "built-in", the `name` field must be set to the name of a preset defined in `DATA_SOURCES` in `config.json`.
+      - `mounted files`: 
+      - `examples`: Links to synthetic examples cannot currently be created.
+   Example: `dataType=built-in`
+5. Simplify, determines whether vg-simplify view is turned on or off.
+6. `name` 
+   Name of Data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `datatype` is set to `built-in`. You do not have to use these presets. Example: `name=snp1kg-BRCA1`
 
 
 ex: http://127.0.0.1:3001?name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in&simplify=false
 
 params  name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in&simplify=false
-
-URL to a region consists of:
-
-name: name=snp1kg-BRCA1 (name of data)
-tracks:
-   - trackFile: 
-      tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg
-      tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam
-   - trackType: 
-      tracks[0][trackType]=graph
-      tracks[1][trackType]=read
-   - trackColorSettings: 
-      - mainPalette
-      tracks[0][trackColorSettings][mainPalette]=greys
-      - auxPalette
-      tracks[0][trackColorSettings][auxPalette]=ygreys
-      - colorReadsByMappingQuality
-region: region=17%3A1-100
-dataPath: dataPath=default
-bedFile: bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed
-dataType: dataType=built-in
-simplify: simplify=false
-
-separated by '?'
-%2F: '/'
