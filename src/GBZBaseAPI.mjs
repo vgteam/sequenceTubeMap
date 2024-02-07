@@ -4,7 +4,8 @@ import { WASI, File, OpenFile, PreopenDirectory } from "@bjorn3/browser_wasi_shi
 
 import {
   parseRegion,
-  convertRegionToRangeRegion
+  convertRegionToRangeRegion,
+  stringifyRegion
 } from "./common.mjs";
 
 // TODO: The Webpack way to get the WASM would be something like:
@@ -74,6 +75,55 @@ export async function blobToArrayBuffer(blob) {
       reader.readAsArrayBuffer(blob);
     });
   }
+}
+
+/**
+ * Convert a graph from GBZ-style JSON to vg-style JSON that matches the vg
+ * protobuf schema. See
+ * <https://github.com/vgteam/libvgio/blob/45d8ada05ee1d1405ef44d93f2ac00a5a097dd09/deps/vg.proto>
+ *
+ * Does not leave the input graph intact.
+ */
+function convertSchema(inGraph) {
+  
+  let outGraph = {};
+
+  // "nodes" becomes "node"
+  outGraph["node"] = inGraph["nodes"];
+
+  // We have to track the node lengths to synthisize the path mappings.
+  let nodeLength = new Map();
+  for (let node of outGraph["node"]) {
+    nodeLength.set(node["id"], node["sequence"].length);
+  }
+
+  // "edges" becomes "edge"
+  outGraph["edge"] = inGraph["edges"];
+  for (let edge of outGraph["edge"]) {
+    // And the names for the reverse flags change.
+    edge["from_start"] = edge["from_is_reverse"];
+    delete edge["from_is_reverse"];
+    edge["to_end"] = edge["to_is_reverse"];
+    delete edge["to_is_reverse"];
+  }
+
+  // "paths" becomes "path"
+  outGraph["path"] = inGraph["paths"];
+  for (let path of outGraph["path"]) {
+    path["mapping"] = [];
+    for (let visit of path["path"]) {
+      let length = nodeLength.get(visit["id"]);
+      // Make a full-length perfect match mapping
+      let mapping = {
+        "position": {"node_id": visit["id"], "is_reverse": visit["is_reverse"]},
+        "edit": [{"from_length": length, "to_length": length}]
+      };
+      path["mapping"].push(mapping);
+    }
+
+    delete path["path"];
+  }
+  return outGraph;
 }
 
 /**
@@ -233,14 +283,14 @@ export class GBZBaseAPI extends APIInterface {
 
     let parts = region.contig.split("#");
 
-    let result = await this.callWasm(["query", "--sample", parts[0], "--contig", parts[parts.length - 1], "--interval", `${region.start}..${region.end}`, "--format", "json", "--distinct", "graph.gbz.db"], {"graph.gbz.db": graphFileBlob})
+    let {stdout} = await this.callWasm(["query", "--sample", parts[0], "--contig", parts[parts.length - 1], "--interval", `${region.start}..${region.end}`, "--format", "json", "--distinct", "graph.gbz.db"], {"graph.gbz.db": graphFileBlob});
 
-    console.log(result);
+    let result = convertSchema(JSON.parse(stdout));
 
     return {
-      graph: {},
+      graph: result,
       gam: {},
-      region: null,
+      region: stringifyRegion(region),
       coloredNodes: [],
     };
   }
