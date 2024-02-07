@@ -58,8 +58,6 @@ class App extends Component {
       }
     });
 
-    this.APIInterface = new ServerAPI(props.apiUrl);
-
     console.log("App component starting up with API URL: " + props.apiUrl);
 
     // Set defaultViewTarget to either URL params (if present) or the first example
@@ -83,7 +81,7 @@ class App extends Component {
         colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
         mappingQualityCutoff: 0,
       },
-      APIInterface: new GBZBaseAPI() //new ServerAPI(props.apiUrl)
+      APIInterface: new ServerAPI(props.apiUrl)
     };
   }
 
@@ -94,10 +92,31 @@ class App extends Component {
     this.setState((state) => {
       if (state.APIInterface instanceof GBZBaseAPI) {
         // Make a server API
-        return {APIInterface: new ServerAPI(this.props.apiUrl)}
+        return {
+          APIInterface: new ServerAPI(this.props.apiUrl),
+          // Also reset to a current view target this can show
+          dataOrigin: dataOriginTypes.API,
+          viewTarget: this.defaultViewTarget,
+          visOptions: {
+            ...state.visOptions,
+            colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
+          },
+        }
       } else {
         // Make a local API
-        return {APIInterface: new GBZBaseAPI()}
+        return {
+          APIInterface: new GBZBaseAPI(),
+          // Set up an empty view target that can't really render.
+          // TODO: Let us control HeaderForm's dataType state so we can pop it right over to custom, or feed it a different defaultViewTarget
+          dataOrigin: dataOriginTypes.API,
+          viewTarget: {
+            tracks: []
+          },
+          visOptions: {
+            ...state.visOptions,
+            colorSchemes: [],
+          },
+        }
       }
     });
   }
