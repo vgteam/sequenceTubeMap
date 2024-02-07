@@ -1,5 +1,11 @@
+import "./config-client.js";
 import { APIInterface } from "./APIInterface.mjs";
-import { WASI, File, OpenFile } from "@bjorn3/browser_wasi_shim";
+import { WASI, File, OpenFile, PreopenDirectory } from "@bjorn3/browser_wasi_shim";
+
+import {
+  parseRegion,
+  convertRegionToRangeRegion
+} from "./common.mjs";
 
 // TODO: The Webpack way to get the WASM would be something like:
 //import QueryWasm from "gbz-base/target/wasm32-wasi/release/query.wasm";
@@ -15,6 +21,10 @@ import { WASI, File, OpenFile } from "@bjorn3/browser_wasi_shim";
 
 // Resolve with the bytes or Response of the WASM query blob, on Jest or Webpack.
 async function getWasmBytes() {
+  if (getWasmBytes.cached) {
+    return getWasmBytes.cached;
+  }
+
   let blobBytes = null;
 
   if (!window["jest"]) {
@@ -42,7 +52,28 @@ async function getWasmBytes() {
   } 
 
   console.log("Got blob bytes: ", blobBytes);
+  getWasmBytes.cached = blobBytes;
   return blobBytes;
+}
+
+/**
+ * Get an ArrayBuffer from a Blob. Works in both the browser and in jsdom
+ * (which doesn't actually implement .arrayBuffer(); see
+ * <https://github.com/jsdom/jsdom/issues/2555>).
+ */
+export async function blobToArrayBuffer(blob) {
+  try {
+    // Browser blob has this method.
+    return await blob.arrayBuffer()
+  } catch {
+    // jsdom blob needs to go through a FileReader
+    return new Promise((resolve, reject) => {
+      let reader = new FileReader();
+      reader.addEventListener("load", () => { resolve(reader.result); });
+      reader.addEventListener("error", reject);
+      reader.readAsArrayBuffer(blob);
+    });
+  }
 }
 
 /**
@@ -84,7 +115,10 @@ export class GBZBaseAPI extends APIInterface {
   }
 
   // Make a call into the WebAssembly code and return the result.
-  async callWasm(argv) {
+  //
+  // If workingDirectory is set, it is an object from filename to blob to
+  // present as the current directory.
+  async callWasm(argv, workingDirectory) {
     if (argv.length < 1) {
       // We need at least one command line argument to be the program name.
       throw new Error("Not safe to invoke main() without program name");
@@ -103,25 +137,50 @@ export class GBZBaseAPI extends APIInterface {
     const environment = ["RUST_BACKTRACE=full"];
     
     // File descriptors for the process in number order
-    let file_descriptors = [new OpenFile(stdin), new OpenFile(stdout), new OpenFile(stderr)];
-   
+    let fileDescriptors = [new OpenFile(stdin), new OpenFile(stdout), new OpenFile(stderr)];
+    
+    if (workingDirectory) {
+      let nameToWASIFile = {};
+      for (const [filename, blob] of Object.entries(workingDirectory)) {
+        console.log(`Mount ${blob.size} byte blob:`, blob);
+        // TODO: We need to get an ArrayBuffer or something from the blob so that the WASI shim can read it.
+        // We want to do it in a way that doesn't read the whole file from disk when it's a browser File.
+        // We also need to do it in a way that works when it's a jsdom File that doesn't implement the arrayBuffer() method.
+        // For now we use the FIleReader workaround if we can't arrayBuffer().
+        // Later we will need to use OpenSyncOPFSFile and implement an object with a handle that can sync read and write at offsets.
+        // TODO: How will this be sync???
+        nameToWASIFile[filename] = new File(await blobToArrayBuffer(blob));
+        console.log("Mount file:", nameToWASIFile[filename]);
+      }
+      // As shown in the browser_wasi_shim examples, if we provide a
+      // PreopenDirectory at FD 4 it is shown to the process.
+      fileDescriptors.push(new PreopenDirectory(".", nameToWASIFile));
+    }
+
     // Set up the WASI interface
-    let wasi = new WASI(argv, environment, file_descriptors);
+    let wasi = new WASI(argv, environment, fileDescriptors);
     
     // Set up the WebAssembly run
     let instantiation = await WebAssembly.instantiate(this.compiledWasm, {
         "wasi_snapshot_preview1": wasi.wasiImport,
     });
     
+    console.log("Running WASM with arguments:", argv)
+    console.log("Running WASM with FDs:", fileDescriptors)
+
+    let returnCode = null;
+
     try {
       // Make the WASI system call main
-      let returnCode = wasi.start(instantiation);
+      returnCode = wasi.start(instantiation);
       console.log("Return code:", returnCode);
     } finally {
       // The WASM code can throw right out of the WASI shim if Rust panics.
       console.log("Standard Output:", new TextDecoder().decode(stdout.data));
       console.log("Standard Error:", new TextDecoder().decode(stderr.data));
     }
+
+    return {returnCode, stdout: stdout.data, stderr: stderr.data}
   }
   
   // Return true if the WASM setup is working, and false otherwise.
@@ -139,6 +198,37 @@ export class GBZBaseAPI extends APIInterface {
   /////////
 
   async getChunkedData(viewTarget, cancelSignal) {
+  
+    console.log("Got view target:", viewTarget)
+
+    // Find the graph track
+    let graphTrack = null
+    for (let track of viewTarget.tracks) {
+      if (track.trackType === "graph") {
+        graphTrack = track;
+      }
+    }
+    if (!graphTrack) {
+      throw new Error("No graph track selected");
+    }
+
+    // Since all the names are numbers, parse it and get the real file blob
+    let graphFileBlob = this.files[parseInt(graphTrack.trackFile)]; 
+
+    // Find the region
+    let region = convertRegionToRangeRegion(parseRegion(viewTarget.region));
+
+    if (!region.contig.includes("#")) {
+      // This isn't PanSN already so adjust to ask for a generic path.
+      region.contig = "_gbwt_ref#" + region.contig;
+    }
+
+    let parts = region.contig.split("#");
+
+    let result = await this.callWasm(["query", "--sample", parts[0], "--contig", parts[parts.length - 1], "--interval", `${region.start}..${region.end}`, "--format", "json", "--distinct", "graph.gbz.db"], {"graph.gbz.db": graphFileBlob})
+
+    console.log(result);
+
     return {
       graph: {},
       gam: {},
@@ -178,6 +268,8 @@ export class GBZBaseAPI extends APIInterface {
     let fileName = this.files.length.toString();
     // Just hang on to the File object.
     this.files.push(file);
+
+    console.log(`Store ${file.size} byte upload:`, file);
 
     if (!this.filesByType.has(fileType)) {
       this.filesByType.set(fileType, []);

@@ -6,6 +6,8 @@ export class APIInterface {
   // Expects a object to be returned with the necessary information to draw a tubemap from vg
   // object should contain keys: graph, gam, region, coloredNodes.
   // cancelSignal is an AbortSignal that can be used to cancel the request.
+  // If the request is not structured correctly, or something goes wrong
+  // internally, throws an Error.
   async getChunkedData(viewTarget, cancelSignal) {
     throw new Error("getChunkedData function not implemented");
   }

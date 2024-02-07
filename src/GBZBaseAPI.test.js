@@ -1,4 +1,4 @@
-import { GBZBaseAPI } from "./GBZBaseAPI.mjs";
+import { GBZBaseAPI, blobToArrayBuffer } from "./GBZBaseAPI.mjs";
 
 import fs from "fs-extra";
 
@@ -46,6 +46,13 @@ describe("when a file is uploaded", () => {
     const file = new window.File([fileData], "x.gbz.db", {
       type: "application/octet-stream",
     });
+
+    // Make sure the file actually is readable
+    let fileDataRetrieved = await blobToArrayBuffer(file);
+    if (fileDataRetrieved.byteLength != fileData.length) {
+      throw new Error("Can't put data into and out of jsdom File");
+    }
+
     let controller = new AbortController();
     uploadName = await api.putFile("graph", file, controller.signal);
   });
@@ -60,5 +67,21 @@ describe("when a file is uploaded", () => {
       }
     }
     expect(found).toBeTruthy();
+  });
+
+  it("can be asked for a view", async () => {
+    const region = "_gbwt_ref#x:1-10";
+    const viewTarget = {
+      "dataType": "mounted files",
+      "tracks": [
+        {"trackFile": uploadName, "trackType": "graph"}
+      ],
+      "region": "x:1-10"
+    };
+    let controller = new AbortController();
+    let view = await api.getChunkedData(viewTarget, controller.signal);
+
+    expect(view.graph).toBeTruthy();
+    expect(view.graph.node).toBeTruthy();
   });
 });
