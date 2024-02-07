@@ -57,7 +57,7 @@ export class GBZBaseAPI extends APIInterface {
     this.files = [];
 
     // We need to index all their names by type.
-    this.filesByType = {};
+    this.filesByType = new Map();
 
     // This is a promise for the compiled WebAssembly blob.
     this.compiledWasm = undefined;
@@ -154,12 +154,12 @@ export class GBZBaseAPI extends APIInterface {
       bedFiles: [],
     };
 
-    for (let type of this.filesByType) {
+    for (let [type, files] of this.filesByType) {
       if (type === "bed") {
         // Just send all these files in bedFiles.
-        response.bedFiles = this.filesByType[type];
+        response.bedFiles = files;
       } else {
-        for (let fileName of this.filesByType[type]) {
+        for (let fileName of files) {
           // We sens a name/type record for each non-BED file
           response.files.push({ name: fileName, type: type });
         }
@@ -179,11 +179,11 @@ export class GBZBaseAPI extends APIInterface {
     // Just hang on to the File object.
     this.files.push(file);
 
-    if (this.filesByType[fileType] === undefined) {
-      this.filesByType[fileType] = [];
+    if (!this.filesByType.has(fileType)) {
+      this.filesByType.set(fileType, []);
     }
     // Index the name we produced by type.
-    this.filesByType[fileType].push(fileName);
+    this.filesByType.get(fileType).push(fileName);
 
     return fileName;
   }

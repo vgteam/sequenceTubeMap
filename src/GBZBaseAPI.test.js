@@ -12,7 +12,7 @@ it("can self-test its WASM setup", async () => {
   expect(working).toBeTruthy();
 });
 
-it("can have a file uploaded", async () => {
+it("can have a file uploaded and use it", async () => {
   let api = new GBZBaseAPI();
 
   // We need to make sure we make a jsdom File (which is a jsdom Blob), and not
@@ -20,12 +20,12 @@ it("can have a file uploaded", async () => {
   // upload machinery.
   // See for example <https://github.com/vitest-dev/vitest/issues/2078> for
   // background on the many flavors of Blob.
-  const fileData = await fs.readFileSync("exampleData/cactus.vg");
+  const fileData = await fs.readFileSync("exampleData/x.gbz.db");
   // Since a Node Buffer is an ArrayBuffer, we can use it to make a jsdom File.
   // We need to put the data block in an enclosing array, or else the block
   // will be iterated and each byte will be stringified and *those* bytes will
   // be uploaded.
-  const file = new window.File([fileData], "cactus.vg", {
+  const file = new window.File([fileData], "x.gbz.db", {
     type: "application/octet-stream",
   });
 
@@ -35,4 +35,30 @@ it("can have a file uploaded", async () => {
   let uploadName = await api.putFile("graph", file, controller.signal);
 
   expect(uploadName).toBeTruthy();
+});
+
+describe("when a file is uploaded", () => {
+  let uploadName = null;
+  const api = new GBZBaseAPI();
+
+  beforeAll(async () => {
+    const fileData = await fs.readFileSync("exampleData/x.gbz.db");
+    const file = new window.File([fileData], "x.gbz.db", {
+      type: "application/octet-stream",
+    });
+    let controller = new AbortController();
+    uploadName = await api.putFile("graph", file, controller.signal);
+  });
+
+  it("should show up in the list of files", async () => {
+    let fileNames = await api.getFilenames();
+    let found = false;
+    for (let file of fileNames.files) {
+      if (file.name === uploadName) {
+        expect(file.type).toEqual("graph");
+        found = true;
+      }
+    }
+    expect(found).toBeTruthy();
+  });
 });
