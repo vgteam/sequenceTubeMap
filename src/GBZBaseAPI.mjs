@@ -70,7 +70,7 @@ export async function blobToArrayBuffer(blob) {
     return new Promise((resolve, reject) => {
       let reader = new FileReader();
       reader.addEventListener("load", () => { resolve(reader.result); });
-      reader.addEventListener("error", reject);
+      reader.addEventListener("error", () => { reject(reader.error); });
       reader.readAsArrayBuffer(blob);
     });
   }
@@ -149,6 +149,8 @@ export class GBZBaseAPI extends APIInterface {
         // For now we use the FIleReader workaround if we can't arrayBuffer().
         // Later we will need to use OpenSyncOPFSFile and implement an object with a handle that can sync read and write at offsets.
         // TODO: How will this be sync???
+        // Maybe get into a worker and use https://developer.mozilla.org/en-US/docs/Web/API/FileReaderSync
+        // Or hackily use a sync XHR like https://stackoverflow.com/a/76999249
         nameToWASIFile[filename] = new File(await blobToArrayBuffer(blob));
         console.log("Mount file:", nameToWASIFile[filename]);
       }
@@ -169,18 +171,24 @@ export class GBZBaseAPI extends APIInterface {
     console.log("Running WASM with FDs:", fileDescriptors)
 
     let returnCode = null;
+    let stdOutText = null;
+    let stdErrText = null;
 
     try {
       // Make the WASI system call main
       returnCode = wasi.start(instantiation);
-      console.log("Return code:", returnCode);
+      // TODO: the shim logs loads of attempts to make/open the lock file, is it maybe not being allowed to be read back?
+      // TODO: Our return code is undefined for some reason; it is supposed to come out of start.
+      console.log("Execution finished with return code:", returnCode);
     } finally {
       // The WASM code can throw right out of the WASI shim if Rust panics.
-      console.log("Standard Output:", new TextDecoder().decode(stdout.data));
-      console.log("Standard Error:", new TextDecoder().decode(stderr.data));
+      stdOutText = new TextDecoder().decode(stdout.data);
+      stdErrText = new TextDecoder().decode(stderr.data);
+      console.log("Standard Output:", stdOutText);
+      console.log("Standard Error:", stdErrText);
     }
 
-    return {returnCode, stdout: stdout.data, stderr: stderr.data}
+    return {returnCode, stdout: stdOutText, stderr: stdErrText}
   }
   
   // Return true if the WASM setup is working, and false otherwise.
