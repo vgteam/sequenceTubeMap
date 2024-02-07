@@ -83,7 +83,23 @@ class App extends Component {
         colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
         mappingQualityCutoff: 0,
       },
+      APIInterface: new GBZBaseAPI() //new ServerAPI(props.apiUrl)
     };
+  }
+
+  /**
+   * Swap API implementations, between server-based and local or visa-versa.
+   */
+  toggleAPIImplementation() {
+    this.setState((state) => {
+      if (state.APIInterface instanceof GBZBaseAPI) {
+        // Make a server API
+        return {APIInterface: new ServerAPI(this.props.apiUrl)}
+      } else {
+        // Make a local API
+        return {APIInterface: new GBZBaseAPI()}
+      }
+    });
   }
 
   /*
@@ -190,6 +206,9 @@ class App extends Component {
   render() {
     return (
       <div>
+        <label>
+          Local mode: <input type="checkbox" checked={this.state.APIInterface instanceof GBZBaseAPI} onChange={() => {this.toggleAPIImplementation();} }/>
+        </label>
         <HeaderForm
           setCurrentViewTarget={this.setCurrentViewTarget}
           setDataOrigin={this.setDataOrigin}
@@ -197,13 +216,13 @@ class App extends Component {
           dataOrigin={this.state.dataOrigin}
           defaultViewTarget={this.defaultViewTarget}
           getCurrentViewTarget={this.getCurrentViewTarget}
-          APIInterface={this.APIInterface}
+          APIInterface={this.state.APIInterface}
         />
         <TubeMapContainer
           viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}
           visOptions={this.state.visOptions}
-          APIInterface={this.APIInterface}
+          APIInterface={this.state.APIInterface}
         />
         <CustomizationAccordion
           visOptions={this.state.visOptions}

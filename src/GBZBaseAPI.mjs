@@ -261,7 +261,9 @@ export class GBZBaseAPI extends APIInterface {
 
     // Find the graph track
     let graphTrack = null
-    for (let track of viewTarget.tracks) {
+    // TODO: We need to handle object tracks; move to array tracks only!
+    for (let trackKey in viewTarget.tracks) {
+      let track = viewTarget.tracks[trackKey];
       if (track.trackType === "graph") {
         graphTrack = track;
       }
@@ -271,7 +273,11 @@ export class GBZBaseAPI extends APIInterface {
     }
 
     // Since all the names are numbers, parse it and get the real file blob
-    let graphFileBlob = this.files[parseInt(graphTrack.trackFile)]; 
+    let graphFileBlob = this.files[parseInt(graphTrack.trackFile)];
+
+    if (graphFileBlob === undefined) {
+      throw new Error("Graph file " + graphTrack.trackFile + " does not exist");
+    }
 
     // Find the region
     let region = convertRegionToRangeRegion(parseRegion(viewTarget.region));
@@ -289,7 +295,7 @@ export class GBZBaseAPI extends APIInterface {
 
     return {
       graph: result,
-      gam: {},
+      gam: [],
       region: stringifyRegion(region),
       coloredNodes: [],
     };
