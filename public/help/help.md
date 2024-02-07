@@ -37,55 +37,62 @@ Users can compose URLs that link to a specific view. To do so, users will requir
 
 These are the fields that can be included in the URL:
 1. `tracks` 
-Information about tracks. Tracks are objects consisting of trackFile, trackType, and trackColorSettings. To retrieve this information, index the tracks array to access the object and respective keys.
+   Information about tracks. Tracks are objects consisting of trackFile, trackType, and trackColorSettings. To retrieve this information, index the tracks array to access the object and respective keys.
 
-A track JSON object might look like this:
-```
-{
-   "trackFile": "exampleData/internal/snp1kg-BRCA1.vg.xg",
-   "trackType": "graph",
-   "trackColorSettings": {
-      "mainPalette": "greys",
-      "auxPalette": "ygreys",
-      "colorReadsByMappingQuality": false
+   A track JSON object might look like this:
+   ```
+   {
+      "trackFile": "exampleData/internal/snp1kg-BRCA1.vg.xg",
+      "trackType": "graph",
+      "trackColorSettings": {
+         "mainPalette": "greys",
+         "auxPalette": "ygreys",
+         "colorReadsByMappingQuality": false
+      }
    }
-}
-```
+   ```
 
-   - The `trackFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the track file 
+   * The `trackFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the track file 
      Examples:
-      - `exampleData/internal/snp1kg-BRCA1.vg.xg`
-      - `https://public.gi.ucsc.edu/~anovak/graphs/trivial-brca1.vg`
-   - The `trackType` specifies the type of the track, which can be "graph", "haplotype", "read"
-   - The `trackColorSettings` provides color information and is an optional setting.
-      - The color palettes are `mainPalette` and `auxPalette`. 
-         - The colors for the palettes can be hex codes starting with a `#`, or premade palettes: `greys`, `ygreys`, `blues`, `reds`, `plainColors`, or `lightColors`. 
-         - The palettes are used differently for different track types
-            - For graphs, the `mainPalette` colors the primary reference path while `auxPalette` is used for the other paths. 
-            - For haplotypes, only the `mainPalette` is used. 
+      * `tracks[0][trackFile]=exampleData/internal/snp1kg-BRCA1.vg.xg`
+      * `tracks[0][trackFile]=https://public.gi.ucsc.edu/~anovak/graphs/trivial-brca1.vg`
+   * The `trackType` specifies the type of the track, which can be "graph", "haplotype", "read"
+      * Example: `tracks[0][trackType]=graph`
+   * The `trackColorSettings` provides color information and is an optional setting.
+      * The color palettes are `mainPalette` and `auxPalette`. 
+         * The colors for the palettes can be hex codes starting with a `#`, or premade palettes: `greys`, `ygreys`, `blues`, `reds`, `plainColors`, or `lightColors`. 
+         * The palettes are used differently for different track types
+            * For graphs, the `mainPalette` colors the primary reference path while `auxPalette` is used for the other paths. 
+            * For haplotypes, only the `mainPalette` is used. 
             - For reads, the `mainPalette` colors the forward-strand reads and the `auxPalette` colors the backward-strand reads. 
-      - `colorReadsByMappingQuality` is a boolean value that determines if reads are colored based on their mapping quality or not. It is an optional field that has a default of `false`. 
-   
-      Examples 
-         - tracks[0][trackColorSettings][mainPalette]=greys
-         - tracks[0][trackColorSettings][auxPalette]=ygreys
-         - colorReadsByMappingQuality = false   
-
-   
+      * `colorReadsByMappingQuality` is a boolean value that determines if reads are colored based on their mapping quality or not. It is an optional field that has a default of `false`. 
+      * Examples
+         * `tracks[0][trackColorSettings][mainPalette]=greys`
+         * `tracks[0][trackColorSettings][auxPalette]=ygreys`
+         * `colorReadsByMappingQuality = false`
 2. `region`
-   This is a region input that is documented at
-   [Displaying Visualizations](#displaying-visualizations) step 3. This region will be loaded in the tubemap visualization once the link is followed.
-   Example: region=17:3A1-100
-3. Name of bedfile. Example: exampleData/internal/snp1kg-BRCA1.bed
+   This is a region input that is documented at step 3 of
+   [Displaying Visualizations](#displaying-visualizations). This region will be loaded in the tubemap visualization once the link is followed.
+   * Example: `region=17:3A1-100`
+3. `bedfile`
+   The `bedFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the bed file. 
+   * Examples:
+      * `bedFile=exampleData/internal/snp1kg-BRCA1.bed`
+      * `bedfile=https://raw.githubusercontent.com/vgteam/sequenceTubeMap/ca4f2485231ee4182173bec19489ba940b27461a/exampleData/cactus.bed`
+      
+   More information on bedfile structure and creation is documented [here](https://github.com/vgteam/sequenceTubeMap?tab=readme-ov-file#preparing-subgraphs-in-advance). 
 4. `datatype`
    Describes type of data as `built-in`, `mounted files`, or synthetic `examples`.
-      - `built-in`: If the `datatype` field is set to "built-in", the `name` field must be set to the name of a preset defined in `DATA_SOURCES` in `config.json`.
-      - `mounted files`: 
-      - `examples`: Links to synthetic examples cannot currently be created.
-   Example: `dataType=built-in`
-5. Simplify, determines whether vg-simplify view is turned on or off.
+      * `built-in`: If the `datatype` field is set to `built-in`, the `name` field must be set to the name of a preset defined in `DATA_SOURCES` in `config.json`.
+      * `mounted files`: If the `datatype` field is set to `mounted files`, the `name` field must be set to custom, and the user may select custom tracks along with an optional bedfile.
+      * `examples`: Links to synthetic examples cannot currently be created.
+   * Example: `dataType=built-in`
+5. `Simplify`. 
+   This determines whether small snarls (e.g. single base indels and SNPs) are displayed or removed. It defaults to false, which means that the small snarls are not removed.
+   * Example: `simplify=false`
 6. `name` 
-   Name of Data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `datatype` is set to `built-in`. You do not have to use these presets. Example: `name=snp1kg-BRCA1`
+   Name of Data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `datatype` is set to `built-in`. You do not have to use these presets. 
+   * Example: `name=snp1kg-BRCA1`
 
 
 ex: http://127.0.0.1:3001?name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in&simplify=false
