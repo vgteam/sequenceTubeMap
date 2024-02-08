@@ -1,4 +1,4 @@
-import { fetchAndParse } from "./fetchAndParse.js";
+import { fetchAndParse } from "../fetchAndParse.js";
 import { APIInterface } from "./APIInterface.mjs";
 
 /**
