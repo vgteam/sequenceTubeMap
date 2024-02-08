@@ -9,4 +9,8 @@
 
 import { setUpWorker } from "./WorkerImplementation.mjs";
 
-setUpWorker(self);
+// Because of create React App's Opinions, we can't use the idiomatic "self"
+// here without fiddling with the linter. See
+// <https://github.com/facebook/create-react-app/issues/12847>. But we can also
+// get at the service worker using "this".
+setUpWorker(this);

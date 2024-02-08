@@ -8,9 +8,7 @@ import {
   stringifyRegion
 } from "../common.mjs";
 
-// We need to import this without extension, and we need the extension to be
-// .js, because otherwise we can't mock it under Jest to polyfill the worker.
-import { makeWorker } from "./local/WorkerFactory";
+import { makeWorker } from "./local/WorkerFactory.js";
 
 // TODO: The Webpack way to get the WASM would be something like:
 //import QueryWasm from "gbz-base/target/wasm32-wasi/release/query.wasm";
@@ -136,6 +134,9 @@ function convertSchema(inGraph) {
 export class GBZBaseAPI extends APIInterface {
   constructor() {
     super();
+
+    // Make a worker
+    this.worker = makeWorker();
 
     // We can take user uploads, in which case we need to hold on to them somewhere.
     // This holds all the file objects.

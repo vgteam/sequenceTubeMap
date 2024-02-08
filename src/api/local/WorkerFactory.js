@@ -8,7 +8,7 @@
  * Returns the worker object. On Jest, this will be replaced with a mock that
  * runs the worker in-process.
  */
-export default function makeWorker() {
+export function makeWorker() {
   // Jest will crash if it ever sees "import.meta" in a source file, but
   // Webpack keys on this exact
   // 
