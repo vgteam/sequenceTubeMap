@@ -1,4 +1,4 @@
-import "./config-client.js";
+import "../config-client.js";
 import { APIInterface } from "./APIInterface.mjs";
 import { WASI, File, OpenFile, PreopenDirectory } from "@bjorn3/browser_wasi_shim";
 
@@ -6,11 +6,11 @@ import {
   parseRegion,
   convertRegionToRangeRegion,
   stringifyRegion
-} from "./common.mjs";
+} from "../common.mjs";
 
 // We need to import this without extension, and we need the extension to be
 // .js, because otherwise we can't mock it under Jest to polyfill the worker.
-import { makeWorker } from "./LocalAPIWorkerFactory";
+import { makeWorker } from "./local/WorkerFactory";
 
 // TODO: The Webpack way to get the WASM would be something like:
 //import QueryWasm from "gbz-base/target/wasm32-wasi/release/query.wasm";

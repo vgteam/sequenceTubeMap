@@ -1,10 +1,10 @@
 /**
- * Fake a new LocalAPIWorker worker in a way that works on Jest. This is used
- * under Jest to mock LocalAPIWorkerFactory.mjs with something that can run on
+ * Fake a new worker in a way that works on Jest. This is used
+ * under Jest to mock WorkerFactory.js with something that can run on
  * Jest.
  */
 
-import { setUpWorker } from "../LocalAPIWorkerImplementation.mjs"
+import { setUpWorker } from "../WorkerImplementation.mjs"
 
 import { EventEmitter } from "events";
 

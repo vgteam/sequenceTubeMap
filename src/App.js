@@ -14,8 +14,8 @@ import Footer from "./components/Footer";
 import { dataOriginTypes } from "./enums";
 import "./config-client.js";
 import { config } from "./config-global.mjs";
-import ServerAPI from "./ServerAPI.mjs";
-import { GBZBaseAPI } from "./GBZBaseAPI.mjs";
+import ServerAPI from "./api/ServerAPI.mjs";
+import { GBZBaseAPI } from "./api/GBZBaseAPI.mjs";
 
 const EXAMPLE_TRACKS = [
   // Fake tracks for the generated examples.
