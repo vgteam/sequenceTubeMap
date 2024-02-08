@@ -106,10 +106,10 @@ export function setUpWorker(self) {
   // Subscribe to file updates and always publish them over the link.
   // We don't ever actually abort the subscription.
   let subscriptionAbortController = new AbortController();
-  let subscription = api.subscribeToFilenameChanges(() => {
+  api.subscribeToFilenameChanges(() => {
     rpc.rpc("_filename_change", {});
   }, subscriptionAbortController.signal);
-  // TODO: Do we need to stash the subscription somewhere safe?
+  // TODO: Do we need to stash the returned subscription somewhere safe?
 
   // If a call is canceled, cancel it on this side.
   rpc.registerRpcHandler('_cancel', ({cancelID}) => {

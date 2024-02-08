@@ -26,7 +26,7 @@ async function getWasmBytes() {
 
   let blobBytes = null;
 
-  if (!window["jest"]) {
+  if (typeof window === "undefined" || !window["jest"]) {
     // Not running on Jest, we should be able to dynamic import a binary asset
     // by export name and get the bytes, and Webpack will handle it.
     try {

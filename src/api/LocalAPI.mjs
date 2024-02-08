@@ -32,7 +32,7 @@ export class LocalAPI extends APIInterface {
     // File name change subscriptions go through this EventTarget
     this.nameChangeEvents = new EventTarget();
 
-    this.rpc.registerRpcHandler("_filename_change", async ({}) => {
+    this.rpc.registerRpcHandler("_filename_change", async () => {
       // If a filename change message comes in from the worker, tell our
       // subscribers.
       this.nameChangeEvents.dispatchEvent(new CustomEvent("change"));

@@ -9,8 +9,10 @@
 
 import { setUpWorker } from "./WorkerImplementation.mjs";
 
-// Because of create React App's Opinions, we can't use the idiomatic "self"
+// Because of Create React App's Opinions, we can't use the idiomatic "self"
 // here without fiddling with the linter. See
-// <https://github.com/facebook/create-react-app/issues/12847>. But we can also
-// get at the service worker using "this".
-setUpWorker(this);
+// <https://github.com/facebook/create-react-app/issues/12847>. Supposedly
+// there's a way to get at the service worker with "this", but "this" right now
+// appears undefined in the browser.
+/* eslint-disable no-restricted-globals */
+setUpWorker(self);

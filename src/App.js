@@ -15,7 +15,7 @@ import { dataOriginTypes } from "./enums";
 import "./config-client.js";
 import { config } from "./config-global.mjs";
 import ServerAPI from "./api/ServerAPI.mjs";
-import { GBZBaseAPI } from "./api/GBZBaseAPI.mjs";
+import { LocalAPI } from "./api/LocalAPI.mjs";
 
 const EXAMPLE_TRACKS = [
   // Fake tracks for the generated examples.
@@ -46,17 +46,6 @@ function getColorSchemesFromTracks(tracks) {
 class App extends Component {
   constructor(props) {
     super(props);
-
-    // See if the WASM API is available.
-    // Right now this just tests and logs, but eventually we will be able to use it.
-    let gbzApi = new GBZBaseAPI();
-    gbzApi.available().then((working) => {
-      if (working) {
-        console.log("WASM API implementation available!");
-      } else {
-        console.error("WASM API implementation not available!");
-      }
-    });
 
     console.log("App component starting up with API URL: " + props.apiUrl);
 
@@ -90,7 +79,7 @@ class App extends Component {
    */
   toggleAPIImplementation() {
     this.setState((state) => {
-      if (state.APIInterface instanceof GBZBaseAPI) {
+      if (state.APIInterface instanceof LocalAPI) {
         // Make a server API
         return {
           APIInterface: new ServerAPI(this.props.apiUrl),
@@ -105,7 +94,7 @@ class App extends Component {
       } else {
         // Make a local API
         return {
-          APIInterface: new GBZBaseAPI(),
+          APIInterface: new LocalAPI(),
           // Set up an empty view target that can't really render.
           // TODO: Let us control HeaderForm's dataType state so we can pop it right over to custom, or feed it a different defaultViewTarget
           dataOrigin: dataOriginTypes.API,
@@ -226,7 +215,7 @@ class App extends Component {
     return (
       <div>
         <label>
-          Local mode: <input type="checkbox" checked={this.state.APIInterface instanceof GBZBaseAPI} onChange={() => {this.toggleAPIImplementation();} }/>
+          Local mode: <input type="checkbox" checked={this.state.APIInterface instanceof LocalAPI} onChange={() => {this.toggleAPIImplementation();} }/>
         </label>
         <HeaderForm
           setCurrentViewTarget={this.setCurrentViewTarget}
