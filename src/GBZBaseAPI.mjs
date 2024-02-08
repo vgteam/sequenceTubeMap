@@ -8,6 +8,8 @@ import {
   stringifyRegion
 } from "./common.mjs";
 
+import { makeWorker } from "./__mocks__/LocalAPIWorkerFactory.mjs";
+
 // TODO: The Webpack way to get the WASM would be something like:
 //import QueryWasm from "gbz-base/target/wasm32-wasi/release/query.wasm";
 // if the export mapping is broken, or
