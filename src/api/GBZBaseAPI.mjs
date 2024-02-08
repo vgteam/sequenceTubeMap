@@ -8,19 +8,15 @@ import {
   stringifyRegion
 } from "../common.mjs";
 
-import { makeWorker } from "./local/WorkerFactory.js";
-
-// TODO: The Webpack way to get the WASM would be something like:
-//import QueryWasm from "gbz-base/target/wasm32-wasi/release/query.wasm";
-// if the export mapping is broken, or
-//import QueryWasm from "gbz-base/query.wasm";
-// if it is working. In Jest, not only is the export mapping not working, but
-// also it can't get us a fetch-able string from the import like Webpack does.
-// So we will need some fancy Jest config to mock the WASM file into a js
-// module that does *something*, and also to mock fetch() into something that
-// can fetch it. Or else we need to hide that all behind something that can
-// fetch the WASM on either Webpack or Jest with its own strategies/by being
-// swapped out.
+// The Webpack way to get the WASM would be something like:
+// 
+// import QueryWasm from "gbz-base/query.wasm";
+// 
+// In Jest, not only is the export mapping not working, but also it can't get
+// us a fetch-able string from the import like Webpack does.
+//
+// So we use this function to detect if we are on Jest and get the blob from
+// the filesystem then, and to otherwise get ti with fetch.
 
 // Resolve with the bytes or Response of the WASM query blob, on Jest or Webpack.
 async function getWasmBytes() {
@@ -130,13 +126,13 @@ function convertSchema(inGraph) {
 
 /**
  * API implementation that uses tools compiled to WebAssembly, client-side.
+ *
+ * Can operate either in the main thread or in a worker, but handles file
+ * uploads differently depending on where you put it.
  */
 export class GBZBaseAPI extends APIInterface {
   constructor() {
     super();
-
-    // Make a worker
-    this.worker = makeWorker();
 
     // We can take user uploads, in which case we need to hold on to them somewhere.
     // This holds all the file objects.

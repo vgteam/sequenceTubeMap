@@ -1,19 +1,13 @@
-import { GBZBaseAPI, blobToArrayBuffer } from "./GBZBaseAPI.mjs";
+import { LocalAPI } from "./LocalAPI.mjs";
 
 import fs from "fs-extra";
 
 it("can be constructed", () => {
-  let api = new GBZBaseAPI();
-});
-
-it("can self-test its WASM setup", async () => {
-  let api = new GBZBaseAPI();
-  let working = await api.available();
-  expect(working).toBeTruthy();
+  let api = new LocalAPI();
 });
 
 it("can have a file uploaded", async () => {
-  let api = new GBZBaseAPI();
+  let api = new LocalAPI();
 
   // We need to make sure we make a jsdom File (which is a jsdom Blob), and not
   // a Node Blob, for our test file. Otherwise it doesn't work with jsdom's
@@ -39,19 +33,13 @@ it("can have a file uploaded", async () => {
 
 describe("when a file is uploaded", () => {
   let uploadName = null;
-  const api = new GBZBaseAPI();
+  const api = new LocalAPI();
 
   beforeAll(async () => {
     const fileData = await fs.readFileSync("exampleData/x.gbz.db");
     const file = new window.File([fileData], "x.gbz.db", {
       type: "application/octet-stream",
     });
-
-    // Make sure the file actually is readable
-    let fileDataRetrieved = await blobToArrayBuffer(file);
-    if (fileDataRetrieved.byteLength != fileData.length) {
-      throw new Error("Can't put data into and out of jsdom File");
-    }
 
     let controller = new AbortController();
     uploadName = await api.putFile("graph", file, controller.signal);

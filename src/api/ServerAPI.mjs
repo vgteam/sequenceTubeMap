@@ -42,12 +42,22 @@ export class ServerAPI extends APIInterface {
     // We make a function to connect the websocket, which we can call to reconnect.
     let connect = () => {
       subscription.ws = new WebSocket(this.apiUrl.replace(/^http/, "ws"));
+      
+      // We make a function to disconnect also and remove all the event handlers.
+      subscription.disconnect = () => {
+        subscription.ws.close();
+        cancelSignal.removeEventListener("abort", subscription.disconnect);
+        subscription.ws.onmessage = undefined;
+        subscription.ws.onclose = undefined;
+        subscription.ws.onerror = undefined;
+      };
+
       subscription.ws.onmessage = (message) => {
         if (!cancelSignal.aborted) {
           // Tell the user that something changed
           handler();
         } else {
-          subscription.ws.close();
+          subscription.disconnect();
         }
       };
       subscription.ws.onclose = (event) => {
@@ -58,15 +68,17 @@ export class ServerAPI extends APIInterface {
       };
       subscription.ws.onerror = (event) => {
         // Close the socket if something went wrong
-        subscription.ws.close();
+        subscription.disconnect();
       };
+
+      // Close the scoket if the user wants to cancel the subscription.
+      cancelSignal.addEventListener("abort", subscription.disconnect);
     };
 
     connect();
 
     // Give the subscription back to the caller to hold.
     // TODO: Do we really need to hold the web socket in scope?
-    // TODO: How does the user close the socket without a message arriving after cancelation?
     return subscription;
   }
 

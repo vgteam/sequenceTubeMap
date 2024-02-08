@@ -8,7 +8,7 @@ import { setUpWorker } from "../WorkerImplementation.mjs"
 
 import { EventEmitter } from "events";
 
-export default function makeWorker() { 
+export function makeWorker() { 
 
   // Make a couple EventEmmitters, chrome them up to look more browser-y, and
   // cross-connect their message events and postMessage functions.
@@ -19,13 +19,13 @@ export default function makeWorker() {
   userSide.addEventListener = userSide.on;
 
   workerSide.postMessage = (message, options) => {
-    setImmediate(() => {
+    setTimeout(() => {
       userSide.emit("message", {data: message});
     });
   }
 
   userSide.postMessage = (message, options) => {
-    setImmediate(() => {
+    setTimeout(() => {
       workerSide.emit("message", {data: message});
     });
   }
