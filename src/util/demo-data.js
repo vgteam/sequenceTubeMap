@@ -112,6 +112,499 @@ export const demoReads = `
 {"sequence": "GGTTCCCACTCCATAAGGTAGTTCAGCACCGCCGTGTCCCGGCCGGGTCGCGGGGAGCCCCGGTACATCGCAGTGGGCTACGTGGACGACACGCAGTTCGTGCGGTTCGACAGCGACGCGGCGACTCCGAGGATGTAGCCGCAGGCGCCGTGGTTGGAGCAGGAGGGACCGGAGTATTGGGACCGGAGCACACGGAACATCAGGCCCGCGCACAGACTGACAAGAGTGAACCTGCCCATGCCGCGCCGCTACTACCACCAGAGCTAGGCCGGTGAATGACCCCGGCCTGGGGCGAAGGTCACGACCCCTCCTCATCCCCCACGGACGCCCCGGGTCCCCCCCGCGAGTCTCCGGCTCC", "path": {"mapping": [{"position": {"node_id": "3"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 2}, {"position": {"node_id": "5"}, "edit": [{"from_length": 16, "to_length": 16}], "rank": 3}, {"position": {"node_id": "6"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 4}, {"position": {"node_id": "8"}, "edit": [{"from_length": 10, "to_length": 10}], "rank": 5}, {"position": {"node_id": "9"}, "edit": [{"from_length": 29, "to_length": 29}], "rank": 6}, {"position": {"node_id": "10"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 7}, {"position": {"node_id": "12"}, "edit": [{"from_length": 2, "to_length": 2}], "rank": 8}, {"position": {"node_id": "13"}, "edit": [{"from_length": 32, "to_length": 32}], "rank": 9}, {"position": {"node_id": "14"}, "edit": [{"from_length": 32, "to_length": 32}], "rank": 10}, {"position": {"node_id": "15"}, "edit": [{"from_length": 6, "to_length": 6}], "rank": 11}, {"position": {"node_id": "16"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 12}, {"position": {"node_id": "18"}, "edit": [{"from_length": 10, "to_length": 10}], "rank": 13}, {"position": {"node_id": "19"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 14}, {"position": {"node_id": "21"}, "edit": [{"from_length": 3, "to_length": 3}], "rank": 15}, {"position": {"node_id": "23"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 16}, {"position": {"node_id": "24"}, "edit": [{"from_length": 10, "to_length": 10}], "rank": 17}, {"position": {"node_id": "25"}, "edit": [{"from_length": 5, "to_length": 5}], "rank": 18}, {"position": {"node_id": "26"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 19}, {"position": {"node_id": "28"}, "edit": [{"from_length": 26, "to_length": 26}], "rank": 20}, {"position": {"node_id": "29"}, "edit": [{"from_length": 2, "to_length": 2}], "rank": 21}, {"position": {"node_id": "30"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 22}, {"position": {"node_id": "32"}, "edit": [{"from_length": 29, "to_length": 29}], "rank": 23}, {"position": {"node_id": "33"}, "edit": [{"from_length": 32, "to_length": 32}], "rank": 24}, {"position": {"node_id": "34"}, "edit": [{"from_length": 32, "to_length": 32}], "rank": 25}, {"position": {"node_id": "35"}, "edit": [{"from_length": 32, "to_length": 32}], "rank": 26}, {"position": {"node_id": "36"}, "edit": [{"from_length": 8, "to_length": 8}], "rank": 27}, {"position": {"node_id": "38"}, "edit": [{"from_length": 1, "to_length": 1}], "rank": 28}, {"position": {"node_id": "39"}, "edit": [{"from_length": 23, "to_length": 23}], "rank": 29}, {"position": {"node_id": "40"}, "edit": [{"from_length": 7, "to_length": 7}], "rank": 30}]}, "score": 358, "identity": 1.0}
 `;
 
+export const cycleGraph = {
+  edge: [
+    {
+      from: "60080783",
+      from_start: true,
+      to: "60080786",
+      to_end: true,
+    },
+    {
+      from: "60080783",
+      from_start: true,
+      to: "60080785",
+    },
+    {
+      from: "60080783",
+      to: "60080785",
+    },
+    {
+      from: "60080786",
+      to: "60080785",
+    },
+    {
+      from: "60080786",
+      to: "60080785",
+      to_end: true,
+    },
+  ],
+  node: [
+    {
+      id: "60080785",
+      sequence: "AC",
+    },
+    {
+      id: "60080783",
+      sequence: "TT",
+    },
+    {
+      id: "60080786",
+      sequence: "GT",
+    },
+  ],
+  path: [
+    {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "1",
+        },
+        {
+          edit: [
+            {
+              from_length: 21,
+              to_length: 21,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "2",
+        },
+      ],
+      name: "GRCh38.chr14",
+      indexOfFirstBase: "0",
+    },
+  ],
+};
+
+
+export const cycleReads = [
+  {
+    identity: 1,
+    name: "Read0",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "1",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "4",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "5",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "6",
+        },
+      ],
+    },
+    score: 110,
+    sequence: "GTGTTT",
+  },
+  {
+    identity: 1,
+    name: "Read1",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 1,
+              to_length: 1,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+            offset: 1,
+          },
+          rank: "1",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "4",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "5",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 1,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+            offset: -2,
+          },
+          rank: "6",
+        },
+      ],
+    },
+    score: 110,
+    sequence: "TGTTT",
+  },
+  {
+    identity: 1,
+    name: "Read2",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "1",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "4",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "5",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "6",
+        },
+      ],
+    },
+    score: 110,
+    sequence: "GTGTTT",
+  },
+  {
+    identity: 1,
+    name: "Read3",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "1",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "4",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "5",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 3,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+            offset: -1,
+          },
+          rank: "6",
+        },
+      ],
+    },
+    score: 110,
+    sequence: "GTACTT",
+  },
+  {
+    identity: 1,
+    name: "Read4",
+    path: {
+      mapping: [
+        {
+          edit: [
+            {
+              from_length: 1,
+              to_length: 1,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+            offset: 1,
+          },
+          rank: "1",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "2",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "3",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080786",
+          },
+          rank: "4",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 2,
+            },
+          ],
+          position: {
+            node_id: "60080785",
+          },
+          rank: "5",
+        },
+        {
+          edit: [
+            {
+              from_length: 2,
+              to_length: 1,
+            },
+          ],
+          position: {
+            node_id: "60080783",
+          },
+          rank: "6",
+        },
+      ],
+    },
+    score: 110,
+    sequence: "TACTT",
+  },
+];
+
 export const reverseAlignmentGraph = {
   edge: [
     {
