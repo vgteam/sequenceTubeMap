@@ -688,25 +688,34 @@ function placeReads() {
         // sometimes, elements without nodes are between 2 segments going to a node we've already visited, from the same direction
         // this means we're looping back to a node we've already been to, and we should sort in reverse
         
-        let nextNodeOrder = reads[idx].path[pathIdx + 1]?.order;
+        // Find the next node in our path
+        let nextPathIndex = pathIdx + 1
+        let nextPathWithNode = reads[idx].path[nextPathIndex];
+        while ((nextPathWithNode?.node === null || !nextPathWithNode?.node) && nextPathIndex < reads[idx].path.length) {
+          nextPathWithNode = reads[idx].path[nextPathIndex];
+          nextPathIndex = nextPathIndex + 1;
+        }
+
+
+        let nextNodeOrder = nextPathWithNode?.order;
         let previousNodeOrders = reads[idx].path.map(p => p.order).slice(0, pathIdx);
 
 
         // if the previous segment and the next segment is going to the same node
         let nextNodeVisited = previousNodeOrders !== null && nextNodeOrder !== null && previousNodeOrders.includes(nextNodeOrder);
 
-        let betweenCycle = false;
+        reads[idx].path[pathIdx].betweenCycle = false;
         if (nextNodeVisited) {
           // check the forward status of the last time we visited the node we're about to visit
           let previousNodeIsForward = reads[idx].path[previousNodeOrders.lastIndexOf(nextNodeOrder)]?.isForward;
-          let nextNodeIsForward = reads[idx].path[pathIdx + 1]?.isForward
+          let nextNodeIsForward = nextPathWithNode?.isForward
 
           // if the next segment and the one we've previously visited is going in the same direction
           let sameDirection = previousNodeIsForward !== null && nextNodeIsForward !== null && previousNodeIsForward === nextNodeIsForward
 
           // we've already visited the next node and we're going the same direction as the last time we've visited it
           if (sameDirection) {
-            betweenCycle = true;
+            reads[idx].path[pathIdx].betweenCycle = true;
           }
         }
 
@@ -715,7 +724,6 @@ function placeReads() {
           readIndex: idx,
           pathIndex: pathIdx,
           previousY: previousValidY,
-          betweenCycle: betweenCycle,
         });
       }
     });
@@ -874,7 +882,7 @@ function compareNoNodeReadsByPreviousY(a, b) {
     // we want to sort of the reverse when the segment is between a cycle
     // this ensures a loop that starts on the outside, stays on the outside
     // and loops are rolled in order
-    if (a.betweenCycle && b.betweenCycle) {
+    if (segmentA?.betweenCycle && segmentB?.betweenCycle) {
       return b.previousY - a.previousY;
     } else {
       return a.previousY - b.previousY;
