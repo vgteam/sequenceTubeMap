@@ -488,7 +488,6 @@ function createTubeMap() {
   generateLaneAssignment();
 
   if (config.showExonsFlag === true && bed !== null) addTrackFeatures();
-  //generateNodeXCoords();
 
   if (reads && config.showReads) {
     generateReadOnlyNodeAttributes();
