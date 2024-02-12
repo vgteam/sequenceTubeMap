@@ -272,7 +272,6 @@ class TubeMapContainer extends Component {
           0,
           1 // Examples always have reads as track 1
         );
-        console.log("READS", reads);
         break;
       case dataOriginTypes.EXAMPLE_8:
         vg = data.cycleGraph;
@@ -285,8 +284,20 @@ class TubeMapContainer extends Component {
           0,
           1 // Examples always have reads as track 1
         );
-        
-        console.log("READS", reads);
+
+        break;
+      case dataOriginTypes.EXAMPLE_9:
+        vg = data.cycle2Graph;
+        nodes = tubeMap.vgExtractNodes(vg);
+        tracks = tubeMap.vgExtractTracks(vg, 0, 0); // Examples have paths and haplotypes as track 0.
+        reads = tubeMap.vgExtractReads(
+          nodes,
+          tracks,
+          data.cycle2Reads,
+          0,
+          1 // Examples always have reads as track 1
+        );
+
         break;
       case dataOriginTypes.NO_DATA:
         // Leave the data empty.

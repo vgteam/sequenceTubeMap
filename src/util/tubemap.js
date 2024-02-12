@@ -678,12 +678,14 @@ function placeReads() {
       if (!element.hasOwnProperty("y")) {
         // previous y value from pathIdx - 1 might not exist yet if that segment is also without node 
         // use previous y value from last segment with node instead 
-        let previousValidY = null;
         let lastIndex = pathIdx - 1;
-        while (previousValidY === null && lastIndex >= 0) {
-          previousValidY = reads[idx].path[lastIndex].y;
+        let previousPathWithNode;
+        while ((previousPathWithNode?.node === null || !previousPathWithNode?.node) && lastIndex >= 0) {
+          previousPathWithNode = reads[idx].path[lastIndex];
           lastIndex = lastIndex - 1;
         }
+
+        let previousValidY = previousPathWithNode?.y;
 
         // sometimes, elements without nodes are between 2 segments going to a node we've already visited, from the same direction
         // this means we're looping back to a node we've already been to, and we should sort in reverse
@@ -696,28 +698,35 @@ function placeReads() {
           nextPathIndex = nextPathIndex + 1;
         }
 
-
         let nextNodeOrder = nextPathWithNode?.order;
-        let previousNodeOrders = reads[idx].path.map(p => p.order).slice(0, pathIdx);
-
+        let previousNodeOrder = previousPathWithNode?.order;
 
         // if the previous segment and the next segment is going to the same node
-        let nextNodeVisited = previousNodeOrders !== null && nextNodeOrder !== null && previousNodeOrders.includes(nextNodeOrder);
+        let nextNodeJustVisited = previousNodeOrder !== null && nextNodeOrder !== null && previousNodeOrder === nextNodeOrder;
+
+      
+        // a segment can also be in a loop if the next node is behind on the map
+        let nextNodeBehind = previousNodeOrder !== null && nextNodeOrder !== null && previousPathWithNode.order > nextNodeOrder;
+
 
         reads[idx].path[pathIdx].betweenCycle = false;
-        if (nextNodeVisited) {
-          // check the forward status of the last time we visited the node we're about to visit
-          let previousNodeIsForward = reads[idx].path[previousNodeOrders.lastIndexOf(nextNodeOrder)]?.isForward;
-          let nextNodeIsForward = nextPathWithNode?.isForward
+        if (nextNodeBehind) {
+          // the segment has to loop regardless of which direction the read goes in
+          reads[idx].path[pathIdx].betweenCycle = true;
+        } else if (nextNodeJustVisited) {
+          // the segment doesn't have to loop if going in opposite direction from the node
+          let previousNodeIsForward = previousPathWithNode?.isForward;
+          let nextNodeIsForward = nextPathWithNode?.isForward;
 
-          // if the next segment and the one we've previously visited is going in the same direction
+          // if the next segment(to a node) and previousl segment(from a node) is going in the same direction
           let sameDirection = previousNodeIsForward !== null && nextNodeIsForward !== null && previousNodeIsForward === nextNodeIsForward
-
-          // we've already visited the next node and we're going the same direction as the last time we've visited it
+          
+          // we're visiting the same node we just visited from the same direction
           if (sameDirection) {
             reads[idx].path[pathIdx].betweenCycle = true;
           }
         }
+
 
 
         elementsWithoutNode.push({

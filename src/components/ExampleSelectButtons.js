@@ -87,7 +87,16 @@ class ExampleSelectButtons extends Component {
             this.handleClick(dataOriginTypes.EXAMPLE_8, "plainColors")
           }
         >
-          Multiple Nodes Cycle
+          Multiple Nodes Cycle 1
+        </Button>
+        <Button
+          color="primary"
+          id="example9"
+          onClick={() =>
+            this.handleClick(dataOriginTypes.EXAMPLE_9, "plainColors")
+          }
+        >
+          Multiple Nodes Cycle 2
         </Button>
       </Form>
     );
