@@ -75,16 +75,17 @@ These are the fields that can be included in the URL:
    [Displaying Visualizations](#displaying-visualizations). This region will be loaded in the tubemap visualization once the link is followed.
    * Example: `region=17:3A1-100`
 3. `bedfile`
-   The `bedFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the bed file. 
+   The `bedFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the bed file. It is an optional field.
    * Examples:
       * `bedFile=exampleData/internal/snp1kg-BRCA1.bed`
       * `bedfile=https://raw.githubusercontent.com/vgteam/sequenceTubeMap/ca4f2485231ee4182173bec19489ba940b27461a/exampleData/cactus.bed`
+      * `bedfile=none`
       
    More information on bedfile structure and creation is documented [here](https://github.com/vgteam/sequenceTubeMap?tab=readme-ov-file#preparing-subgraphs-in-advance). 
 4. `datatype`
    Describes type of data as `built-in`, `mounted files`, or synthetic `examples`.
-      * `built-in`: If the `datatype` field is set to `built-in`, the `name` field must be set to the name of a preset defined in `DATA_SOURCES` in `config.json`.
-      * `mounted files`: If the `datatype` field is set to `mounted files`, the `name` field must be set to custom, and the user may select custom tracks along with an optional bedfile.
+      * `built-in`: If the `datatype` field is set to `built-in`, you should set the `name` field to the name of a preset defined in `DATA_SOURCES` in `config.json`.
+      * `mounted files`: If the `datatype` field is set to `mounted files`, the `name` field must be set to custom, and you should select custom tracks along with an optional bedfile.
       * `examples`: Links to synthetic examples cannot currently be created.
    * Example: `dataType=built-in`
 5. `Simplify`. 
@@ -94,7 +95,3 @@ These are the fields that can be included in the URL:
    Name of Data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `datatype` is set to `built-in`. You do not have to use these presets. 
    * Example: `name=snp1kg-BRCA1`
 
-
-ex: http://127.0.0.1:3001?name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in&simplify=false
-
-params  name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in&simplify=false
