@@ -579,6 +579,9 @@ class HeaderForm extends Component {
     // Returns null if there is no corresponding coords
     // i: number that corresponds to record
     // Find index of given description in regionInfo
+    if (!this.state.regionInfo["desc"]) {
+      return null;
+    }
     const i = this.state.regionInfo["desc"].findIndex((d) => d === desc);
     if (i === -1)
       // Not found
@@ -588,9 +591,9 @@ class HeaderForm extends Component {
   
   // Get the description of the region with the given coordinates, or null if no such region exists.
   getRegionDescByCoords = (coords) => {
-    for (let i = 0; i < this.state.regionInfo["chr"].length; i++) {
+    for (let i = 0; i < this.state.regionInfo["chr"]?.length ?? 0; i++) {
       if (coords === regionStringFromRegionIndex(i, this.state.regionInfo)) {
-        return this.state.regionInfo["desc"][i];
+        return this.state.regionInfo["desc"]?.[i] ?? null;
       }
     }
     return null;
