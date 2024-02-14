@@ -574,48 +574,42 @@ class HeaderForm extends Component {
     }
   };
 
-  getRegionCoords = (desc) => {
+  getRegionCoordsByDesc = (desc) => {
     // Given a region description (string), return the actual corresponding coordinates
     // Returns null if there is no corresponding coords
     // i: number that corresponds to record
     // Find index of given description in regionInfo
+    if (!this.state.regionInfo["desc"]) {
+      return null;
+    }
     const i = this.state.regionInfo["desc"].findIndex((d) => d === desc);
     if (i === -1)
       // Not found
       return null;
-    // Find corresponding chr, start, and end
-    const regionChr = this.state.regionInfo["chr"][i];
-    const regionStart = this.state.regionInfo["start"][i];
-    const regionEnd = this.state.regionInfo["end"][i];
-    // Combine chr, start, and end to get region string
-    const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
-    return regionString;
+    return regionStringFromRegionIndex(i, this.state.regionInfo);
   };
-
   
-  
-  
-  // In addition to a new region value, also takes tracks and chunk associated with the region
-  // Update current track if the new tracks are valid
-  // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
-  // Tracks remain unchanged if neither condition is met
-  handleRegionChange = async (value, desc) => {
-    // Update region description
-    this.setState({ desc: desc });
-
-    // After user selects a region name or coordinates,
-    // update path, region, and associated tracks(if applicable)
-
-    // Update path and region
-    let coords = value;
-    if (
-      this.state.regionInfo.hasOwnProperty("desc") &&
-      this.state.regionInfo["desc"].includes(value)
-    ) {
-      // Just a description was selected, get coords
-      coords = this.getRegionCoords(value);
+  // Get the description of the region with the given coordinates, or null if no such region exists.
+  getRegionDescByCoords = (coords) => {
+    for (let i = 0; i < this.state.regionInfo["chr"]?.length ?? 0; i++) {
+      if (coords === regionStringFromRegionIndex(i, this.state.regionInfo)) {
+        return this.state.regionInfo["desc"]?.[i] ?? null;
+      }
     }
-    this.setState({ region: coords });
+    return null;
+  }
+  
+  // Adopt a new region
+  // Update the region description
+  // Update current tracks if the stored tracks for the region are valid
+  // Otherwise check if the current bed file has associated tracks
+  // Tracks remain unchanged if neither condition is met
+  handleRegionChange = async (coords) => {
+    // Update region coords and description
+    this.setState({
+      region: coords,
+      desc: this.getRegionDescByCoords(coords),
+    });
 
     let coordsToMetaData = {};
 
@@ -694,7 +688,7 @@ class HeaderForm extends Component {
 
   // Budge the region left or right by the given negative or positive fraction
   // of its width.
-  budgeRegion(fraction) {
+  async budgeRegion(fraction) {
     let parsedRegion = parseRegion(this.state.region);
 
     if (parsedRegion.distance !== undefined) {
@@ -709,11 +703,9 @@ class HeaderForm extends Component {
       parsedRegion.start = Math.max(0, Math.round(parsedRegion.start + shift));
       parsedRegion.end = Math.max(0, Math.round(parsedRegion.end + shift));
     }
-
+    
+    await this.handleRegionChange(stringifyRegion(parsedRegion));
     this.setState(
-      (state) => ({
-        region: stringifyRegion(parsedRegion),
-      }),
       () => this.handleGoButton()
     );
   }
@@ -721,16 +713,14 @@ class HeaderForm extends Component {
 
   /* Offset the region left or right by the given negative or positive fraction*/
   // offset: +1 or -1
-  jumpRegion(offset) {
+  async jumpRegion(offset) {
     let regionIndex = determineRegionIndex(this.state.region, this.state.regionInfo) ?? 0;
     if ((offset === -1 && this.canGoLeft(regionIndex)) || (offset === 1 && this.canGoRight(regionIndex))){
       regionIndex += offset;
     }
     let regionString = regionStringFromRegionIndex(regionIndex, this.state.regionInfo);
+    await this.handleRegionChange(regionString);
     this.setState(
-      (state) => ({
-        region: regionString,
-      }),
       () => this.handleGoButton()
     );
   }

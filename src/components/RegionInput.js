@@ -68,7 +68,7 @@ export const RegionInput = ({
             if (regionObject) {
               regionValue = regionObject.value;
             }
-            handleRegionChange(regionValue, regionToDesc.get(regionValue));
+            handleRegionChange(regionValue);
           }}
           options={displayRegions}
           renderInput={(params) => (

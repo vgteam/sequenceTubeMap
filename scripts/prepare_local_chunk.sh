@@ -4,17 +4,20 @@ set -e
 function usage() {
     echo >&2 "${0}: Prepare a tube map chunk and BED line on standard output from a pre-made subgraph. Only supports paths, not haplotypes."
     echo >&2
-    echo >&2 "Usage: ${0} -x subgraph.xg -r chr1:1-100 [-d 'Description of region'] [-n 123 [-n 456]] -o chunk-chr1-1-100 [-g mygam1.gam [-g mygam2.gam ...]] >> regions.bed"
+    echo >&2 "Usage: ${0} -x subgraph.xg -r chr1:1-100 [-d 'Description of region'] [-n 123 [-n 456]] -o chunk-chr1-1-100 [-g mygam1.gam [-p '{\"mainPalette\": \"blues\", \"auxPalette\": \"reds\"}'] [-g mygam2.gam [-p ...] ...]] >> regions.bed"
     exit 1
 }
 
+GAM_FILES=()
+GAM_PALETTES=()
 NODE_COLORS=()
 
-while getopts x:g:r:o:d:n: flag
+while getopts x:g:p:r:o:d:n: flag
 do
     case "${flag}" in
         x) GRAPH_FILE=${OPTARG};;
         g) GAM_FILES+=("$OPTARG");;
+        p) GAM_PALETTES+=("$OPTARG");;
         r) REGION=${OPTARG};;
         o) OUTDIR=${OPTARG};;
         d) DESC="${OPTARG}";;
@@ -82,13 +85,16 @@ printf "${REGION_CONTIG}\t${REGION_START}\t${REGION_END}" > $OUTDIR/regions.tsv
 
 echo >&2 "Gam Files:"
 GAM_NUM=0
-READ_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultReadColorPalette')"
+DEFAULT_READ_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultReadColorPalette')"
 for GAM_FILE in "${GAM_FILES[@]}"; do
     echo >&2 " - $GAM_FILE"
-
+    GAM_PALETTE="${GAM_PALETTES[${GAM_NUM}]}"
+    if [[ -z "${GAM_PALETTE}" ]] ; then
+        GAM_PALETTE="${DEFAULT_READ_PALETTE}"
+    fi
     GAM_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $GAM_FILE)
     # construct track JSON for each gam file
-    jq -n --arg trackFile "${GAM_FILE_PATH}" --arg trackType "read" --argjson trackColorSettings "$READ_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
+    jq -n --arg trackFile "${GAM_FILE_PATH}" --arg trackType "read" --argjson trackColorSettings "$GAM_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
     # Work out a chunk-internal GAM name with the same leading numbering vg chunk uses
     if [[ "${GAM_NUM}" == "0" ]] ; then
         GAM_LEADER="chunk"
