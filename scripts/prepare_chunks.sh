@@ -8,6 +8,7 @@ function usage() {
     exit 1
 }
 
+GAM_FILES=()
 NODE_COLORS=()
 
 while getopts x:h:g:r:o:d:n: flag
