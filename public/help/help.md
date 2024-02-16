@@ -69,19 +69,17 @@ These are the fields that can be included in the URL:
       * Examples
          * `tracks[0][trackColorSettings][mainPalette]=greys`
          * `tracks[0][trackColorSettings][auxPalette]=ygreys`
-         * `colorReadsByMappingQuality = false`
+         * `colorReadsByMappingQuality=true`
 2. `region`
    This is a region input that is documented at step 3 of
    [Displaying Visualizations](#displaying-visualizations). This region will be loaded in the tubemap visualization once the link is followed.
    * Example: `region=17:3A1-100`
 3. `bedfile`
-   The `bedFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the bed file. It is an optional field.
+   The `bedFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the bed file. It is an optional field. More information on bedfile structure and creation is documented [here](https://github.com/vgteam/sequenceTubeMap?tab=readme-ov-file#preparing-subgraphs-in-advance). 
    * Examples:
       * `bedFile=exampleData/internal/snp1kg-BRCA1.bed`
       * `bedfile=https://raw.githubusercontent.com/vgteam/sequenceTubeMap/ca4f2485231ee4182173bec19489ba940b27461a/exampleData/cactus.bed`
       * `bedfile=none`
-      
-   More information on bedfile structure and creation is documented [here](https://github.com/vgteam/sequenceTubeMap?tab=readme-ov-file#preparing-subgraphs-in-advance). 
 4. `datatype`
    Describes type of data as `built-in`, `mounted files`, or synthetic `examples`.
       * `built-in`: If the `datatype` field is set to `built-in`, you should set the `name` field to the name of a preset defined in `DATA_SOURCES` in `config.json`.
