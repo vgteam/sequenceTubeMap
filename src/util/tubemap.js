@@ -679,55 +679,37 @@ function placeReads() {
         // previous y value from pathIdx - 1 might not exist yet if that segment is also without node 
         // use previous y value from last segment with node instead 
         let lastIndex = pathIdx - 1;
-        let previousPathWithNode;
-        while ((previousPathWithNode?.node === null || !previousPathWithNode?.node) && lastIndex >= 0) {
-          previousPathWithNode = reads[idx].path[lastIndex];
+        let previousVisitToNode;
+        while ((previousVisitToNode?.node === null || !previousVisitToNode?.node) && lastIndex >= 0) {
+          previousVisitToNode = reads[idx].path[lastIndex];
           lastIndex = lastIndex - 1;
         }
 
-        let previousValidY = previousPathWithNode?.y;
+        let previousValidY = previousVisitToNode?.y;
 
         // sometimes, elements without nodes are between 2 segments going to a node we've already visited, from the same direction
         // this means we're looping back to a node we've already been to, and we should sort in reverse
         
         // Find the next node in our path
         let nextPathIndex = pathIdx + 1
-        let nextPathWithNode = reads[idx].path[nextPathIndex];
-        while ((nextPathWithNode?.node === null || !nextPathWithNode?.node) && nextPathIndex < reads[idx].path.length) {
-          nextPathWithNode = reads[idx].path[nextPathIndex];
+        let nextVisitToNode = reads[idx].path[nextPathIndex];
+        while ((nextVisitToNode?.node === null || !nextVisitToNode?.node) && nextPathIndex < reads[idx].path.length) {
+          nextVisitToNode = reads[idx].path[nextPathIndex];
           nextPathIndex = nextPathIndex + 1;
         }
 
-        let nextNodeOrder = nextPathWithNode?.order;
-        let previousNodeOrder = previousPathWithNode?.order;
+        // Specifically referring to segments between a cycle that's traversing from right to left
+        let betweenCycleReverseTraversal = 
+        // A segment can be between a cycle if it there are nodes on both sides
+        (nextVisitToNode && previousVisitToNode) &&
+        // Make sure the visitToNode objects are what we expect
+        (typeof previousVisitToNode.order !== "undefined" && typeof nextVisitToNode.order !== "undefined" && typeof nextVisitToNode.isForward !== "undefined" && typeof previousVisitToNode.isForward !== "undefined") &&
+        // A segment is between a cycle if the next node it visits is behind the previous node it visited
+        ((previousVisitToNode.order > nextVisitToNode.order) ||
+        // A segment can also be between a cycle if it's visiting the same node it just visited in the same direction
+        (nextVisitToNode.order === previousVisitToNode.order && nextVisitToNode.isForward === previousVisitToNode.isForward));
 
-        // if the previous segment and the next segment is going to the same node
-        let nextNodeJustVisited = previousNodeOrder !== null && nextNodeOrder !== null && previousNodeOrder === nextNodeOrder;
-
-      
-        // a segment can also be in a loop if the next node is behind on the map
-        let nextNodeBehind = previousNodeOrder !== null && nextNodeOrder !== null && previousPathWithNode.order > nextNodeOrder;
-
-
-        reads[idx].path[pathIdx].betweenCycle = false;
-        if (nextNodeBehind) {
-          // the segment has to loop regardless of which direction the read goes in
-          reads[idx].path[pathIdx].betweenCycle = true;
-        } else if (nextNodeJustVisited) {
-          // the segment doesn't have to loop if going in opposite direction from the node
-          let previousNodeIsForward = previousPathWithNode?.isForward;
-          let nextNodeIsForward = nextPathWithNode?.isForward;
-
-          // if the next segment(to a node) and previousl segment(from a node) is going in the same direction
-          let sameDirection = previousNodeIsForward !== null && nextNodeIsForward !== null && previousNodeIsForward === nextNodeIsForward
-          
-          // we're visiting the same node we just visited from the same direction
-          if (sameDirection) {
-            reads[idx].path[pathIdx].betweenCycle = true;
-          }
-        }
-
-
+        reads[idx].path[pathIdx].betweenCycleReverseTraversal = betweenCycleReverseTraversal;
 
         elementsWithoutNode.push({
           readIndex: idx,
@@ -888,10 +870,10 @@ function compareNoNodeReadsByPreviousY(a, b) {
   const segmentA = reads[a.readIndex].path[a.pathIndex];
   const segmentB = reads[b.readIndex].path[b.pathIndex];
   if (segmentA.order === segmentB.order) {
-    // we want to sort of the reverse when the segment is between a cycle
-    // this ensures a loop that starts on the outside, stays on the outside
-    // and loops are rolled in order
-    if (segmentA?.betweenCycle && segmentB?.betweenCycle) {
+    // We want to sort in reverse order when the segment is along the reverse-going part of a cycle.
+    // This ensures a loop that starts on the outside, stays on the outside,
+    // and rolls up in order with other loops.
+    if (segmentA?.betweenCycleReverseTraversal && segmentB?.betweenCycleReverseTraversal) {
       return b.previousY - a.previousY;
     } else {
       return a.previousY - b.previousY;
@@ -901,15 +883,10 @@ function compareNoNodeReadsByPreviousY(a, b) {
 }
 
 // compare read segments by where they are going to
-function compareReadOutgoingSegmentsByGoingTo(a, b) {
+function compareReadOutgoingSegmentsByGoingTo([readIndexA, pathIndexA], [readIndexB, pathIndexB]) {
   // Expect two arrays both containing 2 integers.
   // The first index of each array contains the read index
   // The second index of each array contains the path index
-  let pathIndexA = a[1];
-  let pathIndexB = b[1];
-  let readIndexA = a[0];
-  let readIndexB = b[0];
-
 
   // Segments are first sorted by the y value of their last node,
   // then by the node they end on,
