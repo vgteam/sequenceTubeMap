@@ -968,6 +968,37 @@ function compareReadIncomingSegmentsByComingFrom(a, b) {
   ); // neither has y-property
 }
 
+// Compare tracks based on ordering at their first convergence
+function compareTrackByInitialOrdering(trackA, trackB) {
+  // Find the first node where the two tracks converge, sort by layer
+  if (!trackA.hasOwnProperty("path")) return -1;
+  if (!trackB.hasOwnProperty("path")) return 1;
+
+  const pathA = trackA.path;
+  const pathB = trackB.path;
+
+  let AIndex = 0;
+  let BIndex = 0;
+  while (AIndex < pathA.length && BIndex < pathB.length) {
+    let trackAOrder = pathA[AIndex].order;
+    let trackBOrder = pathB[BIndex].order;
+    if (trackAOrder === trackBOrder && pathA[AIndex].node && pathB[BIndex].node) {
+      return pathB[BIndex].y - pathA[AIndex].y;
+    } else if (trackAOrder < trackBOrder) {
+      AIndex += 1;
+    } else if (trackAOrder > trackBOrder) {
+      BIndex += 1;
+    } else {
+      // Orders are equal but are traversing out of nodes
+      AIndex += 1;
+      BIndex += 1;
+    }
+  }
+
+  // Tracks do not converge, keep the same ordering
+  return 0;
+}
+
 // compare 2 reads which are completely within a single node
 function compareInternalReads(idxA, idxB) {
   const a = reads[idxA];
@@ -2665,6 +2696,9 @@ function generateSVGShapesFromPath() {
     }
   });
 
+  // Helps generation of verticalRectangles, correct increments of extraRight and extraLeft
+  tracks.sort(compareTrackByInitialOrdering);
+  
   tracks.forEach((track) => {
     highlight = "plain";
     trackColor = generateTrackColor(track, highlight);
@@ -2999,6 +3033,8 @@ function createFeatureRectangle(
   return { xStart: rectXStart, highlight: currentHighlight };
 }
 
+
+
 const MIN_BEND_WIDTH = 7;
 
 function generateForwardToReverse(
@@ -3016,6 +3052,7 @@ function generateForwardToReverse(
   const yTop = Math.min(yStart, yEnd);
   const yBottom = Math.max(yStart, yEnd);
   const radius = MIN_BEND_WIDTH;
+
 
   trackVerticalRectangles.push({
     // elongate incoming rectangle a bit to the right
@@ -3049,6 +3086,7 @@ function generateForwardToReverse(
     name: trackName,
     type,
   }); // elongate outgoing rectangle a bit to the right
+
 
   let d = `M ${x + 5} ${yBottom}`;
   d += ` Q ${x + 5 + radius} ${yBottom} ${x + 5 + radius} ${yBottom - radius}`;
