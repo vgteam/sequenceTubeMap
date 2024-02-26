@@ -44,8 +44,25 @@ const CLEAR_STATE = {
   // Description for the selected region, is not displayed when empty
   desc: "",
 
-  // This tracks several arrays of BED region data, stored by data type, with
+  // This tracks several arrays (desc, chr, start, end) of BED region data, with
   // one entry in each array per region.
+  // desc: description of region, i.e. "region with no source graph available"
+  // chr: path in graph where the region is on, i.e. in ref:2000-3000, "ref" is the chr
+  // start: start of the region, i.e. in ref:2000-3000, 2000 is the start
+  // end: end of the region, i.e. in ref:2000-3000, 3000 is the end
+  // chunk: url/directory for preexisting cached chunk, or empty string if not available
+  // tracks: object full of tracks to apply when user selects region, or null
+  // so regionInfo might look like: 
+  /*
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+  */
   regionInfo: {},
 
   pathNames: [],
@@ -169,6 +186,77 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
   }
 
   return true;
+}
+
+/* determine the current region: accepts a region string and returns the region index
+
+  example of regionInfo:
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+
+  examples: 
+  if the regionString is "17:1-100", it would be parsed into {contig: "17", start: 1, end: 100} -> 0
+  if the regionString is "17:1000-1200", it would be parsed into {contig: "17", start: 1000, end: 1200} -> 1
+  if the regionString is "17:2000-3000", it cannot be found - return null
+
+  The function uses this approach to find the regionIndex given regionString and regionInfo:
+  function (region string){
+    parse(region string) -> return {contig, start, end}
+    loop over chr in region info
+      determine if contig, start, end are present at the current index
+      if present: return index
+    return null
+  }
+*/
+export const determineRegionIndex = (regionString, regionInfo) => {
+  let parsedRegion;
+  try {
+    parsedRegion = parseRegion(regionString);
+  } catch(error) {
+    return null;
+  }
+  if (!regionInfo["chr"]){
+    return null;
+  }
+  for (let i = 0; i < regionInfo["chr"].length; i++){
+    if ((parseInt(regionInfo["start"][i]) === parsedRegion.start) 
+        && (parseInt(regionInfo["end"][i]) === parsedRegion.end)
+        && (regionInfo["chr"][i] === parsedRegion.contig)){
+          return i;
+    }
+  }
+  return null;
+}
+
+/*
+  This function takes in a regionIndex and regionInfo, and reconstructs a regionString from them
+  assumes that index is valid in regionInfo
+
+  example of regionInfo:
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+
+  example of regionIndex: 0
+
+  example of regionString: "17:1-100"
+*/
+export const regionStringFromRegionIndex = (regionIndex, regionInfo) => {
+  let regionStart = regionInfo["start"][regionIndex];
+  let regionEnd = regionInfo["end"][regionIndex];
+  let regionContig = regionInfo["chr"][regionIndex];
+  return regionContig + ":" + regionStart + "-" + regionEnd;
 }
 
 class HeaderForm extends Component {
@@ -486,45 +574,42 @@ class HeaderForm extends Component {
     }
   };
 
-  getRegionCoords = (desc) => {
+  getRegionCoordsByDesc = (desc) => {
     // Given a region description (string), return the actual corresponding coordinates
     // Returns null if there is no corresponding coords
     // i: number that corresponds to record
     // Find index of given description in regionInfo
+    if (!this.state.regionInfo["desc"]) {
+      return null;
+    }
     const i = this.state.regionInfo["desc"].findIndex((d) => d === desc);
     if (i === -1)
       // Not found
       return null;
-    // Find corresponding chr, start, and end
-    const regionChr = this.state.regionInfo["chr"][i];
-    const regionStart = this.state.regionInfo["start"][i];
-    const regionEnd = this.state.regionInfo["end"][i];
-    // Combine chr, start, and end to get region string
-    const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
-    return regionString;
+    return regionStringFromRegionIndex(i, this.state.regionInfo);
   };
-
-  // In addition to a new region value, also takes tracks and chunk associated with the region
-  // Update current track if the new tracks are valid
-  // Otherwise check if the current bed file is a url, and if tracks can be fetched from said url
-  // Tracks remain unchanged if neither condition is met
-  handleRegionChange = async (value, desc) => {
-    // Update region description
-    this.setState({ desc: desc });
-
-    // After user selects a region name or coordinates,
-    // update path, region, and associated tracks(if applicable)
-
-    // Update path and region
-    let coords = value;
-    if (
-      this.state.regionInfo.hasOwnProperty("desc") &&
-      this.state.regionInfo["desc"].includes(value)
-    ) {
-      // Just a description was selected, get coords
-      coords = this.getRegionCoords(value);
+  
+  // Get the description of the region with the given coordinates, or null if no such region exists.
+  getRegionDescByCoords = (coords) => {
+    for (let i = 0; i < this.state.regionInfo["chr"]?.length ?? 0; i++) {
+      if (coords === regionStringFromRegionIndex(i, this.state.regionInfo)) {
+        return this.state.regionInfo["desc"]?.[i] ?? null;
+      }
     }
-    this.setState({ region: coords });
+    return null;
+  }
+  
+  // Adopt a new region
+  // Update the region description
+  // Update current tracks if the stored tracks for the region are valid
+  // Otherwise check if the current bed file has associated tracks
+  // Tracks remain unchanged if neither condition is met
+  handleRegionChange = async (coords) => {
+    // Update region coords and description
+    this.setState({
+      region: coords,
+      desc: this.getRegionDescByCoords(coords),
+    });
 
     let coordsToMetaData = {};
 
@@ -603,7 +688,7 @@ class HeaderForm extends Component {
 
   // Budge the region left or right by the given negative or positive fraction
   // of its width.
-  budgeRegion(fraction) {
+  async budgeRegion(fraction) {
     let parsedRegion = parseRegion(this.state.region);
 
     if (parsedRegion.distance !== undefined) {
@@ -618,21 +703,62 @@ class HeaderForm extends Component {
       parsedRegion.start = Math.max(0, Math.round(parsedRegion.start + shift));
       parsedRegion.end = Math.max(0, Math.round(parsedRegion.end + shift));
     }
-
+    
+    await this.handleRegionChange(stringifyRegion(parsedRegion));
     this.setState(
-      (state) => ({
-        region: stringifyRegion(parsedRegion),
-      }),
       () => this.handleGoButton()
     );
   }
 
+
+  /* Offset the region left or right by the given negative or positive fraction*/
+  // offset: +1 or -1
+  async jumpRegion(offset) {
+    let regionIndex = determineRegionIndex(this.state.region, this.state.regionInfo) ?? 0;
+    if ((offset === -1 && this.canGoLeft(regionIndex)) || (offset === 1 && this.canGoRight(regionIndex))){
+      regionIndex += offset;
+    }
+    let regionString = regionStringFromRegionIndex(regionIndex, this.state.regionInfo);
+    await this.handleRegionChange(regionString);
+    this.setState(
+      () => this.handleGoButton()
+    );
+  }
+
+  canGoLeft = (regionIndex) => {
+    if (this.state.bedFile){
+      return (regionIndex > 0);
+    } else {
+      return true;
+    }
+  }
+
+  canGoRight = (regionIndex) => {
+    if (this.state.bedFile){
+      if (!this.state.regionInfo["chr"]){
+        return false;
+      }
+      return (regionIndex < ((this.state.regionInfo["chr"].length) - 1));
+    } else {
+      return true;
+    }
+  }
+
+
   handleGoRight = () => {
-    this.budgeRegion(0.5);
+    if (this.state.bedFile){
+      this.jumpRegion(1);
+    } else {
+      this.budgeRegion(0.5);
+    }
   };
 
   handleGoLeft = () => {
-    this.budgeRegion(-0.5);
+    if (this.state.bedFile){
+      this.jumpRegion(-1);
+    } else {
+      this.budgeRegion(-0.5);
+    }
   };
 
   showFileSizeAlert = () => {
@@ -736,8 +862,12 @@ class HeaderForm extends Component {
         uploadInProgress={this.state.uploadInProgress}
         getCurrentViewTarget={this.props.getCurrentViewTarget}
         viewTargetHasChange={viewTargetHasChange}
+        canGoLeft={this.canGoLeft(determineRegionIndex(this.state.region, this.state.regionInfo))}
+        canGoRight={this.canGoRight(determineRegionIndex(this.state.region, this.state.regionInfo))}
       />
     );
+
+    
 
     return (
       <div>

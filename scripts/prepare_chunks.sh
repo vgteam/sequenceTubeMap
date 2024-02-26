@@ -4,18 +4,21 @@ set -e
 function usage() {
     echo >&2 "${0}: Extract graph and read chunks for a region, producing a referencing line for a BED file on standard output"
     echo >&2
-    echo >&2 "Usage: ${0} -x mygraph.xg [-h mygraph.gbwt] -r chr1:1-100 [-d 'Description of region'] [-n 123 [-n 456]] -o chunk-chr1-1-100 [-g mygam1.gam [-g mygam2.gam ...]] >> regions.bed"
+    echo >&2 "Usage: ${0} -x mygraph.xg [-h mygraph.gbwt] -r chr1:1-100 [-d 'Description of region'] [-n 123 [-n 456]] -o chunk-chr1-1-100 [-g mygam1.gam  [-p '{\"mainPalette\": \"blues\", \"auxPalette\": \"reds\"}'] [-g mygam2.gam [-p ...] ...]] >> regions.bed"
     exit 1
 }
 
+GAM_FILES=()
+GAM_PALETTES=()
 NODE_COLORS=()
 
-while getopts x:h:g:r:o:d:n: flag
+while getopts x:h:g:p:r:o:d:n: flag
 do
     case "${flag}" in
         x) GRAPH_FILE=${OPTARG};;
         h) HAPLOTYPE_FILE=${OPTARG};;
         g) GAM_FILES+=("$OPTARG");;
+        p) GAM_PALETTES+=("$OPTARG");;
         r) REGION=${OPTARG};;
         o) OUTDIR=${OPTARG};;
         d) DESC="${OPTARG}";;
@@ -84,13 +87,19 @@ fi
 
 # construct track JSON for each gam file
 echo >&2 "Gam Files:"
-READ_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultReadColorPalette')"
+GAM_NUM=0
+DEFAULT_READ_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultReadColorPalette')"
 echo >&2 "Read Palette: $READ_PALETTE"
 for GAM_FILE in "${GAM_FILES[@]}"; do
+    GAM_PALETTE="${GAM_PALETTES[${GAM_NUM}]}"
+    if [[ -z "${GAM_PALETTE}" ]] ; then
+        GAM_PALETTE="${DEFAULT_READ_PALETTE}"
+    fi
     GAM_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $GAM_FILE)
     echo >&2 " - $GAM_FILE_PATH"
-    jq -n --arg trackFile "${GAM_FILE_PATH}" --arg trackType "read" --argjson trackColorSettings "$READ_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
+    jq -n --arg trackFile "${GAM_FILE_PATH}" --arg trackType "read" --argjson trackColorSettings "$GAM_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
     vg_chunk_params+=(-a $GAM_FILE)
+    GAM_NUM=$((GAM_NUM + 1))
 done
 
 # put all tracks objects into an array
