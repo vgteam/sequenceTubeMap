@@ -598,6 +598,16 @@ class HeaderForm extends Component {
     }
     return null;
   }
+
+  // Function to convert array to object, where the key would be the index and the value
+  //  would be the value at the array index
+  convertArrayToObject = (array) => {
+    obj = new Object();
+    for(let i = 0; i < array.length; i++){
+      obj[i] = array[i];
+    }
+    return obj;
+  }
   
   // Adopt a new region
   // Update the region description
@@ -651,7 +661,8 @@ class HeaderForm extends Component {
         this.setState((laterState) => {
           if (laterState.region === coords) {
             // The user still has the same region selected, so apply the tracks we now have
-            return { tracks: json.tracks };
+            console.log("json tracks: ", json.tracks)
+            return this.convertArrayToObject(json.tracks);//{ tracks: json.tracks };
           }
           // Otherwise, don't apply the downloaded tracks, because they are no longer relevant.
           // TODO: Save the downloaded tracks in case the user selects the region again?
