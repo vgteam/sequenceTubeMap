@@ -488,7 +488,6 @@ function createTubeMap() {
   generateLaneAssignment();
 
   if (config.showExonsFlag === true && bed !== null) addTrackFeatures();
-  generateNodeXCoords();
 
   if (reads && config.showReads) {
     generateReadOnlyNodeAttributes();
@@ -504,6 +503,8 @@ function createTubeMap() {
       node.internalReads = [];
     });
   }
+
+  generateNodeXCoords();
 
   generateSVGShapesFromPath(nodes, tracks);
   if (DEBUG) {
@@ -676,12 +677,39 @@ function placeReads() {
       if (!element.hasOwnProperty("y")) {
         // previous y value from pathIdx - 1 might not exist yet if that segment is also without node 
         // use previous y value from last segment with node instead 
-        let previousValidY = null;
         let lastIndex = pathIdx - 1;
-        while (previousValidY === null && lastIndex >= 0) {
-          previousValidY = reads[idx].path[lastIndex].y;
+        let previousVisitToNode;
+        while ((previousVisitToNode?.node === null || !previousVisitToNode?.node) && lastIndex >= 0) {
+          previousVisitToNode = reads[idx].path[lastIndex];
           lastIndex = lastIndex - 1;
         }
+
+        let previousValidY = previousVisitToNode?.y;
+
+        // sometimes, elements without nodes are between 2 segments going to a node we've already visited, from the same direction
+        // this means we're looping back to a node we've already been to, and we should sort in reverse
+        
+        // Find the next node in our path
+        let nextPathIndex = pathIdx + 1
+        let nextVisitToNode = reads[idx].path[nextPathIndex];
+        while ((nextVisitToNode?.node === null || !nextVisitToNode?.node) && nextPathIndex < reads[idx].path.length) {
+          nextVisitToNode = reads[idx].path[nextPathIndex];
+          nextPathIndex = nextPathIndex + 1;
+        }
+
+        // Specifically referring to segments between a cycle that's traversing from right to left
+        let betweenCycleReverseTraversal = 
+        // A segment can be between a cycle if it there are nodes on both sides
+        (nextVisitToNode && previousVisitToNode) &&
+        // Make sure the visitToNode objects are what we expect
+        (typeof previousVisitToNode.order !== "undefined" && typeof nextVisitToNode.order !== "undefined" && typeof nextVisitToNode.isForward !== "undefined" && typeof previousVisitToNode.isForward !== "undefined") &&
+        // A segment is between a cycle if the next node it visits is behind the previous node it visited
+        ((previousVisitToNode.order > nextVisitToNode.order) ||
+        // A segment can also be between a cycle if it's visiting the same node it just visited in the same direction
+        (nextVisitToNode.order === previousVisitToNode.order && nextVisitToNode.isForward === previousVisitToNode.isForward));
+
+        reads[idx].path[pathIdx].betweenCycleReverseTraversal = betweenCycleReverseTraversal;
+
         elementsWithoutNode.push({
           readIndex: idx,
           pathIndex: pathIdx,
@@ -841,31 +869,61 @@ function compareNoNodeReadsByPreviousY(a, b) {
   const segmentA = reads[a.readIndex].path[a.pathIndex];
   const segmentB = reads[b.readIndex].path[b.pathIndex];
   if (segmentA.order === segmentB.order) {
-    return a.previousY - b.previousY;
+    // We want to sort in reverse order when the segment is along the reverse-going part of a cycle.
+    // This ensures a loop that starts on the outside, stays on the outside,
+    // and rolls up in order with other loops.
+    if (segmentA?.betweenCycleReverseTraversal && segmentB?.betweenCycleReverseTraversal) {
+      return b.previousY - a.previousY;
+    } else {
+      return a.previousY - b.previousY;
+    }
   }
   return segmentA.order - segmentB.order;
 }
 
 // compare read segments by where they are going to
-function compareReadOutgoingSegmentsByGoingTo(a, b) {
-  let pathIndexA = a[1];
-  let pathIndexB = b[1];
-  // let readA = reads[a[0]]
-  // let nodeIndexA = readA.path[pathIndexA].node;
-  let nodeA = nodes[reads[a[0]].path[pathIndexA].node];
-  let nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+function compareReadOutgoingSegmentsByGoingTo([readIndexA, pathIndexA], [readIndexB, pathIndexB]) {
+  // Expect two arrays both containing 2 integers.
+  // The first index of each array contains the read index
+  // The second index of each array contains the path index
+
+  // Segments are first sorted by the y value of their last node,
+  // then by the node they end on,
+  // then by length in final node
+  let previousValidYA = null;
+  let previousValidYB = null;
+  let lastPathIndexA = reads[readIndexA].path.length - 1;
+  let lastPathIndexB = reads[readIndexB].path.length - 1;
+  while ((previousValidYA === null || !previousValidYA) && lastPathIndexA >= 0) {
+    previousValidYA = reads[readIndexA].path[lastPathIndexA].y;
+    lastPathIndexA -= 1;
+  }
+  while ((previousValidYB === null || !previousValidYB) && lastPathIndexB >= 0) {
+    previousValidYB = reads[readIndexB].path[lastPathIndexB].y;
+    lastPathIndexB -= 1;
+  }
+  
+  if (previousValidYA && previousValidYB) {
+    return previousValidYA - previousValidYB;
+  }
+
+  // Couldn't find a valid y value for at least one of the reads, sort by which node reads end on
+  let nodeA = nodes[reads[readIndexA].path[pathIndexA].node];
+  let nodeB = nodes[reads[readIndexB].path[pathIndexB].node];
+  // Follow the reads' paths until we find the node they diverge at
+  // Or, they go through all the same nodes and we do a tiebreaker at the end
   while (nodeA !== null && nodeB !== null && nodeA === nodeB) {
-    if (pathIndexA < reads[a[0]].path.length - 1) {
+    if (pathIndexA < reads[readIndexA].path.length - 1) {
       pathIndexA += 1;
-      while (reads[a[0]].path[pathIndexA].node === null) pathIndexA += 1; // skip null nodes in path
-      nodeA = nodes[reads[a[0]].path[pathIndexA].node];
+      while (reads[readIndexA].path[pathIndexA].node === null) pathIndexA += 1; // skip null nodes in path
+      nodeA = nodes[reads[readIndexA].path[pathIndexA].node]; // the next node a is going to
     } else {
       nodeA = null;
     }
-    if (pathIndexB < reads[b[0]].path.length - 1) {
+    if (pathIndexB < reads[readIndexB].path.length - 1) {
       pathIndexB += 1;
-      while (reads[b[0]].path[pathIndexB].node === null) pathIndexB += 1; // skip null nodes in path
-      nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+      while (reads[readIndexB].path[pathIndexB].node === null) pathIndexB += 1; // skip null nodes in path
+      nodeB = nodes[reads[readIndexB].path[pathIndexB].node]; // the next node b is going to
     } else {
       nodeB = null;
     }
@@ -876,10 +934,13 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
   }
   if (nodeB !== null) return -1; // nodeB not null, nodeA null
   // both nodes are null -> both end in the same node
-  const beginDiff = reads[a[0]].firstNodeOffset - reads[b[0]].firstNodeOffset;
+  const beginDiff = reads[readIndexA].firstNodeOffset - reads[readIndexB].firstNodeOffset;
   if (beginDiff !== 0) return beginDiff;
-  // break tie: both reads cover the same nodes and begin at the same position -> compare by endPosition
-  return reads[a[0]].finalNodeCoverLength - reads[b[0]].finalNodeCoverLength;
+
+  // break tie: both reads cover the same nodes and begin at the same position
+
+  // One or both reads didn't have a previously valid Y value, compare by the endPosition of the read
+  return reads[readIndexA].finalNodeCoverLength - reads[readIndexB].finalNodeCoverLength;
 }
 
 // compare read segments by (y-coord of) where they are coming from
