@@ -37,9 +37,10 @@ Users can compose URLs that link to a specific view. To do so, users will requir
 
 These are the fields that can be included in the URL:
 1. `tracks` 
-   Information about tracks. Tracks are objects consisting of trackFile, trackType, and trackColorSettings. To retrieve this information, index the tracks array to access the object and respective keys.
 
-   A track JSON object might look like this:
+   Information about tracks. Tracks are objects consisting of `trackFile`, `trackType`, and `trackColorSettings`.
+
+   A track object in JSON format might look like this:
    ```
    {
       "trackFile": "exampleData/internal/snp1kg-BRCA1.vg.xg",
@@ -64,32 +65,37 @@ These are the fields that can be included in the URL:
          * The palettes are used differently for different track types
             * For graphs, the `mainPalette` colors the primary reference path while `auxPalette` is used for the other paths. 
             * For haplotypes, only the `mainPalette` is used. 
-            - For reads, the `mainPalette` colors the forward-strand reads and the `auxPalette` colors the backward-strand reads. 
+            - For reads, the `mainPalette` colors the forward-strand reads and the `auxPalette` colors the reverse-strand reads. 
       * `colorReadsByMappingQuality` is a boolean value that determines if reads are colored based on their mapping quality or not. It is an optional field that has a default of `false`. 
-      * Examples
+      * `trackColorSettings` examples
          * `tracks[0][trackColorSettings][mainPalette]=greys`
          * `tracks[0][trackColorSettings][auxPalette]=ygreys`
          * `colorReadsByMappingQuality=true`
 2. `region`
-   This is a region input that is documented at step 3 of
+
+   Region input. This is documented at step 3 of
    [Displaying Visualizations](#displaying-visualizations). This region will be loaded in the tubemap visualization once the link is followed.
-   * Example: `region=17:3A1-100`
-3. `bedfile`
-   The `bedFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the bed file. It is an optional field. More information on bedfile structure and creation is documented [here](https://github.com/vgteam/sequenceTubeMap?tab=readme-ov-file#preparing-subgraphs-in-advance). 
+   * examples: `region=17:3A1-100`
+3. `bedFile`
+
+   Path (from the server working directory) or URL (any HTTP/HTTPS URL) to the bed file. It is an optional field. More information on bed file structure and creation is documented [here](https://github.com/vgteam/sequenceTubeMap?tab=readme-ov-file#preparing-subgraphs-in-advance). 
    * Examples:
       * `bedFile=exampleData/internal/snp1kg-BRCA1.bed`
-      * `bedfile=https://raw.githubusercontent.com/vgteam/sequenceTubeMap/ca4f2485231ee4182173bec19489ba940b27461a/exampleData/cactus.bed`
-      * `bedfile=none`
+      * `bedFile=https://raw.githubusercontent.com/vgteam/sequenceTubeMap/ca4f2485231ee4182173bec19489ba940b27461a/exampleData/cactus.bed`
+      * `bedFile=none`
 4. `datatype`
-   Describes type of data as `built-in`, `mounted files`, or synthetic `examples`.
+
+   Data can be `built-in`, `mounted files`, or synthetic `examples`.
       * `built-in`: If the `datatype` field is set to `built-in`, you should set the `name` field to the name of a preset defined in `DATA_SOURCES` in `config.json`.
       * `mounted files`: If the `datatype` field is set to `mounted files`, the `name` field must be set to custom, and you should select custom tracks along with an optional bedfile.
       * `examples`: Links to synthetic examples cannot currently be created.
    * Example: `dataType=built-in`
 5. `Simplify`. 
-   This determines whether small snarls (e.g. single base indels and SNPs) are displayed or removed. It defaults to false, which means that the small snarls are not removed.
+
+   Whether small snarls (e.g. single base indels and SNPs) are displayed or removed. It defaults to false, which means that the small snarls are not removed.
    * Example: `simplify=false`
 6. `name` 
-   Name of Data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `datatype` is set to `built-in`. You do not have to use these presets. 
+
+   Name of data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `datatype` is set to `built-in`. You do not have to use these presets. 
    * Example: `name=snp1kg-BRCA1`
 
