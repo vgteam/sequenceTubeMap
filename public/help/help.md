@@ -33,9 +33,18 @@ The following procedure describes adding and updating settings of custom tracks.
 ![Go Button](helpGuideImages/img9.png)
 
 ##### How to make link-to-view URLs
-Users can compose URLs that link to a specific view. To do so, users will require specific information about files and tracks. The link has a [query string](https://en.wikipedia.org/wiki/Query_string#Structure) that consists of key-value pairs separated by ampersands, where the keys are not URL-econded and the values are URL-encoded. Keys can use brackets to encode hierarchical structures such as arrays and objects. For arrays, put a number in brackets to assign a new value to or access a value in that entry in the array, and for objects, put the key's name in brackets to assign a new value to or access a value in that entry in the object. The key's name should **not** be in quotes.
+Users can compose URLs that link to a specific view, or a visualization of genomic data. The link describes which tracks and files will be displayed. 
 
-These are the fields that can be included in the URL:
+###### Query String Encoding
+The link has a [query string](https://en.wikipedia.org/wiki/Query_string#Structure) that consists of key-value pairs separated by ampersands, where the keys are not URL-econded and the values are URL-encoded. 
+
+Keys can use brackets to encode hierarchical structures such as arrays and objects. 
+   * For arrays, put a number in brackets to assign a new value to or access a value in that entry in the array.
+   * For objects, put the key's name in brackets to assign a new value to or access a value in that entry in the object. 
+
+The key's name should **not** be in quotes.
+
+###### Fields that can be included in the link URL:
 1. `tracks` 
 
    Information about tracks. Tracks are objects consisting of `trackFile`, `trackType`, and `trackColorSettings`.
@@ -53,49 +62,60 @@ These are the fields that can be included in the URL:
    }
    ```
 
-   * The `trackFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the track file 
-     Examples:
-      * `tracks[0][trackFile]=exampleData/internal/snp1kg-BRCA1.vg.xg`
-      * `tracks[0][trackFile]=https://public.gi.ucsc.edu/~anovak/graphs/trivial-brca1.vg`
-   * The `trackType` specifies the type of the track, which can be "graph", "haplotype", "read"
-      * Example: `tracks[0][trackType]=graph`
-   * The `trackColorSettings` provides color information and is an optional setting.
-      * The color palettes are `mainPalette` and `auxPalette`. 
-         * The colors for the palettes can be hex codes starting with a `#`, or premade palettes: `greys`, `ygreys`, `blues`, `reds`, `plainColors`, or `lightColors`. 
-         * The palettes are used differently for different track types
-            * For graphs, the `mainPalette` colors the primary reference path while `auxPalette` is used for the other paths. 
-            * For haplotypes, only the `mainPalette` is used. 
-            - For reads, the `mainPalette` colors the forward-strand reads and the `auxPalette` colors the reverse-strand reads. 
-      * `colorReadsByMappingQuality` is a boolean value that determines if reads are colored based on their mapping quality or not. It is an optional field that has a default of `false`. 
-      * `trackColorSettings` examples
-         * `tracks[0][trackColorSettings][mainPalette]=greys`
-         * `tracks[0][trackColorSettings][auxPalette]=ygreys`
-         * `colorReadsByMappingQuality=true`
+   The collection of tracks wil be encoded as query string parameters starting with tracks.
+
+   * The `trackFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the track file. 
+     * Examples:
+         * File in server working directory: `tracks[0][trackFile]=exampleData/internal/snp1kg-BRCA1.vg.xg`.
+         * HTTP/HTTPS URL: `tracks[0][trackFile]=https://public.gi.ucsc.edu/~anovak/graphs/trivial-brca1.vg`.
+   * The `trackType` specifies the type of the track, which can be `graph`, `haplotype`, `read`.
+      * Example: `tracks[0][trackType]=graph`.
+   * `trackColorSettings` (optional): the color information for the track. It has subfields:
+      * `mainPalette` and `auxPalette` (optional): The "main" and "auxilliary" color palettes to use, respectively. The values for each palette can be a hex code starting with a `#`, or one of the premade palette names: `greys`, `ygreys`, `blues`, `reds`, `plainColors`, or `lightColors`.
+      * The palettes are used differently for different track types.
+         * Graphs: the `mainPalette` colors the primary reference path while `auxPalette` is used for the other paths. 
+         * Haplotypes: only the `mainPalette` is used. 
+         * Reads: the `mainPalette` colors the forward-strand reads and the `auxPalette` colors the reverse-strand reads. 
+         * Examples:
+            * `tracks[0][trackColorSettings][mainPalette]=greys`.
+            * `tracks[0][trackColorSettings][auxPalette]=ygreys`.
+      * `colorReadsByMappingQuality` (optional) is a boolean value that determines if reads are colored based on their mapping quality or not. It defaults to `false`. 
+         * Example: `tracks[0][trackColorSettings][colorReadsByMappingQuality]=true`.
+   
+
 2. `region`
 
-   Region input. This is documented at step 3 of
+   Region coordinates. This is documented at step 3 of
    [Displaying Visualizations](#displaying-visualizations). This region will be loaded in the tubemap visualization once the link is followed.
-   * examples: `region=17:3A1-100`
-3. `bedFile`
+      * Example: `region=17%3A1-100`.
 
-   Path (from the server working directory) or URL (any HTTP/HTTPS URL) to the bed file. It is an optional field. More information on bed file structure and creation is documented [here](https://github.com/vgteam/sequenceTubeMap?tab=readme-ov-file#preparing-subgraphs-in-advance). 
+
+3. `bedFile` (optional)
+
+   A BED file containing coordinates for regions of interest, some of which may have associated pre-extracted Tube Map views. More information on BED file structure and creation is documented [here](https://github.com/vgteam/sequenceTubeMap?tab=readme-ov-file#preparing-subgraphs-in-advance). 
    * Examples:
-      * `bedFile=exampleData/internal/snp1kg-BRCA1.bed`
-      * `bedFile=https://raw.githubusercontent.com/vgteam/sequenceTubeMap/ca4f2485231ee4182173bec19489ba940b27461a/exampleData/cactus.bed`
-      * `bedFile=none`
-4. `datatype`
+      * File in server working directory: `bedFile=exampleData/internal/snp1kg-BRCA1.bed`.
+      * HTTP/HTTPS URL: `bedFile=https://raw.githubusercontent.com/vgteam/sequenceTubeMap/ca4f2485231ee4182173bec19489ba940b27461a/exampleData/cactus.bed`.
+      * No BED file: `bedFile=none`.
+   
+4. `dataType`
 
-   Data can be `built-in`, `mounted files`, or synthetic `examples`.
-      * `built-in`: If the `datatype` field is set to `built-in`, you should set the `name` field to the name of a preset defined in `DATA_SOURCES` in `config.json`.
-      * `mounted files`: If the `datatype` field is set to `mounted files`, the `name` field must be set to custom, and you should select custom tracks along with an optional bedfile.
-      * `examples`: Links to synthetic examples cannot currently be created.
-   * Example: `dataType=built-in`
-5. `Simplify`. 
+   Information about the type of data. Data can be `built-in`, `mounted files`, or synthetic `examples`.
+      * `built-in`: Predefined data sources from the server configuration file. If the `dataType` field is set to `built-in`, you should set the `name` field to the name of a data source defined in `DATA_SOURCES` in `config.json`.
+      * `mounted files`: If the `dataType` field is set to `mounted files`, the `name` field must be set to `custom`, and you should provide `custom` tracks along with an optional `bedFile`.
+      * Examples: 
+         * `dataType=built-in`.
+         * `dataType=mounted%20files`.
 
-   Whether small snarls (e.g. single base indels and SNPs) are displayed or removed. It defaults to false, which means that the small snarls are not removed.
-   * Example: `simplify=false`
+5. `Simplify`
+
+   Whether small snarls (e.g. single base indels and SNPs) are displayed or removed. It defaults to false, which means that the small snarls are not removed. Currently, this option cannot be used if there are any read tracks.
+      * Example: `simplify=false`.
+
 6. `name` 
 
-   Name of data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `datatype` is set to `built-in`. You do not have to use these presets. 
-   * Example: `name=snp1kg-BRCA1`
+   Name of data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `dataType` is set to `built-in`. You do not have to use these presets. If `dataType` is `mounted files`, this field should be set to `custom`.
+      * Examples:
+         * `name=snp1kg-BRCA1`.
+         * `name=snp1kg-BRCA1`.
 
