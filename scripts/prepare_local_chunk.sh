@@ -65,6 +65,24 @@ echo >&2 "Node colors: " ${NODE_COLORS[@]}
 rm -fr $OUTDIR
 mkdir -p $OUTDIR
 
+TEMP="script_temp"
+
+rm -fr $TEMP
+mkdir $TEMP
+
+
+# Covert GAF files to GAM
+for i in "${!GAM_FILES[@]}"; do
+    if [[ ${GAM_FILES[$i]} == *.gaf ]]; then
+        # Filename without path
+        filename=$(basename -- ${GAM_FILES[$i]})
+        # Remove file extension
+        filename=${filename%.*}
+        vg convert --gaf-to-gam ${GAM_FILES[$i]} ${GRAPH_FILE} > $TEMP/${filename}.gam
+        GAM_FILES[$i]="$TEMP/${filename}.gam"
+    fi
+done
+
 # Parse the region
 REGION_END="$(echo ${REGION} | rev | cut -f1 -d'-' | rev)"
 REGION_START="$(echo ${REGION} | rev | cut -f2 -d'-' | cut -f1 -d':' | rev)"
@@ -134,4 +152,6 @@ done
 # Print BED line
 cat $OUTDIR/regions.tsv | cut -f1-3 | tr -d "\n"
 printf "\t${DESC}\t${OUTDIR}\n"
+
+rm -fr $TEMP
 
