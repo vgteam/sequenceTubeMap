@@ -188,11 +188,13 @@ It assumes that the graph represents some region along some reference path that 
 It assumes that path names in the subgraph *don't* use subregion suffixes (bracket-enclosed numbers).
 The path name used in the region should *exactly* match the name of one of the paths in the graph.
 
+`prepare_local_chunk.sh` also accepts `.gaf` files, which will automatically converted into a gam file using `vg convert`.
+
 For example, you can run it like:
 
 ```
 cd exampleData/
-../scripts/prepare_local_chunk.sh -x subgraph.gbz -r chr5:1023911-1025911 -g subgraph_reads.gam -g other_sample_reads.gam -o subgraph1 >> subgraphs.bed
+../scripts/prepare_local_chunk.sh -x subgraph.gbz -r chr5:1023911-1025911 -g subgraph_reads.gam -g other_sample_reads.gam -g another_sample_reads.gaf -o subgraph1 >> subgraphs.bed
 ```
 
 Your graph can be a `.vg`, `.xg`, `.gfa`, or any other graph format understood by vg, but it *must* be in the same node ID space as your reads, and the script does *not* check this for you! In particular, indexing a GFA graph and mapping to it with `vg giraffe` can result in the original GFA nodes being cut into manageable pieces and assigned new numbers in the graph that the reads actually are aligned to, meaning the original GFA won't work here. You can check your reads against your graph with `vg validate subgraph.gfa --gam subgraph_reads.gam`. If your read alignments look completely absurd and jump all over the place, this is likely the problem.
@@ -201,6 +203,19 @@ If the original subgraph file does not remain in place under the configured `dat
 
 The net result will be that you can select the BED file, select the region it specifies, and view a precomputed view of the subgraph, with coordinates computed assuming it covers the region provided to `prepare_local_chunk.sh`.
 
+A note on naming node IDs when using `.gfa` files:
+VG keeps node IDs the same when all node names are integers. However, node IDs are renamed upon encountering string-named nodes. Renaming begins at the first encounter of a string-named node, using the highest integer encountered so far (+1), or 1 if the first node is string-named in the GFA file. Future nodes are renamed in a +1 manner regardless of their datatype.
+
+Here's an example of a rename
+
+```
+Original -> Renamed
+3 -> 3
+1 -> 1
+five -> 4
+7 -> 5
+four -> 6
+```
 
 #### Development Mode
 
