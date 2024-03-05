@@ -44,10 +44,29 @@ Keys can use brackets to encode hierarchical structures such as arrays and objec
 
 The key's name should **not** be in quotes.
 
+Example of an array of JSON objects: 
+```
+object = 
+[
+   {
+      "a": "b",
+   }, 
+   {
+      "c": "d",
+      "e": {
+         "f": "g"
+      }
+   }, 
+]
+```
+
+This array's query string representation would be: `object[0][a]=b&object[1][c]=d&object[e][f]=g`.
+
+
 ###### Fields that can be included in the link URL:
 1. `tracks` 
 
-   Information about tracks. Tracks are objects consisting of `trackFile`, `trackType`, and `trackColorSettings`.
+   Array of tracks. Tracks are objects consisting of `trackFile`, `trackType`, and `trackColorSettings`.
 
    A track object in JSON format might look like this:
    ```
@@ -64,11 +83,11 @@ The key's name should **not** be in quotes.
 
    The collection of tracks wil be encoded as query string parameters starting with tracks.
 
-   * The `trackFile` is the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the track file. 
+   * `trackFile`: the path (from the server working directory) or URL (any HTTP/HTTPS URL) to the track file. 
      * Examples:
          * File in server working directory: `tracks[0][trackFile]=exampleData/internal/snp1kg-BRCA1.vg.xg`.
          * HTTP/HTTPS URL: `tracks[0][trackFile]=https://public.gi.ucsc.edu/~anovak/graphs/trivial-brca1.vg`.
-   * The `trackType` specifies the type of the track, which can be `graph`, `haplotype`, `read`.
+   * `trackType`: the type of the track, which can be `graph`, `haplotype`, `read`.
       * Example: `tracks[0][trackType]=graph`.
    * `trackColorSettings` (optional): the color information for the track. It has subfields:
       * `mainPalette` and `auxPalette` (optional): The "main" and "auxilliary" color palettes to use, respectively. The values for each palette can be a hex code starting with a `#`, or one of the premade palette names: `greys`, `ygreys`, `blues`, `reds`, `plainColors`, or `lightColors`.
@@ -85,8 +104,8 @@ The key's name should **not** be in quotes.
 
 2. `region`
 
-   Region coordinates. This is documented at step 3 of
-   [Displaying Visualizations](#displaying-visualizations). This region will be loaded in the tubemap visualization once the link is followed.
+   Region coordinates. This region will be loaded in the Tube Map visualization once the link is followed. Syntax of region coordinates is documented at step 3 of
+   [Displaying Visualizations](#displaying-visualizations). 
       * Example: `region=17%3A1-100`.
 
 
@@ -102,12 +121,12 @@ The key's name should **not** be in quotes.
 
    Information about the type of data. Data can be `built-in`, `mounted files`, or synthetic `examples`.
       * `built-in`: Predefined data sources from the server configuration file. If the `dataType` field is set to `built-in`, you should set the `name` field to the name of a data source defined in `DATA_SOURCES` in `config.json`.
-      * `mounted files`: If the `dataType` field is set to `mounted files`, the `name` field must be set to `custom`, and you should provide `custom` tracks along with an optional `bedFile`.
+      * `mounted files`: If the `dataType` field is set to `mounted files`, the `name` field must be set to `custom`, and you should provide custom tracks along with an optional `bedFile`.
       * Examples: 
          * `dataType=built-in`.
          * `dataType=mounted%20files`.
 
-5. `Simplify`
+5. `simplify`
 
    Whether small snarls (e.g. single base indels and SNPs) are displayed or removed. It defaults to false, which means that the small snarls are not removed. Currently, this option cannot be used if there are any read tracks.
       * Example: `simplify=false`.
@@ -117,5 +136,38 @@ The key's name should **not** be in quotes.
    Name of data. This is a field that indicates the name of preset data, which is defined in `DATA_SOURCES` in `config.json`. `name` is used when `dataType` is set to `built-in`. You do not have to use these presets. If `dataType` is `mounted files`, this field should be set to `custom`.
       * Examples:
          * `name=snp1kg-BRCA1`.
-         * `name=snp1kg-BRCA1`.
+         * `name=custom`.
 
+
+Examples of links:
+   * Link with preexisting data: 
+      ```
+      http://127.0.0.1:3001?
+      tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&
+      tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&
+      tracks[0][trackColorSettings][auxPalette]=ygreys&
+      tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&
+      tracks[1][trackType]=read&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&
+      name=snp1kg-BRCA1&
+      region=17%3A1000-1200&
+      dataType=built-in&
+      simplify=false
+      ```
+   * Link with custom data: 
+      ```
+      http://127.0.0.1:3001?
+      tracks[1][trackType]=graph&
+      tracks[1][trackColorSettings][mainPalette]=%23000000&
+      tracks[1][trackColorSettings][auxPalette]=greys&
+      tracks[1][trackColorSettings][colorReadsByMappingQuality]=false&
+      tracks[1][trackFile]=exampleData%2Fcactus.vg&
+      tracks[2][trackType]=read&
+      tracks[2][trackColorSettings][mainPalette]=blues&
+      tracks[2][trackColorSettings][auxPalette]=reds&
+      tracks[2][trackColorSettings][colorReadsByMappingQuality]=false&
+      tracks[2][trackFile]=exampleData%2Fcactus0_10.sorted.gam&
+      bedFile=none&
+      region=ref%3A2000-3000&
+      dataType=mounted%20files&
+      simplify=false
+      ```
