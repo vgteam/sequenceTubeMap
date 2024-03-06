@@ -204,7 +204,7 @@ If the original subgraph file does not remain in place under the configured `dat
 The net result will be that you can select the BED file, select the region it specifies, and view a precomputed view of the subgraph, with coordinates computed assuming it covers the region provided to `prepare_local_chunk.sh`.
 
 A note on naming node IDs when using `.gfa` files:
-VG keeps node IDs the same when all node names are integers. However, node IDs are renamed upon encountering string-named nodes. Renaming begins at the first encounter of a string-named node, using the highest integer encountered so far (+1), or 1 if the first node is string-named in the GFA file. Future nodes are renamed in a +1 manner regardless of their datatype.
+VG keeps node IDs the same when all node names are strictly positive integers. However, node IDs are renamed upon encountering string-named nodes. Renaming begins at the first encounter of a string-named node, using the highest integer encountered so far (+1), or 1 if the first node is string-named in the GFA file. Future nodes are renamed in a +1 manner regardless of their datatype.
 
 Here's an example of a rename:
 

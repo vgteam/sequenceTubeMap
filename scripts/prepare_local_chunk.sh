@@ -65,10 +65,7 @@ echo >&2 "Node colors: " ${NODE_COLORS[@]}
 rm -fr $OUTDIR
 mkdir -p $OUTDIR
 
-TEMP="script_temp"
-
-rm -fr $TEMP
-mkdir $TEMP
+TEMP="$(mktemp -d)"
 
 
 # Covert GAF files to GAM
