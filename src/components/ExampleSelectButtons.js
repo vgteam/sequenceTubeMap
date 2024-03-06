@@ -80,6 +80,24 @@ class ExampleSelectButtons extends Component {
         >
           Alignments to Reverse Nodes
         </Button>
+        <Button
+          color="primary"
+          id="example8"
+          onClick={() =>
+            this.handleClick(dataOriginTypes.EXAMPLE_8, "plainColors")
+          }
+        >
+          Multiple Nodes Cycle 1
+        </Button>
+        <Button
+          color="primary"
+          id="example9"
+          onClick={() =>
+            this.handleClick(dataOriginTypes.EXAMPLE_9, "plainColors")
+          }
+        >
+          Multiple Nodes Cycle 2
+        </Button>
       </Form>
     );
   }

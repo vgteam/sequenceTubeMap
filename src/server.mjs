@@ -1753,7 +1753,7 @@ async function getBedRegions(bed) {
     bed_data = fs.readFileSync(bed).toString();
   }
 
-  lines = bed_data.split("\n");
+  lines = bed_data.split(/\r?\n/);
   lines.map(function (line) {
     let records = line.split("\t");
 
