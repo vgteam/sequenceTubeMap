@@ -1917,15 +1917,18 @@ function generateNodeXCoords() {
 function calculateExtraSpace() {
   const leftSideEdges = [];
   const rightSideEdges = [];
+  const fallAngleAdjustment = [];
   const extra = [];
 
   for (let i = 0; i <= maxOrder; i += 1) {
     leftSideEdges.push(0);
     rightSideEdges.push(0);
+    fallAngleAdjustment.push(0);
   }
 
   tracks.forEach((track) => {
     for (let i = 1; i < track.path.length; i += 1) {
+      // Track is going to the same node, account for space taken up by edges looping around
       if (track.path[i].order === track.path[i - 1].order) {
         // repeat or translocation
         if (track.path[i].isForward === true) {
@@ -1933,14 +1936,23 @@ function calculateExtraSpace() {
         } else {
           rightSideEdges[track.path[i].order] += 1;
         }
+      } else {
+        // Track is going to a differnt node, account for space needed to limit rise/fall angle 
+        const yDifference = Math.abs(track.path[i].y - track.path[i - 1].y);
+        fallAngleAdjustment[track.path[i].order] = Math.max(yDifference / 22.5, fallAngleAdjustment[track.path[i].order]);
       }
     }
   });
 
+
   extra.push(Math.max(0, leftSideEdges[0] - 1));
   for (let i = 1; i <= maxOrder; i += 1) {
+    // Extra space uses space needed for edges(tracks looping), or space needed to limit rise/fall angle, whichever is larger
     extra.push(
-      Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1)
+      Math.max(
+        Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1),
+        fallAngleAdjustment[i]
+      )
     );
   }
   return extra;
