@@ -4,6 +4,7 @@ import { Container, Row, Col, Label, Alert, Button } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import "../config-client.js";
 import { config } from "../config-global.mjs";
+import { LocalAPI } from "../api/LocalAPI.mjs";
 import DataPositionFormRow from "./DataPositionFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
@@ -781,7 +782,7 @@ class HeaderForm extends Component {
 
   // Sends uploaded file to server and returns a path to the file
   handleFileUpload = async (fileType, file) => {
-    if (file.size > config.MAXUPLOADSIZE) {
+    if ((!this.props.APIInterface instanceof LocalAPI) && file.size > config.MAXUPLOADSIZE) {
       this.showFileSizeAlert();
       return;
     }
