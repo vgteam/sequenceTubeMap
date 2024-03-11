@@ -44,6 +44,7 @@
     }
   ],
   "vgPath": "",
+  "dataPath": "exampleData",
   "internalDataPath": "exampleData/internal/",
   "tempDirPath": "temp",
   "fetchTimeout": 15,
