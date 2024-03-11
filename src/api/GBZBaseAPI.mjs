@@ -2,6 +2,10 @@
  * GBZBase-based API implementation. Designed to run in a worker efficiently.
  */
 
+// Use this magic comment to tell eslint we are allowed to use worker things
+// during the Webpack build.
+/* eslint-env worker */
+
 import "../config-client.js";
 import { APIInterface } from "./APIInterface.mjs";
 import { WASI, File, OpenFile, SyncOPFSFile, PreopenDirectory } from "@bjorn3/browser_wasi_shim";
@@ -137,8 +141,7 @@ function convertSchema(inGraph) {
  */
 class SyncWorkerBlobFile extends SyncOPFSFile {
   constructor(backing_blob) {
-    this.readonly = true;
-    this.handle = new FileSystemSyncAccessHandlePolyfill(backing_blob);
+    super(new FileSystemSyncAccessHandlePolyfill(backing_blob), {readonly: true});
   }
 }
 
@@ -232,7 +235,7 @@ class FileSystemSyncAccessHandlePolyfill {
 
     // Now blit from that buffer into the destination
     let destinationArray = new Uint8Array(destinationBuffer, destinationOffest, length);
-    let sourceArray = new UInt8Array(partBuffer, 0, length);
+    let sourceArray = new Uint8Array(partBuffer, 0, length);
     destinationArray.set(sourceArray);
 
     // Return the length we thought we could do
