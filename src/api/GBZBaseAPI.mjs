@@ -1,6 +1,10 @@
+/**
+ * GBZBase-based API implementation. Designed to run in a worker efficiently.
+ */
+
 import "../config-client.js";
 import { APIInterface } from "./APIInterface.mjs";
-import { WASI, File, OpenFile, PreopenDirectory } from "@bjorn3/browser_wasi_shim";
+import { WASI, File, OpenFile, SyncOPFSFile, PreopenDirectory } from "@bjorn3/browser_wasi_shim";
 
 import {
   parseRegion,
@@ -125,6 +129,141 @@ function convertSchema(inGraph) {
 }
 
 /**
+ * Implementation of a WASI Browser Shim file that is backed by FileReaderSync and operates on a backing Blob.
+ *
+ * Read-only.
+ *
+ * We extend SyncOPFSFile because then we can use OpenSyncOPFSFile for free, as long as we re-implement this.handle.
+ */
+class SyncWorkerBlobFile extends SyncOPFSFile {
+  constructor(backing_blob) {
+    this.readonly = true;
+    this.handle = new FileSystemSyncAccessHandlePolyfill(backing_blob);
+  }
+}
+
+/**
+ * Implementation of the API of FileSystemSyncAccessHandle
+ * <https://developer.mozilla.org/en-US/docs/Web/API/FileSystemSyncAccessHandle>,
+ * as used by Browser WASI Shim
+ * <https://github.com/bjorn3/browser_wasi_shim/blob/527f4dfee4a0568a7f42e9c0e940aaad7b79d23c/src/fs_core.ts#L460-L470>.
+ *
+ * Implements the API on top of a Blob, using FileReaderSync.
+ *
+ * Only allows read access.
+ */
+class FileSystemSyncAccessHandlePolyfill {
+  /**
+   * Make a new FileSystemSyncAccessHandlePolyfill acting like a
+   * FileSystemSyncAccessHandle to the file represented by the given Blob.
+   */
+  constructor(blob) {
+    // Start open
+    this.closed = false;
+    // Save the blob
+    this.blob = blob;
+    // Make sure right away we actually can have a FileReaderSync
+    this.reader = new FileReaderSync();
+  }
+  
+  /**
+   * Close the file.
+   */
+  close() {
+    this.closed = true;
+  }
+
+  /**
+   * Flush changes to the file to disk.
+   *
+   * Not implemented since we are read-only.
+   */
+  flush() {
+    throw new Error("Flush not implemented; blobs are read only");
+  }
+
+  /**
+   * Get the size of the file in bytes as a number.
+   */
+  getSize() {
+    if (this.closed) {
+      throw new Error("Can't get size of closed file");
+    }
+    
+    return this.blob.size;
+  }
+
+  /**
+   * Read into the given ArrayBuffer or ArrayBufferView.
+   *
+   * Starts at 0 in the file, unless "at" is set in options, in which case it
+   * starts there in the file.
+   *
+   * Tries to fill the whole buffer/view.
+   *
+   * Returns the number of bytes read.
+   */
+  read(buffer, options) {
+    if (this.closed) {
+      throw new Error("Can't read closed file");
+    }
+
+    // Use the actual buffer we got with offset 0, or get the buffer and offset
+    // out of the view
+    let destinationBuffer = buffer.buffer ?? buffer;
+    let destinationOffest = buffer.byteOffset ?? 0;
+  
+    // Where should we start in the file
+    let startByte = options?.at ?? 0;
+
+    // How many bytes are we going to move?
+    //
+    // ArrayBuffer and ArrayBufferView both have a byteLength to see how much
+    // we were asked for.
+    //
+    // But we can't read past the end of the Blob.
+    let length = Math.min(buffer.byteLength, this.blob.size - startByte);
+
+    // Slice the blob to the part we want to read.
+    let partBlob = this.blob.slice(startByte, startByte + length);
+
+    // And read into a new ArrayBuffer using the sync reader.
+    let partBuffer = this.reader.readAsArrayBuffer(partBlob);
+
+    // Now blit from that buffer into the destination
+    let destinationArray = new Uint8Array(destinationBuffer, destinationOffest, length);
+    let sourceArray = new UInt8Array(partBuffer, 0, length);
+    destinationArray.set(sourceArray);
+
+    // Return the length we thought we could do
+    return length;
+  }
+  
+  /**
+   * Truncate the file to the given number of bytes.
+   *
+   * Not implemented since we are read-only.
+   */
+  truncate(to: number) {
+    throw new Error("Truncate not implemented; blobs are read only");
+  }
+  
+  /**
+   * Write the given buffer or view's contents to the file.
+   *
+   * Writes at the start of the file, unless at is set in options, in which
+   * case it writes at that position in the file. Returns the number of bytes
+   * written.
+   *
+   * Not actually implemented since we are read-only.
+   */
+  write(buffer, options) {
+    throw new Error("Write not implemented; blobs are read only");
+  }
+
+}
+
+/**
  * API implementation that uses tools compiled to WebAssembly, client-side.
  *
  * Can operate either in the main thread or in a worker, but handles file
@@ -194,15 +333,14 @@ export class GBZBaseAPI extends APIInterface {
       let nameToWASIFile = {};
       for (const [filename, blob] of Object.entries(workingDirectory)) {
         console.log(`Mount ${blob.size} byte blob:`, blob);
-        // TODO: We need to get an ArrayBuffer or something from the blob so that the WASI shim can read it.
-        // We want to do it in a way that doesn't read the whole file from disk when it's a browser File.
-        // We also need to do it in a way that works when it's a jsdom File that doesn't implement the arrayBuffer() method.
-        // For now we use the FIleReader workaround if we can't arrayBuffer().
-        // Later we will need to use OpenSyncOPFSFile and implement an object with a handle that can sync read and write at offsets.
-        // TODO: How will this be sync???
-        // Maybe get into a worker and use https://developer.mozilla.org/en-US/docs/Web/API/FileReaderSync
-        // Or hackily use a sync XHR like https://stackoverflow.com/a/76999249
-        nameToWASIFile[filename] = new File(await blobToArrayBuffer(blob));
+        if (typeof FileReaderSync !== "undefined") {
+          // On a worker where we can do sync reads
+           nameToWASIFile[filename] = new SyncWorkerBlobFile(blob);
+        } else {
+          // In the main thread where we can't do sync reads
+          console.warn("Sync blob read is not available. Reading " + blob.size + " byte blob into memory asynchronously to consult synchronously later!");
+          nameToWASIFile[filename] = new File(await blobToArrayBuffer(blob));
+        }
         console.log("Mount file:", nameToWASIFile[filename]);
       }
       // As shown in the browser_wasi_shim examples, if we provide a

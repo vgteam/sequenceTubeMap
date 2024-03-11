@@ -4,13 +4,14 @@
 
 import { RpcProvider } from "worker-rpc";
 
+// We are actually a proxying wrapper around this actual implementation.
 import { GBZBaseAPI } from "../GBZBaseAPI.mjs";
 
 export function setUpWorker(self) {
   // Here we have access to the Web Worker self (or a good immitation)
 
   // Set up an RPC channel over the web worker message passing.
-  // This one doesn't asusme we're *really* using a worker, which is important
+  // This one doesn't assume we're *really* using a worker, which is important
   // because sometimes it is mocked out.
   const rpc = new RpcProvider((message, transfer) => {
     return self.postMessage(message, transfer);
@@ -21,7 +22,9 @@ export function setUpWorker(self) {
     return rpc.dispatch(e.data);
   });
 
-  // Make an API implementation
+  // Make an API implementation.
+  // Really we just proxy between this in ther worker and a proxy object in the
+  // page thread.
   const api = new GBZBaseAPI();
   
   // Now register RPC messages. The handlers can only take a sungle object, but
