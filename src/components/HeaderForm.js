@@ -597,6 +597,16 @@ class HeaderForm extends Component {
     }
     return null;
   }
+
+  // Function to convert array to object, where the key would be the index and the value
+  //  would be the value at the array index
+  convertArrayToObject = (array) => {
+    let obj = {};
+    for(let i = 0; i < array.length; i++){
+      obj[i] = array[i];
+    }
+    return obj;
+  }
   
   // Adopt a new region
   // Update the region description
@@ -635,7 +645,7 @@ class HeaderForm extends Component {
 
     // Override current tracks with new tracks from chunk dir
     if (tracks) {
-      this.setState({ tracks: tracks });
+      this.setState({ tracks: this.convertArrayToObject(tracks) });
       console.log("New tracks have been applied");
     } else if (this.state.bedFile && chunk) {
       // Try to retrieve tracks from the server
@@ -650,7 +660,8 @@ class HeaderForm extends Component {
         this.setState((laterState) => {
           if (laterState.region === coords) {
             // The user still has the same region selected, so apply the tracks we now have
-            return { tracks: json.tracks };
+            console.log("json tracks: ", json.tracks)
+            return {tracks: this.convertArrayToObject(json.tracks)};
           }
           // Otherwise, don't apply the downloaded tracks, because they are no longer relevant.
           // TODO: Save the downloaded tracks in case the user selects the region again?
