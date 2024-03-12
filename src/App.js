@@ -66,9 +66,7 @@ class App extends Component {
     this.defaultViewTarget =
       urlParamsToViewTarget(document.location) ?? config.DATA_SOURCES[0];
     this.state = {
-      // These describe the files on the server side that we are working on.
-      // This is a little like dataPath (inside viewTarget, which specifies if we're using mounted/built-in data),
-      // but lets us toggle between data from
+      // These describe the files on the server side that we are working on. It lets us toggle between data from
       // the server and local test data
       dataOrigin: dataOriginTypes.API,
       viewTarget: this.defaultViewTarget,
