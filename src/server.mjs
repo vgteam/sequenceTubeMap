@@ -382,6 +382,47 @@ api.post("/getChunkedData", (req, res, next) => {
   });
 });
 
+
+/*
+graph = {
+  node: [
+    {
+      sequence: "AGCT"
+      id: "1"
+    ,
+    {
+      sequence: "AGCTAG"
+      id: "2"
+    }
+  ]
+  edge: []
+  path: []
+}
+removing sequence would result in
+graph = {
+  node: [
+    {
+      id: "1"
+    ,
+    {
+      id: "2"
+    }
+  ]
+  edge: []
+  path: []
+}
+*/
+
+// read a graph object and remove "sequence" fields in place
+function removeNodeSequencesInPlace(graph){
+  if (!graph.node){
+    return;
+  }
+  for (let node in graph.node){
+    delete node.sequence;
+  }
+}
+
 // Handle a chunked data (tube map view) request. Returns a promise. On error,
 // either the promise rejects *or* next() is called with an error, or both.
 // TODO: This is a terrible mixed design for error handling; we need to either
@@ -746,6 +787,8 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
+      // if includeSequences is false: 
+        // removeNodeSequencesInPlace(req.graph)
       req.region = [rangeRegion.start, rangeRegion.end];
       // vg chunk always puts the path we reference on first automatically
       if (!sentResponse) {
@@ -855,6 +898,8 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
+      // if includeSequences is false: 
+        // removeNodeSequencesInPlace(req.graph)
       req.region = [rangeRegion.start, rangeRegion.end];
 
       // We might not have the path we are referencing on appearing first.
