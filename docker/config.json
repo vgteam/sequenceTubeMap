@@ -43,6 +43,7 @@
     }
   ],
   "vgPath": "",
+  "dataPath": "/data",
   "internalDataPath": "./exampleData/internal",
 
   "defaultHaplotypeColorPalette" : {
