@@ -56,7 +56,7 @@ Example of an array of JSON objects:
       "e": {
          "f": "g"
       }
-   }, 
+   } 
 ]
 ```
 
