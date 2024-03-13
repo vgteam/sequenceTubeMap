@@ -81,8 +81,8 @@ class App extends Component {
    */
   setAPIMode(mode) {
     this.setState((state) => {
-      if (mode != this.getAPIMode(state)) {
-        if (mode == "local") {
+      if (mode !== this.getAPIMode(state)) {
+        if (mode === "local") {
           // Make a local API
           return {
             APIInterface: new LocalAPI(),
@@ -97,7 +97,7 @@ class App extends Component {
               colorSchemes: [],
             },
           };
-        } else if (mode == "server") {
+        } else if (mode === "server") {
           // Make a server API
           return {
             APIInterface: new ServerAPI(this.props.apiUrl),
