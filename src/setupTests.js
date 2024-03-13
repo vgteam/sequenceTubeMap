@@ -9,3 +9,9 @@
 import { TextEncoder, TextDecoder } from "util";
 globalThis.TextEncoder = TextEncoder;
 globalThis.TextDecoder = TextDecoder;
+
+// Make sure the mock version of the web worker we use for the local API
+// implementation loads under Jest, where web workers are not actually
+// available.
+jest.mock("./api/local/WorkerFactory")
+

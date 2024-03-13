@@ -78,7 +78,7 @@
   },
 
   "fileTypeToExtensions": {
-    "graph": ".xg,.vg,.hg,.gbz,.pg",
+    "graph": ".xg,.vg,.hg,.gbz,.pg,.db",
     "haplotype": ".gbwt,.gbz",
     "read": ".gam"
   },

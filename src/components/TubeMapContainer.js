@@ -18,7 +18,6 @@ class TubeMapContainer extends Component {
   componentDidMount() {
     this.fetchCanceler = new AbortController();
     this.cancelSignal = this.fetchCanceler.signal;
-    this.api = this.props.APIInterface;
     this.getRemoteTubeMapData();
   }
 
@@ -135,7 +134,7 @@ class TubeMapContainer extends Component {
   getRemoteTubeMapData = async () => {
     this.setState({ isLoading: true, error: null });
     try {
-      const json = await this.api.getChunkedData(
+      const json = await this.props.APIInterface.getChunkedData(
         this.props.viewTarget,
         this.cancelSignal
       );

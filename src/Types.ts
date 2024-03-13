@@ -3,7 +3,7 @@
 
 // Describes whether a built-in example, user uploaded file, mounted, or synthetic example
 // Fills input for the "Data:" dropdown in the HeaderForm
-type DataType = "built-in" | "file-upload" | "mounted files" | "examples";
+type DataType = "built-in" | "mounted files" | "examples";
 
 // Possible filestypes taken from the request
 // Files like GBZ contains graph and maybe haplotype and so can be either

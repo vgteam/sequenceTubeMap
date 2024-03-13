@@ -14,8 +14,8 @@ import Footer from "./components/Footer";
 import { dataOriginTypes } from "./enums";
 import "./config-client.js";
 import { config } from "./config-global.mjs";
-import ServerAPI from "./ServerAPI.mjs";
-import { GBZBaseAPI } from "./GBZBaseAPI.mjs";
+import ServerAPI from "./api/ServerAPI.mjs";
+import { LocalAPI } from "./api/LocalAPI.mjs";
 
 const EXAMPLE_TRACKS = [
   // Fake tracks for the generated examples.
@@ -47,19 +47,6 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    // See if the WASM API is available.
-    // Right now this just tests and logs, but eventually we will be able to use it.
-    let gbzApi = new GBZBaseAPI();
-    gbzApi.available().then((working) => {
-      if (working) {
-        console.log("WASM API implementation available!");
-      } else {
-        console.error("WASM API implementation not available!");
-      }
-    });
-
-    this.APIInterface = new ServerAPI(props.apiUrl);
-
     console.log("App component starting up with API URL: " + props.apiUrl);
 
     // Set defaultViewTarget to either URL params (if present) or the first example
@@ -81,7 +68,67 @@ class App extends Component {
         colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
         mappingQualityCutoff: 0,
       },
+      APIInterface: new ServerAPI(props.apiUrl)
     };
+  }
+  
+  /**
+   * Set which API implementation to query for graph data.
+   *
+   * Mode can be "local" or "server".
+   */
+  setAPIMode(mode) {
+    this.setState((state) => {
+      if (mode !== this.getAPIMode(state)) {
+        if (mode === "local") {
+          // Make a local API
+          return {
+            APIInterface: new LocalAPI(),
+            // Set up an empty view target that can't really render.
+            // TODO: Let us control HeaderForm's dataType state so we can pop it right over to custom, or feed it a different defaultViewTarget
+            dataOrigin: dataOriginTypes.API,
+            viewTarget: {
+              tracks: []
+            },
+            visOptions: {
+              ...state.visOptions,
+              colorSchemes: [],
+            },
+          };
+        } else if (mode === "server") {
+          // Make a server API
+          return {
+            APIInterface: new ServerAPI(this.props.apiUrl),
+            // Also reset to a current view target this can show
+            dataOrigin: dataOriginTypes.API,
+            viewTarget: this.defaultViewTarget,
+            visOptions: {
+              ...state.visOptions,
+              colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
+            },
+          };
+        } else {
+          throw new Error("Unimplemented API mode: " + mode)
+        }
+      }
+    });
+  }
+  
+  /**
+   * Get the string describing the current API mode ("local" or "server"),
+   * given the state (by default the current state).
+   */
+  getAPIMode(state) {
+    if (state === undefined) {
+      state = this.state;
+    }
+    if (state.APIInterface instanceof LocalAPI) {
+      return "local";
+    } else if (state.APIInterface instanceof ServerAPI) {
+      return "server";
+    } else {
+      throw new Error("Unnamed API implementation: " + state.APIInterface);
+    }
   }
 
   /*
@@ -195,13 +242,13 @@ class App extends Component {
           dataOrigin={this.state.dataOrigin}
           defaultViewTarget={this.defaultViewTarget}
           getCurrentViewTarget={this.getCurrentViewTarget}
-          APIInterface={this.APIInterface}
+          APIInterface={this.state.APIInterface}
         />
         <TubeMapContainer
           viewTarget={this.state.viewTarget}
           dataOrigin={this.state.dataOrigin}
           visOptions={this.state.visOptions}
-          APIInterface={this.APIInterface}
+          APIInterface={this.state.APIInterface}
         />
         <CustomizationAccordion
           visOptions={this.state.visOptions}
@@ -215,6 +262,8 @@ class App extends Component {
             this.handleMappingQualityCutoffChange
           }
           setColorSetting={this.setColorSetting}
+          currentAPIMode={this.getAPIMode()}
+          setAPIMode={this.setAPIMode.bind(this)}
         />
         <Footer />
       </div>

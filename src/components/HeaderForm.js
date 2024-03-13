@@ -4,6 +4,7 @@ import { Container, Row, Col, Label, Alert, Button } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import "../config-client.js";
 import { config } from "../config-global.mjs";
+import { LocalAPI } from "../api/LocalAPI.mjs";
 import DataPositionFormRow from "./DataPositionFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
@@ -272,7 +273,6 @@ class HeaderForm extends Component {
   componentDidMount() {
     this.fetchCanceler = new AbortController();
     this.cancelSignal = this.fetchCanceler.signal;
-    this.api = this.props.APIInterface;
     this.initState();
     this.getMountedFilenames();
     this.setUpWebsocket();
@@ -410,7 +410,7 @@ class HeaderForm extends Component {
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getFilenames(this.cancelSignal);
+      const json = await this.props.APIInterface.getFilenames(this.cancelSignal);
       if (!json.files || json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
@@ -458,7 +458,7 @@ class HeaderForm extends Component {
   getBedRegions = async (bedFile) => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getBedRegions(bedFile, this.cancelSignal);
+      const json = await this.props.APIInterface.getBedRegions(bedFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       if (!json.bedRegions || !(json.bedRegions["desc"] instanceof Array)) {
         throw new Error(
@@ -485,7 +485,7 @@ class HeaderForm extends Component {
   getPathNames = async (graphFile) => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getPathNames(graphFile, this.cancelSignal);
+      const json = await this.props.APIInterface.getPathNames(graphFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
       if (!(pathNames instanceof Array)) {
@@ -658,7 +658,7 @@ class HeaderForm extends Component {
       console.log("New tracks have been applied");
     } else if (isSet(this.state.bedFile) && chunk) {
       // Try to retrieve tracks from the server
-      const json = await this.api.getChunkTracks(
+      const json = await this.props.APIInterface.getChunkTracks(
         this.state.bedFile,
         chunk,
         this.cancelSignal
@@ -790,7 +790,7 @@ class HeaderForm extends Component {
 
   // Sends uploaded file to server and returns a path to the file
   handleFileUpload = async (fileType, file) => {
-    if (file.size > config.MAXUPLOADSIZE) {
+    if (!(this.props.APIInterface instanceof LocalAPI) && file.size > config.MAXUPLOADSIZE) {
       this.showFileSizeAlert();
       return;
     }
@@ -798,7 +798,7 @@ class HeaderForm extends Component {
     this.setUploadInProgress(true);
 
     try {
-      let fileName = await this.api.putFile(fileType, file, this.cancelSignal);
+      let fileName = await this.props.APIInterface.putFile(fileType, file, this.cancelSignal);
       if (fileType === "graph") {
         // Refresh the graphs right away
         this.getMountedFilenames();
@@ -814,7 +814,7 @@ class HeaderForm extends Component {
   };
 
   setUpWebsocket = () => {
-    this.subscription = this.api.subscribeToFilenameChanges(
+    this.subscription = this.props.APIInterface.subscribeToFilenameChanges(
       this.getMountedFilenames,
       this.cancelSignal
     );
