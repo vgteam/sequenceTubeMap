@@ -181,7 +181,7 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
     return false;
   }
 
-  if (currViewTarget.simplify !== nextViewTarget.simplify) {
+  if (currViewTarget.removeSequences !== nextViewTarget.removeSequences) {
     return false;
   }
 
@@ -309,6 +309,7 @@ class HeaderForm extends Component {
         dataType: ds.dataType,
         name: ds.name,
         simplify: ds.simplify,
+        includeSequences: ds.simplify
       };
       return stateVals;
     });
@@ -549,6 +550,7 @@ class HeaderForm extends Component {
     region: this.state.region,
     dataType: this.state.dataType,
     simplify: this.state.simplify && !readsExist(this.state.tracks),
+    removeSequences: this.state.removeSequences
   });
 
   handleGoButton = () => {
@@ -817,6 +819,11 @@ class HeaderForm extends Component {
     this.setState({ simplify: !this.state.simplify });
   };
 
+  /* Function for toggling nodeSequences button, enabling client to make request for node sequences to be displayed or note */
+  toggleRemoveSequences = () => {
+    this.setState({ removeSequences: !this.state.removeSequences });
+  };
+
   render() {
     let errorDiv = null;
     if (this.state.error) {
@@ -959,6 +966,14 @@ class HeaderForm extends Component {
                       {this.state.simplify ? "Simplify On" : "Simplify Off"}
                     </Button>
                   )}
+                  {/* Button for remove node sequences */}
+                  <Button
+                      onClick={this.toggleRemoveSequences}
+                      outline
+                      active={this.state.removeSequences}
+                    >
+                      {this.state.removeSequences ? "Remove Node Sequences" : "Keep Node Sequences"}
+                    </Button>
                 </div>
               )}
               <Row>

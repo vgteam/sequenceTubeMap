@@ -415,12 +415,14 @@ graph = {
 
 // read a graph object and remove "sequence" fields in place
 function removeNodeSequencesInPlace(graph){
+  console.log("graph:", graph)
   if (!graph.node){
     return;
   }
-  for (let node in graph.node){
+  graph.node.forEach(function (node) {
+    console.log("node sequence to delete:", node)
     delete node.sequence;
-  }
+  })
 }
 
 // Handle a chunked data (tube map view) request. Returns a promise. On error,
@@ -536,6 +538,13 @@ async function getChunkedData(req, res, next) {
       throw new BadRequestError("Simplify cannot be used on read tracks.");
     }
     req.simplify = true;
+  }
+
+  // client is going to send includeSequences = true if they don't want sequences of nodes to be displayed
+  req.includeSequences = false;
+  if (!req.body.includeSequences) {
+    // any errors / edge cases?
+    req.includeSequences = true;
   }
 
   // check the bed file if this region has been pre-fetched
@@ -787,8 +796,10 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
-      // if includeSequences is false: 
-        // removeNodeSequencesInPlace(req.graph)
+      if (!req.body.includeSequences){
+        removeNodeSequencesInPlace(req.graph)
+      } 
+      console.log("remove sequences? ", req.graph.node)
       req.region = [rangeRegion.start, rangeRegion.end];
       // vg chunk always puts the path we reference on first automatically
       if (!sentResponse) {
@@ -898,8 +909,10 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
-      // if includeSequences is false: 
-        // removeNodeSequencesInPlace(req.graph)
+      if (!req.body.includeSequences){
+        removeNodeSequencesInPlace(req.graph)
+      } 
+      console.log("remove sequences? ", req.graph)
       req.region = [rangeRegion.start, rangeRegion.end];
 
       // We might not have the path we are referencing on appearing first.
