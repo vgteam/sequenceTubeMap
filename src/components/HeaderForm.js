@@ -790,7 +790,7 @@ class HeaderForm extends Component {
 
   // Sends uploaded file to server and returns a path to the file
   handleFileUpload = async (fileType, file) => {
-    if ((!this.props.APIInterface instanceof LocalAPI) && file.size > config.MAXUPLOADSIZE) {
+    if (!(this.props.APIInterface instanceof LocalAPI) && file.size > config.MAXUPLOADSIZE) {
       this.showFileSizeAlert();
       return;
     }
