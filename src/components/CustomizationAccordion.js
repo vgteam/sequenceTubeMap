@@ -17,6 +17,7 @@ class VisualizationOptions extends Component {
   state = {
     isOpenLegend: false,
     isOpenVisualizationOptions: true,
+    isOpenServer: false
   };
 
   toggleLegend = (e) => {
@@ -28,6 +29,11 @@ class VisualizationOptions extends Component {
     this.setState({
       isOpenVisualizationOptions: !this.state.isOpenVisualizationOptions,
     });
+    e.preventDefault();
+  };
+
+  toggleServer = (e) => {
+    this.setState({ isOpenServer: !this.state.isOpenServer });
     e.preventDefault();
   };
 
@@ -210,6 +216,42 @@ class VisualizationOptions extends Component {
               </CardBody>
             </Collapse>
           </Card>
+          <Card>
+            <CardHeader id="serverCard">
+              <h5 className="mb-0">
+                <a href="#collapse" onClick={this.toggleServer}>
+                  Backend Configuration
+                </a>
+              </h5>
+            </CardHeader>
+            <Collapse isOpen={this.state.isOpenServer}>
+              <CardBody>
+                <Form>
+                  <Label className="mr-sm-2 " for="dataSourceSelect">
+                    Extract tube map data:
+                  </Label>
+                  <Input
+                    type="select"
+                    id="apiSelect"
+                    className="custom-select"
+                    value={this.props.currentAPIMode}
+                    onChange={(e) => {this.props.setAPIMode(e.target.value)}}
+                  >
+                    <option value="server">
+                      On remote server
+                    </option> 
+                    <option value="local">
+                      In-browser (.gbz.db uploads only!)
+                    </option> 
+                  </Input>
+                </Form>
+              </CardBody>
+            </Collapse>
+          </Card>
+
+
+        
+        
         </div>
       </Container>
     );
@@ -220,6 +262,8 @@ VisualizationOptions.propTypes = {
   handleMappingQualityCutoffChange: PropTypes.func.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   tracks: PropTypes.array.isRequired,
+  currentAPIMode: PropTypes.string,
+  setAPIMode: PropTypes.func
 };
 
 export default VisualizationOptions;

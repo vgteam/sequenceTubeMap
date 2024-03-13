@@ -73,41 +73,64 @@ class App extends Component {
       APIInterface: new ServerAPI(props.apiUrl)
     };
   }
-
+  
   /**
-   * Swap API implementations, between server-based and local or visa-versa.
+   * Set which API implementation to query for graph data.
+   *
+   * Mode can be "local" or "server".
    */
-  toggleAPIImplementation() {
+  setAPIMode(mode) {
     this.setState((state) => {
-      if (state.APIInterface instanceof LocalAPI) {
-        // Make a server API
-        return {
-          APIInterface: new ServerAPI(this.props.apiUrl),
-          // Also reset to a current view target this can show
-          dataOrigin: dataOriginTypes.API,
-          viewTarget: this.defaultViewTarget,
-          visOptions: {
-            ...state.visOptions,
-            colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
-          },
-        }
-      } else {
-        // Make a local API
-        return {
-          APIInterface: new LocalAPI(),
-          // Set up an empty view target that can't really render.
-          // TODO: Let us control HeaderForm's dataType state so we can pop it right over to custom, or feed it a different defaultViewTarget
-          dataOrigin: dataOriginTypes.API,
-          viewTarget: {
-            tracks: []
-          },
-          visOptions: {
-            ...state.visOptions,
-            colorSchemes: [],
-          },
+      if (mode != this.getAPIMode(state)) {
+        if (mode == "local") {
+          // Make a local API
+          return {
+            APIInterface: new LocalAPI(),
+            // Set up an empty view target that can't really render.
+            // TODO: Let us control HeaderForm's dataType state so we can pop it right over to custom, or feed it a different defaultViewTarget
+            dataOrigin: dataOriginTypes.API,
+            viewTarget: {
+              tracks: []
+            },
+            visOptions: {
+              ...state.visOptions,
+              colorSchemes: [],
+            },
+          };
+        } else if (mode == "server") {
+          // Make a server API
+          return {
+            APIInterface: new ServerAPI(this.props.apiUrl),
+            // Also reset to a current view target this can show
+            dataOrigin: dataOriginTypes.API,
+            viewTarget: this.defaultViewTarget,
+            visOptions: {
+              ...state.visOptions,
+              colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
+            },
+          };
+        } else {
+          throw new Error("Unimplemented API mode: " + mode)
         }
       }
     });
+  }
+  
+  /**
+   * Get the string describing the current API mode ("local" or "server"),
+   * given the state (by default the current state).
+   */
+  getAPIMode(state) {
+    if (state === undefined) {
+      state = this.state;
+    }
+    if (state.APIInterface instanceof LocalAPI) {
+      return "local";
+    } else if (state.APIInterface instanceof ServerAPI) {
+      return "server";
+    } else {
+      throw new Error("Unnamed API implementation: " + state.APIInterface);
+    }
   }
 
   /*
@@ -214,9 +237,6 @@ class App extends Component {
   render() {
     return (
       <div>
-        <label>
-          Local mode: <input type="checkbox" checked={this.state.APIInterface instanceof LocalAPI} onChange={() => {this.toggleAPIImplementation();} }/>
-        </label>
         <HeaderForm
           setCurrentViewTarget={this.setCurrentViewTarget}
           setDataOrigin={this.setDataOrigin}
@@ -244,6 +264,8 @@ class App extends Component {
             this.handleMappingQualityCutoffChange
           }
           setColorSetting={this.setColorSetting}
+          currentAPIMode={this.getAPIMode()}
+          setAPIMode={this.setAPIMode.bind(this)}
         />
         <Footer />
       </div>
