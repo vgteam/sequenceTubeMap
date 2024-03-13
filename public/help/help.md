@@ -44,9 +44,9 @@ Keys can use brackets to encode hierarchical structures such as arrays and objec
 
 The key's name should **not** be in quotes.
 
-Example of an array of JSON objects: 
-```
-object = 
+Example of an array of JSON objects:
+
+```json
 [
    {
       "a": "b",
@@ -56,7 +56,7 @@ object =
       "e": {
          "f": "g"
       }
-   }, 
+   } 
 ]
 ```
 
@@ -69,7 +69,8 @@ This array's query string representation would be: `object[0][a]=b&object[1][c]=
    Array of tracks. Tracks are objects consisting of `trackFile`, `trackType`, and `trackColorSettings`.
 
    A track object in JSON format might look like this:
-   ```
+   
+   ```json
    {
       "trackFile": "exampleData/internal/snp1kg-BRCA1.vg.xg",
       "trackType": "graph",
@@ -140,7 +141,8 @@ This array's query string representation would be: `object[0][a]=b&object[1][c]=
 
 
 Examples of links:
-   * Link with preexisting data: 
+   * Link with preexisting data:
+
       ```
       http://127.0.0.1:3001?
       tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&
@@ -153,7 +155,8 @@ Examples of links:
       dataType=built-in&
       simplify=false
       ```
-   * Link with custom data: 
+   * Link with custom data:
+   
       ```
       http://127.0.0.1:3001?
       tracks[1][trackType]=graph&
