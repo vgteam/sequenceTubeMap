@@ -12,7 +12,7 @@
       "bedFile": "exampleData/internal/snp1kg-BRCA1.bed",
       "dataType": "built-in",
       "simplify": false,
-      "includeSequences": false
+      "removeSequences": false
     },
     {
       "name": "vg \"small\" example",

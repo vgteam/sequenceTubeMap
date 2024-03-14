@@ -419,9 +419,9 @@ function removeNodeSequencesInPlace(graph){
   if (!graph.node){
     return;
   }
-  graph.node.forEach(function (node) {
+  graph.node.forEach(function(node) {
     console.log("node sequence to delete:", node)
-    delete node.sequence;
+    node.sequence = "";
   })
 }
 
@@ -540,11 +540,11 @@ async function getChunkedData(req, res, next) {
     req.simplify = true;
   }
 
-  // client is going to send includeSequences = true if they don't want sequences of nodes to be displayed
-  req.includeSequences = false;
-  if (!req.body.includeSequences) {
+  // client is going to send removeSequences = true if they don't want sequences of nodes to be displayed
+  req.removeSequences = false;
+  if (req.body.removeSequences) {
     // any errors / edge cases?
-    req.includeSequences = true;
+    req.removeSequences = true;
   }
 
   // check the bed file if this region has been pre-fetched
@@ -796,10 +796,11 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
-      if (!req.body.includeSequences){
+      console.log("remove sequences?", req.removeSequences)
+      if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
       } 
-      console.log("remove sequences? ", req.graph.node)
+      console.log("graph with removed sequences", req.graph.node)
       req.region = [rangeRegion.start, rangeRegion.end];
       // vg chunk always puts the path we reference on first automatically
       if (!sentResponse) {
@@ -909,7 +910,7 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
-      if (!req.body.includeSequences){
+      if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
       } 
       console.log("remove sequences? ", req.graph)

@@ -309,7 +309,7 @@ class HeaderForm extends Component {
         dataType: ds.dataType,
         name: ds.name,
         simplify: ds.simplify,
-        includeSequences: ds.simplify
+        removeSequences: ds.removeSequences
       };
       return stateVals;
     });
@@ -820,7 +820,7 @@ class HeaderForm extends Component {
   };
 
   /* Function for toggling nodeSequences button, enabling client to make request for node sequences to be displayed or note */
-  toggleRemoveSequences = () => {
+  toggleIncludeSequences = () => {
     this.setState({ removeSequences: !this.state.removeSequences });
   };
 
@@ -968,7 +968,7 @@ class HeaderForm extends Component {
                   )}
                   {/* Button for remove node sequences */}
                   <Button
-                      onClick={this.toggleRemoveSequences}
+                      onClick={this.toggleIncludeSequences}
                       outline
                       active={this.state.removeSequences}
                     >
