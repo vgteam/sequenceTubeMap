@@ -1939,7 +1939,7 @@ function calculateExtraSpace() {
       } else {
         // Track is going to a differnt node, account for space needed to limit rise/fall angle 
         const yDifference = Math.abs(track.path[i].y - track.path[i - 1].y);
-        fallAngleAdjustment[track.path[i].order] = Math.max(yDifference / 22.5, fallAngleAdjustment[track.path[i].order]);
+        fallAngleAdjustment[track.path[i].order] = Math.max(yDifference / 17.5, fallAngleAdjustment[track.path[i].order]);
       }
     }
   });
@@ -3882,17 +3882,21 @@ function drawTrackCurves(type, groupTrack) {
   );
 
   myTrackCurves.sort(compareCurvesByLineChanges);
+  console.log("myTrackCurves", myTrackCurves);
 
   myTrackCurves.forEach((curve) => {
     const xMiddle = (curve.xStart + curve.xEnd) / 2;
+    const xRightAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * 0.6;
+    const xLeftAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * (1 - 0.6);
     let d = `M ${curve.xStart} ${curve.yStart}`;
-    d += ` C ${xMiddle} ${curve.yStart} ${xMiddle} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
+    d += ` C ${xLeftAdjusted} ${curve.yStart} ${xRightAdjusted} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
     d += ` V ${curve.yEnd + curve.width}`;
-    d += ` C ${xMiddle} ${curve.yEnd + curve.width} ${xMiddle} ${
+    d += ` C ${xRightAdjusted} ${curve.yEnd + curve.width} ${xLeftAdjusted} ${
       curve.yStart + curve.width
     } ${curve.xStart} ${curve.yStart + curve.width}`;
     d += " Z";
     curve.path = d;
+
   });
 
   groupTrack
