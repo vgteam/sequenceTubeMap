@@ -1939,6 +1939,7 @@ function calculateExtraSpace() {
       } else {
         // Track is going to a differnt node, account for space needed to limit rise/fall angle 
         const yDifference = Math.abs(track.path[i].y - track.path[i - 1].y);
+        //TODO: Extra space should also be accounted when there are too many tracks curving at the nodes
         fallAngleAdjustment[track.path[i].order] = Math.max(yDifference / 17.5, fallAngleAdjustment[track.path[i].order]);
       }
     }
@@ -2786,6 +2787,8 @@ function generateSVGShapesFromPath() {
             id: track.id,
             name: track.name,
             type: track.type,
+            nodeStart: track.path[i - 1]?.node,
+            nodeEnd: track.path[i]?.node
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -2806,6 +2809,8 @@ function generateSVGShapesFromPath() {
             id: track.id,
             name: track.name,
             type: track.type,
+            nodeStart: track.path[i - 1]?.node,
+            nodeEnd: track.path[i]?.node
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -3683,8 +3688,12 @@ function drawTrackRectangles(rectangles, type, groupTrack) {
 }
 
 function compareCurvesByLineChanges(a, b) {
-  if (a[6] < b[6]) return -1;
-  else if (a[6] > b[6]) return 1;
+  if (a.xStart < b.xStart) return 1;
+  else if (a.xStart > b.xStart) return -1;
+  else if (a.xEnd < b.xEnd) return 1;
+  else if (a.xEnd > b.xEnd) return -1;
+  else if (a.yStart > b.yStart) return 1;
+  else if (a.yStart < b.yStart) return -1;
   return 0;
 }
 
@@ -3877,26 +3886,60 @@ function defineSVGPatterns() {
 }
 
 function drawTrackCurves(type, groupTrack) {
+
   const myTrackCurves = trackCurves.filter(
     filterObjectByAttribute("type", type)
   );
 
-  myTrackCurves.sort(compareCurvesByLineChanges);
-  console.log("myTrackCurves", myTrackCurves);
+  const groupedCurves = {};
 
+  // Group track curves based on if they have the same start and end node
   myTrackCurves.forEach((curve) => {
-    const xMiddle = (curve.xStart + curve.xEnd) / 2;
-    const xRightAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * 0.6;
-    const xLeftAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * (1 - 0.6);
-    let d = `M ${curve.xStart} ${curve.yStart}`;
-    d += ` C ${xLeftAdjusted} ${curve.yStart} ${xRightAdjusted} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
-    d += ` V ${curve.yEnd + curve.width}`;
-    d += ` C ${xRightAdjusted} ${curve.yEnd + curve.width} ${xLeftAdjusted} ${
-      curve.yStart + curve.width
-    } ${curve.xStart} ${curve.yStart + curve.width}`;
-    d += " Z";
-    curve.path = d;
+    const key = `${curve.nodeStart}-${curve.nodeEnd}`;
+    if (!groupedCurves[key]) {
+      groupedCurves[key] = [];
+    }
+    groupedCurves[key].push(curve);
+  });
 
+  Object.values(groupedCurves).forEach((curveGroup) => {
+    // Control point adjustment range: 30% to 70% of the original x values
+    let adjustValue = 0.3;
+    let adjustIncrement = 0.4 / curveGroup.length;
+
+    // Ignore Beziar Curve skewing when a group is not too big
+    if (curveGroup.length <= 5) {
+      adjustValue = 0.5;
+      adjustIncrement = 0;
+    }
+
+    // Sort curve groups by their starting y value
+    curveGroup.sort(compareCurvesByLineChanges);
+
+    curveGroup.forEach((curve) => {
+      let xAdjusted = null;
+      // NextAdjusted is used to try to draw a parallel curve on the way back
+      let xNextAdjusted = null;
+      // Determine if the curve is going up or down
+      if (curve.yStart < curve.yEnd) {
+        xAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * (1 - adjustValue);
+        adjustValue += adjustIncrement;
+        xNextAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * (1 - adjustValue);
+      } else {
+        xAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * adjustValue;
+        adjustValue += adjustIncrement;
+        xNextAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * adjustValue;
+      }
+      let d = `M ${curve.xStart} ${curve.yStart}`;
+      d += ` C ${xAdjusted} ${curve.yStart} ${xAdjusted} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
+      d += ` V ${curve.yEnd + curve.width}`;
+      d += ` C ${xNextAdjusted} ${curve.yEnd + curve.width} ${xNextAdjusted} ${
+        curve.yStart + curve.width
+      } ${curve.xStart} ${curve.yStart + curve.width}`;
+      d += " Z";
+      curve.path = d;
+
+    })
   });
 
   groupTrack
