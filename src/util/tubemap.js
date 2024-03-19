@@ -1937,7 +1937,7 @@ function calculateExtraSpace() {
           rightSideEdges[track.path[i].order] += 1;
         }
       } else {
-        // Track is going to a differnt node, account for space needed to limit rise/fall angle 
+        // Track is going to a different node; account for space needed to limit rise/fall angle 
         const yDifference = Math.abs(track.path[i].y - track.path[i - 1].y);
         //TODO: Extra space should also be accounted when there are too many tracks curving at the nodes
         fallAngleAdjustment[track.path[i].order] = Math.max(yDifference / 17.5, fallAngleAdjustment[track.path[i].order]);
@@ -3687,11 +3687,9 @@ function drawTrackRectangles(rectangles, type, groupTrack) {
     .text((d) => getPopUpTrackText(d.name));
 }
 
-function compareCurvesByLineChanges(a, b) {
+function compareCurvesByXYStartValue(a, b) {
   if (a.xStart < b.xStart) return 1;
   else if (a.xStart > b.xStart) return -1;
-  else if (a.xEnd < b.xEnd) return 1;
-  else if (a.xEnd > b.xEnd) return -1;
   else if (a.yStart > b.yStart) return 1;
   else if (a.yStart < b.yStart) return -1;
   return 0;
@@ -3914,7 +3912,7 @@ function drawTrackCurves(type, groupTrack) {
     }
 
     // Sort curve groups by their starting y value
-    curveGroup.sort(compareCurvesByLineChanges);
+    curveGroup.sort(compareCurvesByXYStartValue);
 
     curveGroup.forEach((curve) => {
       let xAdjusted = null;
