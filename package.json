@@ -62,7 +62,7 @@
   "scripts": {
     "start": "concurrently -n frontend,backend -c red,green 'HOST=${HOST:=127.0.0.1} PORT=${PORT:=3001} react-scripts start' 'npm:serve'",
     "build": "react-scripts build",
-    "test": "react-scripts test --reporters default jest-compact-reporter --seed=1",
+    "test": "react-scripts test --testResultsProcessor=./node_modules/jest-html-reporter --reporters default jest-compact-reporter --seed=1",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
@@ -85,6 +85,7 @@
   "devDependencies": {
     "jest-compact-reporter": "^1.2.9",
     "jest-fetch-mock": "^3.0.3",
+    "jest-html-reporter": "^3.10.2",
     "prettier": "^2.8.8",
     "qs": "^6.11.1"
   },
