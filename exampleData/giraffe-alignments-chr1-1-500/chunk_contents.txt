@@ -1,0 +1,5 @@
+chunk.vg
+chunk_0_chr1_1_500.annotate.txt
+chunk_0_chr1_1_500.gam
+regions.tsv
+tracks.json
