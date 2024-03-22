@@ -1,0 +1,20 @@
+[
+  {
+    "trackFile": "exampleData/STM_DataShare_Nov07_2023/STM_DataShare_Nov07_2023/giraffe_alignments/chr5_73149742_73150242.giraffe.gbz",
+    "trackType": "graph",
+    "trackColorSettings": {
+      "mainPalette": "#000000",
+      "auxPalette": "greys",
+      "colorReadsByMappingQuality": false
+    }
+  },
+  {
+    "trackFile": "exampleData/STM_DataShare_Nov07_2023/STM_DataShare_Nov07_2023/giraffe_alignments/normal.chr5_73149742_73150242.sorted.gam",
+    "trackType": "read",
+    "trackColorSettings": {
+      "mainPalette": "blues",
+      "auxPalette": "reds",
+      "colorReadsByMappingQuality": false
+    }
+  }
+]
