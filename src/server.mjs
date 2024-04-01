@@ -543,7 +543,9 @@ async function getChunkedData(req, res, next) {
   // client is going to send removeSequences = true if they don't want sequences of nodes to be displayed
   req.removeSequences = false;
   if (req.body.removeSequences) {
-    // any errors / edge cases?
+    if (readsExist(req.body.tracks)) {
+      throw new BadRequestError("Can't remove node sequences if read tracks exist.");
+    }
     req.removeSequences = true;
   }
 
@@ -796,11 +798,9 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
-      console.log("remove sequences?", req.removeSequences)
       if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
       } 
-      console.log("graph with removed sequences", req.graph.node)
       req.region = [rangeRegion.start, rangeRegion.end];
       // vg chunk always puts the path we reference on first automatically
       if (!sentResponse) {

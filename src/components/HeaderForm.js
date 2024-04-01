@@ -550,7 +550,7 @@ class HeaderForm extends Component {
     region: this.state.region,
     dataType: this.state.dataType,
     simplify: this.state.simplify && !readsExist(this.state.tracks),
-    removeSequences: this.state.removeSequences
+    removeSequences: this.state.removeSequences && !readsExist(this.state.tracks)
   });
 
   handleGoButton = () => {
@@ -958,22 +958,25 @@ class HeaderForm extends Component {
                   ></TrackPicker>
                   {/* Button for simplify */}
                   {!readsExist(this.state.tracks) && (
-                    <Button
-                      onClick={this.toggleSimplify}
-                      outline
-                      active={this.state.simplify}
-                    >
-                      {this.state.simplify ? "Simplify On" : "Simplify Off"}
-                    </Button>
+                    <>
+                      <Button
+                        onClick={this.toggleSimplify}
+                        outline
+                        active={this.state.simplify}
+                      >
+                        {this.state.simplify ? "Simplify On" : "Simplify Off"}
+                      </Button>
+                      {/* Button for remove node sequences */}
+                      <Button
+                        onClick={this.toggleIncludeSequences}
+                        outline
+                        active={this.state.removeSequences}
+                      >
+                        {this.state.removeSequences ? "Remove Node Sequences" : "Keep Node Sequences"}
+                      </Button>
+                    </>
                   )}
-                  {/* Button for remove node sequences */}
-                  <Button
-                      onClick={this.toggleIncludeSequences}
-                      outline
-                      active={this.state.removeSequences}
-                    >
-                      {this.state.removeSequences ? "Remove Node Sequences" : "Keep Node Sequences"}
-                    </Button>
+                  
                 </div>
               )}
               <Row>
