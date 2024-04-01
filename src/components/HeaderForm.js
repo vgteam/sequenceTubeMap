@@ -10,6 +10,7 @@ import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
 import FormHelperText from "@mui/material/FormHelperText";
+import PopupDialog from "./PopupDialog.js";
 import {
   parseRegion,
   stringifyRegion,
@@ -309,6 +310,7 @@ class HeaderForm extends Component {
         dataType: ds.dataType,
         name: ds.name,
         simplify: ds.simplify,
+        popupOpen: false,
         removeSequences: ds.removeSequences
       };
       return stateVals;
@@ -824,6 +826,14 @@ class HeaderForm extends Component {
     this.setState({ removeSequences: !this.state.removeSequences });
   };
 
+  openPopup = () => {
+    this.setState({ popupOpen: !this.state.popupOpen });
+  };
+
+  closePopup = () => {
+    this.setState({ popupOpen: !this.state.popupOpen });
+  };
+
   render() {
     let errorDiv = null;
     if (this.state.error) {
@@ -956,27 +966,37 @@ class HeaderForm extends Component {
                     onChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
-                  {/* Button for simplify */}
                   {!readsExist(this.state.tracks) && (
                     <>
                       <Button
-                        onClick={this.toggleSimplify}
+                        onClick={this.openPopup}
                         outline
-                        active={this.state.simplify}
+                        active={this.state.simplify || this.state.removeSequences}
                       >
-                        {this.state.simplify ? "Simplify On" : "Simplify Off"}
+                        Simplify
                       </Button>
-                      {/* Button for remove node sequences */}
-                      <Button
-                        onClick={this.toggleIncludeSequences}
-                        outline
-                        active={this.state.removeSequences}
-                      >
-                        {this.state.removeSequences ? "Remove Node Sequences" : "Keep Node Sequences"}
-                      </Button>
+                      <PopupDialog open={this.state.popupOpen} close={this.closePopup} width="200px">
+                        <div style={{ height: "20vh"}}>
+                          {/* Button for simplify */}
+                          <Button
+                            onClick={this.toggleSimplify}
+                            outline
+                            active={this.state.simplify}
+                          >
+                            {this.state.simplify ? "Remove Small Variants" : "Keep Small Variants"}
+                          </Button>
+                          {/* Button for remove node sequences */}
+                          <Button
+                            onClick={this.toggleIncludeSequences}
+                            outline
+                            active={this.state.removeSequences}
+                          >
+                            {this.state.removeSequences ? "Remove Node Sequences" : "Keep Node Sequences"}
+                          </Button>
+                        </div>
+                      </PopupDialog>
                     </>
                   )}
-                  
                 </div>
               )}
               <Row>
