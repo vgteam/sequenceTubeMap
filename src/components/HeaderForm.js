@@ -957,15 +957,13 @@ class HeaderForm extends Component {
                   region={this.state.region}
                 />
               )}
+              
               {customFilesFlag && (
-                <div style={{ display: "flex" }}>
-                  {DataPositionFormRowComponent}
-                  <TrackPicker
-                    tracks={this.state.tracks}
-                    availableTracks={this.state.fileSelectOptions}
-                    onChange={this.handleInputChange}
-                    handleFileUpload={this.handleFileUpload}
-                  ></TrackPicker>
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    {DataPositionFormRowComponent}
+                  </div>
+                  <div className="d-flex justify-content-end align-items-start flex-shrink-0">
                   {!readsExist(this.state.tracks) && (
                     <>
                       <Button
@@ -997,6 +995,13 @@ class HeaderForm extends Component {
                       </PopupDialog>
                     </>
                   )}
+                  <TrackPicker
+                    tracks={this.state.tracks}
+                    availableTracks={this.state.fileSelectOptions}
+                    onChange={this.handleInputChange}
+                    handleFileUpload={this.handleFileUpload}
+                  ></TrackPicker>
+                  </div>
                 </div>
               )}
               <Row>
