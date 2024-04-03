@@ -11,6 +11,9 @@ import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
 import FormHelperText from "@mui/material/FormHelperText";
 import PopupDialog from "./PopupDialog.js";
+import Switch from "react-switch";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGear } from "@fortawesome/free-solid-svg-icons";
 import {
   parseRegion,
   stringifyRegion,
@@ -971,26 +974,20 @@ class HeaderForm extends Component {
                         outline
                         active={this.state.simplify || this.state.removeSequences}
                       >
-                        Simplify
+                      <FontAwesomeIcon icon={faGear} /> Simplify
                       </Button>
-                      <PopupDialog open={this.state.popupOpen} close={this.closePopup} width="200px">
-                        <div style={{ height: "20vh"}}>
-                          {/* Button for simplify */}
-                          <Button
-                            onClick={this.toggleSimplify}
-                            outline
-                            active={this.state.simplify}
-                          >
-                            {this.state.simplify ? "Remove Small Variants" : "Keep Small Variants"}
-                          </Button>
-                          {/* Button for remove node sequences */}
-                          <Button
-                            onClick={this.toggleIncludeSequences}
-                            outline
-                            active={this.state.removeSequences}
-                          >
-                            {this.state.removeSequences ? "Remove Node Sequences" : "Keep Node Sequences"}
-                          </Button>
+                      <PopupDialog open={this.state.popupOpen} close={this.closePopup} width="400px">
+                        <div style={{ height: "10vh"}}>
+                          {/* Toggle for simplify small variants */}
+                          <label className="d-flex align-items-center justify-content-between" style={{ marginBottom: "10px"}}>
+                            <span>Remove Small Variants</span>
+                            <Switch onChange={this.toggleSimplify} checked={this.state.simplify} />
+                          </label>
+                          {/* Toggle for remove node sequences */}
+                          <label className="d-flex align-items-center justify-content-between">
+                            <span>Remove Node Sequences</span>
+                            <Switch onChange={this.toggleIncludeSequences} checked={this.state.removeSequences} />
+                          </label>
                         </div>
                       </PopupDialog>
                     </>
