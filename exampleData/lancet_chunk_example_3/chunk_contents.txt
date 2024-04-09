@@ -1,0 +1,6 @@
+chunk-1_0_ref0_1184_1923.gam
+chunk.vg
+chunk_0_ref0_1184_1923.annotate.txt
+chunk_0_ref0_1184_1923.gam
+regions.tsv
+tracks.json

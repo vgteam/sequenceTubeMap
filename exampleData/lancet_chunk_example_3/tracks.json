@@ -1,0 +1,27 @@
+[
+  {
+    "trackFile": "exampleData/visualization_examples/chr7_124051614_124054114__HCC1395.giraffe.gbz",
+    "trackType": "graph",
+    "trackColorSettings": {
+      "mainPalette": "#000000",
+      "auxPalette": "greys",
+      "colorReadsByMappingQuality": false
+    }
+  },
+  {
+    "trackFile": "exampleData/visualization_examples/Tumor_HCC1395.chr7_124051614_124054114.sorted.gam",
+    "trackType": "read",
+    "trackColorSettings": {
+      "mainPalette": "reds",
+      "auxPalette": "reds"
+    }
+  },
+  {
+    "trackFile": "exampleData/visualization_examples/Normal_HCC1395.chr7_124051614_124054114.sorted.gam",
+    "trackType": "read",
+    "trackColorSettings": {
+      "mainPalette": "blues",
+      "auxPalette": "blues"
+    }
+  }
+]

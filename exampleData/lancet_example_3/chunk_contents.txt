@@ -1,6 +1,0 @@
-chunk-1_0_ref0_1500_2000.gam
-chunk.vg
-chunk_0_ref0_1500_2000.annotate.txt
-chunk_0_ref0_1500_2000.gam
-regions.tsv
-tracks.json

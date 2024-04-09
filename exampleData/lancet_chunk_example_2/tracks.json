@@ -1,6 +1,6 @@
 [
   {
-    "trackFile": "exampleData/STM_DataShare_Nov07_2023/STM_DataShare_Nov07_2023/giraffe_alignments/chr1_86645908_86646408.giraffe.gbz",
+    "trackFile": "exampleData/visualization_examples/chr5_73149742_73150242.giraffe.gbz",
     "trackType": "graph",
     "trackColorSettings": {
       "mainPalette": "#000000",
@@ -9,7 +9,7 @@
     }
   },
   {
-    "trackFile": "exampleData/STM_DataShare_Nov07_2023/STM_DataShare_Nov07_2023/giraffe_alignments/normal.chr1_86645908_86646408.gam",
+    "trackFile": "exampleData/visualization_examples/normal.chr5_73149742_73150242.sorted.gam",
     "trackType": "read",
     "trackColorSettings": {
       "mainPalette": "blues",
