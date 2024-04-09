@@ -11,7 +11,7 @@ import { fetchAndParse } from "./fetchAndParse";
 // We want to be able to replace the `fetchAndParse` that *other* files see,
 // and we want to use *different* implementations for different tests in this
 // file. We can mock it with Jest, but Jest will move this call before the
-// imports when runnin the tests, so we can't access any file-level variables
+// imports when running the tests, so we can't access any file-level variables
 // in it. So we need to do some sneaky global trickery.
 
 // Register the given replacement function to be called instead of fetchAndParse.
@@ -25,7 +25,7 @@ function clearFetchAndParseMock() {
 }
 
 jest.mock("./fetchAndParse", () => {
-  // This dispatcher will replace fetchAndParse when we or anyone eles imports it.
+  // This dispatcher will replace fetchAndParse when we or anyone else imports it.
   function fetchAndParseDispatcher() {
     // Ge tthe real fetchAndParse
     const { fetchAndParse } = jest.requireActual("./fetchAndParse");

@@ -4,6 +4,7 @@ import { Container, Row, Col, Label, Alert, Button } from "reactstrap";
 import { dataOriginTypes } from "../enums";
 import "../config-client.js";
 import { config } from "../config-global.mjs";
+import { LocalAPI } from "../api/LocalAPI.mjs";
 import DataPositionFormRow from "./DataPositionFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
@@ -72,6 +73,8 @@ const CLEAR_STATE = {
   pathNames: [],
 
   tracks: {},
+  // BED file of regions to jump between. Regions may have pre-extracted chunks in the last column.
+  // If not used, may be undefined or may have the sting value "none".
   bedFile: undefined,
   region: "",
   name: undefined,
@@ -97,6 +100,12 @@ const EMPTY_STATE = {
   // will try and draw the BED dropdown without an array of options.
   bedSelectOptions: [],
 };
+
+// Return true if file is set to a string file name or URL, and false if it is
+// falsey or the "none" sentinel.
+function isSet(file) {
+  return (file !== "none" && file);
+}
 
 // Creates track to be stored in ViewTarget
 // Modify as the track system changes
@@ -268,7 +277,6 @@ class HeaderForm extends Component {
   componentDidMount() {
     this.fetchCanceler = new AbortController();
     this.cancelSignal = this.fetchCanceler.signal;
-    this.api = this.props.APIInterface;
     this.initState();
     this.getMountedFilenames();
     this.setUpWebsocket();
@@ -293,7 +301,7 @@ class HeaderForm extends Component {
   initState = () => {
     // Populate state with either viewTarget or the first example
     let ds = this.props.defaultViewTarget ?? DATA_SOURCES[0];
-    const bedSelect = ds.bedFile ? ds.bedFile : "none";
+    const bedSelect = isSet(ds.bedFile) ? ds.bedFile : "none";
     if (bedSelect !== "none") {
       this.getBedRegions(bedSelect);
     }
@@ -323,7 +331,7 @@ class HeaderForm extends Component {
   setTrackFile = (type, index, file) => {
     // Set the nth track of the given type to the given file.
     // If there is no nth track of that type, create one.
-    // If the file is "none", remove that track.
+    // If the file is unset, remove that track.
     this.setState((state) => {
       console.log(
         "Set file " +
@@ -346,13 +354,13 @@ class HeaderForm extends Component {
         let track = state.tracks[key];
         if (track.trackType === type) {
           if (seenTracksOfType === index) {
-            if (file !== "none") {
+            if (isSet(file)) {
               // We want to adjust it, so keep a modified copy of it
               let newTrack = JSON.parse(JSON.stringify(track));
               newTrack.trackFile = file;
               newTracks[key] = newTrack;
             }
-            // If the file is "none" we drop the track.
+            // If the file is unset we drop the track.
           } else {
             // We want to keep it as is
             newTracks[key] = track;
@@ -370,7 +378,7 @@ class HeaderForm extends Component {
       console.log(
         "Saw " + seenTracksOfType + " tracks of type vs index " + index
       );
-      if (seenTracksOfType === index && file !== "none") {
+      if (seenTracksOfType === index && isSet(file)) {
         // We need to add this track
         console.log("Create track at index " + (maxKey + 1));
         newTracks[maxKey + 1] = createTrack({ type: type, name: file });
@@ -385,8 +393,8 @@ class HeaderForm extends Component {
   };
 
   getTrackFile = (tracks, type, index) => {
-    // Get the file used in the nth track of the gicen type, or "none" if no
-    // such track exists.
+    // Get the file used in the nth track of the given type, or the unset
+    // "none" sentinel if no such track exists.
     let seenTracksOfType = 0;
     for (const key in tracks) {
       let track = tracks[key];
@@ -408,7 +416,7 @@ class HeaderForm extends Component {
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getFilenames(this.cancelSignal);
+      const json = await this.props.APIInterface.getFilenames(this.cancelSignal);
       if (!json.files || json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
@@ -422,7 +430,7 @@ class HeaderForm extends Component {
             const bedSelect = json.bedFiles.includes(state.bedSelect)
               ? state.bedSelect
               : "none";
-            if (bedSelect !== "none") {
+            if (isSet(bedSelect)) {
               this.getBedRegions(bedSelect);
             }
             for (const key in state.tracks) {
@@ -456,7 +464,7 @@ class HeaderForm extends Component {
   getBedRegions = async (bedFile) => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getBedRegions(bedFile, this.cancelSignal);
+      const json = await this.props.APIInterface.getBedRegions(bedFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       if (!json.bedRegions || !(json.bedRegions["desc"] instanceof Array)) {
         throw new Error(
@@ -483,7 +491,7 @@ class HeaderForm extends Component {
   getPathNames = async (graphFile) => {
     this.setState({ error: null });
     try {
-      const json = await this.api.getPathNames(graphFile, this.cancelSignal);
+      const json = await this.props.APIInterface.getPathNames(graphFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
       if (!(pathNames instanceof Array)) {
@@ -521,7 +529,7 @@ class HeaderForm extends Component {
       DATA_SOURCES.forEach((ds) => {
         if (ds.name === value) {
           let bedSelect = "none";
-          if (ds.bedFile) {
+          if (isSet(ds.bedFile)) {
             this.getBedRegions(ds.bedFile);
             bedSelect = ds.bedFile;
           } else {
@@ -655,9 +663,9 @@ class HeaderForm extends Component {
     if (tracks) {
       this.setState({ tracks: this.convertArrayToObject(tracks) });
       console.log("New tracks have been applied");
-    } else if (this.state.bedFile && chunk) {
+    } else if (isSet(this.state.bedFile) && chunk) {
       // Try to retrieve tracks from the server
-      const json = await this.api.getChunkTracks(
+      const json = await this.props.APIInterface.getChunkTracks(
         this.state.bedFile,
         chunk,
         this.cancelSignal
@@ -688,7 +696,7 @@ class HeaderForm extends Component {
 
     // update path names
     const graphFile = this.getTrackFile(newTracks, fileTypes.GRAPH, 0);
-    if (graphFile && graphFile !== "none") {
+    if (isSet(graphFile)) {
       this.getPathNames(graphFile);
     }
   };
@@ -698,7 +706,7 @@ class HeaderForm extends Component {
     const value = event.target.value;
     this.setState({ [id]: value });
 
-    if (value !== "none") {
+    if (isSet(value)) {
       this.getBedRegions(value);
     }
     this.setState({ bedFile: value });
@@ -744,7 +752,7 @@ class HeaderForm extends Component {
   }
 
   canGoLeft = (regionIndex) => {
-    if (this.state.bedFile){
+    if (isSet(this.state.bedFile)){
       return (regionIndex > 0);
     } else {
       return true;
@@ -752,7 +760,7 @@ class HeaderForm extends Component {
   }
 
   canGoRight = (regionIndex) => {
-    if (this.state.bedFile){
+    if (isSet(this.state.bedFile)){
       if (!this.state.regionInfo["chr"]){
         return false;
       }
@@ -764,7 +772,7 @@ class HeaderForm extends Component {
 
 
   handleGoRight = () => {
-    if (this.state.bedFile){
+    if (isSet(this.state.bedFile)){
       this.jumpRegion(1);
     } else {
       this.budgeRegion(0.5);
@@ -772,7 +780,7 @@ class HeaderForm extends Component {
   };
 
   handleGoLeft = () => {
-    if (this.state.bedFile){
+    if (isSet(this.state.bedFile)){
       this.jumpRegion(-1);
     } else {
       this.budgeRegion(-0.5);
@@ -789,7 +797,7 @@ class HeaderForm extends Component {
 
   // Sends uploaded file to server and returns a path to the file
   handleFileUpload = async (fileType, file) => {
-    if (file.size > config.MAXUPLOADSIZE) {
+    if (!(this.props.APIInterface instanceof LocalAPI) && file.size > config.MAXUPLOADSIZE) {
       this.showFileSizeAlert();
       return;
     }
@@ -797,7 +805,7 @@ class HeaderForm extends Component {
     this.setUploadInProgress(true);
 
     try {
-      let fileName = await this.api.putFile(fileType, file, this.cancelSignal);
+      let fileName = await this.props.APIInterface.putFile(fileType, file, this.cancelSignal);
       if (fileType === "graph") {
         // Refresh the graphs right away
         this.getMountedFilenames();
@@ -813,7 +821,7 @@ class HeaderForm extends Component {
   };
 
   setUpWebsocket = () => {
-    this.subscription = this.api.subscribeToFilenameChanges(
+    this.subscription = this.props.APIInterface.subscribeToFilenameChanges(
       this.getMountedFilenames,
       this.cancelSignal
     );

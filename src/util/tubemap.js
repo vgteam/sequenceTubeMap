@@ -1917,15 +1917,18 @@ function generateNodeXCoords() {
 function calculateExtraSpace() {
   const leftSideEdges = [];
   const rightSideEdges = [];
+  const fallAngleAdjustment = [];
   const extra = [];
 
   for (let i = 0; i <= maxOrder; i += 1) {
     leftSideEdges.push(0);
     rightSideEdges.push(0);
+    fallAngleAdjustment.push(0);
   }
 
   tracks.forEach((track) => {
     for (let i = 1; i < track.path.length; i += 1) {
+      // Track is going to the same node, account for space taken up by edges looping around
       if (track.path[i].order === track.path[i - 1].order) {
         // repeat or translocation
         if (track.path[i].isForward === true) {
@@ -1933,14 +1936,24 @@ function calculateExtraSpace() {
         } else {
           rightSideEdges[track.path[i].order] += 1;
         }
+      } else {
+        // Track is going to a different node; account for space needed to limit rise/fall angle 
+        const yDifference = Math.abs(track.path[i].y - track.path[i - 1].y);
+        //TODO: Extra space should also be accounted when there are too many tracks curving at the nodes
+        fallAngleAdjustment[track.path[i].order] = Math.max(yDifference / 17.5, fallAngleAdjustment[track.path[i].order]);
       }
     }
   });
 
+
   extra.push(Math.max(0, leftSideEdges[0] - 1));
   for (let i = 1; i <= maxOrder; i += 1) {
+    // Extra space uses space needed for edges(tracks looping), or space needed to limit rise/fall angle, whichever is larger
     extra.push(
-      Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1)
+      Math.max(
+        Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1),
+        fallAngleAdjustment[i]
+      )
     );
   }
   return extra;
@@ -2774,6 +2787,8 @@ function generateSVGShapesFromPath() {
             id: track.id,
             name: track.name,
             type: track.type,
+            nodeStart: track.path[i - 1]?.node,
+            nodeEnd: track.path[i]?.node
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -2794,6 +2809,8 @@ function generateSVGShapesFromPath() {
             id: track.id,
             name: track.name,
             type: track.type,
+            nodeStart: track.path[i - 1]?.node,
+            nodeEnd: track.path[i]?.node
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -3670,9 +3687,11 @@ function drawTrackRectangles(rectangles, type, groupTrack) {
     .text((d) => getPopUpTrackText(d.name));
 }
 
-function compareCurvesByLineChanges(a, b) {
-  if (a[6] < b[6]) return -1;
-  else if (a[6] > b[6]) return 1;
+function compareCurvesByXYStartValue(a, b) {
+  if (a.xStart < b.xStart) return 1;
+  else if (a.xStart > b.xStart) return -1;
+  else if (a.yStart > b.yStart) return 1;
+  else if (a.yStart < b.yStart) return -1;
   return 0;
 }
 
@@ -3865,22 +3884,60 @@ function defineSVGPatterns() {
 }
 
 function drawTrackCurves(type, groupTrack) {
+
   const myTrackCurves = trackCurves.filter(
     filterObjectByAttribute("type", type)
   );
 
-  myTrackCurves.sort(compareCurvesByLineChanges);
+  const groupedCurves = {};
 
+  // Group track curves based on if they have the same start and end node
   myTrackCurves.forEach((curve) => {
-    const xMiddle = (curve.xStart + curve.xEnd) / 2;
-    let d = `M ${curve.xStart} ${curve.yStart}`;
-    d += ` C ${xMiddle} ${curve.yStart} ${xMiddle} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
-    d += ` V ${curve.yEnd + curve.width}`;
-    d += ` C ${xMiddle} ${curve.yEnd + curve.width} ${xMiddle} ${
-      curve.yStart + curve.width
-    } ${curve.xStart} ${curve.yStart + curve.width}`;
-    d += " Z";
-    curve.path = d;
+    const key = `${curve.nodeStart}-${curve.nodeEnd}`;
+    if (!groupedCurves[key]) {
+      groupedCurves[key] = [];
+    }
+    groupedCurves[key].push(curve);
+  });
+
+  Object.values(groupedCurves).forEach((curveGroup) => {
+    // Control point adjustment range: 30% to 70% of the original x values
+    let adjustValue = 0.3;
+    let adjustIncrement = 0.4 / curveGroup.length;
+
+    // Ignore Beziar Curve skewing when a group is not too big
+    if (curveGroup.length <= 5) {
+      adjustValue = 0.5;
+      adjustIncrement = 0;
+    }
+
+    // Sort curve groups by their starting y value
+    curveGroup.sort(compareCurvesByXYStartValue);
+
+    curveGroup.forEach((curve) => {
+      let xAdjusted = null;
+      // NextAdjusted is used to try to draw a parallel curve on the way back
+      let xNextAdjusted = null;
+      // Determine if the curve is going up or down
+      if (curve.yStart < curve.yEnd) {
+        xAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * (1 - adjustValue);
+        adjustValue += adjustIncrement;
+        xNextAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * (1 - adjustValue);
+      } else {
+        xAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * adjustValue;
+        adjustValue += adjustIncrement;
+        xNextAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * adjustValue;
+      }
+      let d = `M ${curve.xStart} ${curve.yStart}`;
+      d += ` C ${xAdjusted} ${curve.yStart} ${xAdjusted} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
+      d += ` V ${curve.yEnd + curve.width}`;
+      d += ` C ${xNextAdjusted} ${curve.yEnd + curve.width} ${xNextAdjusted} ${
+        curve.yStart + curve.width
+      } ${curve.xStart} ${curve.yStart + curve.width}`;
+      d += " Z";
+      curve.path = d;
+
+    })
   });
 
   groupTrack
