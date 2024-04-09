@@ -4052,7 +4052,10 @@ function getTrackByID(trackID) {
 function trackMouseOver() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
-  d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)").raise();
+  // TODO: We want to also .raise() here, but it makes Firefox 124.0.2 on Mac
+  // lose the mouseout and immediately trigger another mouseover, if the mouse
+  // is iver a curved section of a read.
+  d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)");
 }
 
 // Highlight node on mouseover
@@ -4067,7 +4070,7 @@ function trackMouseOut() {
   const trackID = d3.select(this).attr("trackID");
   d3.selectAll(`.track${trackID}`).each(function clearTrackHighlight() {
     const c = d3.select(this).attr("color");
-    d3.select(this).style("fill", c).lower();
+    d3.select(this).style("fill", c);
   });
 }
 
