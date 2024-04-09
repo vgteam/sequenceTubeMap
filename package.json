@@ -49,6 +49,7 @@
     "react-scripts": "5.0.1",
     "react-select": "^5.7.3",
     "react-select-event": "^5.5.1",
+    "react-switch": "^7.0.0",
     "reactjs-popup": "^2.0.5",
     "reactstrap": "^9.1.9",
     "readers-writer-lock": "^1.0.0",

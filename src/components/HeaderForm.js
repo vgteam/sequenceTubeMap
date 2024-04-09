@@ -11,7 +11,7 @@ import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
 import FormHelperText from "@mui/material/FormHelperText";
 import PopupDialog from "./PopupDialog.js";
-import { Switch } from "react-switch";
+import Switch from "react-switch";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGear } from "@fortawesome/free-solid-svg-icons";
 import {
