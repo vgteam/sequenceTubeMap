@@ -2669,8 +2669,7 @@ function getReadXEnd(read) {
 // position within the given node
 function getXCoordinateOfBaseWithinNode(node, base) {
   if (base > node.sequenceLength) return null; // equality is allowed
-  const nodeLeftX = node.x - 4;
-  const nodeRightX = node.x + node.pixelWidth + 4;
+  const [nodeLeftX, nodeRightX] = nodePixelCoordinatesInX(node);
   return nodeLeftX + (base / node.sequenceLength) * (nodeRightX - nodeLeftX);
 }
 
@@ -3467,6 +3466,32 @@ function drawLabels(dNodes) {
   }
 }
 
+function nodePixelCoordinatesInX(node) {
+  // Add and subtract 4 to account for stroke width - TODO: figure out what the 4 means
+  const nodeLeftX = node.x - 4;
+  const nodeRightX = node.x + node.pixelWidth + 4;
+  return [nodeLeftX, nodeRightX];
+}
+
+// If nodes are spaced closely together (based on the threshold value) then those nodes would be grouped together
+//  in a larger interval. If the nodes are spaced further apart (based on the threshold) then those nodes would form a 
+//  separate interval.
+export function axisIntervals(nodePixelCoordinates, threshold) {
+  if (nodePixelCoordinates.length == 0){
+    return [];
+  } else if (nodePixelCoordinates.length == 1){
+    return nodePixelCoordinates;
+  }
+  // Sorting an array in ascending order based on first element of subarrays - from https://stackoverflow.com/questions/48634944/sort-an-array-of-arrays-by-the-first-elements-in-the-nested-arrays
+  let mergedIntervals = [];
+  nodePixelCoordinates = nodePixelCoordinates.sort((a, b) => {a[0] - b[0]})
+  console.log("Sorted:", nodePixelCoordinates);
+  // for (let i = 0; i < nodePixelCoordinates.length; i++){
+
+  // }
+}
+
+
 function drawRuler() {
   let rulerTrackIndex = 0;
   while (tracks[rulerTrackIndex].name !== trackForRuler) rulerTrackIndex += 1;
@@ -3530,6 +3555,9 @@ function drawRuler() {
 
   let start_region = Number(inputRegion[0]);
   let end_region = Number(inputRegion[1]);
+
+  intervalsVisitedByNodes = [];
+
   for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
     // Walk along the ruler track in ascending coordinate order.
     const nodeIndex =
@@ -3539,6 +3567,9 @@ function drawRuler() {
           : i
       ];
     const currentNode = nodes[Math.abs(nodeIndex)];
+
+    intervalsVisitedByNodes.push(nodePixelCoordinatesInX(currentNode));
+
     // Each node may actually have the track's coordinates go through it
     // backward. In fact, the whole track may be laid out backward.
     // So xor the reverse flags, which we assume to be bools
