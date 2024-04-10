@@ -194,6 +194,10 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
     return false;
   }
 
+  if (currViewTarget.simplify !== nextViewTarget.simplify) {
+    return false;
+  }
+
   if (currViewTarget.removeSequences !== nextViewTarget.removeSequences) {
     return false;
   }
@@ -832,16 +836,12 @@ class HeaderForm extends Component {
     this.setState({ simplify: !this.state.simplify });
   };
 
-  /* Function for toggling nodeSequences button, enabling client to make request for node sequences to be displayed or note */
+  /* Function for toggling display of node sequences */
   toggleIncludeSequences = () => {
     this.setState({ removeSequences: !this.state.removeSequences });
   };
 
   openPopup = () => {
-    this.setState({ popupOpen: !this.state.popupOpen });
-  };
-
-  closePopup = () => {
     this.setState({ popupOpen: !this.state.popupOpen });
   };
 
@@ -984,7 +984,7 @@ class HeaderForm extends Component {
                       >
                       <FontAwesomeIcon icon={faGear} /> Simplify
                       </Button>
-                      <PopupDialog open={this.state.popupOpen} close={this.closePopup} width="400px">
+                      <PopupDialog open={this.state.popupOpen} close={!this.openPopup} width="400px">
                         <div style={{ height: "10vh"}}>
                           {/* Toggle for simplify small variants */}
                           <label className="d-flex align-items-center justify-content-between" style={{ marginBottom: "10px"}}>
