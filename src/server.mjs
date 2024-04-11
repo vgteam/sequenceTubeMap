@@ -389,7 +389,7 @@ graph = {
     {
       sequence: "AGCT"
       id: "1"
-    ,
+    },
     {
       sequence: "AGCTAG"
       id: "2"
@@ -403,7 +403,7 @@ graph = {
   node: [
     {
       id: "1"
-    ,
+    },
     {
       id: "2"
     }
