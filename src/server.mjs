@@ -394,8 +394,8 @@ graph = {
       sequence: "AGCTAG"
       id: "2"
     }
-  ]
-  edge: []
+  ],
+  edge: [],
   path: []
 }
 removing sequence would result in
@@ -407,8 +407,8 @@ graph = {
     {
       id: "2"
     }
-  ]
-  edge: []
+  ],
+  edge: [],
   path: []
 }
 */
