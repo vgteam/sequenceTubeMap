@@ -420,7 +420,6 @@ function removeNodeSequencesInPlace(graph){
     return;
   }
   graph.node.forEach(function(node) {
-    console.log("node sequence to delete:", node)
     node.sequence = "";
   })
 }
