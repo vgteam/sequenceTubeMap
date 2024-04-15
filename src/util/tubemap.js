@@ -3478,17 +3478,24 @@ function nodePixelCoordinatesInX(node) {
 //  separate interval.
 export function axisIntervals(nodePixelCoordinates, threshold) {
   if (nodePixelCoordinates.length == 0){
+    console.log("nodePixelCoordinates, length 0:", nodePixelCoordinates);
     return [];
   } else if (nodePixelCoordinates.length == 1){
+    console.log("nodePixelCoordinates, length 1:", nodePixelCoordinates);
     return nodePixelCoordinates;
   }
   // Sorting an array in ascending order based on first element of subarrays - from https://stackoverflow.com/questions/48634944/sort-an-array-of-arrays-by-the-first-elements-in-the-nested-arrays
-  let mergedIntervals = [];
-  nodePixelCoordinates = nodePixelCoordinates.sort((a, b) => {a[0] - b[0]})
-  console.log("Sorted:", nodePixelCoordinates);
-  // for (let i = 0; i < nodePixelCoordinates.length; i++){
-
-  // }
+  nodePixelCoordinates.sort((a, b) => {a[0] - b[0]});
+  let mergedIntervals = [nodePixelCoordinates[0]];
+  for (let i = 1; i < nodePixelCoordinates.length; i++){
+    if (nodePixelCoordinates[i][0] <= mergedIntervals[mergedIntervals.length - 1][1] - threshold) {
+      mergedIntervals[mergedIntervals.length - 1][1] = Math.max(mergedIntervals[mergedIntervals.length - 1][1], nodePixelCoordinates[i][1]);
+    } else {
+      mergedIntervals.push(nodePixelCoordinates[i]);
+    }
+  }
+  console.log("mergedIntervals~:", mergedIntervals);
+  return mergedIntervals;
 }
 
 

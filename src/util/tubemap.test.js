@@ -870,42 +870,42 @@ describe("axisIntervals", () => {
   it("can handle an empty array", async () => {
     let nodePixelCoordinates = [];
     let threshold = 1;
-    expect(axisIntervals(nodePixelCoordinates, threshold).toBe([]));
+    expect(axisIntervals(nodePixelCoordinates, threshold)).toStrictEqual([]);
   });
   // TEST 2
   it("can handle an array of one interval", async () => {
     let nodePixelCoordinates = [[0, 1]];
     let threshold = 1;
-    expect(axisIntervals(nodePixelCoordinates, threshold).toBe([[0, 1]]));
+    expect(axisIntervals(nodePixelCoordinates, threshold)).toStrictEqual([[0, 1]]);
   });
   // TEST 3
   it("can handle an array of two interval where the difference between the intervals is less than the threshold", async () => {
     let nodePixelCoordinates = [[0, 1], [1, 2]];
     let threshold = 1;
-    expect(axisIntervals(nodePixelCoordinates, threshold).toBe([[0, 2]]));
+    expect(axisIntervals(nodePixelCoordinates, threshold)).toStrictEqual([[0, 1], [1, 2]]);
   });
   // TEST 4
   it("can handle an array of two interval where the difference between the intervals is greater than the threshold", async () => {
     let nodePixelCoordinates = [[0, 1], [3, 4]];
     let threshold = 1;
-    expect(axisIntervals(nodePixelCoordinates, threshold).toBe([[0, 1], [3, 4]]));
+    expect(axisIntervals(nodePixelCoordinates, threshold)).toStrictEqual([[0, 1], [3, 4]]);
   });
   // TEST 5
   it("can handle an array of two interval where the difference between the intervals is equal to the threshold", async () => {
     let nodePixelCoordinates = [[0, 1], [2, 3]];
     let threshold = 1;
-    expect(axisIntervals(nodePixelCoordinates, threshold).toBe([[0, 1], [2, 3]]));
+    expect(axisIntervals(nodePixelCoordinates, threshold)).toStrictEqual([[0, 1], [2, 3]]);
   });
   // TEST 6
   it("can handle an array of repeating intervals", async () => {
     let nodePixelCoordinates = [];
     let threshold = 1;
-    expect(axisIntervals(nodePixelCoordinates, threshold).toBe([]));
+    expect(axisIntervals(nodePixelCoordinates, threshold)).toStrictEqual([]);
   });
   // TEST 7
   it("can handle an array of out of order intervals", async () => {
     let nodePixelCoordinates = [];
     let threshold = 1;
-    expect(axisIntervals(nodePixelCoordinates, threshold).toBe([]));
+    expect(axisIntervals(nodePixelCoordinates, threshold)).toStrictEqual([]);
   });
 });
