@@ -3475,26 +3475,31 @@ function nodePixelCoordinatesInX(node) {
 
 // If nodes are spaced closely together (based on the threshold value) then those nodes would be grouped together
 //  in a larger interval. If the nodes are spaced further apart (based on the threshold) then those nodes would form a 
-//  separate interval.
+//  separate interval. If the distance between the nodes is equal to the threshold, then the nodes would be grouped together
+//  in a larger interval
 export function axisIntervals(nodePixelCoordinates, threshold) {
+  console.log("Before sort:", nodePixelCoordinates);
   if (nodePixelCoordinates.length == 0){
     return [];
   } else if (nodePixelCoordinates.length == 1){
     return nodePixelCoordinates;
   }
   // Sorting an array in ascending order based on first element of subarrays - from https://stackoverflow.com/questions/48634944/sort-an-array-of-arrays-by-the-first-elements-in-the-nested-arrays
-  nodePixelCoordinates.sort((a, b) => {a[0] - b[0]});
+  nodePixelCoordinates.sort((a, b) => a[0] - b[0]);
+  console.log("After sort:", nodePixelCoordinates);
   // https://keithwilliams-91944.medium.com/merge-intervals-solution-in-javascript-daa61b618ed4
   let mergedIntervals = [nodePixelCoordinates[0]];
   for (let i = 1; i < nodePixelCoordinates.length; i++){
-    // compare the start value of current coordinate to the end value of the last coordinate: this determines overlap
-    if (nodePixelCoordinates[i][0] <= mergedIntervals[mergedIntervals.length - 1][1] - threshold) {
+    console.log("Current merged intervals:", mergedIntervals);
+    // compute the distance between the current interval and the current coordinate pair's starting x-value, and compare it to a threshold. If it's less than the threshold, merge the intervals.
+    if (nodePixelCoordinates[i][0] - mergedIntervals[mergedIntervals.length - 1][1] <= threshold) {
       // update ending position to the maximum of current end value and end of current interval - can be thought of as extending the interval
       mergedIntervals[mergedIntervals.length - 1][1] = Math.max(mergedIntervals[mergedIntervals.length - 1][1], nodePixelCoordinates[i][1]);
     } else {
-      // completed interval
+      // new interval
       mergedIntervals.push(nodePixelCoordinates[i]);
     }
+    console.log("Modifying merged intervals:", mergedIntervals);
   }
   return mergedIntervals;
 }
