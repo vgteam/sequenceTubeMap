@@ -3478,7 +3478,6 @@ function nodePixelCoordinatesInX(node) {
 //  separate interval. If the distance between the nodes is equal to the threshold, then the nodes would be grouped together
 //  in a larger interval
 export function axisIntervals(nodePixelCoordinates, threshold) {
-  console.log("Before sort:", nodePixelCoordinates);
   if (nodePixelCoordinates.length == 0){
     return [];
   } else if (nodePixelCoordinates.length == 1){
@@ -3486,11 +3485,9 @@ export function axisIntervals(nodePixelCoordinates, threshold) {
   }
   // Sorting an array in ascending order based on first element of subarrays - from https://stackoverflow.com/questions/48634944/sort-an-array-of-arrays-by-the-first-elements-in-the-nested-arrays
   nodePixelCoordinates.sort((a, b) => a[0] - b[0]);
-  console.log("After sort:", nodePixelCoordinates);
   // https://keithwilliams-91944.medium.com/merge-intervals-solution-in-javascript-daa61b618ed4
   let mergedIntervals = [nodePixelCoordinates[0]];
   for (let i = 1; i < nodePixelCoordinates.length; i++){
-    console.log("Current merged intervals:", mergedIntervals);
     // compute the distance between the current interval and the current coordinate pair's starting x-value, and compare it to a threshold. If it's less than the threshold, merge the intervals.
     if (nodePixelCoordinates[i][0] - mergedIntervals[mergedIntervals.length - 1][1] <= threshold) {
       // update ending position to the maximum of current end value and end of current interval - can be thought of as extending the interval
@@ -3499,7 +3496,6 @@ export function axisIntervals(nodePixelCoordinates, threshold) {
       // new interval
       mergedIntervals.push(nodePixelCoordinates[i]);
     }
-    console.log("Modifying merged intervals:", mergedIntervals);
   }
   return mergedIntervals;
 }
@@ -3569,7 +3565,7 @@ function drawRuler() {
   let start_region = Number(inputRegion[0]);
   let end_region = Number(inputRegion[1]);
 
-  intervalsVisitedByNodes = [];
+  let intervalsVisitedByNodes = [];
 
   for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
     // Walk along the ruler track in ascending coordinate order.
@@ -3581,6 +3577,7 @@ function drawRuler() {
       ];
     const currentNode = nodes[Math.abs(nodeIndex)];
 
+    // Adding node X start and end positions into an array
     intervalsVisitedByNodes.push(nodePixelCoordinatesInX(currentNode));
 
     // Each node may actually have the track's coordinates go through it
@@ -3645,6 +3642,12 @@ function drawRuler() {
     // Advance to the next node
     indexOfFirstBaseInNode += currentNode.sequenceLength;
   }
+  
+  // merge intervals
+  console.log("Intervals: ", intervalsVisitedByNodes);
+  // what should be the threshold?
+  var mergedIntervals = axisIntervals(intervalsVisitedByNodes, 50);
+  console.log("Merged Intervals: ", mergedIntervals); // not merging?
 
   // Sort ticks on X coordinate
   ticks.sort(([bp1, x1], [bp2, x2]) => x1 > x2);
@@ -3666,14 +3669,29 @@ function drawRuler() {
   ticks_region.forEach((tick) => drawRulerMarkingRegion(tick[0], tick[1]));
 
   // draw horizontal line
-  svg
-    .append("line")
-    .attr("x1", 0)
-    .attr("y1", minYCoordinate - 10)
-    .attr("x2", maxXCoordinate)
-    .attr("y2", minYCoordinate - 10)
-    .attr("stroke-width", 1)
-    .attr("stroke", "black");
+
+  // draw the line for each interval
+  mergedIntervals.forEach((interval) => 
+    svg
+      .append("line")
+      .attr("x1", 0)
+      .attr("y1", minYCoordinate - 10)
+      .attr("x2", maxXCoordinate)
+      .attr("y2", minYCoordinate - 10)
+      .attr("stroke-width", 1)
+      .attr("stroke", "black")
+  );
+
+  /*
+    svg
+      .append("line")
+      .attr("x1", 0)
+      .attr("y1", minYCoordinate - 10)
+      .attr("x2", maxXCoordinate)
+      .attr("y2", minYCoordinate - 10)
+      .attr("stroke-width", 1)
+      .attr("stroke", "black")
+  */
 
   // Plot all the ticks
   ticks.forEach((tick) => drawRulerMarking(tick[0], tick[1]));
