@@ -146,6 +146,7 @@ const config = {
   // 1...scale node width with log2 of number of bases within node
   // 2...scale node width with log10 of number of bases within node
   nodeWidthOption: 0,
+  nodeIntervalThreshold: 50,
   showReads: true,
   showSoftClips: true,
   colorSchemes: {},
@@ -3484,17 +3485,18 @@ export function axisIntervals(nodePixelCoordinates, threshold) {
     return nodePixelCoordinates;
   }
   // Sorting an array in ascending order based on first element of subarrays - from https://stackoverflow.com/questions/48634944/sort-an-array-of-arrays-by-the-first-elements-in-the-nested-arrays
-  nodePixelCoordinates.sort((a, b) => a[0] - b[0]);
+  let nodePixelCoordinatesCopy = nodePixelCoordinates.slice(); // shallow copy
+  nodePixelCoordinatesCopy.sort((a, b) => a[0] - b[0]);
   // https://keithwilliams-91944.medium.com/merge-intervals-solution-in-javascript-daa61b618ed4
-  let mergedIntervals = [nodePixelCoordinates[0]];
-  for (let i = 1; i < nodePixelCoordinates.length; i++){
+  let mergedIntervals = [nodePixelCoordinatesCopy[0].slice()];
+  for (let i = 1; i < nodePixelCoordinatesCopy.length; i++){
     // compute the distance between the current interval and the current coordinate pair's starting x-value, and compare it to a threshold. If it's less than the threshold, merge the intervals.
-    if (nodePixelCoordinates[i][0] - mergedIntervals[mergedIntervals.length - 1][1] <= threshold) {
+    if (nodePixelCoordinatesCopy[i][0] - mergedIntervals[mergedIntervals.length - 1][1] <= threshold) {
       // update ending position to the maximum of current end value and end of current interval - can be thought of as extending the interval
-      mergedIntervals[mergedIntervals.length - 1][1] = Math.max(mergedIntervals[mergedIntervals.length - 1][1], nodePixelCoordinates[i][1]);
+      mergedIntervals[mergedIntervals.length - 1][1] = Math.max(mergedIntervals[mergedIntervals.length - 1][1], nodePixelCoordinatesCopy[i][1]);
     } else {
       // new interval
-      mergedIntervals.push(nodePixelCoordinates[i]);
+      mergedIntervals.push(nodePixelCoordinatesCopy[i].slice());
     }
   }
   return mergedIntervals;
@@ -3576,8 +3578,10 @@ function drawRuler() {
           : i
       ];
     const currentNode = nodes[Math.abs(nodeIndex)];
+    console.log("Current node:", currentNode);
 
     // Adding node X start and end positions into an array
+    console.log("node pixel coordinates:", nodePixelCoordinatesInX(currentNode));
     intervalsVisitedByNodes.push(nodePixelCoordinatesInX(currentNode));
 
     // Each node may actually have the track's coordinates go through it
@@ -3645,8 +3649,8 @@ function drawRuler() {
   
   // merge intervals
   console.log("Intervals: ", intervalsVisitedByNodes);
-  // what should be the threshold?
-  var mergedIntervals = axisIntervals(intervalsVisitedByNodes, 50);
+  var mergedIntervals = axisIntervals(intervalsVisitedByNodes, config.nodeIntervalThreshold);
+
   console.log("Merged Intervals: ", mergedIntervals); // not merging?
 
   // Sort ticks on X coordinate
@@ -3668,31 +3672,40 @@ function drawRuler() {
   // plot ticks highlighting the region
   ticks_region.forEach((tick) => drawRulerMarkingRegion(tick[0], tick[1]));
 
-  // draw horizontal line
-
-  // draw the line for each interval
-  mergedIntervals.forEach((interval) => 
+  // draw horizontal line for each interval
+  let axisY = minYCoordinate - 10;
+  mergedIntervals.forEach((interval) => {
     svg
       .append("line")
-      .attr("x1", 0)
-      .attr("y1", minYCoordinate - 10)
-      .attr("x2", maxXCoordinate)
-      .attr("y2", minYCoordinate - 10)
+      .attr("x1", interval[0])
+      .attr("y1", axisY)
+      .attr("x2", interval[1])
+      .attr("y2", axisY)
       .attr("stroke-width", 1)
       .attr("stroke", "black")
-  );
-
-  /*
+    
+    // starting vertical line
     svg
-      .append("line")
-      .attr("x1", 0)
-      .attr("y1", minYCoordinate - 10)
-      .attr("x2", maxXCoordinate)
-      .attr("y2", minYCoordinate - 10)
-      .attr("stroke-width", 1)
-      .attr("stroke", "black")
-  */
+    .append("line")
+    .attr("x1", interval[0])
+    .attr("y1", axisY - 5)
+    .attr("x2", interval[0])
+    .attr("y2", axisY + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black")
 
+    // ending vertical line
+    svg
+    .append("line")
+    .attr("x1", interval[1])
+    .attr("y1", axisY - 5)
+    .attr("x2", interval[1])
+    .attr("y2", axisY + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black")
+  }
+);
+  
   // Plot all the ticks
   ticks.forEach((tick) => drawRulerMarking(tick[0], tick[1]));
 }
