@@ -382,6 +382,48 @@ api.post("/getChunkedData", (req, res, next) => {
   });
 });
 
+
+/*
+graph = {
+  node: [
+    {
+      sequence: "AGCT"
+      id: "1"
+    },
+    {
+      sequence: "AGCTAG"
+      id: "2"
+    }
+  ],
+  edge: [],
+  path: []
+}
+removing sequence would result in
+graph = {
+  node: [
+    {
+      id: "1"
+    },
+    {
+      id: "2"
+    }
+  ],
+  edge: [],
+  path: []
+}
+*/
+
+// read a graph object and remove "sequence" fields in place
+function removeNodeSequencesInPlace(graph){
+  console.log("graph:", graph)
+  if (!graph.node){
+    return;
+  }
+  graph.node.forEach(function(node) {
+    node.sequence = "";
+  })
+}
+
 // Handle a chunked data (tube map view) request. Returns a promise. On error,
 // either the promise rejects *or* next() is called with an error, or both.
 // TODO: This is a terrible mixed design for error handling; we need to either
@@ -495,6 +537,15 @@ async function getChunkedData(req, res, next) {
       throw new BadRequestError("Simplify cannot be used on read tracks.");
     }
     req.simplify = true;
+  }
+
+  // client is going to send removeSequences = true if they don't want sequences of nodes to be displayed
+  req.removeSequences = false;
+  if (req.body.removeSequences) {
+    if (readsExist(req.body.tracks)) {
+      throw new BadRequestError("Can't remove node sequences if read tracks exist.");
+    }
+    req.removeSequences = true;
   }
 
   // check the bed file if this region has been pre-fetched
@@ -746,6 +797,9 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
+      if (req.removeSequences){
+        removeNodeSequencesInPlace(req.graph)
+      } 
       req.region = [rangeRegion.start, rangeRegion.end];
       // vg chunk always puts the path we reference on first automatically
       if (!sentResponse) {
@@ -855,6 +909,10 @@ async function getChunkedData(req, res, next) {
         return;
       }
       req.graph = JSON.parse(graphAsString);
+      if (req.removeSequences){
+        removeNodeSequencesInPlace(req.graph)
+      } 
+      console.log("remove sequences? ", req.graph)
       req.region = [rangeRegion.start, rangeRegion.end];
 
       // We might not have the path we are referencing on appearing first.

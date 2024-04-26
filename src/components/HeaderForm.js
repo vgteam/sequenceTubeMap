@@ -11,6 +11,10 @@ import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
 import BedFileDropdown from "./BedFileDropdown";
 import FormHelperText from "@mui/material/FormHelperText";
+import PopupDialog from "./PopupDialog.js";
+import Switch from "react-switch";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGear } from "@fortawesome/free-solid-svg-icons";
 import {
   parseRegion,
   stringifyRegion,
@@ -194,6 +198,10 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
     return false;
   }
 
+  if (currViewTarget.removeSequences !== nextViewTarget.removeSequences) {
+    return false;
+  }
+
   return true;
 }
 
@@ -317,6 +325,8 @@ class HeaderForm extends Component {
         dataType: ds.dataType,
         name: ds.name,
         simplify: ds.simplify,
+        popupOpen: false,
+        removeSequences: ds.removeSequences
       };
       return stateVals;
     });
@@ -557,6 +567,7 @@ class HeaderForm extends Component {
     region: this.state.region,
     dataType: this.state.dataType,
     simplify: this.state.simplify && !readsExist(this.state.tracks),
+    removeSequences: this.state.removeSequences && !readsExist(this.state.tracks)
   });
 
   handleGoButton = () => {
@@ -825,6 +836,15 @@ class HeaderForm extends Component {
     this.setState({ simplify: !this.state.simplify });
   };
 
+  /* Function for toggling display of node sequences */
+  toggleIncludeSequences = () => {
+    this.setState({ removeSequences: !this.state.removeSequences });
+  };
+
+  togglePopup = () => {
+    this.setState({ popupOpen: !this.state.popupOpen });
+  };
+
   render() {
     let errorDiv = null;
     if (this.state.error) {
@@ -948,25 +968,45 @@ class HeaderForm extends Component {
                   region={this.state.region}
                 />
               )}
+              
               {customFilesFlag && (
-                <div style={{ display: "flex" }}>
-                  {DataPositionFormRowComponent}
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    {DataPositionFormRowComponent}
+                  </div>
+                  <div className="d-flex justify-content-end align-items-start flex-shrink-0">
+                  {!readsExist(this.state.tracks) && (
+                    <>
+                      <Button
+                        onClick={this.togglePopup}
+                        outline
+                        active={this.state.simplify || this.state.removeSequences}
+                      >
+                      <FontAwesomeIcon icon={faGear} /> Simplify
+                      </Button>
+                      <PopupDialog open={this.state.popupOpen} close={this.togglePopup} width="400px">
+                        <div style={{ height: "10vh"}}>
+                          {/* Toggle for simplify small variants */}
+                          <label className="d-flex align-items-center justify-content-between" style={{ marginBottom: "10px"}}>
+                            <span>Remove Small Variants</span>
+                            <Switch onChange={this.toggleSimplify} checked={this.state.simplify} />
+                          </label>
+                          {/* Toggle for remove node sequences */}
+                          <label className="d-flex align-items-center justify-content-between">
+                            <span>Remove Node Sequences</span>
+                            <Switch onChange={this.toggleIncludeSequences} checked={this.state.removeSequences} />
+                          </label>
+                        </div>
+                      </PopupDialog>
+                    </>
+                  )}
                   <TrackPicker
                     tracks={this.state.tracks}
                     availableTracks={this.state.fileSelectOptions}
                     onChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
-                  {/* Button for simplify */}
-                  {!readsExist(this.state.tracks) && (
-                    <Button
-                      onClick={this.toggleSimplify}
-                      outline
-                      active={this.state.simplify}
-                    >
-                      {this.state.simplify ? "Simplify On" : "Simplify Off"}
-                    </Button>
-                  )}
+                  </div>
                 </div>
               )}
               <Row>
