@@ -3479,9 +3479,9 @@ function nodePixelCoordinatesInX(node) {
 //  separate interval. If the distance between the nodes is equal to the threshold, then the nodes would be grouped together
 //  in a larger interval
 export function axisIntervals(nodePixelCoordinates, threshold) {
-  if (nodePixelCoordinates.length == 0){
+  if (nodePixelCoordinates.length === 0){
     return [];
-  } else if (nodePixelCoordinates.length == 1){
+  } else if (nodePixelCoordinates.length === 1){
     return nodePixelCoordinates;
   }
   // Sorting an array in ascending order based on first element of subarrays - from https://stackoverflow.com/questions/48634944/sort-an-array-of-arrays-by-the-first-elements-in-the-nested-arrays
@@ -3671,7 +3671,7 @@ function drawRuler() {
 
   // plot ticks highlighting the region
   ticks_region.forEach((tick) => drawRulerMarkingRegion(tick[0], tick[1]));
-  
+
   // draw horizontal line for each interval
   
   let axisY = minYCoordinate - 10;
@@ -3712,15 +3712,26 @@ function drawRuler() {
 }
 
 function drawRulerMarking(sequencePosition, xCoordinate) {
+  let axisY = minYCoordinate - 10;
   svg
     .append("text")
-    .attr("x", xCoordinate)
+    .attr("x", xCoordinate + 2)
     .attr("y", minYCoordinate - 13)
-    .text(`|${sequencePosition}`)
+    .text(`${sequencePosition}`)
     .attr("font-family", fonts)
     .attr("font-size", "12px")
     .attr("fill", "black")
     .style("pointer-events", "none");
+
+    // vertical line
+    svg
+    .append("line")
+    .attr("x1", xCoordinate)
+    .attr("y1", axisY - 5)
+    .attr("x2", xCoordinate)
+    .attr("y2", axisY + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black")
 }
 
 function drawRulerMarkingRegion(sequencePosition, xCoordinate) {
