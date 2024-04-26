@@ -841,7 +841,7 @@ class HeaderForm extends Component {
     this.setState({ removeSequences: !this.state.removeSequences });
   };
 
-  openPopup = () => {
+  togglePopup = () => {
     this.setState({ popupOpen: !this.state.popupOpen });
   };
 
@@ -978,13 +978,13 @@ class HeaderForm extends Component {
                   {!readsExist(this.state.tracks) && (
                     <>
                       <Button
-                        onClick={this.openPopup}
+                        onClick={this.togglePopup}
                         outline
                         active={this.state.simplify || this.state.removeSequences}
                       >
                       <FontAwesomeIcon icon={faGear} /> Simplify
                       </Button>
-                      <PopupDialog open={this.state.popupOpen} close={!this.openPopup} width="400px">
+                      <PopupDialog open={this.state.popupOpen} close={this.togglePopup} width="400px">
                         <div style={{ height: "10vh"}}>
                           {/* Toggle for simplify small variants */}
                           <label className="d-flex align-items-center justify-content-between" style={{ marginBottom: "10px"}}>
