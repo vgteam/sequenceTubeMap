@@ -3671,10 +3671,8 @@ function drawRuler() {
 
   // plot ticks highlighting the region
   ticks_region.forEach((tick) => drawRulerMarkingRegion(tick[0], tick[1]));
-
-  // draw horizontal line
-
-  // draw the line for each interval
+  
+  // draw horizontal line for each interval
   
   let axisY = minYCoordinate - 10;
   mergedIntervals.forEach((interval) => {
