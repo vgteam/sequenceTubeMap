@@ -1309,10 +1309,10 @@ function getImageDimensions() {
 
 // This needs to be the width of the ruler.
 // TODO: Tell the ruler drawing code.
-const RULER_WIDTH = 15;
+const RULER_WIDTH = 30;
 const NODE_MARGIN = 10;
 // This is how much space to let us pan, around the nodes as measure by getImageDimensions()
-const RAIL_SPACE = 25;
+const RAIL_SPACE = RULER_WIDTH + NODE_MARGIN;
 
 // align visualization to the top and left within svg and resize svg to correct size
 // enable zooming and panning
@@ -3578,10 +3578,8 @@ function drawRuler() {
           : i
       ];
     const currentNode = nodes[Math.abs(nodeIndex)];
-    console.log("Current node:", currentNode);
 
     // Adding node X start and end positions into an array
-    console.log("node pixel coordinates:", nodePixelCoordinatesInX(currentNode));
     intervalsVisitedByNodes.push(nodePixelCoordinatesInX(currentNode));
 
     // Each node may actually have the track's coordinates go through it
@@ -3648,10 +3646,7 @@ function drawRuler() {
   }
   
   // merge intervals
-  console.log("Intervals: ", intervalsVisitedByNodes);
   var mergedIntervals = axisIntervals(intervalsVisitedByNodes, config.nodeIntervalThreshold);
-
-  console.log("Merged Intervals: ", mergedIntervals); // not merging?
 
   // Sort ticks on X coordinate
   ticks.sort(([bp1, x1], [bp2, x2]) => x1 > x2);
@@ -3715,8 +3710,9 @@ function drawRulerMarking(sequencePosition, xCoordinate) {
   let axisY = minYCoordinate - 10;
   svg
     .append("text")
-    .attr("x", xCoordinate + 2)
-    .attr("y", minYCoordinate - 13)
+    .attr("text-anchor", "middle")
+    .attr("x", xCoordinate)
+    .attr("y", minYCoordinate - 18)
     .text(`${sequencePosition}`)
     .attr("font-family", fonts)
     .attr("font-size", "12px")
