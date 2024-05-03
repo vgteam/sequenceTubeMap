@@ -912,7 +912,6 @@ async function getChunkedData(req, res, next) {
       if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
       } 
-      console.log("remove sequences? ", req.graph)
       req.region = [rangeRegion.start, rangeRegion.end];
 
       // We might not have the path we are referencing on appearing first.
