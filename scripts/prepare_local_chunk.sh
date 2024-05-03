@@ -15,11 +15,11 @@ NODE_COLORS=()
 while getopts x:g:p:r:o:d:n: flag
 do
     case "${flag}" in
-        x) GRAPH_FILE=${OPTARG};;
+        x) GRAPH_FILE="${OPTARG}";;
         g) GAM_FILES+=("$OPTARG");;
         p) GAM_PALETTES+=("$OPTARG");;
-        r) REGION=${OPTARG};;
-        o) OUTDIR=${OPTARG};;
+        r) REGION="${OPTARG}";;
+        o) OUTDIR="${OPTARG}";;
         d) DESC="${OPTARG}";;
         n) NODE_COLORS+=("${OPTARG}");;
         *)
@@ -57,45 +57,45 @@ if [[ -z "${DESC}" ]] ; then
     DESC="Region ${REGION}"
 fi
 
-echo >&2 "Graph File: " $GRAPH_FILE
-echo >&2 "Region: " $REGION
-echo >&2 "Output Directory: " $OUTDIR
-echo >&2 "Node colors: " ${NODE_COLORS[@]}
+echo >&2 "Graph File: $GRAPH_FILE"
+echo >&2 "Region: $REGION"
+echo >&2 "Output Directory: $OUTDIR"
+echo >&2 "Node colors: ${NODE_COLORS[@]}"
 
-rm -fr $OUTDIR
-mkdir -p $OUTDIR
+rm -fr "$OUTDIR"
+mkdir -p "$OUTDIR"
 
 TEMP="$(mktemp -d)"
 
 
 # Covert GAF files to GAM
 for i in "${!GAM_FILES[@]}"; do
-    if [[ ${GAM_FILES[$i]} == *.gaf ]]; then
+    if [[ "${GAM_FILES[$i]}" == *.gaf ]]; then
         # Filename without path
-        filename=$(basename -- ${GAM_FILES[$i]})
+        filename="$(basename -- "${GAM_FILES[$i]}")"
         # Remove file extension
-        filename=${filename%.*}
-        vg convert --gaf-to-gam ${GAM_FILES[$i]} ${GRAPH_FILE} > $TEMP/${filename}.gam
+        filename="${filename%.*}"
+        vg convert --gaf-to-gam "${GAM_FILES[$i]}" "${GRAPH_FILE}" > "$TEMP/${filename}.gam"
         GAM_FILES[$i]="$TEMP/${filename}.gam"
     fi
 done
 
 # Parse the region
-REGION_END="$(echo ${REGION} | rev | cut -f1 -d'-' | rev)"
-REGION_START="$(echo ${REGION} | rev | cut -f2 -d'-' | cut -f1 -d':' | rev)"
-REGION_CONTIG="$(echo ${REGION} | rev| cut -f2- -d':' | rev)"
+REGION_END="$(echo "${REGION}" | rev | cut -f1 -d'-' | rev)"
+REGION_START="$(echo "${REGION}" | rev | cut -f2 -d'-' | cut -f1 -d':' | rev)"
+REGION_CONTIG="$(echo "${REGION}" | rev| cut -f2- -d':' | rev)"
 
 # get path relative to directory above the scripts directory
-GRAPH_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $GRAPH_FILE)
+GRAPH_FILE_PATH="$(realpath --relative-to "$(dirname "${BASH_SOURCE[0]}")/../" "$GRAPH_FILE")"
 
 # construct track JSON for graph file
-GRAPH_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultGraphColorPalette')"
-jq -n --arg trackFile "${GRAPH_FILE_PATH}" --arg trackType "graph" --argjson trackColorSettings "$GRAPH_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
+GRAPH_PALETTE="$(cat "$(dirname "${BASH_SOURCE[0]}")/../src/config.json" | jq '.defaultGraphColorPalette')"
+jq -n --arg trackFile "${GRAPH_FILE_PATH}" --arg trackType "graph" --argjson trackColorSettings "$GRAPH_PALETTE" '$ARGS.named' >> "$OUTDIR/temp.json"
 
 # Put the graphy file in place
-vg convert -p "${GRAPH_FILE}" > $OUTDIR/chunk.vg
+vg convert -p "${GRAPH_FILE}" > "$OUTDIR/chunk.vg"
 # Start the region BED inside the chunk
-printf "${REGION_CONTIG}\t${REGION_START}\t${REGION_END}" > $OUTDIR/regions.tsv
+printf "${REGION_CONTIG}\t${REGION_START}\t${REGION_END}" > "$OUTDIR/regions.tsv"
 
 
 echo >&2 "Gam Files:"
@@ -107,9 +107,9 @@ for GAM_FILE in "${GAM_FILES[@]}"; do
     if [[ -z "${GAM_PALETTE}" ]] ; then
         GAM_PALETTE="${DEFAULT_READ_PALETTE}"
     fi
-    GAM_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $GAM_FILE)
+    GAM_FILE_PATH=$(realpath --relative-to "$(dirname "${BASH_SOURCE[0]}")/../" "$GAM_FILE")
     # construct track JSON for each gam file
-    jq -n --arg trackFile "${GAM_FILE_PATH}" --arg trackType "read" --argjson trackColorSettings "$GAM_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
+    jq -n --arg trackFile "${GAM_FILE_PATH}" --arg trackType "read" --argjson trackColorSettings "$GAM_PALETTE" '$ARGS.named' >> "$OUTDIR/temp.json"
     # Work out a chunk-internal GAM name with the same leading numbering vg chunk uses
     if [[ "${GAM_NUM}" == "0" ]] ; then
         GAM_LEADER="chunk"
@@ -120,35 +120,35 @@ for GAM_FILE in "${GAM_FILES[@]}"; do
     # Put the chunk in place
     cp "${GAM_FILE}" "${GAM_CHUNK_NAME}"
     # List it in the regions TSV like vg would
-    printf "\t$(basename "${GAM_CHUNK_NAME}")" >> $OUTDIR/regions.tsv
+    printf "\t$(basename "${GAM_CHUNK_NAME}")" >> "$OUTDIR/regions.tsv"
     GAM_NUM=$((GAM_NUM + 1))
 done
 
 # put all tracks objects into an array
-(jq -s '.' < $OUTDIR/temp.json) > $OUTDIR/tracks.json
+(jq -s '.' < "$OUTDIR/temp.json") > "$OUTDIR/tracks.json"
 
-rm $OUTDIR/temp.json
+rm "$OUTDIR/temp.json"
 
 # construct node file
 if [[ ! -z "${NODE_COLORS}" ]] ; then
     for NODENAME in "${NODE_COLORS[@]}"; do
         echo >&2 "Highlighted node: $NODENAME"
-        printf "$NODENAME\n" >> $OUTDIR/nodeColors.tsv
+        printf "$NODENAME\n" >> "$OUTDIR/nodeColors.tsv"
     done
 fi
 
 # Make the empty but required annotation file. We have no haplotypes to put in it.
 touch "${OUTDIR}/chunk_0_${REGION_CONTIG}_${REGION_START}_${REGION_END}.annotate.txt"
-printf "\tchunk_0_${REGION_CONTIG}_${REGION_START}_${REGION_END}.annotate.txt\n" >> $OUTDIR/regions.tsv
+printf "\tchunk_0_${REGION_CONTIG}_${REGION_START}_${REGION_END}.annotate.txt\n" >> "$OUTDIR/regions.tsv"
 
-for file in `ls $OUTDIR/`
+for file in `ls "$OUTDIR/"`
 do
-    printf "$file\n" >> $OUTDIR/chunk_contents.txt
+    printf "$file\n" >> "$OUTDIR/chunk_contents.txt"
 done
 
 # Print BED line
-cat $OUTDIR/regions.tsv | cut -f1-3 | tr -d "\n"
+cat "$OUTDIR/regions.tsv" | cut -f1-3 | tr -d "\n"
 printf "\t${DESC}\t${OUTDIR}\n"
 
-rm -fr $TEMP
+rm -fr "$TEMP"
 
