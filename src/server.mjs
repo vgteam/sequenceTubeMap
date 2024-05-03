@@ -912,7 +912,6 @@ async function getChunkedData(req, res, next) {
       if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
       } 
-      console.log("remove sequences? ", req.graph)
       req.region = [rangeRegion.start, rangeRegion.end];
 
       // We might not have the path we are referencing on appearing first.
@@ -1429,6 +1428,23 @@ assert(
   "Scratch path is not acceptable; does it contain .. or //?"
 );
 
+/**
+ * Convert an absolute path to a path relative to the current directory, if it
+ * would be an allowed path (i.e. not include ..). If not, pass threough the
+ * original path.
+ *
+ * This is the path we should send to the client, to keep the server's base
+ * directory out of the path unless it is needed.
+ */
+function toClientPath(absPath) {
+  let relPath = path.relative('.', absPath);
+  if (isAllowedPath(relPath)) {
+    return relPath;
+  } else {
+    return absPath;
+  }
+}
+
 api.get("/getFilenames", (req, res) => {
   console.log("received request for filenames");
   const result = {
@@ -1439,18 +1455,18 @@ api.get("/getFilenames", (req, res) => {
   if (isAllowedPath(MOUNTED_DATA_PATH)) {
     // list files in folder
     fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
-      const absPath = path.resolve(MOUNTED_DATA_PATH, file);
+      const clientPath = toClientPath(path.resolve(MOUNTED_DATA_PATH, file));
       if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
-        result.files.push({ trackFile: absPath, trackType: "graph" });
+        result.files.push({ trackFile: clientPath, trackType: "graph" });
       }
       if (endsWithExtensions(file, HAPLOTYPE_EXTENSIONS)) {
-        result.files.push({ trackFile: absPath, trackType: "haplotype" });
+        result.files.push({ trackFile: clientPath, trackType: "haplotype" });
       }
       if (file.endsWith(".sorted.gam")) {
-        result.files.push({ trackFile: absPath, trackType: "read" });
+        result.files.push({ trackFile: clientPath, trackType: "read" });
       }
       if (file.endsWith(".bed")) {
-        result.bedFiles.push(absPath);
+        result.bedFiles.push(clientPath);
       }
     });
   } else {
