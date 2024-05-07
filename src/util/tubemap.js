@@ -318,7 +318,7 @@ export function changeAllTracksVisibility(value) {
   let i = 0;
   while (i < inputTracks.length) {
     inputTracks[i].hidden = !value;
-    var checkbox = document.getElementById(`showTrack${i}`);
+    var checkbox = document.getElementById(`showTrack${inputTracks[i].id}`);
     checkbox.checked = value;
     i += 1;
   }
@@ -661,14 +661,16 @@ function placeReads() {
 
   // Space out read tracks if multiple exist
   let topMargin = allSources.length > 1 ? READ_WIDTH : 0;
-  for (let source of allSources) {
-    // Go through all source tracks in order
-    sortedNodes.forEach((node) => {
-      // And for each node, place these reads in it.
+  sortedNodes.forEach((node) => {
+    // For each node
+    for (let source of allSources) {
+      // Go through all source tracks in order
+      
+      // Place the reads from this source in this node.
       // Use a margin to separate multiple read tracks if we have them.
       placeReadSet(readsBySource[source], node, topMargin);
-    });
-  }
+    }
+  });
 
   // place read segments which are without node
   const bottomY = calculateBottomY();
@@ -4070,6 +4072,7 @@ function drawLegend() {
   content +=
     '<table class="table-sm table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
   const listeners = [];
+  // This is in terms of tracks, but when we change visibility we need to touch inputTracks, so we need to set up listeners by track ID.
   for (let i = 0; i < tracks.length; i += 1) {
     if (tracks[i].type === "haplo") {
       content += `<tr><td style="text-align:right"><div class="color-box" style="background-color: ${generateTrackColor(
@@ -4081,17 +4084,17 @@ function drawLegend() {
       } else {
         content += `<td>${tracks[i].id}</td>`;
       }
-      content += `<td><input type="checkbox" checked=true id="showTrack${i}"></td>`;
-      listeners.push(i);
+      content += `<td><input type="checkbox" checked=true id="showTrack${tracks[i].id}"></td>`;
+      listeners.push(tracks[i].id);
     }
   }
   content += "</table";
   // $('#legendDiv').html(content);
   document.getElementById("legendDiv").innerHTML = content;
-  listeners.forEach((i) => {
+  listeners.forEach((id) => {
     document
-      .getElementById(`showTrack${i}`)
-      .addEventListener("click", () => changeTrackVisibility(i), false);
+      .getElementById(`showTrack${id}`)
+      .addEventListener("click", () => changeTrackVisibility(id), false);
   });
   document
     .getElementById("selectall")
