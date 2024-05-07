@@ -86,13 +86,17 @@ export const urlParamsToViewTarget = (url) => {
     result = qs.parse(s[1]);
   }
 
-  // Ensures that the simplify field is a boolean, as the qs module can't tell
+  
+
+  // Ensures that the flag fields are booleans, as the qs module can't tell
   // the difference between false and "false"
   if (result != null) {
-    if (result.simplify === "true") {
-      result.simplify = true;
-    } else if (result.simplify === "false") {
-      result.simplify = false;
+    for (let flag_name of ["simplify", "removeSequences"]) {
+      if (result[flag_name] === "true") {
+        result[flag_name] = true;
+      } else if (result[flag_name] === "false") {
+        result[flag_name] = false;
+      }
     }
   }
 
