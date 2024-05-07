@@ -661,14 +661,16 @@ function placeReads() {
 
   // Space out read tracks if multiple exist
   let topMargin = allSources.length > 1 ? READ_WIDTH : 0;
-  for (let source of allSources) {
-    // Go through all source tracks in order
-    sortedNodes.forEach((node) => {
-      // And for each node, place these reads in it.
+  sortedNodes.forEach((node) => {
+    // For each node
+    for (let source of allSources) {
+      // Go through all source tracks in order
+      
+      // Place the reads from this source in this node.
       // Use a margin to separate multiple read tracks if we have them.
       placeReadSet(readsBySource[source], node, topMargin);
-    });
-  }
+    }
+  });
 
   // place read segments which are without node
   const bottomY = calculateBottomY();
