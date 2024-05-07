@@ -1828,12 +1828,17 @@ async function getBedRegions(bed) {
   }
 
   lines = bed_data.split(/\r?\n/);
-  lines.map(function (line) {
+  
+  for (let [index, line] of lines.entries()) {
     let records = line.split("\t");
 
     if (records.length < 3) {
       // This is an empty line or otherwise not BED
-      return;
+      if (line !== "") {
+        // This is a bad line
+        throw new BadRequestError("BED line " + (index + 1) + " could not be parsed");
+      }
+      continue;
     }
     bed_info["chr"].push(records[0]);
     bed_info["start"].push(records[1]);
@@ -1848,7 +1853,11 @@ async function getBedRegions(bed) {
       chunk = records[4];
     }
     bed_info["chunk"].push(chunk);
-  });
+  }
+
+  if (bed_info.length === 0) {
+    BadRequestError("BED file is empty");
+  }
 
   // check for a tracks.json file to prefill tracks configuration
   for (let i = 0; i < bed_info["chunk"].length; i++) {
