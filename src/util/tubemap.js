@@ -142,10 +142,11 @@ const config = {
   clickableNodesFlag: false,
   showExonsFlag: false,
   // Options for the width of sequence nodes:
-  // 0...scale node width linear with number of bases within node
-  // 1...scale node width with log2 of number of bases within node
-  // 2...scale node width with log10 of number of bases within node
-  nodeWidthOption: 0,
+  // normal...scale node width linear with number of bases within node
+  // compressed...scale node width with log2 of number of bases within node
+  // small...scale node width with 1% of number of bases within node
+  // fixed...set fixed node width to 1 base
+  nodeWidthOption: "normal",
   showReads: true,
   showSoftClips: true,
   colorSchemes: {},
@@ -376,8 +377,14 @@ export function setColorSet(fileID, newColor) {
 }
 
 // sets which option should be used for calculating the node width from its sequence length
+/*
+  - normal: Node lengths are computed based on the sequence length, and the sequences are displayed
+  - compressed: Node lengths are computed based on the log of the sequence length, and the sequences aren't displayed
+  - small: Node lengths are computed based on the sequence length / 100, and the sequences aren't displayed
+  - fixed: Node lengths are set to 1 base unit, and the sequences aren't displayed
+ */
 export function setNodeWidthOption(value) {
-  if (value === 0 || value === 1 || value === 2) {
+  if (["normal", "compressed", "small", "fixed"].includes(value)) {
     if (config.nodeWidthOption !== value) {
       config.nodeWidthOption = value;
       if (svg !== undefined) {
@@ -545,9 +552,9 @@ function createTubeMap() {
   // all drawn nodes are grouped
   let nodeGroup = svg.append("g").attr("class", "node");
   drawNodes(dNodes, nodeGroup);
-  if (config.nodeWidthOption === 0) drawLabels(dNodes);
+  if (config.nodeWidthOption === "normal") drawLabels(dNodes);
   if (trackForRuler !== undefined) drawRuler();
-  if (config.nodeWidthOption === 0) drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
+  if (config.nodeWidthOption === "normal") drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
   if (DEBUG) {
     console.log(`number of tracks: ${numberOfTracks}`);
     console.log(`number of nodes: ${numberOfNodes}`);
@@ -3451,7 +3458,7 @@ export function coverage(node, allReads) {
 
 // draw seqence labels for nodes
 function drawLabels(dNodes) {
-  if (config.nodeWidthOption === 0) {
+  if (config.nodeWidthOption === "normal") {
     svg
       .selectAll("text")
       .data(dNodes)
@@ -3474,7 +3481,7 @@ function drawRuler() {
 
   // How often should we have a tick in bp?
   let markingInterval = 100;
-  if (config.nodeWidthOption === 0) markingInterval = 20;
+  if (config.nodeWidthOption === "normal") markingInterval = 20;
   // How close may markings be in image space?
   const markingClearance = 80;
 
@@ -3512,7 +3519,7 @@ function drawRuler() {
       : // Otherwise, add them to the left side
         indexIntoVisitToMark;
 
-    if (config.nodeWidthOption !== 0 && !is_region) {
+    if (config.nodeWidthOption !== "normal" && !is_region) {
       // Actually always mark at an edge of the node, if we are scaling the node nonlinearly
       // and if we are not highlighting the input region
       offsetIntoNodeForward = currentNodeIsReverse
@@ -3588,7 +3595,7 @@ function drawRuler() {
         currentNodeIsReverse
       );
 
-      if (config.nodeWidthOption === 0 || !alreadyMarkedNode) {
+      if (config.nodeWidthOption === "normal" || !alreadyMarkedNode) {
         // This is a mark we are not filtering due to node compression.
         // Make the mark
         ticks.push([nextUnmarkedIndex, xCoordOfMarking]);
@@ -4185,19 +4192,27 @@ function generateNodeWidth() {
   });
 
   switch (config.nodeWidthOption) {
-    case 1:
+    case "compressed":
       nodes.forEach((node) => {
         node.width = 1 + Math.log(node.sequenceLength) / Math.log(2);
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
-    case 2:
+    case "small":
       nodes.forEach((node) => {
         node.width = node.sequenceLength / 100;
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
-    default:
+    case "fixed":
+      // when there's no reads in the node, it should be a little wider
+      nodes.forEach((node) => {
+        console.log("node.sequenceLength:", node.sequenceLength);
+        node.width = 1 + Math.log(node.sequenceLength) / Math.log(2);
+        node.pixelWidth = Math.round((node.width) * 8.401);
+      });
+      break;
+    case "normal":
       nodes.forEach((node) => {
         node.width = node.sequenceLength;
 
@@ -4220,6 +4235,9 @@ function generateNodeWidth() {
         }
         document.getElementById("dummytext").remove();
       });
+      break;
+    default:
+      throw new Error(`${config.nodeWidthOption} not implemented`)
   }
 }
 

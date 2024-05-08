@@ -125,6 +125,7 @@ class TubeMapContainer extends Component {
               coloredNodes: this.state.coloredNodes,
               ...this.props.visOptions,
             }}
+            nodeSequences={!this.props.viewTarget.removeSequences}
           />
         </div>
       </div>
