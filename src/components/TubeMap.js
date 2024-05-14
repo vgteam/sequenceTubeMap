@@ -37,10 +37,12 @@ class TubeMap extends Component {
   updateVisOptions() {
     const visOptions = this.props.visOptions;
     if (this.props.nodeSequences){
+      // If node sequences aren't removed
       visOptions.compressedView
       ? tubeMap.setNodeWidthOption("compressed")
       : tubeMap.setNodeWidthOption("normal");
     } else{
+      // If node sequences are removed
       tubeMap.setNodeWidthOption("fixed");
     }
     tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);

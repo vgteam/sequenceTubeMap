@@ -420,7 +420,8 @@ function removeNodeSequencesInPlace(graph){
     return;
   }
   graph.node.forEach(function(node) {
-    node.sequence = "";
+    node.sequenceLength = node.sequence.length;
+    delete node.sequence;
   })
 }
 
@@ -1584,11 +1585,12 @@ const fetchAndValidate = async (url, maxBytes, existingLocation = null) => {
       "If-None-Match": ETagMap.get(url) || "-1",
     };
   }
+  let controller = timeoutController(config.fetchTimeout);
   const options = {
     method: "GET",
     credentials: "omit",
     cache: "default",
-    signal: timeoutController(config.fetchTimeout).signal,
+    signal: controller.signal,
     headers: fetchHeader,
   };
 

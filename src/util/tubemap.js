@@ -4176,7 +4176,7 @@ export function vgExtractNodes(vg) {
   vg.node.forEach((node) => {
     result.push({
       name: `${node.id}`,
-      sequenceLength: node.sequence.length,
+      sequenceLength: node.sequenceLength ?? node.sequence.length,
       seq: node.sequence,
     });
   });
@@ -4208,7 +4208,7 @@ function generateNodeWidth() {
       // when there's no reads in the node, it should be a little wider
       nodes.forEach((node) => {
         console.log("node.sequenceLength:", node.sequenceLength);
-        node.width = 1 + Math.log(node.sequenceLength) / Math.log(2);
+        node.width = 10;
         node.pixelWidth = Math.round((node.width) * 8.401);
       });
       break;
