@@ -543,10 +543,6 @@ async function getChunkedData(req, res, next) {
   // client is going to send removeSequences = true if they don't want sequences of nodes to be displayed
   req.removeSequences = false;
   if (req.body.removeSequences) {
-    /*
-    if (readsExist(req.body.tracks)) {
-      throw new BadRequestError("Can't remove node sequences if read tracks exist.");
-    }*/
     req.removeSequences = true;
   }
 
