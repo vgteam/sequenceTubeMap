@@ -4222,7 +4222,7 @@ function generateNodeWidth() {
           .attr("x", 0)
           .attr("y", 100)
           .attr("id", "dummytext")
-          .text(node.seq.substr(1))
+          .text(node.seq ? node.seq.substr(1) : "A")
           .attr("font-family", fonts)
           .attr("font-size", "14px")
           .attr("fill", "black")
