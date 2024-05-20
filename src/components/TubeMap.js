@@ -36,9 +36,15 @@ class TubeMap extends Component {
 
   updateVisOptions() {
     const visOptions = this.props.visOptions;
-    visOptions.compressedView
-      ? tubeMap.setNodeWidthOption(1)
-      : tubeMap.setNodeWidthOption(0);
+    if (this.props.nodeSequences){
+      // If node sequences aren't removed
+      visOptions.compressedView
+      ? tubeMap.setNodeWidthOption("compressed")
+      : tubeMap.setNodeWidthOption("normal");
+    } else{
+      // If node sequences are removed
+      tubeMap.setNodeWidthOption("fixed");
+    }
     tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);
     tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
     tubeMap.setShowReadsFlag(visOptions.showReads);
@@ -69,6 +75,11 @@ TubeMap.propTypes = {
   reads: PropTypes.array.isRequired,
   region: PropTypes.array.isRequired,
   visOptions: PropTypes.object.isRequired,
+  nodeSequences: PropTypes.bool
+};
+
+TubeMap.defaultProps = {
+  nodeSequences: true
 };
 
 export default TubeMap;

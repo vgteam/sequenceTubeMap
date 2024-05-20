@@ -143,6 +143,7 @@ class VisualizationOptions extends Component {
                       <Input
                         type="checkbox"
                         checked={visOptions.compressedView}
+                        disabled={this.props.enableCompressedNodes}
                         onChange={() => toggleFlag("compressedView")}
                       />
                       Compressed view
@@ -249,9 +250,6 @@ class VisualizationOptions extends Component {
             </Collapse>
           </Card>
 
-
-        
-        
         </div>
       </Container>
     );
@@ -259,6 +257,7 @@ class VisualizationOptions extends Component {
 }
 
 VisualizationOptions.propTypes = {
+  enableCompressedNodes: PropTypes.bool,
   handleMappingQualityCutoffChange: PropTypes.func.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   tracks: PropTypes.array.isRequired,
