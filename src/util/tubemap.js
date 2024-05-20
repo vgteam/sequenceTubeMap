@@ -1399,8 +1399,9 @@ export function zoomBy(zoomFactor) {
 
   const minZoom = Math.min(
     1,
-    parentElement.clientWidth / (maxXCoordinate + 10)
-  );
+    parentElement.clientWidth / (maxXCoordinate + 10), 
+    parentElement.clientHeight / (maxYCoordinate + 10)
+  )
   const maxZoom = 8;
   const width = parentElement.clientWidth;
 
