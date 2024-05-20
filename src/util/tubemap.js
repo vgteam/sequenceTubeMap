@@ -318,7 +318,7 @@ export function changeAllTracksVisibility(value) {
   let i = 0;
   while (i < inputTracks.length) {
     inputTracks[i].hidden = !value;
-    var checkbox = document.getElementById(`showTrack${i}`);
+    var checkbox = document.getElementById(`showTrack${inputTracks[i].id}`);
     checkbox.checked = value;
     i += 1;
   }
@@ -667,14 +667,16 @@ function placeReads() {
 
   // Space out read tracks if multiple exist
   let topMargin = allSources.length > 1 ? READ_WIDTH : 0;
-  for (let source of allSources) {
-    // Go through all source tracks in order
-    sortedNodes.forEach((node) => {
-      // And for each node, place these reads in it.
+  sortedNodes.forEach((node) => {
+    // For each node
+    for (let source of allSources) {
+      // Go through all source tracks in order
+      
+      // Place the reads from this source in this node.
       // Use a margin to separate multiple read tracks if we have them.
       placeReadSet(readsBySource[source], node, topMargin);
-    });
-  }
+    }
+  });
 
   // place read segments which are without node
   const bottomY = calculateBottomY();
@@ -1315,10 +1317,10 @@ function getImageDimensions() {
 
 // This needs to be the width of the ruler.
 // TODO: Tell the ruler drawing code.
-const RULER_WIDTH = 15;
+const RULER_WIDTH = 30;
 const NODE_MARGIN = 10;
 // This is how much space to let us pan, around the nodes as measure by getImageDimensions()
-const RAIL_SPACE = 25;
+const RAIL_SPACE = RULER_WIDTH + NODE_MARGIN;
 
 // align visualization to the top and left within svg and resize svg to correct size
 // enable zooming and panning
@@ -2676,8 +2678,7 @@ function getReadXEnd(read) {
 // position within the given node
 function getXCoordinateOfBaseWithinNode(node, base) {
   if (base > node.sequenceLength) return null; // equality is allowed
-  const nodeLeftX = node.x - 4;
-  const nodeRightX = node.x + node.pixelWidth + 4;
+  const [nodeLeftX, nodeRightX] = nodePixelCoordinatesInX(node);
   return nodeLeftX + (base / node.sequenceLength) * (nodeRightX - nodeLeftX);
 }
 
@@ -3474,6 +3475,42 @@ function drawLabels(dNodes) {
   }
 }
 
+function nodePixelCoordinatesInX(node) {
+  // Add and subtract 4 to account for stroke width - TODO: figure out what the 4 means
+  const nodeLeftX = node.x - 4;
+  const nodeRightX = node.x + node.pixelWidth + 4;
+  return [nodeLeftX, nodeRightX];
+}
+
+// If nodes are spaced closely together (based on the threshold value) then those nodes would be grouped together
+//  in a larger interval. If the nodes are spaced further apart (based on the threshold) then those nodes would form a 
+//  separate interval. If the distance between the nodes is equal to the threshold, then the nodes would be grouped together
+//  in a larger interval
+export function axisIntervals(nodePixelCoordinates, threshold) {
+  if (nodePixelCoordinates.length === 0){
+    return [];
+  } else if (nodePixelCoordinates.length === 1){
+    return nodePixelCoordinates;
+  }
+  // Sorting an array in ascending order based on first element of subarrays - from https://stackoverflow.com/questions/48634944/sort-an-array-of-arrays-by-the-first-elements-in-the-nested-arrays
+  let nodePixelCoordinatesCopy = nodePixelCoordinates.slice(); // shallow copy
+  nodePixelCoordinatesCopy.sort((a, b) => a[0] - b[0]);
+  // https://keithwilliams-91944.medium.com/merge-intervals-solution-in-javascript-daa61b618ed4
+  let mergedIntervals = [nodePixelCoordinatesCopy[0].slice()];
+  for (let i = 1; i < nodePixelCoordinatesCopy.length; i++){
+    // compute the distance between the current interval and the current coordinate pair's starting x-value, and compare it to a threshold. If it's less than the threshold, merge the intervals.
+    if (nodePixelCoordinatesCopy[i][0] - mergedIntervals[mergedIntervals.length - 1][1] <= threshold) {
+      // update ending position to the maximum of current end value and end of current interval - can be thought of as extending the interval
+      mergedIntervals[mergedIntervals.length - 1][1] = Math.max(mergedIntervals[mergedIntervals.length - 1][1], nodePixelCoordinatesCopy[i][1]);
+    } else {
+      // new interval
+      mergedIntervals.push(nodePixelCoordinatesCopy[i].slice());
+    }
+  }
+  return mergedIntervals;
+}
+
+
 function drawRuler() {
   let rulerTrackIndex = 0;
   while (tracks[rulerTrackIndex].name !== trackForRuler) rulerTrackIndex += 1;
@@ -3537,6 +3574,9 @@ function drawRuler() {
 
   let start_region = Number(inputRegion[0]);
   let end_region = Number(inputRegion[1]);
+
+  let intervalsVisitedByNodes = [];
+
   for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
     // Walk along the ruler track in ascending coordinate order.
     const nodeIndex =
@@ -3546,6 +3586,10 @@ function drawRuler() {
           : i
       ];
     const currentNode = nodes[Math.abs(nodeIndex)];
+
+    // Adding node X start and end positions into an array
+    intervalsVisitedByNodes.push(nodePixelCoordinatesInX(currentNode));
+
     // Each node may actually have the track's coordinates go through it
     // backward. In fact, the whole track may be laid out backward.
     // So xor the reverse flags, which we assume to be bools
@@ -3608,6 +3652,9 @@ function drawRuler() {
     // Advance to the next node
     indexOfFirstBaseInNode += currentNode.sequenceLength;
   }
+  
+  // merge intervals
+  var mergedIntervals = axisIntervals(intervalsVisitedByNodes, config.nodeIntervalThreshold);
 
   // Sort ticks on X coordinate
   ticks.sort(([bp1, x1], [bp2, x2]) => x1 > x2);
@@ -3628,30 +3675,67 @@ function drawRuler() {
   // plot ticks highlighting the region
   ticks_region.forEach((tick) => drawRulerMarkingRegion(tick[0], tick[1]));
 
-  // draw horizontal line
-  svg
+  // draw horizontal line for each interval
+  
+  let axisY = minYCoordinate - 10;
+  mergedIntervals.forEach((interval) => {
+    svg
+      .append("line")
+      .attr("x1", interval[0])
+      .attr("y1", axisY)
+      .attr("x2", interval[1])
+      .attr("y2", axisY)
+      .attr("stroke-width", 1)
+      .attr("stroke", "black")
+    
+    // starting vertical line
+    svg
     .append("line")
-    .attr("x1", 0)
-    .attr("y1", minYCoordinate - 10)
-    .attr("x2", maxXCoordinate)
-    .attr("y2", minYCoordinate - 10)
+    .attr("x1", interval[0])
+    .attr("y1", axisY - 5)
+    .attr("x2", interval[0])
+    .attr("y2", axisY + 5)
     .attr("stroke-width", 1)
-    .attr("stroke", "black");
+    .attr("stroke", "black")
 
+    // ending vertical line
+    svg
+    .append("line")
+    .attr("x1", interval[1])
+    .attr("y1", axisY - 5)
+    .attr("x2", interval[1])
+    .attr("y2", axisY + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black")
+  }
+);
+  
   // Plot all the ticks
   ticks.forEach((tick) => drawRulerMarking(tick[0], tick[1]));
 }
 
 function drawRulerMarking(sequencePosition, xCoordinate) {
+  let axisY = minYCoordinate - 10;
   svg
     .append("text")
+    .attr("text-anchor", "middle")
     .attr("x", xCoordinate)
-    .attr("y", minYCoordinate - 13)
-    .text(`|${sequencePosition}`)
+    .attr("y", minYCoordinate - 18)
+    .text(`${sequencePosition}`)
     .attr("font-family", fonts)
     .attr("font-size", "12px")
     .attr("fill", "black")
     .style("pointer-events", "none");
+
+    // vertical line
+    svg
+    .append("line")
+    .attr("x1", xCoordinate)
+    .attr("y1", axisY - 5)
+    .attr("x2", xCoordinate)
+    .attr("y2", axisY + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black")
 }
 
 function drawRulerMarkingRegion(sequencePosition, xCoordinate) {
@@ -3994,6 +4078,7 @@ function drawLegend() {
   content +=
     '<table class="table-sm table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
   const listeners = [];
+  // This is in terms of tracks, but when we change visibility we need to touch inputTracks, so we need to set up listeners by track ID.
   for (let i = 0; i < tracks.length; i += 1) {
     if (tracks[i].type === "haplo") {
       content += `<tr><td style="text-align:right"><div class="color-box" style="background-color: ${generateTrackColor(
@@ -4005,17 +4090,17 @@ function drawLegend() {
       } else {
         content += `<td>${tracks[i].id}</td>`;
       }
-      content += `<td><input type="checkbox" checked=true id="showTrack${i}"></td>`;
-      listeners.push(i);
+      content += `<td><input type="checkbox" checked=true id="showTrack${tracks[i].id}"></td>`;
+      listeners.push(tracks[i].id);
     }
   }
   content += "</table";
   // $('#legendDiv').html(content);
   document.getElementById("legendDiv").innerHTML = content;
-  listeners.forEach((i) => {
+  listeners.forEach((id) => {
     document
-      .getElementById(`showTrack${i}`)
-      .addEventListener("click", () => changeTrackVisibility(i), false);
+      .getElementById(`showTrack${id}`)
+      .addEventListener("click", () => changeTrackVisibility(id), false);
   });
   document
     .getElementById("selectall")
