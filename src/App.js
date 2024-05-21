@@ -71,6 +71,7 @@ class App extends Component {
       APIInterface: new ServerAPI(props.apiUrl)
     };
   }
+
   
   /**
    * Set which API implementation to query for graph data.
@@ -251,6 +252,7 @@ class App extends Component {
           APIInterface={this.state.APIInterface}
         />
         <CustomizationAccordion
+          enableCompressedNodes={this.state.viewTarget.removeSequences}
           visOptions={this.state.visOptions}
           tracks={
             this.state.dataOrigin === dataOriginTypes.API
