@@ -1315,6 +1315,20 @@ function getImageDimensions() {
   });
 }
 
+// Minimum zoom is a scaling factor that determines how far the graph can be zoomed out. This function determines
+// how small the graph needs to appear to fully fit onto the screen.
+// This factor is based on maxXCoordinate and maxYCoordinate, and the size of the svg's parent.
+function minZoom() {
+  let svgElement = document.getElementById(svgID.substring(1));
+  // And find its parent holding element.
+  let parentElement = svgElement.parentNode;
+  return Math.min(
+    1,
+    parentElement.clientWidth / (maxXCoordinate + 10),
+    parentElement.clientHeight / (maxYCoordinate + 10)
+  );
+}
+
 // This needs to be the width of the ruler.
 // TODO: Tell the ruler drawing code.
 const RULER_WIDTH = 30;
@@ -1346,11 +1360,6 @@ function alignSVG() {
     svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
     svg.attr("width", parentElement.clientWidth);
 
-    const minZoom = Math.min(
-      1,
-      parentElement.clientWidth / (maxXCoordinate + 10)
-    );
-
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
     zoom
@@ -1358,7 +1367,7 @@ function alignSVG() {
         [0, 0],
         [parentElement.clientWidth, parentElement.clientHeight],
       ])
-      .scaleExtent([minZoom, 8])
+      .scaleExtent([minZoom(), 8])
       .translateExtent([
         [0, minYCoordinate - RAIL_SPACE],
         [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
@@ -1403,17 +1412,13 @@ export function zoomBy(zoomFactor) {
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
 
-  const minZoom = Math.min(
-    1,
-    parentElement.clientWidth / (maxXCoordinate + 10)
-  );
   const maxZoom = 8;
   const width = parentElement.clientWidth;
 
   const transform = d3.zoomTransform(d3.select(svgID).node());
   const translateK = Math.min(
     maxZoom,
-    Math.max(transform.k * zoomFactor, minZoom)
+    Math.max(transform.k * zoomFactor, minZoom())
   );
   let translateX =
     width / 2.0 - ((width / 2.0 - transform.x) * translateK) / transform.k;
