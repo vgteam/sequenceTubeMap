@@ -3730,6 +3730,8 @@ function drawRuler() {
   // Plot all the ticks
   for (let i = 0; i < ticks.length; i++){
     let tick = ticks[i];
+    // Figure out how to align the tick text, to keep the outermost labels inside
+    // the visible area
     let align;
     if (i === 0){
       align = "start";
@@ -3742,6 +3744,9 @@ function drawRuler() {
   }
 }
 
+/// Draw an axis tick for the given sequence position (in bp) at the given pixel X
+/// coordinate. The text label can be aligned to the tick mark by its "start", "end",
+/// or "middle".
 function drawRulerMarking(sequencePosition, xCoordinate, align) {
   let axisY = minYCoordinate - 10;
   svg
