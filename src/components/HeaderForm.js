@@ -493,6 +493,9 @@ class HeaderForm extends Component {
   };
 
   getPathNames = async (graphFile) => {
+    if (graphFile === null){
+      return;
+    }
     this.setState({ error: null });
     try {
       const json = await this.props.APIInterface.getPathNames(graphFile, this.cancelSignal);

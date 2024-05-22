@@ -42,6 +42,39 @@
       "bedFile": "exampleData/cactus.bed",
       "region": "ref:1-100",
       "dataType": "built-in"
+    },
+    {
+      "name": "Lancet example",
+      "tracks": [
+        {
+          "trackFile": null,
+          "trackType": "graph",
+          "trackColorSettings": {
+            "mainPalette": "#000000",
+            "auxPalette": "greys",
+            "colorReadsByMappingQuality": false
+          }
+        },
+        {
+          "trackFile": null,
+          "trackType": "read",
+          "trackColorSettings": {
+            "mainPalette": "blues",
+            "auxPalette": "blues"
+          }
+        },
+        {
+          "trackFile": "../../Downloads/STM_DataShare_Nov07_2023 2/giraffe_alignments/tumor.chr1_7290357_7290857.gam",
+          "trackType": "read",
+          "trackColorSettings": {
+            "mainPalette": "reds",
+            "auxPalette": "reds"
+          }
+        }
+      ],
+      "bedFile": "https://public.gi.ucsc.edu/~anovak/vg-data/lancet_2023-11-07/index.bed",
+      "region": "chr1:7290357-7290857",
+      "dataType": "built-in"
     }
   ],
   "vgPath": "",
