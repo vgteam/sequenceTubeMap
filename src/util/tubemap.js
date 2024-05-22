@@ -3716,14 +3716,30 @@ function drawRuler() {
 );
   
   // Plot all the ticks
-  ticks.forEach((tick) => drawRulerMarking(tick[0], tick[1]));
+  for (let i = 0; i < ticks.length; i++){
+    let tick = ticks[i];
+    // Figure out how to align the tick text, to keep the outermost labels inside
+    // the visible area
+    let align;
+    if (i === 0){
+      align = "start";
+    } else if (i === ticks.length - 1){
+      align = "end";
+    } else {
+      align = "middle";
+    }
+    drawRulerMarking(tick[0], tick[1], align);
+  }
 }
 
-function drawRulerMarking(sequencePosition, xCoordinate) {
+/// Draw an axis tick for the given sequence position (in bp) at the given pixel X
+/// coordinate. The text label can be aligned to the tick mark by its "start", "end",
+/// or "middle".
+function drawRulerMarking(sequencePosition, xCoordinate, align) {
   let axisY = minYCoordinate - 10;
   svg
     .append("text")
-    .attr("text-anchor", "middle")
+    .attr("text-anchor", align)
     .attr("x", xCoordinate)
     .attr("y", minYCoordinate - 18)
     .text(`${sequencePosition}`)
