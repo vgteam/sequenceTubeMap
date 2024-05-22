@@ -570,7 +570,7 @@ class HeaderForm extends Component {
     region: this.state.region,
     dataType: this.state.dataType,
     simplify: this.state.simplify && !readsExist(this.state.tracks),
-    removeSequences: this.state.removeSequences && !readsExist(this.state.tracks)
+    removeSequences: this.state.removeSequences
   });
 
   handleGoButton = () => {
@@ -978,7 +978,7 @@ class HeaderForm extends Component {
                     {DataPositionFormRowComponent}
                   </div>
                   <div className="d-flex justify-content-end align-items-start flex-shrink-0">
-                  {!readsExist(this.state.tracks) && (
+                  {(
                     <>
                       <Button
                         onClick={this.togglePopup}
