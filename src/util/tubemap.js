@@ -1360,12 +1360,6 @@ function alignSVG() {
     svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
     svg.attr("width", parentElement.clientWidth);
 
-    /*
-    const minZoom = Math.min(
-      1,
-      parentElement.clientWidth / (maxXCoordinate + 10)
-    );*/
-
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
     zoom
@@ -1418,12 +1412,6 @@ export function zoomBy(zoomFactor) {
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
 
-  /*
-  const minZoom = Math.min(
-    1,
-    parentElement.clientWidth / (maxXCoordinate + 10), 
-    parentElement.clientHeight / (maxYCoordinate + 10)
-  )*/
   const maxZoom = 8;
   const width = parentElement.clientWidth;
 
