@@ -64,7 +64,7 @@
           }
         },
         {
-          "trackFile": "../../Downloads/STM_DataShare_Nov07_2023 2/giraffe_alignments/tumor.chr1_7290357_7290857.gam",
+          "trackFile": null,
           "trackType": "read",
           "trackColorSettings": {
             "mainPalette": "reds",
