@@ -730,9 +730,7 @@ function placeReads() {
     });
   });
 
-  console.log("elementsWithoutNode before sort:", elementsWithoutNode)
   elementsWithoutNode.sort(compareNoNodeReads);
-  console.log("elementsWithoutNode:", elementsWithoutNode)
   elementsWithoutNode.forEach((element) => {
     const segment = reads[element.readIndex].path[element.pathIndex];
     segment.y = bottomY[segment.order];
@@ -876,18 +874,18 @@ function setOccupiedUntil(map, read, pathIndex, y, node) {
   }
 }
 
-// compare read segments which are outside of nodes
-// by the y-coord of where they are coming from
+// compare read segments which are outside of nodes to sort them in a good horizontal
+// and then vertical display order.
 function compareNoNodeReads(a, b) {
-  // Sort by order by segments
+  const readA = reads[a.readIndex];
+  const readB = reads[b.readIndex];
   const segmentA = readA.path[a.pathIndex];
   const segmentB = readB.path[b.pathIndex];
+  // Sort by order by segments
   if (segmentA.order !== segmentB.order) {
     return segmentA.order - segmentB.order;
   } 
   // Sort by reads' source track
-  const readA = reads[a.readIndex];
-  const readB = reads[b.readIndex];
   if (readA.sourceTrackID !== readB.sourceTrackID){
     return readA.sourceTrackID - readB.sourceTrackID;
   }
