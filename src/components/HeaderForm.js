@@ -312,8 +312,11 @@ class HeaderForm extends Component {
     for (const key in ds.tracks) {
       if (ds.tracks[key].trackType === fileTypes.GRAPH) {
         // Load the paths for any graph tracks
-        console.log("Get path names for track: ", ds.tracks[key]);
-        this.getPathNames(ds.tracks[key].trackFile);
+        console.log("Get path names quietly for initial track: ", ds.tracks[key]);
+        // Try and get the path names, quietly. We aren't checking here if the
+        // server actually has this file; maybe it's a fake one from a
+        // pre-generated region.
+        this.getPathNames(ds.tracks[key].trackFile, true);
       }
     }
     this.setState((state) => {
@@ -494,7 +497,11 @@ class HeaderForm extends Component {
     });
   };
 
-  getPathNames = async (graphFile) => {
+  /// Download the list of path names for the given graph file.
+  /// It may be null.
+  /// If the graph file isn't known to actually be an available file, set quiet
+  /// to true to suppress rendering any errors.
+  getPathNames = async (graphFile, quiet) => {
     if (graphFile === null){
       return;
     }
@@ -512,7 +519,10 @@ class HeaderForm extends Component {
         };
       });
     } catch (error) {
-      this.handleFetchError(error, `API getPathNames failed:`);
+      if (!quiet) {
+        // We aren't expecting any errors.
+        this.handleFetchError(error, `API getPathNames failed:`);
+      }
     }
   };
 
