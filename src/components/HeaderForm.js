@@ -479,6 +479,8 @@ class HeaderForm extends Component {
         return {
           // RegionInfo: object with chr, chunk, desc arrays
           regionInfo: json.bedRegions ?? {},
+          // Fill in the description from the coordinates when the region info arrives
+          desc: this.getRegionDescByCoords(state.region, json.bedRegions ?? {})
         };
       });
     } catch (error) {
@@ -596,26 +598,30 @@ class HeaderForm extends Component {
     }
   };
 
-  getRegionCoordsByDesc = (desc) => {
+  getRegionCoordsByDesc = (desc, regionInfo) => {
     // Given a region description (string), return the actual corresponding coordinates
     // Returns null if there is no corresponding coords
+
+    regionInfo = regionInfo ?? this.state.regionInfo;
+
     // i: number that corresponds to record
     // Find index of given description in regionInfo
-    if (!this.state.regionInfo["desc"]) {
+    if (!regionInfo["desc"]) {
       return null;
     }
-    const i = this.state.regionInfo["desc"].findIndex((d) => d === desc);
+    const i = regionInfo["desc"].findIndex((d) => d === desc);
     if (i === -1)
       // Not found
       return null;
-    return regionStringFromRegionIndex(i, this.state.regionInfo);
+    return regionStringFromRegionIndex(i, regionInfo);
   };
   
   // Get the description of the region with the given coordinates, or null if no such region exists.
-  getRegionDescByCoords = (coords) => {
-    for (let i = 0; i < this.state.regionInfo["chr"]?.length ?? 0; i++) {
-      if (coords === regionStringFromRegionIndex(i, this.state.regionInfo)) {
-        return this.state.regionInfo["desc"]?.[i] ?? null;
+  getRegionDescByCoords = (coords, regionInfo) => {
+    regionInfo = regionInfo ?? this.state.regionInfo;
+    for (let i = 0; i < regionInfo["chr"]?.length ?? 0; i++) {
+      if (coords === regionStringFromRegionIndex(i, regionInfo)) {
+        return regionInfo["desc"]?.[i] ?? null;
       }
     }
     return null;
@@ -638,9 +644,11 @@ class HeaderForm extends Component {
   // Tracks remain unchanged if neither condition is met
   handleRegionChange = async (coords) => {
     // Update region coords and description
-    this.setState({
-      region: coords,
-      desc: this.getRegionDescByCoords(coords),
+    this.setState((state) => {
+      return {
+        region: coords,
+        desc: this.getRegionDescByCoords(coords, state.regionInfo),
+      };
     });
 
     let coordsToMetaData = {};
