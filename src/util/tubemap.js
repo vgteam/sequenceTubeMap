@@ -4187,7 +4187,7 @@ function trackMouseOver() {
   const trackID = d3.select(this).attr("trackID");
   // TODO: We want to also .raise() here, but it makes Firefox 124.0.2 on Mac
   // lose the mouseout and immediately trigger another mouseover, if the mouse
-  // is iver a curved section of a read.
+  // is over a curved section of a read.
   d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)");
 }
 
