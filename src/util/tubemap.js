@@ -694,6 +694,7 @@ function placeReads() {
         }
 
         let previousValidY = previousVisitToNode?.y;
+        let previousValidNode = previousVisitToNode?.node;
 
         // sometimes, elements without nodes are between 2 segments going to a node we've already visited, from the same direction
         // this means we're looping back to a node we've already been to, and we should sort in reverse
@@ -723,12 +724,13 @@ function placeReads() {
           readIndex: idx,
           pathIndex: pathIdx,
           previousY: previousValidY,
+          previousNode: previousValidNode
         });
       }
     });
   });
 
-  elementsWithoutNode.sort(compareNoNodeReadsByPreviousY);
+  elementsWithoutNode.sort(compareNoNodeReads);
   elementsWithoutNode.forEach((element) => {
     const segment = reads[element.readIndex].path[element.pathIndex];
     segment.y = bottomY[segment.order];
@@ -872,22 +874,37 @@ function setOccupiedUntil(map, read, pathIndex, y, node) {
   }
 }
 
-// compare read segments which are outside of nodes
-// by the y-coord of where they are coming from
-function compareNoNodeReadsByPreviousY(a, b) {
-  const segmentA = reads[a.readIndex].path[a.pathIndex];
-  const segmentB = reads[b.readIndex].path[b.pathIndex];
-  if (segmentA.order === segmentB.order) {
-    // We want to sort in reverse order when the segment is along the reverse-going part of a cycle.
-    // This ensures a loop that starts on the outside, stays on the outside,
-    // and rolls up in order with other loops.
-    if (segmentA?.betweenCycleReverseTraversal && segmentB?.betweenCycleReverseTraversal) {
-      return b.previousY - a.previousY;
-    } else {
-      return a.previousY - b.previousY;
+// compare read segments which are outside of nodes to sort them in a good horizontal
+// and then vertical display order.
+function compareNoNodeReads(a, b) {
+  const readA = reads[a.readIndex];
+  const readB = reads[b.readIndex];
+  const segmentA = readA.path[a.pathIndex];
+  const segmentB = readB.path[b.pathIndex];
+  // Sort by order by segments
+  if (segmentA.order !== segmentB.order) {
+    return segmentA.order - segmentB.order;
+  } 
+  // Sort by reads' source track
+  if (readA.sourceTrackID !== readB.sourceTrackID){
+    return readA.sourceTrackID - readB.sourceTrackID;
+  }
+  // Sort by order of previous node
+  const prevNodeA = nodes[a.previousNode];
+  const prevNodeB = nodes[b.previousNode];
+  if (a.previousNode && b.previousNode){
+    if (prevNodeA.order !== prevNodeB.order){
+      return prevNodeA.order - prevNodeB.order;
     }
   }
-  return segmentA.order - segmentB.order;
+  // We want to sort in reverse order when the segment is along the reverse-going part of a cycle.
+  // This ensures a loop that starts on the outside, stays on the outside,
+  // and rolls up in order with other loops.
+  if (segmentA?.betweenCycleReverseTraversal && segmentB?.betweenCycleReverseTraversal) {
+    return b.previousY - a.previousY;
+  } else {
+    return a.previousY - b.previousY;
+  }
 }
 
 // compare read segments by where they are going to
@@ -1320,6 +1337,9 @@ function getImageDimensions() {
 // This factor is based on maxXCoordinate and maxYCoordinate, and the size of the svg's parent.
 function minZoom() {
   let svgElement = document.getElementById(svgID.substring(1));
+  if (svgElement === null){
+    return 1;
+  }
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
   return Math.min(
