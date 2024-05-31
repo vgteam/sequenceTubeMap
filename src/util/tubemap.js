@@ -3784,7 +3784,7 @@ function drawTrackRectangles(rectangles, type, groupTrack) {
     .append("rect")
     .attr("x", (d) => d.xStart)
     .attr("y", (d) => d.yStart)
-    .attr("width", (d) => d.xEnd - d.xStart + 1)
+    .attr("width", (d) => d.xEnd - d.xStart)
     .attr("height", (d) => d.yEnd - d.yStart + 1)
     .style("fill", (d) => d.color)
     .attr("trackID", (d) => d.id)
