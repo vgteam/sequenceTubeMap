@@ -28,7 +28,17 @@ export const TrackListItem = ({
   // reset after onChange is called
   const [propChanges, setPropChanges] = useState({});
 
-  const [pickerType, setPickerType] = useState("mounted");
+  // Figure out if the track we're holding is actually available
+  let trackIsAvailable = false;
+  for (const track of availableTracks) {
+    if (track.trackType === trackProps.trackType && track.trackFile === trackProps.trackFile) {
+      trackIsAvailable = true;
+      break;
+    }
+  }
+
+  // Display as a mounted file if the track is actually available and a fixed unchangeable file otherwise.
+  const [pickerType, setPickerType] = useState(trackIsAvailable ? "mounted" : "fixed");
 
   const trackTypeOnChange = async (newTrackType) => {
     // wait until file change to call onChange
@@ -97,6 +107,7 @@ export const TrackListItem = ({
             onChange={setPickerType}
             testID={"picker-type-select-component".concat(trackID)}
             options={config.pickerTypeOptions}
+            isDisabled={pickerType === "fixed"}
           />
         </Col>
 
