@@ -19,6 +19,7 @@ import {
   parseRegion,
   stringifyRegion,
   isEmpty,
+  isValidURL,
   readsExist,
 } from "../common.mjs";
 
@@ -408,6 +409,33 @@ class HeaderForm extends Component {
         // Index the available tracks
         let availableTrackSet = makeAvailableTrackSet(json.files);
 
+        if (this.state.dataType !== dataTypes.EXAMPLES) {
+          // Work out whether the BED file we were set to exists in the result we got
+          const bedFile = (isValidURL(this.state.bedFile) || json.bedFiles.includes(this.state.bedFile))
+            ? this.state.bedFile
+            : "none";
+          if (isSet(bedFile)) {
+            // If so, kick off a request for BED region metadata
+            console.log("Get BED regions for available BED file")
+            this.getBedRegions(bedFile);
+          } else {
+            console.log("Don't get BED regions for BED", this.state.bedFile)
+          }
+          
+          // Sync up path names for first graph track.
+          let graphTrack = firstGraphTrack(this.state.tracks);
+          if (graphTrack) {
+            if (trackIsImplied(graphTrack, availableTrackSet)) {
+              console.log("Don't get path names for implied track:", graphTrack);
+            } else {
+              // Load the paths for any graph tracks advertised by the server.
+              // TODO: Do we need to do this now?
+              console.log("Get path names for track:", graphTrack);
+              this.getPathNames(graphTrack.trackFile);
+            }
+          }
+        }
+
         this.setState((state) => {
           let newState = {
             // Make sure we have implied track entries for selected tracks not
@@ -416,31 +444,17 @@ class HeaderForm extends Component {
             availableBeds: json.bedFiles
           };
 
-          if (state.dataType !== dataTypes.EXAMPLES) {
-            // Work out whether the BED file we are set to exists in the result we got
-            const bedSelect = json.bedFiles.includes(state.bedSelect)
+          if (state.dataType === dataTypes.CUSTOM) {
+            // See if the BED file vanished and if so clear it out.
+            const bedSelect = (isValidURL(state.bedSelect) || json.bedFiles.includes(state.bedSelect))
               ? state.bedSelect
               : "none";
-            if (isSet(bedSelect)) {
-              // If so, kick off a request for BED region metadata
-              this.getBedRegions(bedSelect);
-            }
-            // Add the bed option to the state, unselecting vanished BED files
             newState.bedSelect = bedSelect;
-            
-            // Sync up path names for first graph track.
-            let graphTrack = firstGraphTrack(state.tracks);
-            if (graphTrack) {
-              if (trackIsImplied(graphTrack, availableTrackSet)) {
-                console.log("Don't get path names for implied track:", graphTrack);
-                // Clear any path names for the now-implied track.
-                newState.pathNames = [];
-              } else {
-                // Load the paths for any graph tracks advertised by the server.
-                // TODO: Do we need to do this now?
-                console.log("Get path names for track:", graphTrack);
-                this.getPathNames(graphTrack.trackFile);
-              }
+            newState.bedFile = isSet(bedSelect) ? bedSelect : undefined;
+            if (!isSet(bedSelect)) {
+              // Switching to no BED so clear the BED-related info
+              newState.regionInfo = {};
+              newState.desc = undefined;
             }
           }
 
@@ -484,6 +498,7 @@ class HeaderForm extends Component {
   resetBedRegions = () => {
     this.setState({
       regionInfo: {},
+      desc: undefined
     });
   };
 
