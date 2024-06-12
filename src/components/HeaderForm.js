@@ -283,12 +283,22 @@ function trackIsImplied(track, availableTrackSet) {
   return !availableTrackSet.has(makeKey(track));
 }
 
-// Given an array of available tracks from the server and an object of currently selected
-// tracks, return an array guaranteed to have entries for the tracks already
-// selected. This ensures the user can switch back to them if they deselect
-// them, even if they don't really exist server-side (which can happen if they
-// are from pre-extracted regions).
+// Given an array of available tracks (some of which may already be implied)
+// and an object of currently selected tracks, return an array guaranteed to
+// have entries for the tracks already selected. This ensures the user can
+// switch back to them if they deselect them, even if they don't really exist
+// server-side (which can happen if they are from pre-extracted regions).
+//
+// Removes existing implied tracks in the input.
 function trackListWithImplied(availableTracks, availableTrackSet, currentTracks) {
+  // Identify all available, non-implied tracks
+  let newAvailableTracks = [];
+  for (let track of availableTracks) {
+    if (!track.trackIsImplied) {
+      newAvailableTracks.push(track);
+    }
+  }
+
   // Identify all the current tracks that are not in the list already
   let unavailable = [];
   for (const key in currentTracks) {
@@ -296,16 +306,15 @@ function trackListWithImplied(availableTracks, availableTrackSet, currentTracks)
     if (trackIsImplied(track, availableTrackSet)) {
       // This track isn't available, so we'll have to do something for it
       unavailable.push(track);
-    }
+    } 
   }
 
   if (unavailable.length == 0) {
     // No tracks to add
-    return availableTracks;
+    return newAvailableTracks;
   }
 
-  // Now we need to splice together an array of the original tracks and new entries fro the ones we didn't see.
-  let newAvailableTracks = availableTracks.slice();
+  // Now we need to add new entries for the ones we didn't see.
   for (let track of unavailable) {
     // For each unavailable track currently selected, make an available tracks
     // entry that knows it doesn't really exist in the API as a full track.
@@ -662,15 +671,11 @@ class HeaderForm extends Component {
     }
 
     // Set to null if any properties are undefined
-    const tracks = coordsToMetaData?.[coords]?.tracks ?? null;
+    let tracks = coordsToMetaData?.[coords]?.tracks ?? null;
     const chunk = coordsToMetaData?.[coords]?.chunk ?? null;
 
-    // Override current tracks with new tracks from chunk dir
-    if (tracks) {
-      this.setState({ tracks: this.convertArrayToObject(tracks) });
-      console.log("New tracks have been applied");
-    } else if (isSet(this.state.bedFile) && chunk) {
-      // Try to retrieve tracks from the server
+    if (!tracks && isSet(this.state.bedFile) && chunk) {
+      // Try fetching tracks
       const json = await this.props.APIInterface.getChunkTracks(
         this.state.bedFile,
         chunk,
@@ -679,16 +684,28 @@ class HeaderForm extends Component {
 
       // Replace tracks if request returns non-falsey value
       if (json.tracks) {
-        this.setState((laterState) => {
-          if (laterState.region === coords) {
-            // The user still has the same region selected, so apply the tracks we now have
-            console.log("json tracks: ", json.tracks)
-            return {tracks: this.convertArrayToObject(json.tracks)};
-          }
-          // Otherwise, don't apply the downloaded tracks, because they are no longer relevant.
-          // TODO: Save the downloaded tracks in case the user selects the region again?
-        });
+        console.log("json tracks: ", json.tracks);
+        tracks = json.tracks;
+        // TODO: Save downloaded tracks in case the user selects the region again?
       }
+    }
+
+    // Override current tracks with new tracks
+    if (tracks) {
+      let trackObject = this.convertArrayToObject(tracks);
+      this.setState((laterState) => {
+        if (laterState.region === coords) {
+          // The user still has the same region selected, so apply the tracks we now have
+          let availableTrackSet = makeAvailableTrackSet(laterState.availableTracks);
+          return {
+            tracks: trackObject,
+            // Make sure to make implied tracks based on any tracks we are
+            // supposed to have that aren't available.
+            availableTracks: trackListWithImplied(laterState.availableTracks, availableTrackSet, trackObject)
+          };
+        }
+        // Otherwise, don't apply the tracks, because they are no longer relevant.
+      });
     }
   };
 
