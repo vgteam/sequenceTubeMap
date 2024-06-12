@@ -70,6 +70,8 @@ const CLEAR_STATE = {
   */
   regionInfo: {},
 
+  // Names of paths in the graph track. Always kept in sync with the first
+  // graph track. Emptied out if it is to change, to be re-populated.
   pathNames: [],
 
   tracks: {},
@@ -309,7 +311,7 @@ function trackListWithImplied(availableTracks, availableTrackSet, currentTracks)
     } 
   }
 
-  if (unavailable.length == 0) {
+  if (unavailable.length === 0) {
     // No tracks to add
     return newAvailableTracks;
   }
@@ -330,6 +332,18 @@ function trackListWithImplied(availableTracks, availableTrackSet, currentTracks)
   return newAvailableTracks;
 }
 
+
+// Get the first graph track in a collection of selected tracks, or a falsey
+// value if there isn't one.
+function firstGraphTrack(tracks) {
+  for (const key in tracks) {
+    let track = tracks[key];
+    if (track.trackType === fileTypes.GRAPH) {
+      return track;
+    }
+  }
+  return null;
+}
 
 
 
@@ -379,27 +393,6 @@ class HeaderForm extends Component {
     });
   };
 
-  getTrackFile = (tracks, type, index) => {
-    // Get the file used in the nth track of the given type, or the unset
-    // "none" sentinel if no such track exists.
-    let seenTracksOfType = 0;
-    for (const key in tracks) {
-      let track = tracks[key];
-      if (track === -1) {
-        continue;
-      }
-      if (track.trackType === type) {
-        if (seenTracksOfType === index) {
-          // This is the one. Return its filename.
-          return track.trackFile;
-        }
-        seenTracksOfType++;
-      }
-    }
-    // Not found
-    return "none";
-  };
-
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
@@ -434,18 +427,19 @@ class HeaderForm extends Component {
             }
             // Add the bed option to the state, unselecting vanished BED files
             newState.bedSelect = bedSelect;
-
-            for (const key in state.tracks) {
-              let track = state.tracks[key];
-              if (track.trackType === fileTypes.GRAPH) {
-                if (trackIsImplied(track, availableTrackSet)) {
-                  console.log("Don't get path names for implied track:", track);
-                } else {
-                  // Load the paths for any graph tracks advertised by the server.
-                  // TODO: Do we need to do this now?
-                  console.log("Get path names for track:", track);
-                  this.getPathNames(track.trackFile);
-                }
+            
+            // Sync up path names for first graph track.
+            let graphTrack = firstGraphTrack(state.tracks);
+            if (graphTrack) {
+              if (trackIsImplied(graphTrack, availableTrackSet)) {
+                console.log("Don't get path names for implied track:", graphTrack);
+                // Clear any path names for the now-implied track.
+                newState.pathNames = [];
+              } else {
+                // Load the paths for any graph tracks advertised by the server.
+                // TODO: Do we need to do this now?
+                console.log("Get path names for track:", graphTrack);
+                this.getPathNames(graphTrack.trackFile);
               }
             }
           }
@@ -504,9 +498,18 @@ class HeaderForm extends Component {
         throw new Error("Server did not send back an array of path names");
       }
       this.setState((state) => {
-        return {
-          pathNames: pathNames,
-        };
+        // Find the then-selected graph file
+        let laterGraphTrack = firstGraphTrack(state.tracks);
+
+        if (laterGraphTrack && laterGraphTrack.trackFile === graphFile) {
+          // The path names we got are for the graph file we currently have selected.
+          console.log("Apply path names");
+          return {
+            pathNames: pathNames,
+          };
+        } else {
+          console.log("Discard stale path names for " + graphFile + " because we are now looking at " + laterGraphTrack);
+        }
       });
     } catch (error) {
       if (!quiet) {
@@ -545,22 +548,30 @@ class HeaderForm extends Component {
             // Without bedFile, we have no regions
             this.setState({ regionInfo: {} });
           }
-          for (const key in ds.tracks) {
-            if (ds.tracks[key].trackType === fileTypes.GRAPH) {
-              // Load the paths for any graph tracks.
-              console.log("Get path names for track: ", ds.tracks[key]);
-              this.getPathNames(ds.tracks[key].trackFile);
-            }
+          let graphTrack = firstGraphTrack(ds.tracks);
+          if (graphTrack) {
+            // Load the paths for any graph tracks.
+            console.log("Get path names for built-in track: ", graphTrack);
+            this.getPathNames(graphTrack.trackFile);
           }
-          this.setState({
-            tracks: ds.tracks,
-            bedFile: ds.bedFile,
-            bedSelect: bedSelect,
-            region: ds.region,
-            dataType: dataTypes.BUILT_IN,
-            name: ds.name,
+          this.setState((state) => {
+            let newState = {
+              tracks: ds.tracks,
+              bedFile: ds.bedFile,
+              bedSelect: bedSelect,
+              region: ds.region,
+              dataType: dataTypes.BUILT_IN,
+              name: ds.name,
+            };
+
+            let laterGraphTrack = firstGraphTrack(state.tracks);
+            if (!laterGraphTrack || !graphTrack || laterGraphTrack.trackFile !== graphTrack.trackFile) {
+              // We're changing the graph track file, so clear out the path names until their result comes in.
+              console.log("Discard old path named for", laterGraphTrack);
+              newState.pathNames = [];
+            }
+            return newState;
           });
-          return;
         }
       });
     }
@@ -693,35 +704,83 @@ class HeaderForm extends Component {
     // Override current tracks with new tracks
     if (tracks) {
       let trackObject = this.convertArrayToObject(tracks);
+      let newGraphTrack = firstGraphTrack(trackObject);
       this.setState((laterState) => {
         if (laterState.region === coords) {
           // The user still has the same region selected, so apply the tracks we now have
           let availableTrackSet = makeAvailableTrackSet(laterState.availableTracks);
-          return {
+          let laterGraphTrack = firstGraphTrack(laterState.tracks);
+          let newState = {
             tracks: trackObject,
             // Make sure to make implied tracks based on any tracks we are
             // supposed to have that aren't available.
             availableTracks: trackListWithImplied(laterState.availableTracks, availableTrackSet, trackObject)
           };
+
+          if (!newGraphTrack || !laterGraphTrack || newGraphTrack.trackFile !== laterGraphTrack.trackFile) {
+            // Changing the tracks also changes the selected graph, which means we can't keep stored path names.
+            newState.pathNames = [];
+          }
+
+          return newState;
         }
         // Otherwise, don't apply the tracks, because they are no longer relevant.
       });
+
+      let currentGraphTrack = firstGraphTrack(this.state.tracks);
+      if (!newGraphTrack || !currentGraphTrack || newGraphTrack.trackFile !== currentGraphTrack.trackFile) {
+        // Path list will need to be updated.
+
+        // Do indexing to see if the new track is implied.
+        let availableTrackSet = makeAvailableTrackSet(this.state.availableTracks);
+
+        if (newGraphTrack && !trackIsImplied(newGraphTrack, availableTrackSet)) {
+          console.log("Get path names for chunk provided graph track:", newGraphTrack)
+          this.getPathNames(newGraphTrack.trackFile);
+        }
+      }
     }
   };
 
+  // Apply new tracks when the user uses the track picker UI. Assumes we're
+  // selecting from the available and implied tracks, but doesn't update to
+  // imply new tracks or un-imply existing tracks because the current tracks
+  // changed.
   handleInputChange = (newTracks) => {
+    // Find the graph track being selected
+    let newGraphTrack = firstGraphTrack(newTracks);
+
     this.setState((state) => {
-      let newState = Object.assign({}, state);
-      newState.tracks = newTracks;
-      console.log("Set result: " + JSON.stringify(newTracks));
+      // Apply the new tracks
+      let newState = {tracks: newTracks};
+    
+      // See what graph track we're actually overwriting when wer actually get applied.
+      let laterGraphTrack = firstGraphTrack(state.tracks);
+
+      if (!newGraphTrack || !laterGraphTrack || newGraphTrack.trackFile !== laterGraphTrack.trackFile) {
+        // The stored path list can't apply to the new graph track.
+        newState.pathNames = [];
+      }
+
       return newState;
     });
 
-    // update path names
-    const graphFile = this.getTrackFile(newTracks, fileTypes.GRAPH, 0);
-    if (isSet(graphFile)) {
-      this.getPathNames(graphFile);
+    // After doing the state set, kick off a request for the paths in the new graph if we think we need them.
+    let currentGraphTrack = firstGraphTrack(this.state.tracks);
+    if (!newGraphTrack || !currentGraphTrack || newGraphTrack.trackFile !== currentGraphTrack.trackFile) {
+      // Path list will need to be updated.
+
+      // Do indexing to see if the new track is implied.
+      let availableTrackSet = makeAvailableTrackSet(this.state.availableTracks);
+
+      if (newGraphTrack && !trackIsImplied(newGraphTrack, availableTrackSet)) {
+        console.log("Get path names for newly selected graph track:", newGraphTrack)
+        this.getPathNames(newGraphTrack.trackFile);
+      }
     }
+
+    // TODO: What if we don't kick off the request but we race other updates
+    // such that the graph track changes and we should have?
   };
 
   handleBedChange = (event) => {
