@@ -1,10 +1,6 @@
 // Type file for documentation
 // (not actually enforced by Typescript)
 
-// Describes whether a built-in example, user uploaded file, mounted, or synthetic example
-// Fills input for the "Data:" dropdown in the HeaderForm
-type DataType = "built-in" | "mounted files" | "examples";
-
 // Possible filestypes taken from the request
 // Files like GBZ contains graph and maybe haplotype and so can be either
 type filetype = "graph" | "haplotype" | "read" | "bed";
@@ -28,9 +24,11 @@ type ViewTarget = {
   tracks: Array<track>;
   bedFile?: string;
 
+  simplify?: boolean; // Whether to write out small snarls
+  removeSequences?: boolean; // Whether to remove node sequences server-side
+
   // Non-essential to server, used for examples
   name?: string;
-  dataType: DataType;
 };
 
 type RegionInfo = {

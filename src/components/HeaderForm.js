@@ -107,21 +107,6 @@ function isSet(file) {
   return (file !== "none" && file);
 }
 
-// Creates track to be stored in ViewTarget
-// Modify as the track system changes
-// INPUT: file structure, see Types.ts
-function createTrack(file) {
-  //track properties
-  const files = [file];
-
-  //remove empty files here?
-
-  const track = {
-    files: files,
-  };
-  return track;
-}
-
 // Checks if all file names in the track are equal
 function tracksEqual(curr, next) {
   if ((curr === undefined) !== (next === undefined)) {
@@ -388,7 +373,7 @@ class HeaderForm extends Component {
       if (seenTracksOfType === index && isSet(file)) {
         // We need to add this track
         console.log("Create track at index " + (maxKey + 1));
-        newTracks[maxKey + 1] = createTrack({ type: type, name: file });
+        newTracks[maxKey + 1] = {trackType: type, trackFile: file}; 
       }
 
       // Add the new tracks to the state
