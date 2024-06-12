@@ -354,20 +354,6 @@ class HeaderForm extends Component {
     // Populate state with either viewTarget or the first example
     let ds = this.props.defaultViewTarget ?? DATA_SOURCES[0];
     const bedSelect = isSet(ds.bedFile) ? ds.bedFile : "none";
-    if (isSet(bedSelect)) {
-      // If so, kick off a request for BED region metadata
-      this.getBedRegions(bedSelect);
-    }
-    for (const key in ds.tracks) {
-      if (ds.tracks[key].trackType === fileTypes.GRAPH) {
-        // Load the paths for any graph tracks
-        console.log("Get path names quietly for initial track: ", ds.tracks[key]);
-        // Try and get the path names, quietly. We aren't checking here if the
-        // server actually has this file; maybe it's a fake one from a
-        // pre-generated region.
-        this.getPathNames(ds.tracks[key].trackFile, true);
-      }
-    }
     this.setState((state) => {
       const stateVals = {
         tracks: ds.tracks,
