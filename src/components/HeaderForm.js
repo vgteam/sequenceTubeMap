@@ -463,12 +463,18 @@ class HeaderForm extends Component {
         );
       }
       this.setState((state) => {
-        return {
-          // RegionInfo: object with chr, chunk, desc arrays
-          regionInfo: json.bedRegions ?? {},
-          // Fill in the description from the coordinates when the region info arrives
-          desc: this.getRegionDescByCoords(state.region, json.bedRegions ?? {})
-        };
+        if (state.bedFile === bedFile) {
+          // We have the region info for the currently selected BED file.
+          console.log("Apply retrieved BED regions");
+          return {
+            // RegionInfo: object with chr, chunk, desc arrays
+            regionInfo: json.bedRegions ?? {},
+            // Fill in the description from the coordinates when the region info arrives
+            desc: this.getRegionDescByCoords(state.region, json.bedRegions ?? {})
+          };
+        } else {
+          console.log("Discard stale BED regions for " + bedFile + " because we are now looking at " + state.bedFile);
+        }
       });
     } catch (error) {
       this.handleFetchError(error, `API getBedRegions failed:`);
@@ -788,10 +794,24 @@ class HeaderForm extends Component {
     const value = event.target.value;
     this.setState({ [id]: value });
 
-    if (isSet(value)) {
+    this.setState((state) => {
+      let newState = { bedFile: value };
+      
+      if (value !== state.bedFile) {
+        // Bed file is changing so old BED regions aren't right anymore.
+        console.log("Clearing outdated BED regions");
+        newState.regionInfo = {};
+        newState.desc = undefined;
+      }
+
+      return newState;
+    });
+
+    if (isSet(value) && value !== this.state.bedFile) {
+      // Go fetch the BED regions which we will need.
       this.getBedRegions(value);
     }
-    this.setState({ bedFile: value });
+    
   };
 
   // Budge the region left or right by the given negative or positive fraction
