@@ -95,10 +95,10 @@ const EMPTY_STATE = {
 
   // These ones are for selecting entire files and need to be preserved when
   // switching dataType.
-  fileSelectOptions: [],
+  availableTracks: [],
   // This one is for the BED files. It needs to exist when we start up or we
   // will try and draw the BED dropdown without an array of options.
-  bedSelectOptions: [],
+  availableBeds: [],
 };
 
 // Return true if file is set to a string file name or URL, and false if it is
@@ -370,16 +370,16 @@ class HeaderForm extends Component {
               }
             }
             return {
-              fileSelectOptions: json.files,
-              bedSelectOptions: json.bedFiles,
+              availableTracks: json.files,
+              availableBeds: json.bedFiles,
               bedSelect,
             };
           });
         } else {
           this.setState((state) => {
             return {
-              fileSelectOptions: json.files,
-              bedSelectOptions: json.bedFiles,
+              availableTracks: json.files,
+              availableBeds: json.bedFiles,
             };
           });
         }
@@ -831,8 +831,8 @@ class HeaderForm extends Component {
     const displayDescription = this.state.desc;
 
     console.log(
-      "Rendering header form with fileSelectOptions: ",
-      this.state.fileSelectOptions
+      "Rendering header form with availableTracks: ",
+      this.state.availableTracks
     );
 
     const DataPositionFormRowComponent = (
@@ -897,7 +897,7 @@ class HeaderForm extends Component {
                     inputId="bedSelectInput"
                     value={this.state.bedSelect}
                     onChange={this.handleBedChange}
-                    options={this.state.bedSelectOptions}
+                    options={this.state.availableBeds}
                   />
                   &nbsp;
                 </React.Fragment>
@@ -944,7 +944,7 @@ class HeaderForm extends Component {
                   )}
                   <TrackPicker
                     tracks={this.state.tracks}
-                    availableTracks={this.state.fileSelectOptions}
+                    availableTracks={this.state.availableTracks}
                     onChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
