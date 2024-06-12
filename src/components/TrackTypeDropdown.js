@@ -46,7 +46,6 @@ TrackTypeDropdown.propTypes = {
   onChange: PropTypes.func.isRequired,
   testID: PropTypes.string,
   options: PropTypes.array,
-  isDisabled: PropTypes.bool,
 };
 
 TrackTypeDropdown.defaultProps = {
@@ -55,7 +54,6 @@ TrackTypeDropdown.defaultProps = {
   value: "graph",
   testID: "file-type-select-component",
   options: ["graph", "haplotype", "read"],
-  isDisabled: false,
 };
 
 export default TrackTypeDropdown;

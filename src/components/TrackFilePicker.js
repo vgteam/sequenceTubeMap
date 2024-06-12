@@ -21,7 +21,7 @@ export const TrackFilePicker = ({
   fileType, // e.g read, gam, graph
   value, // input file
   handleInputChange,
-  pickerType, // either "mounted", "upload", or "fixed" to determine which component we render
+  pickerType, // either "dropdown or upload" to determine which component we render
   className,
   testID,
   handleFileUpload,
@@ -62,7 +62,7 @@ export const TrackFilePicker = ({
     value: option,
   }));
 
-  if (pickerType === "mounted" || pickerType === "fixed") {
+  if (pickerType === "mounted") {
     return (
       // wrap Select container in div to easily query in tests
       <div data-testid={testID}>
@@ -79,7 +79,6 @@ export const TrackFilePicker = ({
           onChange={mountedOnChange}
           autoComplete="on"
           className={className}
-          isDisabled={pickerType === "fixed"}
         />
       </div>
     );
