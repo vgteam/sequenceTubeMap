@@ -107,7 +107,7 @@ function isSet(file) {
   return (file !== "none" && file);
 }
 
-// Checks if all file names in the track are equal
+// Checks if two track objects in the current track set are equal
 function tracksEqual(curr, next) {
   if ((curr === undefined) !== (next === undefined)) {
     // One is undefined and the other isn't
@@ -261,6 +261,69 @@ export const regionStringFromRegionIndex = (regionIndex, regionInfo) => {
   return regionContig + ":" + regionStart + "-" + regionEnd;
 }
 
+// Sadly JS doesn't have any notion of a tuple to key things on, so we need a way to make a string key
+function makeKey(track) {
+  return JSON.stringify([track.trackType, track.trackFile]);
+}
+
+// Get a Set keyed by makeKey() keys for tracks, listing all the available,
+// non-implied tracks from a list of available tracks.
+function makeAvailableTrackSet(availableTracks) {
+  let available = new Set();
+  for (let track of availableTracks) {
+    if (!track.trackIsImplied) {
+      available.add(makeKey(track));
+    }
+  }
+  return available;
+}
+
+// Look up whether a selected track is implied (i.e. not in the given set).
+function trackIsImplied(track, availableTrackSet) {
+  return !availableTrackSet.has(makeKey(track));
+}
+
+// Given an array of available tracks from the server and an object of currently selected
+// tracks, return an array guaranteed to have entries for the tracks already
+// selected. This ensures the user can switch back to them if they deselect
+// them, even if they don't really exist server-side (which can happen if they
+// are from pre-extracted regions).
+function trackListWithImplied(availableTracks, availableTrackSet, currentTracks) {
+  // Identify all the current tracks that are not in the list already
+  let unavailable = [];
+  for (const key in currentTracks) {
+    let track = currentTracks[key];
+    if (trackIsImplied(track, availableTrackSet)) {
+      // This track isn't available, so we'll have to do something for it
+      unavailable.push(track);
+    }
+  }
+
+  if (unavailable.length == 0) {
+    // No tracks to add
+    return availableTracks;
+  }
+
+  // Now we need to splice together an array of the original tracks and new entries fro the ones we didn't see.
+  let newAvailableTracks = availableTracks.slice();
+  for (let track of unavailable) {
+    // For each unavailable track currently selected, make an available tracks
+    // entry that knows it doesn't really exist in the API as a full track.
+    newAvailableTracks.push({
+      trackType: track.trackType,
+      trackFile: track.trackFile,
+      // Don't bring along the color settings.
+      // Do mark it as an "implied" track that we need to remember sort of exists.
+      trackIsImplied: true
+    });
+  }
+
+  return newAvailableTracks;
+}
+
+
+
+
 class HeaderForm extends Component {
   state = EMPTY_STATE;
   componentDidMount() {
@@ -353,36 +416,42 @@ class HeaderForm extends Component {
       } else {
         json.bedFiles.unshift("none");
 
-        if (this.state.dataType === dataTypes.CUSTOM_FILES) {
-          this.setState((state) => {
+        // Index the available tracks
+        let availableTrackSet = makeAvailableTrackSet(json.files);
+
+        this.setState((state) => {
+          let newState = {
+            // Make sure we have implied track entries for selected tracks not
+            // mentioned by the server
+            availableTracks: trackListWithImplied(json.files, availableTrackSet, state.tracks),
+            availableBeds: json.bedFiles
+          };
+
+          if (state.dataType === dataTypes.CUSTOM_FILES) {
+            // Work out whether the BED file we are set to exists in the result we got
             const bedSelect = json.bedFiles.includes(state.bedSelect)
               ? state.bedSelect
               : "none";
             if (isSet(bedSelect)) {
+              // If so, kick off a request for BED region metadata
               this.getBedRegions(bedSelect);
             }
+            // Add the bed option to the state, unselecting vanished BED files
+            newState.bedSelect = bedSelect;
+
             for (const key in state.tracks) {
-              if (state.tracks[key].trackType === fileTypes.GRAPH) {
-                // Load the paths for any graph tracks.
+              let track = state.tracks[key];
+              if (track.trackType === fileTypes.GRAPH && !trackIsImplied(track, availableTrackSet)) {
+                // Load the paths for any graph tracks advertised by the server.
                 // TODO: Do we need to do this now?
-                console.log("Get path names for track: ", state.tracks[key]);
-                this.getPathNames(state.tracks[key].trackFile);
+                console.log("Get path names for track: ", track);
+                this.getPathNames(track.trackFile);
               }
             }
-            return {
-              availableTracks: json.files,
-              availableBeds: json.bedFiles,
-              bedSelect,
-            };
-          });
-        } else {
-          this.setState((state) => {
-            return {
-              availableTracks: json.files,
-              availableBeds: json.bedFiles,
-            };
-          });
-        }
+          }
+
+          return newState;
+        });
       }
     } catch (error) {
       this.handleFetchError(error, `API getFilenames failed:`);

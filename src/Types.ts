@@ -5,14 +5,26 @@
 // Files like GBZ contains graph and maybe haplotype and so can be either
 type filetype = "graph" | "haplotype" | "read" | "bed";
 
-
-// Contains information necessary to make a track
-type track = {
+// The basic concept of a track
+type BaseTrack = {
   trackFile: string; // Name of file
-  trackType: filetype;
+  trackType: filetype; // What kind of data the track provides
+}
+
+// Represents a track available in an API
+type AvailableTrack extends BaseTrack = {
+  // If set, this track came from a preset or a pre-extracted region and is not
+  // actually queryable on its own through the API for e.g. the list of paths
+  // in it.
+  trackIsImplied?: boolean
+}
+
+// Represents a track actually selected to be displayed
+type track extends BaseTrack = {
   trackColorSettings: ColorScheme;
 }
 
+// A collection of selected tracks to render a view with
 type tracks = {
   [key: number]: track;
 }
