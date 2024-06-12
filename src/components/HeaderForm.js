@@ -428,13 +428,15 @@ class HeaderForm extends Component {
 
             for (const key in state.tracks) {
               let track = state.tracks[key];
-              if (track.trackType === fileTypes.GRAPH && !trackIsImplied(track, availableTrackSet)) {
-                // Load the paths for any graph tracks advertised by the server.
-                // TODO: Do we need to do this now?
-                console.log("Get path names for track:", track);
-                this.getPathNames(track.trackFile);
-              } else {
-                console.log("Don't get path names for implied track:", track);
+              if (track.trackType === fileTypes.GRAPH) {
+                if (trackIsImplied(track, availableTrackSet)) {
+                  console.log("Don't get path names for implied track:", track);
+                } else {
+                  // Load the paths for any graph tracks advertised by the server.
+                  // TODO: Do we need to do this now?
+                  console.log("Get path names for track:", track);
+                  this.getPathNames(track.trackFile);
+                }
               }
             }
           }
