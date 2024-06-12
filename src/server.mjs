@@ -1443,6 +1443,46 @@ function toClientPath(absPath) {
   }
 }
 
+/**
+ * Run the given callback with the path to each file under the given directory,
+ * recursively.
+ *
+ * Hides directories that look like pre-extracted chunk directories.
+ */
+function forEachFileUnder(directory, callback) {
+  
+  // Make a list of all the files in the directory
+  let children = new Set();
+  fs.readdirSync(directory).forEach((basename) => {
+    children.add(basename);
+  });
+
+  if (directory !== MOUNTED_DATA_PATH && ((children.has("regions.tsv") && children.has("chunk.vg")) || children.has("chunk_contents.txt"))) {
+    // This smells like a pre-extracted chunk directory, so skip it.
+    return;
+  }
+
+  for (let basename of children) {
+    // Go through all the files in the directory
+    let absPath = path.resolve(directory, basename);
+    let stat = fs.statSync(absPath, {throwIfNoEntry: false});
+    if (stat) {
+      // It actually exists
+      if (stat.isDirectory()) {
+        // Recurse
+        forEachFileUnder(absPath, callback);
+      } else if (stat.isFile()) {
+        // Show the file
+        callback(absPath);
+      } else {
+        console.log("Found file of unknown type:", absPath);
+      }
+    } else {
+      console.log("File vanished:", absPath);
+    }
+  }
+}
+
 api.get("/getFilenames", (req, res) => {
   console.log("received request for filenames");
   const result = {
@@ -1452,8 +1492,8 @@ api.get("/getFilenames", (req, res) => {
 
   if (isAllowedPath(MOUNTED_DATA_PATH)) {
     // list files in folder
-    fs.readdirSync(MOUNTED_DATA_PATH).forEach((file) => {
-      const clientPath = toClientPath(path.resolve(MOUNTED_DATA_PATH, file));
+    forEachFileUnder(MOUNTED_DATA_PATH, (file) => {
+      const clientPath = toClientPath(file);
       if (endsWithExtensions(file, GRAPH_EXTENSIONS)) {
         result.files.push({ trackFile: clientPath, trackType: "graph" });
       }

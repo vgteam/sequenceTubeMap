@@ -354,7 +354,8 @@ class HeaderForm extends Component {
     // Populate state with either viewTarget or the first example
     let ds = this.props.defaultViewTarget ?? DATA_SOURCES[0];
     const bedSelect = isSet(ds.bedFile) ? ds.bedFile : "none";
-    if (bedSelect !== "none") {
+    if (isSet(bedSelect)) {
+      // If so, kick off a request for BED region metadata
       this.getBedRegions(bedSelect);
     }
     for (const key in ds.tracks) {
@@ -427,7 +428,7 @@ class HeaderForm extends Component {
             availableBeds: json.bedFiles
           };
 
-          if (state.dataType === dataTypes.CUSTOM_FILES) {
+          if (state.dataType !== dataTypes.EXAMPLES) {
             // Work out whether the BED file we are set to exists in the result we got
             const bedSelect = json.bedFiles.includes(state.bedSelect)
               ? state.bedSelect
@@ -444,8 +445,10 @@ class HeaderForm extends Component {
               if (track.trackType === fileTypes.GRAPH && !trackIsImplied(track, availableTrackSet)) {
                 // Load the paths for any graph tracks advertised by the server.
                 // TODO: Do we need to do this now?
-                console.log("Get path names for track: ", track);
+                console.log("Get path names for track:", track);
                 this.getPathNames(track.trackFile);
+              } else {
+                console.log("Don't get path names for implied track:", track);
               }
             }
           }
