@@ -15,7 +15,7 @@ export const TrackListItem = ({
   // * trackFile: file object / undefined
   // * trackColorSettings: object(aka. colorScheme)
   trackProps,
-  // availableTracks: array of tracks(see types.ts)
+  // availableTracks: array of tracks(see Types.ts)
   availableTracks,
   // availableColors: array of ColorPalettes
   availableColors,

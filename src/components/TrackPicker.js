@@ -22,7 +22,7 @@ export const TrackPicker = ({
   return (
     <div>
       <Button
-        aria-label="TrackPicker"
+        aria-label="Track Picker"
         data-testid={"TrackPickerButton"}
         onClick={() => setOpen(!open)}
       >

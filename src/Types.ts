@@ -1,22 +1,30 @@
 // Type file for documentation
 // (not actually enforced by Typescript)
 
-// Describes whether a built-in example, user uploaded file, mounted, or synthetic example
-// Fills input for the "Data:" dropdown in the HeaderForm
-type DataType = "built-in" | "mounted files" | "examples";
-
 // Possible filestypes taken from the request
 // Files like GBZ contains graph and maybe haplotype and so can be either
 type filetype = "graph" | "haplotype" | "read" | "bed";
 
-
-// Contains information necessary to make a track
-type track = {
+// The basic concept of a track
+type BaseTrack = {
   trackFile: string; // Name of file
-  trackType: filetype;
+  trackType: filetype; // What kind of data the track provides
+}
+
+// Represents a track available in an API
+type AvailableTrack extends BaseTrack = {
+  // If set, this track came from a preset or a pre-extracted region and is not
+  // actually queryable on its own through the API for e.g. the list of paths
+  // in it.
+  trackIsImplied?: boolean
+}
+
+// Represents a track actually selected to be displayed
+type track extends BaseTrack = {
   trackColorSettings: ColorScheme;
 }
 
+// A collection of selected tracks to render a view with
 type tracks = {
   [key: number]: track;
 }
@@ -28,9 +36,11 @@ type ViewTarget = {
   tracks: Array<track>;
   bedFile?: string;
 
+  simplify?: boolean; // Whether to write out small snarls
+  removeSequences?: boolean; // Whether to remove node sequences server-side
+
   // Non-essential to server, used for examples
   name?: string;
-  dataType: DataType;
 };
 
 type RegionInfo = {

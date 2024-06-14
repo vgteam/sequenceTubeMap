@@ -47,28 +47,46 @@ export const TrackFilePicker = ({
     const segments = fullPath.split("/");
     return segments[segments.length - 1];
   }
-
-  const fileOptions = [];
-  // find all file options matching the specified file type
+  
+  // Make the list of all options for the <Select>
+  let allOptions = [];
+  // And the currently selected one
+  let currentOption = null;
   for (const track of tracks) {
     if (track.trackType === fileType) {
-      fileOptions.push(track.trackFile);
+      // This track could get selected so make an object for the Select.
+      let trackOption = {label: getFilename(track.trackFile), value: track.trackFile};
+      if (track.trackIsImplied) {
+        // Make this file look different because it's not actually in the API
+        trackOption.label = "(?) " + trackOption.label;
+      }
+      allOptions.push(trackOption);
+      if (trackOption.value === value) {
+        // This one should be the selected one.
+        currentOption = trackOption;
+      }
     }
   }
-
-  // takes in an array of options and maps them into a format <Select> takes
-  const dropDownOptions = fileOptions.map((option) => ({
-    label: getFilename(option),
-    value: option,
-  }));
-
+  if (currentOption === null) {
+    // We didn't find an option that matches what's currently selected.
+    if (value === undefined) {
+      // Because we're in a special nothing-is-selected state. Make a placeholder to represent that.
+      currentOption = {label: "Select a file", value: undefined};
+    } else {
+      // We're *supposed* to always be given one.
+      // Make an even more implied option.
+      console.warn("Value " + value + " not found in available tracks:", tracks);
+      currentOption = {label: "(!) " + getFilename(value), value: value};
+    }
+  }
+  
   if (pickerType === "mounted") {
     return (
       // wrap Select container in div to easily query in tests
       <div data-testid={testID}>
         <Select
-          options={dropDownOptions}
-          value={{ label: getFilename(value), value: value }}
+          options={allOptions}
+          value={currentOption}
           // Identical-looking object literals will compare unequal, so we
           // need to provide a way to turn them into strings so that
           // `value` can be matched up with the corresponding item in
@@ -119,7 +137,6 @@ TrackFilePicker.propTypes = {
 };
 
 TrackFilePicker.defaultProps = {
-  value: "Select a file",
   fileType: "graph",
   pickerType: "mounted",
   className: undefined,
