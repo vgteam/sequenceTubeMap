@@ -24,6 +24,7 @@ import { readFileSync, writeFile } from "fs";
 import {
   parseRegion,
   convertRegionToRangeRegion,
+  convertRangeRegionTo0Based,
   stringifyRangeRegion,
   stringifyRegion,
   isValidURL,
@@ -650,8 +651,12 @@ async function getChunkedData(req, res, next) {
         );
       }
     } else {
+      if (rangeRegion.start < 1) {
+        throw new BadRequestError("1-based coordinates required: " + req.body.region);
+      }
       // Ask for the whole region by start - end range.
-      vgChunkParams.push("-c", "20", "-p", stringifyRangeRegion(rangeRegion));
+      // We've been working in 1-based regions, but the vg backend is 0-based.
+      vgChunkParams.push("-c", "20", "-p", stringifyRangeRegion(convertRangeRegionTo0Based(rangeRegion)));
     }
     vgChunkParams.push(
       "-T",
@@ -1282,7 +1287,8 @@ function processRegionFile(req, res, next) {
       console.log("Region: " + line);
       const arr = line.replace(/\s+/g, " ").split(" ");
       req.graph.path.forEach((p) => {
-        if (p.name === arr[0]) p.indexOfFirstBase = arr[1];
+        // Convert from 0-based BED coordinates to 1-based user-facing coordinates.
+        if (p.name === arr[0]) p.indexOfFirstBase = Number(arr[1]) + 1;
       });
     });
 
@@ -1833,6 +1839,7 @@ api.post("/getBedRegions", (req, res, next) => {
 // Load up the given BED file by URL or path, and
 // return a data structure decribing all the pre-cached regions it defines.
 // Validates file paths for user-accessibility. May throw.
+// Converts all intervals to 1-based, end-inclusive, even though BED is 0-based, end-exclusive.
 async function getBedRegions(bed) {
   let bed_info = {
     chr: [],
@@ -1880,7 +1887,8 @@ async function getBedRegions(bed) {
       continue;
     }
     bed_info["chr"].push(records[0]);
-    bed_info["start"].push(records[1]);
+    // Convert interval from 0-based end-exclusive to 1-based end-inclusive
+    bed_info["start"].push(records[1]) + 1;
     bed_info["end"].push(records[2]);
     let desc = records.join("_");
     if (records.length > 3) {

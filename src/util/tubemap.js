@@ -4415,6 +4415,9 @@ export function vgExtractTracks(vg, pathSourceTrackId, haplotypeSourceTrackID) {
     if (path.hasOwnProperty("name")) track.name = path.name;
     if (path.hasOwnProperty("indexOfFirstBase")) {
       track.indexOfFirstBase = Number(path.indexOfFirstBase);
+      if (track.indexOfFirstBase === 0) {
+        throw new Error("Track should have 1-based first base index: " + track);
+      }
     }
     result.push(track);
   });

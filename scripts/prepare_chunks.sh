@@ -67,7 +67,23 @@ echo >&2 "Node colors: " ${NODE_COLORS[@]}
 rm -fr $OUTDIR
 mkdir -p $OUTDIR
 
-vg_chunk_params=(-x $GRAPH_FILE -g -c 20 -p $REGION -T -b $OUTDIR/chunk -E $OUTDIR/regions.tsv)
+# Parse the region
+REGION_END="$(echo "${REGION}" | rev | cut -f1 -d'-' | rev)"
+REGION_START="$(echo "${REGION}" | rev | cut -f2 -d'-' | cut -f1 -d':' | rev)"
+REGION_CONTIG="$(echo "${REGION}" | rev| cut -f2- -d':' | rev)"
+
+if [[ "${REGION_START}" == "0" ]] ; then
+    echo >&2 "You use 1-based coordinates with -r"
+    echo >&2
+    usage
+fi
+
+# vg chunk (for now) uses 0-based regions
+# TODO: Change vg!
+REGION_START_ZERO_BASED=((REGION_START-1))
+REGION_END_ZERO_BASED=((REGION_END))
+
+vg_chunk_params=(-x $GRAPH_FILE -g -c 20 -p "${REGION_CONTIG}:${REGION_START_ZERO_BASED}-${REGION_END_ZERO_BASED}" -T -b $OUTDIR/chunk -E $OUTDIR/regions.tsv)
 
 
 # construct track JSON for graph file
@@ -124,10 +140,10 @@ do
     printf "$file\n" >> $OUTDIR/chunk_contents.txt
 done
 
-# Print BED line, using the region we were passed as the coordinates
-echo "${REGION%:*}" | tr -d "\n"
+# Print BED line, using the zero-based region as the coordinates
+echo "${REGION_CONTIG}" | tr -d "\n"
 printf "\t"
-echo "${REGION}" | rev | cut -f2 -d'-' | cut -f1 -d':' | rev | tr -d "\n"
+echo "${REGION_START_ZERO_BASED}" | tr -d "\n"
 printf "\t"
-echo "${REGION}" | rev | cut -f1 -d'-' | rev | tr -d "\n"
+echo "${REGION_END_ZERO_BASED}" | tr -d "\n"
 printf "\t${DESC}\t${OUTDIR}\n"

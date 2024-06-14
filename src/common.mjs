@@ -81,6 +81,12 @@ export function convertRegionToRangeRegion(region) {
   }
 }
 
+/// Given a range-based region like the user might feed in, make it 0-based so
+/// that vg chunk can understand it.
+export function convertRangeRegionTo0Based({ contig, start, end }) {
+  return { contig, start: start - 1, end: end - 1 }; 
+}
+
 // Take a { contig, start, end} region and turn it into a
 // string compatible with parseRegion() or with vg.
 export function stringifyRangeRegion({ contig, start, end }) {

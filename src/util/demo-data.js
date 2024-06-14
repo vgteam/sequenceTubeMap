@@ -182,7 +182,7 @@ export const cycleGraph = {
         },
       ],
       name: "GRCh38.chr14",
-      indexOfFirstBase: "0",
+      indexOfFirstBase: "1",
     },
   ],
 };
@@ -675,7 +675,7 @@ export const cycle2Graph = {
         },
       ],
       name: "GRCh38.chr14",
-      indexOfFirstBase: "0",
+      indexOfFirstBase: "1",
     },
   ],
 };
@@ -1119,7 +1119,7 @@ export const reverseAlignmentGraph = {
         },
       ],
       name: "GRCh38.chr14",
-      indexOfFirstBase: "0",
+      indexOfFirstBase: "1",
     },
   ],
 };

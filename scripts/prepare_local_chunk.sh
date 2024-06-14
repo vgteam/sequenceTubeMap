@@ -85,6 +85,12 @@ REGION_END="$(echo "${REGION}" | rev | cut -f1 -d'-' | rev)"
 REGION_START="$(echo "${REGION}" | rev | cut -f2 -d'-' | cut -f1 -d':' | rev)"
 REGION_CONTIG="$(echo "${REGION}" | rev| cut -f2- -d':' | rev)"
 
+if [[ "${REGION_START}" == "0" ]] ; then
+    echo >&2 "You use 1-based coordinates with -r"
+    echo >&2
+    usage
+fi
+
 # get path relative to directory above the scripts directory
 GRAPH_FILE_PATH="$(realpath --relative-to "$(dirname "${BASH_SOURCE[0]}")/../" "$GRAPH_FILE")"
 
@@ -95,7 +101,10 @@ jq -n --arg trackFile "${GRAPH_FILE_PATH}" --arg trackType "graph" --argjson tra
 # Put the graphy file in place
 vg convert -p "${GRAPH_FILE}" > "$OUTDIR/chunk.vg"
 # Start the region BED inside the chunk
-printf "${REGION_CONTIG}\t${REGION_START}\t${REGION_END}" > "$OUTDIR/regions.tsv"
+# BED files use 0-based exclusive coordinates, but we speak 1-based inclusive coordinates.
+REGION_START_ZERO_BASED=((REGION_START-1))
+REGION_END_ZERO_BASED=((REGION_END))
+printf "${REGION_CONTIG}\t${REGION_START_ZERO_BASED}\t${REGION_END_ZERO_BASED}" > "$OUTDIR/regions.tsv"
 
 
 echo >&2 "Gam Files:"
