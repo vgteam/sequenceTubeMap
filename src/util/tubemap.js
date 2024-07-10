@@ -1378,21 +1378,43 @@ function alignSVG() {
 
   function configureZoomBounds() {
     // Configure panning and zooming, given the SVG parent's size on the page.
+    
+    // The zoom extent should cover the whole viewport. At initial scale 1
+    // zoom, this is how much of the world we see.
+    //
+    // We need to set an extent manually because auto-determination of the
+    // region to zoom breaks on the React testing jsdom.
+    let minExtentX = 0;
+    let minExtentY = 0;
+    let maxExtentX = parentElement.clientWidth;
+    let maxExtentY = parentElement.clientHeight;
 
-    svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
-    svg.attr("width", parentElement.clientWidth);
+    // The translation extent should be, at initial scale 1 zoom, how much of
+    // the world we can pan around to see.
+    //
+    // It needs to be larger than the zoom extent if we actually want to keep
+    // the view within it.
+    // TODO: Add size asserts and make sure the ruler stays in view if possible.
+    let minTranslationX = Math.min(minExtentX, 0);
+    let minTranslationY = Math.min(minExtentY, minYCoordinate - RAIL_SPACE);
+    let maxTranslationX = Math.max(maxExtentX, maxXCoordinate);
+    let maxTranslationY = Math.max(maxExtentY, maxYCoordinate + RAIL_SPACE);
 
-    // We need to set an extent here because auto-determination of the region
-    // to zoom breaks on the React testing jsdom
+    // When downloading an SVG, always show the whole viewport.
+    let svgWidth = maxExtentX - minExtentX;
+    let svgHeight = maxExtentY - minExtentY;
+    svg.attr("width", svgWidth);
+    svg.attr("height", svgHeight);
+   
     zoom
       .extent([
-        [0, 0],
-        [parentElement.clientWidth, parentElement.clientHeight],
+        [minExtentX, minExtentY],
+        [maxExtentX, maxExtentY],
       ])
       .scaleExtent([minZoom(), 8])
       .translateExtent([
-        [0, minYCoordinate - RAIL_SPACE],
-        [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
+        [minTranslationX, minTranslationY],
+        [maxTranslationX, maxTranslationY],
       ]);
   }
 
@@ -1419,11 +1441,12 @@ function alignSVG() {
     maxXCoordinate + 10 < containerWidth
       ? (containerWidth - maxXCoordinate - 10) / 2
       : 0;
+  const yOffset = RAIL_SPACE - minYCoordinate;
   d3.select(document)
     .select(svgID)
     .call(
       zoom.transform,
-      d3.zoomIdentity.translate(xOffset, RAIL_SPACE - minYCoordinate)
+      d3.zoomIdentity.translate(xOffset, yOffset)
     );
 }
 
