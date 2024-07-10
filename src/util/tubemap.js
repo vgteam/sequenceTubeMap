@@ -154,6 +154,8 @@ const config = {
   exonColors: "lightColors",
   hideLegendFlag: false,
   mappingQualityCutoff: 0,
+  // How far apart can nodes be before making a break in the coordinate bar?
+  nodeIntervalThreshold: 150,
   showInfoCallback: function (info) {
     alert(info);
   },
