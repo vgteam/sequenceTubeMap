@@ -925,15 +925,19 @@ class HeaderForm extends Component {
 
     try {
       let fileName = await this.props.APIInterface.putFile(fileType, file, this.cancelSignal);
-      if (fileType === "graph") {
-        // Refresh the graphs right away
-        this.getMountedFilenames();
-      }
       this.setUploadInProgress(false);
       // Remember that we uploaded this file and can select it.
       this.setState((state) => {
-        uploads: state.uploads.concat([{trackType: fileType, trackFile: fileName}])
+        return {uploads: state.uploads.concat([{trackType: fileType, trackFile: fileName}])};
       });
+
+      if (fileType === "graph") {
+        // Refresh the whole file list, for its side effect of requesting the
+        // path names if they are out of date.
+        // TODO: just ask for the path names directly.
+        this.getMountedFilenames();
+      }
+
       return fileName;
     } catch (e) {
       if (!this.cancelSignal.aborted) {
@@ -1007,11 +1011,10 @@ class HeaderForm extends Component {
     );
     const displayDescription = this.state.desc;
     
+    // TODO: Is there a way to cache this without duplicating data in the
+    // state? Maybe with function component hooks that expose a compute graph
+    // to React? Because otherwise we visit every track on every region keystroke...
     const availableTracks = collectTrackOptions(this.state.advertisedTracks, this.state.uploads, this.state.chunkTracks, this.state.tracks);
-    console.log(
-      "Rendering header form with availableTracks: ",
-      availableTracks
-    );
 
     const DataPositionFormRowComponent = (
       <DataPositionFormRow

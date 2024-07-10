@@ -76,7 +76,6 @@ export const TrackListItem = ({
     "trackFile" in propChanges
       ? propChanges["trackFile"]
       : trackProps["trackFile"];
-  console.log(displayedFile);
   return (
     <Container
       key={trackID}
