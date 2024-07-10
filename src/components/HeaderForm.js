@@ -423,7 +423,7 @@ class HeaderForm extends Component {
           // Sync up path names for first graph track.
           let graphTrack = firstGraphTrack(this.state.tracks);
           if (graphTrack) {
-            let trackOptions = collectTrackOptions(json.files, this.state.uploads, this.state.tracks);
+            let trackOptions = collectTrackOptions(json.files, this.state.uploads, this.state.chunkTracks, this.state.tracks);
             let graphTrackFromList = findTrack(trackOptions, graphTrack);
             if (graphTrackFromList.trackIsImplied) {
               console.log("Don't get path names for implied track:", graphTrack);
@@ -460,6 +460,7 @@ class HeaderForm extends Component {
         });
       }
     } catch (error) {
+      console.error(error);
       this.handleFetchError(error, `API getFilenames failed:`);
     }
   };
