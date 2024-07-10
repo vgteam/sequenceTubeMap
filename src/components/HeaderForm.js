@@ -98,7 +98,13 @@ const EMPTY_STATE = {
 
   // These ones are for selecting entire files and need to be preserved when
   // switching dataType.
-  availableTracks: [],
+  
+  // These are track objects form uploads we made.
+  uploads: [],
+  // These are track objects advertised by the server
+  advertisedTracks: [],
+  // These are track objects provided by the server just for this region
+  chunkTracks: [],
   // This one is for the BED files. It needs to exist when we start up or we
   // will try and draw the BED dropdown without an array of options.
   availableBeds: [],
@@ -265,72 +271,66 @@ export const regionStringFromRegionIndex = (regionIndex, regionInfo) => {
 }
 
 // Sadly JS doesn't have any notion of a tuple to key things on, so we need a way to make a string key
-function makeKey(track) {
+function makeTrackKey(track) {
   return JSON.stringify([track.trackType, track.trackFile]);
 }
 
-// Get a Set keyed by makeKey() keys for tracks, listing all the available,
-// non-implied tracks from a list of available tracks.
-function makeAvailableTrackSet(availableTracks) {
-  let available = new Set();
-  for (let track of availableTracks) {
-    if (!track.trackIsImplied) {
-      available.add(makeKey(track));
-    }
-  }
-  return available;
-}
+// Given an array of tracks advertised by the server, an array of tracks we
+// created form uploads, an array of tracks suggested for the current region,
+// and the currently selected tracks, make an array of selectable tracks.
+// Tracks we have selected or are suggested for the current region, but which
+// we don't have a source for, are tagged with trackIsImplied. 
+function collectTrackOptions(advertisedTracks, uploads, chunkTracks, currentTracks) {
+  // Collect tracks known from server advertisements and uploads.
+  let allKnown = advertisedTracks.concat(uploads);
 
-// Look up whether a selected track is implied (i.e. not in the given set).
-function trackIsImplied(track, availableTrackSet) {
-  return !availableTrackSet.has(makeKey(track));
-}
-
-// Given an array of available tracks (some of which may already be implied)
-// and an object of currently selected tracks, return an array guaranteed to
-// have entries for the tracks already selected. This ensures the user can
-// switch back to them if they deselect them, even if they don't really exist
-// server-side (which can happen if they are from pre-extracted regions).
-//
-// Removes existing implied tracks in the input.
-function trackListWithImplied(availableTracks, availableTrackSet, currentTracks) {
-  // Identify all available, non-implied tracks
-  let newAvailableTracks = [];
-  for (let track of availableTracks) {
-    if (!track.trackIsImplied) {
-      newAvailableTracks.push(track);
-    }
+  // Index them so we can ID whether a given track we see selected is alrwady known
+  let knownKeys = new Set();
+  for (let track of allKnown) {
+    knownKeys.add(makeTrackKey(track));
   }
 
-  // Identify all the current tracks that are not in the list already
-  let unavailable = [];
-  for (const key in currentTracks) {
-    let track = currentTracks[key];
-    if (trackIsImplied(track, availableTrackSet)) {
-      // This track isn't available, so we'll have to do something for it
-      unavailable.push(track);
+  let alreadyImplied = new Set();
+  let implied = [];
+  function visitTrack(track) {
+    // Imply the given track if not known or already implied.
+    let key = makeTrackKey(track);
+    if (!alreadyImplied.has(key) && !knownKeys.has(key)) {
+      // This track isn't known, so it must be implied.
+      // Make an implied track record for it
+      implied.push({
+        trackType: track.trackType,
+        trackFile: track.trackFile,
+        // Don't bring along the color settings.
+        // Do mark it as an "implied" track that we need to remember sort of exists.
+        trackIsImplied: true
+      });
+      alreadyImplied.add(key);
     } 
+  };
+  for (const key in currentTracks) {
+    // Imply all the current tracks that are not in the list already
+    let track = currentTracks[key];
+    visitTrack(track);
   }
-
-  if (unavailable.length === 0) {
-    // No tracks to add
-    return newAvailableTracks;
+  for (let track of chunkTracks) {
+    // Also suggested ones
+    visitTrack(track);
   }
+  
+  // Return the implied and known tracks.
+  return implied.concat(allKnown);
+}
 
-  // Now we need to add new entries for the ones we didn't see.
-  for (let track of unavailable) {
-    // For each unavailable track currently selected, make an available tracks
-    // entry that knows it doesn't really exist in the API as a full track.
-    newAvailableTracks.push({
-      trackType: track.trackType,
-      trackFile: track.trackFile,
-      // Don't bring along the color settings.
-      // Do mark it as an "implied" track that we need to remember sort of exists.
-      trackIsImplied: true
-    });
+// Find the counterpart to the given track object in the given array of tracks,
+// or null if it is not found.
+function findTrack(trackList, track) {
+  for (let otherTrack of trackList) {
+    if (otherTrack.trackFile == track.trackFile && otherTrack.trackType == track.trackType) {
+      return otherTrack;
+    }
   }
-
-  return newAvailableTracks;
+  return null;
 }
 
 
@@ -381,6 +381,7 @@ class HeaderForm extends Component {
     this.setState((state) => {
       const stateVals = {
         tracks: ds.tracks,
+        chunkTracks: [],
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
         region: ds.region,
@@ -406,9 +407,6 @@ class HeaderForm extends Component {
       } else {
         json.bedFiles.unshift("none");
 
-        // Index the available tracks
-        let availableTrackSet = makeAvailableTrackSet(json.files);
-
         if (this.state.dataType !== dataTypes.EXAMPLES) {
           // Work out whether the BED file we were set to exists in the result we got
           const bedFile = (isValidURL(this.state.bedFile) || json.bedFiles.includes(this.state.bedFile))
@@ -425,7 +423,9 @@ class HeaderForm extends Component {
           // Sync up path names for first graph track.
           let graphTrack = firstGraphTrack(this.state.tracks);
           if (graphTrack) {
-            if (trackIsImplied(graphTrack, availableTrackSet)) {
+            let trackOptions = collectTrackOptions(json.files, this.state.uploads, this.state.tracks);
+            let graphTrackFromList = findTrack(trackOptions, graphTrack);
+            if (graphTrackFromList.trackIsImplied) {
               console.log("Don't get path names for implied track:", graphTrack);
             } else {
               // Load the paths for any graph tracks advertised by the server.
@@ -438,9 +438,7 @@ class HeaderForm extends Component {
 
         this.setState((state) => {
           let newState = {
-            // Make sure we have implied track entries for selected tracks not
-            // mentioned by the server
-            availableTracks: trackListWithImplied(json.files, availableTrackSet, state.tracks),
+            advertisedTracks: json.files,
             availableBeds: json.bedFiles
           };
 
@@ -578,6 +576,7 @@ class HeaderForm extends Component {
           this.setState((state) => {
             let newState = {
               tracks: ds.tracks,
+              chunkTracks: [],
               bedFile: ds.bedFile,
               bedSelect: bedSelect,
               region: ds.region,
@@ -729,13 +728,10 @@ class HeaderForm extends Component {
       this.setState((laterState) => {
         if (laterState.region === coords) {
           // The user still has the same region selected, so apply the tracks we now have
-          let availableTrackSet = makeAvailableTrackSet(laterState.availableTracks);
           let laterGraphTrack = firstGraphTrack(laterState.tracks);
           let newState = {
             tracks: trackObject,
-            // Make sure to make implied tracks based on any tracks we are
-            // supposed to have that aren't available.
-            availableTracks: trackListWithImplied(laterState.availableTracks, availableTrackSet, trackObject)
+            chunkTracks: tracks
           };
 
           if (!newGraphTrack || !laterGraphTrack || newGraphTrack.trackFile !== laterGraphTrack.trackFile) {
@@ -749,24 +745,29 @@ class HeaderForm extends Component {
       });
 
       let currentGraphTrack = firstGraphTrack(this.state.tracks);
-      if (!newGraphTrack || !currentGraphTrack || newGraphTrack.trackFile !== currentGraphTrack.trackFile) {
+      if (newGraphTrack && (!currentGraphTrack || newGraphTrack.trackFile !== currentGraphTrack.trackFile)) {
         // Path list will need to be updated.
 
         // Do indexing to see if the new track is implied.
-        let availableTrackSet = makeAvailableTrackSet(this.state.availableTracks);
-
-        if (newGraphTrack && !trackIsImplied(newGraphTrack, availableTrackSet)) {
+        let trackOptions = collectTrackOptions(this.state.advertisedTracks, this.state.uploads, tracks, trackObject);
+        let graphTrackFromList = findTrack(trackOptions, newGraphTrack);
+        if (!graphTrackFromList.trackIsImplied) {
           console.log("Get path names for chunk provided graph track:", newGraphTrack)
           this.getPathNames(newGraphTrack.trackFile);
         }
       }
+    } else {
+      // Clear suggested tracks when we switch away from the suggesting region.
+      this.setState((laterState) => {
+        if (laterState.region === coords) {
+          return {chunkTracks: []};
+        }
+      });
     }
   };
 
   // Apply new tracks when the user uses the track picker UI. Assumes we're
-  // selecting from the available and implied tracks, but doesn't update to
-  // imply new tracks or un-imply existing tracks because the current tracks
-  // changed.
+  // selecting from the advertised, uploaded, and implied tracks.
   handleInputChange = (newTracks) => {
     // Find the graph track being selected
     let newGraphTrack = firstGraphTrack(newTracks);
@@ -788,13 +789,13 @@ class HeaderForm extends Component {
 
     // After doing the state set, kick off a request for the paths in the new graph if we think we need them.
     let currentGraphTrack = firstGraphTrack(this.state.tracks);
-    if (!newGraphTrack || !currentGraphTrack || newGraphTrack.trackFile !== currentGraphTrack.trackFile) {
+    if (newGraphTrack && (!currentGraphTrack || newGraphTrack.trackFile !== currentGraphTrack.trackFile)) {
       // Path list will need to be updated.
 
       // Do indexing to see if the new track is implied.
-      let availableTrackSet = makeAvailableTrackSet(this.state.availableTracks);
-
-      if (newGraphTrack && !trackIsImplied(newGraphTrack, availableTrackSet)) {
+      let trackOptions = collectTrackOptions(this.state.advertisedTracks, this.state.uploads, this.state.chunkTracks, newTracks);
+      let graphTrackFromList = findTrack(trackOptions, newGraphTrack);
+      if (!graphTrackFromList.trackIsImplied) {
         console.log("Get path names for newly selected graph track:", newGraphTrack)
         this.getPathNames(newGraphTrack.trackFile);
       }
@@ -928,6 +929,10 @@ class HeaderForm extends Component {
         this.getMountedFilenames();
       }
       this.setUploadInProgress(false);
+      // Remember that we uploaded this file and can select it.
+      this.setState((state) => {
+        uploads: state.uploads.concat([{trackType: fileType, trackFile: fileName}])
+      });
       return fileName;
     } catch (e) {
       if (!this.cancelSignal.aborted) {
@@ -1000,10 +1005,11 @@ class HeaderForm extends Component {
       this.props.getCurrentViewTarget()
     );
     const displayDescription = this.state.desc;
-
+    
+    const availableTracks = collectTrackOptions(this.state.advertisedTracks, this.state.uploads, this.state.chunkTracks, this.state.tracks);
     console.log(
       "Rendering header form with availableTracks: ",
-      this.state.availableTracks
+      availableTracks
     );
 
     const DataPositionFormRowComponent = (
@@ -1115,7 +1121,7 @@ class HeaderForm extends Component {
                   )}
                   <TrackPicker
                     tracks={this.state.tracks}
-                    availableTracks={this.state.availableTracks}
+                    availableTracks={availableTracks}
                     onChange={this.handleInputChange}
                     handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
