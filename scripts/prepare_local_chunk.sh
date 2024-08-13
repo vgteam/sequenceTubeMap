@@ -12,7 +12,7 @@ GAM_FILES=()
 GAM_PALETTES=()
 NODE_COLORS=()
 
-while getopts x:g:p:r:o:d:n: flag
+while getopts x:g:p:r:o:b:d:n: flag
 do
     case "${flag}" in
         x) GRAPH_FILE="${OPTARG}";;
