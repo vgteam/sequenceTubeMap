@@ -60,6 +60,12 @@ if [[ ! -z "${BASEDIR}" && "${OUTDIR}" != "${BASEDIR}"* ]] ; then
     usage
 fi
 
+if [[ ! -z "${BASEDIR}" && "${BASEDIR}" != *"/" ]] ; then
+    echo >&2 "Base directory from -b does not end with a slash"
+    echo >&2
+    usage
+fi
+
 if [[ -z "${DESC}" ]] ; then
     DESC="Region ${REGION}"
 fi
