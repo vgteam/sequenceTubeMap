@@ -4,7 +4,7 @@ set -e
 function usage() {
     echo >&2 "${0}: Prepare a tube map chunk and BED line on standard output from a pre-made subgraph. Only supports paths, not haplotypes."
     echo >&2
-    echo >&2 "Usage: ${0} -x subgraph.xg -r chr1:1-100 [-d 'Description of region'] [-n 123 [-n 456]] -o chunk-chr1-1-100 [-g mygam1.gam [-p '{\"mainPalette\": \"blues\", \"auxPalette\": \"reds\"}'] [-g mygam2.gam [-p ...] ...]] >> regions.bed"
+    echo >&2 "Usage: ${0} -x subgraph.xg -r chr1:1-100 [-d 'Description of region'] [-n 123 [-n 456]] -o chunk-chr1-1-100 [-g mygam1.gam [-p '{\"mainPalette\": \"blues\", \"auxPalette\": \"reds\"}'] [-g mygam2.gam [-p ...] ...]] [-b /output/directory/prefix/to/remove] >> regions.bed"
     exit 1
 }
 
@@ -12,7 +12,7 @@ GAM_FILES=()
 GAM_PALETTES=()
 NODE_COLORS=()
 
-while getopts x:g:p:r:o:d:n: flag
+while getopts x:g:p:r:o:b:d:n: flag
 do
     case "${flag}" in
         x) GRAPH_FILE="${OPTARG}";;
@@ -20,6 +20,7 @@ do
         p) GAM_PALETTES+=("$OPTARG");;
         r) REGION="${OPTARG}";;
         o) OUTDIR="${OPTARG}";;
+        b) BASEDIR="${OPTARG}";;
         d) DESC="${OPTARG}";;
         n) NODE_COLORS+=("${OPTARG}");;
         *)
@@ -49,6 +50,18 @@ fi
 
 if [[ -z "${OUTDIR}" ]] ; then
     echo >&2 "You must specify an output directory with -o"
+    echo >&2
+    usage
+fi
+
+if [[ ! -z "${BASEDIR}" && "${OUTDIR}" != "${BASEDIR}"* ]] ; then
+    echo >&2 "Base directory from -b is not a prefix of out directory from -o"
+    echo >&2
+    usage
+fi
+
+if [[ ! -z "${BASEDIR}" && "${BASEDIR}" != *"/" ]] ; then
+    echo >&2 "Base directory from -b does not end with a slash"
     echo >&2
     usage
 fi
@@ -146,9 +159,16 @@ do
     printf "$file\n" >> "$OUTDIR/chunk_contents.txt"
 done
 
+# Work out how the BED should refer to the OUTDIR
+PATH_TO_OUTDIR="${OUTDIR}"
+if [[ ! -z "${BASEDIR}" ]] ; then
+    # Remove BASEDIR from the front of OUTDIR
+    PATH_TO_OUTDIR="${OUTDIR#"$BASEDIR"}"
+fi
+
 # Print BED line
 cat "$OUTDIR/regions.tsv" | cut -f1-3 | tr -d "\n"
-printf "\t${DESC}\t${OUTDIR}\n"
+printf "\t${DESC}\t${PATH_TO_OUTDIR}\n"
 
 rm -fr "$TEMP"
 
