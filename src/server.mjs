@@ -1206,9 +1206,6 @@ function processGamFile(req, res, next, gamFile, gamFileNumber) {
       vgViewParams.push("-");
       // vg convert needs the graph to convert GAF to GAM
       const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
-      // let dataPath = pickDataPath(req.body.dataPath);
-      // console.log(`dataPath = ${dataPath}`);
-      // vgConvertParams.push("-F", gamFile, `${dataPath}${graphFile}`);
       vgConvertParams.push("-F", gamFile, graphFile);
     }
     if (gamFile.endsWith(".gam")) {
