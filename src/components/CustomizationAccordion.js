@@ -17,6 +17,7 @@ class VisualizationOptions extends Component {
   state = {
     isOpenLegend: false,
     isOpenVisualizationOptions: true,
+    isOpenServer: false
   };
 
   toggleLegend = (e) => {
@@ -31,6 +32,11 @@ class VisualizationOptions extends Component {
     e.preventDefault();
   };
 
+  toggleServer = (e) => {
+    this.setState({ isOpenServer: !this.state.isOpenServer });
+    e.preventDefault();
+  };
+
   handleMappingQualityCutoffChange = (event) => {
     this.props.handleMappingQualityCutoffChange(event.target.value);
   };
@@ -39,7 +45,7 @@ class VisualizationOptions extends Component {
     return (key, value) => {
       this.props.setColorSetting(key, index, value);
     };
-  }
+  };
 
   render() {
     const { visOptions, toggleFlag } = this.props;
@@ -64,14 +70,26 @@ class VisualizationOptions extends Component {
       let type = track.trackType;
       if (type === "graph") {
         trackSettingsList.push(
-          <TrackSettings key={key} label="Graph Paths" fileType={type} trackColorSettings={visOptions.colorSchemes[key]} setTrackColorSetting={this.setColorWithIndex(key)} />
+          <TrackSettings
+            key={key}
+            label="Graph Paths"
+            fileType={type}
+            trackColorSettings={visOptions.colorSchemes[key]}
+            setTrackColorSetting={this.setColorWithIndex(key)}
+          />
         );
       } else if (type === "haplotype") {
         // TODO: Do nothing for now. Haplotypes get assigned to the graph as their source track right now.
       } else if (type === "read") {
         if (visOptions.showReads) {
           trackSettingsList.push(
-            <TrackSettings key={key} label={"Read Track " + readTrackNumber} fileType={type} trackColorSettings={visOptions.colorSchemes[key]} setTrackColorSetting={this.setColorWithIndex(key)} />
+            <TrackSettings
+              key={key}
+              label={"Read Track " + readTrackNumber}
+              fileType={type}
+              trackColorSettings={visOptions.colorSchemes[key]}
+              setTrackColorSetting={this.setColorWithIndex(key)}
+            />
           );
           readTrackNumber++;
         }
@@ -125,6 +143,7 @@ class VisualizationOptions extends Component {
                       <Input
                         type="checkbox"
                         checked={visOptions.compressedView}
+                        disabled={this.props.enableCompressedNodes}
                         onChange={() => toggleFlag("compressedView")}
                       />
                       Compressed view
@@ -198,6 +217,39 @@ class VisualizationOptions extends Component {
               </CardBody>
             </Collapse>
           </Card>
+          <Card>
+            <CardHeader id="serverCard">
+              <h5 className="mb-0">
+                <a href="#collapse" onClick={this.toggleServer}>
+                  Backend Configuration
+                </a>
+              </h5>
+            </CardHeader>
+            <Collapse isOpen={this.state.isOpenServer}>
+              <CardBody>
+                <Form>
+                  <Label className="mr-sm-2 " for="dataSourceSelect">
+                    Extract tube map data:
+                  </Label>
+                  <Input
+                    type="select"
+                    id="apiSelect"
+                    className="custom-select"
+                    value={this.props.currentAPIMode}
+                    onChange={(e) => {this.props.setAPIMode(e.target.value)}}
+                  >
+                    <option value="server">
+                      On remote server
+                    </option> 
+                    <option value="local">
+                      In-browser (.gbz.db uploads only!)
+                    </option> 
+                  </Input>
+                </Form>
+              </CardBody>
+            </Collapse>
+          </Card>
+
         </div>
       </Container>
     );
@@ -205,9 +257,12 @@ class VisualizationOptions extends Component {
 }
 
 VisualizationOptions.propTypes = {
+  enableCompressedNodes: PropTypes.bool,
   handleMappingQualityCutoffChange: PropTypes.func.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   tracks: PropTypes.array.isRequired,
+  currentAPIMode: PropTypes.string,
+  setAPIMode: PropTypes.func
 };
 
 export default VisualizationOptions;

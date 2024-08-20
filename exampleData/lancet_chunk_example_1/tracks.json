@@ -1,0 +1,20 @@
+[
+  {
+    "trackFile": "exampleData/visualization_examples/chr1_86645908_86646408.giraffe.gbz",
+    "trackType": "graph",
+    "trackColorSettings": {
+      "mainPalette": "#000000",
+      "auxPalette": "greys",
+      "colorReadsByMappingQuality": false
+    }
+  },
+  {
+    "trackFile": "exampleData/visualization_examples/normal.chr1_86645908_86646408.sorted.gam",
+    "trackType": "read",
+    "trackColorSettings": {
+      "mainPalette": "blues",
+      "auxPalette": "reds",
+      "colorReadsByMappingQuality": false
+    }
+  }
+]

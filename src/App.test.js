@@ -1,16 +1,52 @@
+// Tests functionality without server
+
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 
-import * as fetchAndParseModule from "./fetchAndParse";
-// Tests functionality without server
+import { fetchAndParse } from "./fetchAndParse";
 
-jest.mock("./fetchAndParse");
+// We want to be able to replace the `fetchAndParse` that *other* files see,
+// and we want to use *different* implementations for different tests in this
+// file. We can mock it with Jest, but Jest will move this call before the
+// imports when running the tests, so we can't access any file-level variables
+// in it. So we need to do some sneaky global trickery.
+
+// Register the given replacement function to be called instead of fetchAndParse.
+function setFetchAndParseMock(replacement) {
+  globalThis["__App.test.js_fetchAndParse_mock"] = replacement;
+}
+
+// Remove any replacement function and go back to the real fetchAndParse.
+function clearFetchAndParseMock() {
+  globalThis["__App.test.js_fetchAndParse_mock"] = undefined;
+}
+
+jest.mock("./fetchAndParse", () => {
+  // This dispatcher will replace fetchAndParse when we or anyone else imports it.
+  function fetchAndParseDispatcher() {
+    // Ge tthe real fetchAndParse
+    const { fetchAndParse } = jest.requireActual("./fetchAndParse");
+    // Grab the replacement or the real one if no replacement is set
+    let functionToUse =
+      globalThis["__App.test.js_fetchAndParse_mock"] ?? fetchAndParse;
+    // Give it any arguments we got and return its return value.
+    return functionToUse.apply(this, arguments);
+  }
+  // When someone asks for this module, hand them these contents instead.
+  return {
+    __esModule: true,
+    fetchAndParse: fetchAndParseDispatcher,
+  };
+});
+
+// TODO: We won't need to do *any* of this if we actually get the ability to pass an API implementation into the app.
 
 beforeEach(() => {
   jest.resetAllMocks();
+  clearFetchAndParseMock();
 });
 
 const getRegionInput = () => {
@@ -23,15 +59,17 @@ it("renders without crashing", () => {
 });
 
 it("renders with error when api call to server throws", async () => {
-  fetchAndParseModule.fetchAndParse = () => {
+  setFetchAndParseMock(() => {
     throw new Error("Mock Server Error");
-  };
+  });
   render(<App />);
-  expect(screen.getAllByText(/Mock Server Error/i)[0]).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getAllByText(/Mock Server Error/i)[0]).toBeInTheDocument();
+  });
 });
 
 it("renders without crashing when sent bad fetch data from server", async () => {
-  fetchAndParseModule.fetchAndParse = () => ({});
+  setFetchAndParseMock(() => ({}));
   render(<App />);
 
   await waitFor(() => {

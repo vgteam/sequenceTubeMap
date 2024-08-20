@@ -4,6 +4,7 @@
 // not-really-standard implementations of JS modules in play. So we import the
 // server's start function and put it in an object pretendign to be a module.
 import { start } from "./server.mjs";
+import fs from "fs-extra";
 const server = { start };
 
 import React from "react";
@@ -91,10 +92,43 @@ async function waitForLoadStart() {
 
 // Wait for the loading throbber to disappear
 async function waitForLoadEnd() {
+  console.log("Waiting for load end");
   return new Promise((resolve, reject) => {
     function waitAround() {
       let loader = document.getElementById("loader");
       if (loader) {
+        console.log("Still loading...");
+        setTimeout(waitAround, 100);
+      } else {
+        console.log("Loading over!");
+        resolve();
+      }
+    }
+    waitAround();
+  });
+}
+
+// Wait for the upload throbber to appear
+async function waitForUploadStart() {
+  return new Promise((resolve, reject) => {
+    function waitAround() {
+      let loaders = document.getElementsByClassName("upload-in-progress");
+      if (loaders.length == 0) {
+        setTimeout(waitAround, 100);
+      } else {
+        resolve();
+      }
+    }
+    waitAround();
+  });
+}
+
+// Wait for the upload throbber to disappear
+async function waitForUploadEnd() {
+  return new Promise((resolve, reject) => {
+    function waitAround() {
+      let loaders = document.getElementsByClassName("upload-in-progress");
+      if (loaders.length > 0) {
         setTimeout(waitAround, 100);
       } else {
         resolve();
@@ -183,7 +217,7 @@ describe("When we wait for it to load", () => {
       userEvent.click(getRegionInput());
     });
     // Make sure that option in RegionInput dropdown (17_1_100) is visible
-    expect(screen.getByText("17_1_100")).toBeInTheDocument();
+    expect(screen.getByText("17:1-100 17_1_100")).toBeInTheDocument();
   });
   it("the region options in autocomplete are cleared after selecting new data", async () => {
     // Input data dropdown
@@ -196,7 +230,7 @@ describe("When we wait for it to load", () => {
       userEvent.click(getRegionInput());
     });
     // Make sure that old option in RegionInput dropdown (17_...) is not visible
-    expect(screen.queryByText("17_1_100")).not.toBeInTheDocument();
+    expect(screen.queryByText("1-100 17_1_100")).not.toBeInTheDocument();
     await act(async () => {
       userEvent.click(regionInput);
     });
@@ -263,13 +297,13 @@ describe("When we wait for it to load", () => {
     expect(svg.getElementsByTagName("title").length).toEqual(65);
   });
 
-  it('draws the right SVG for cactus multiple reads', async () => {
+  it("draws the right SVG for cactus multiple reads", async () => {
     let dropdown = document.getElementById("dataSourceSelect");
 
     // Input data dropdown
     await userEvent.selectOptions(
       screen.getByLabelText(/Data/i),
-      'cactus multiple reads'
+      "cactus multiple reads"
     );
     const autocomplete = screen.getByTestId("autocomplete");
     const input = autocomplete.querySelector("input");
@@ -300,15 +334,12 @@ describe("When we wait for it to load", () => {
     expect(svg).toBeTruthy();
     expect(svg.getElementsByTagName("title").length).toEqual(23);
   });
-
 });
-
-
 
 it("produces correct link for view before & after go is pressed", async () => {
   // First test that after pressing go, the link reflects the dat form
   const expectedLinkBRCA1 =
-    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=snp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=NA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&dataPath=default&region=17%3A1-100&bedFile=snp1kg-BRCA1.bed&dataType=built-in";
+    "http://localhost?name=snp1kg-BRCA1&tracks[0][trackFile]=exampleData%2Finternal%2Fsnp1kg-BRCA1.vg.xg&tracks[0][trackType]=graph&tracks[0][trackColorSettings][mainPalette]=greys&tracks[0][trackColorSettings][auxPalette]=ygreys&tracks[1][trackFile]=exampleData%2Finternal%2FNA12878-BRCA1.sorted.gam&tracks[1][trackType]=read&region=17%3A1-100&bedFile=exampleData%2Finternal%2Fsnp1kg-BRCA1.bed&dataType=built-in&simplify=false&removeSequences=false";
   // Set up dropdown
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
@@ -342,22 +373,19 @@ it("produces correct link for view before & after go is pressed", async () => {
   await clickCopyLink();
 
   const expectedLinkCactus =
-    "http://localhost?tracks[0][trackFile]=cactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=cactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=cactus.bed&name=cactus&region=ref%3A1-100&dataPath=mounted&dataType=built-in";
+    "http://localhost?tracks[0][trackFile]=exampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=exampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=exampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in&simplify=false&removeSequences=false";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
-});
+}, 20000);
 
 it("can retrieve the list of mounted graph files", async () => {
   // Wait for everything to settle so we don't stop the server while it is thinking
   await waitForLoadEnd();
 
-  // Swap over to the mounted files mode
+  // Swap over to the custom files mode
   await act(async () => {
     let dropdown = document.getElementById("dataSourceSelect");
-    await userEvent.selectOptions(
-      screen.getByLabelText(/Data/i),
-      "custom (mounted files)"
-    );
+    await userEvent.selectOptions(screen.getByLabelText(/Data/i), "custom");
   });
 
   // Find the select box's input
@@ -370,23 +398,134 @@ it("can retrieve the list of mounted graph files", async () => {
     userEvent.click(trackSelectButton);
   });
 
+  // add a new track
+  await waitFor(() => {
+    fireEvent.click(screen.queryByTestId("track-add-button-component"));
+  });
+
+  // We shouldn't see the option before we open the dropdown
+  expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
+
+  // Make sure the right entry eventually shows up (since we could be racing
+  // the initial load from the component mounting)
+  await waitFor(() => {
+    // try to select a graph file
+    fireEvent.keyDown(
+      screen.queryByTestId("file-select-component1").firstChild,
+      { key: "ArrowDown" }
+    );
+  });
+
+  expect(screen.queryByText("cactus.vg.xg")).toBeTruthy();
+});
+
+// uploads a cactus.vg file and renders the svg
+it("can accept uploaded files", async () => {
+  await waitForLoadEnd();
+
+  // Swap over to the custom files mode
+  await act(async () => {
+    let dropdown = document.getElementById("dataSourceSelect");
+    await userEvent.selectOptions(screen.getByLabelText(/Data/i), "custom");
+  });
+
+  // Find the select box's input
+  let trackSelectButton = screen.queryByTestId("TrackPickerButton");
+  expect(trackSelectButton).toBeTruthy();
+
+  // open track selection
+  await act(async () => {
+    userEvent.click(trackSelectButton);
+  });
 
   // add a new track
   await waitFor(() => {
     fireEvent.click(screen.queryByTestId("track-add-button-component"));
   });
 
-
-  // We shouldn't see the option before we open the dropdown
-  expect(screen.queryByText("cactus.vg.xg")).not.toBeInTheDocument();
-
-
-  // Make sure the right entry eventually shows up (since we could be racing
-  // the initial load from the component mounting)
   await waitFor(() => {
-    // try to select a graph file
-    fireEvent.keyDown(screen.queryByTestId('file-select-component1').firstChild, {key: "ArrowDown"});
+    // wait for picker type dropdown
+    fireEvent.keyDown(
+      screen.queryByTestId("picker-type-select-component1").firstChild,
+      { key: "ArrowDown" }
+    );
   });
 
-  expect(screen.queryByText("cactus.vg.xg")).toBeTruthy();
-});
+  // select the upload option
+  await waitFor(() => screen.getByText("upload"));
+  fireEvent.click(screen.getByText("upload"));
+
+  await waitFor(() => screen.queryByTestId("file-select-component1"));
+
+  const fileUploader = screen.queryByTestId("file-select-component1");
+
+  // We need to make sure we make a jsdom File (which is a jsdom Blob), and not
+  // a Node Blob, for our test file. Otherwise it doesn't work with jsdom's
+  // upload machinery.
+  // See for example <https://github.com/vitest-dev/vitest/issues/2078> for
+  // background on the many flavors of Blob.
+  const fileData = await fs.readFileSync("exampleData/cactus.vg");
+  // Since a Node Buffer is an ArrayBuffer, we can use it to make a jsdom File.
+  // We need to put the data block in an enclosing array, or else the block
+  // will be iterated and each byte will be stringified and *those* bytes will
+  // be uploaded.
+  const file = new window.File([fileData], "cactus.vg", {
+    type: "application/octet-stream",
+  });
+
+  console.log("Adding file:", file);
+  await act(async () => {
+    await waitFor(() => {
+      userEvent.upload(fileUploader, file);
+    });
+    console.log("File added");
+
+    // make sure the file is in the upload component
+    expect(fileUploader.files.length).toBe(1);
+    expect(fileUploader.files[0]).toStrictEqual(file);
+
+    // Wait for the upload to actually go through.
+    // TODO: Don't let the user close the dialog until the upload goes through?
+    // We need to see the upload spinner
+    await waitForUploadStart();
+    console.log("Upload started");
+    // And then it needs to go away again
+    await waitForUploadEnd();
+    console.log("Upload ended");
+  });
+
+  // exit the track picker
+  fireEvent.click(screen.queryByTestId("TrackPickerCloseButton"));
+
+  // try to compute the svg
+  const autocomplete = screen.getByTestId("autocomplete");
+  const input = autocomplete.querySelector("input");
+
+  console.log("Clearing input");
+  await userEvent.clear(input);
+
+  // Input region
+  // using fireEvent because userEvent has no change
+  fireEvent.focus(input);
+  fireEvent.change(input, { target: { value: "node:1+10" } });
+  expect(input.value).toBe("node:1+10");
+  fireEvent.keyDown(autocomplete, { key: "Enter" });
+
+  // Wait for rendered response
+  await waitFor(() => screen.getByTestId("autocomplete"));
+
+  // Click go
+  let go = document.getElementById("goButton");
+  await userEvent.click(go);
+
+  await waitForLoadEnd();
+
+  // See if correct svg rendered
+  let svg = document.getElementById("svg");
+  expect(svg).toBeTruthy();
+  // Since remove redundant nodes is on, we have 3 titles for nodes and 2 for paths.
+  expect(svg.getElementsByTagName("title").length).toEqual(5);
+
+  console.log("Test over");
+}, 50000); // We need to allow a long time for the slow vg test machines.
+// TODO: Is this slow because of unnecessary re-renders caused by the new color schemes taking effect and being rendered with the old data, before the new data downloads?

@@ -1,4 +1,6 @@
 ref	10	100	this is a test region
+ref	500	600	region without read tracks	chunk-cactus-no-reads
 ref	1000	2000	another region with a very long description to see how it will be displayed
-ref	2000	3000	pre-fecthed region	test_prechunk
-ref	4000	4500	pre-fecthed region but the chunk is missing	test_prechunk_missing
+ref	2000	3000	pre-fetched region	chunk-ref-2000-3000
+ref	4000	4500	pre-fetched region but the chunk is missing	test_prechunk_missing
+

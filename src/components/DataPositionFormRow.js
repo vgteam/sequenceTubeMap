@@ -9,7 +9,7 @@ import {
   faSearchPlus,
   faSearchMinus,
 } from "@fortawesome/free-solid-svg-icons";
-import HelpButton from "./HelpButton.js"
+import HelpButton from "./HelpButton.js";
 import * as tubeMap from "../util/tubemap";
 
 const ZOOM_FACTOR = 2.0;
@@ -65,13 +65,15 @@ class DataPositionFormRow extends Component {
         {this.props.uploadInProgress && (
           <div className="smallLoader" id="fileUploadSpinner" />
         )}
-
         {/* Help Button */}
-        <HelpButton file="./help/help-tooltip.md"></HelpButton>
-        
+        <HelpButton file="./help/help.md"></HelpButton>
         <Button
           color={this.props.viewTargetHasChange ? "alert" : "primary"}
-          title={this.props.viewTargetHasChange ? "Click to apply pending changes." : "No changes to apply; view is up to date."}
+          title={
+            this.props.viewTargetHasChange
+              ? "Click to apply pending changes."
+              : "No changes to apply; view is up to date."
+          }
           id="goButton"
           onClick={this.props.handleGoButton}
           disabled={this.props.uploadInProgress}
@@ -82,6 +84,7 @@ class DataPositionFormRow extends Component {
           color="primary"
           id="goLeftButton"
           onClick={this.props.handleGoLeft}
+          disabled={this.props.uploadInProgress || !this.props.canGoLeft}
         >
           <FontAwesomeIcon icon={faStepBackward} size="lg" />
         </Button>
@@ -95,6 +98,7 @@ class DataPositionFormRow extends Component {
           color="primary"
           id="goRightButton"
           onClick={this.props.handleGoRight}
+          disabled={this.props.uploadInProgress || !this.props.canGoRight}
         >
           <FontAwesomeIcon icon={faStepForward} size="lg" />
         </Button>
@@ -107,8 +111,8 @@ class DataPositionFormRow extends Component {
         </Button>
         <CopyLink getCurrentViewTarget={this.props.getCurrentViewTarget} />
         {this.props.uploadInProgress && (
-          <div class="spinner-grow" role="status">
-            <span class="sr-only">Loading...</span>
+          <div className="spinner-grow upload-in-progress" role="status">
+            <span className="sr-only">Loading...</span>
           </div>
         )}
       </Form>
@@ -123,6 +127,8 @@ DataPositionFormRow.propTypes = {
   uploadInProgress: PropTypes.bool.isRequired,
   getCurrentViewTarget: PropTypes.func.isRequired,
   viewTargetHasChange: PropTypes.bool.isRequired,
+  canGoLeft: PropTypes.bool.isRequired,
+  canGoRight: PropTypes.bool.isRequired,
 };
 
 export default DataPositionFormRow;

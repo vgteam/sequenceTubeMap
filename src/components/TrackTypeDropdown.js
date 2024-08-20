@@ -5,33 +5,33 @@ import Select from "react-select";
 /**
  * A track type dropdown component.
  * Created using composition of functions approach.
- * 
+ *
  * Expects a two-way-binding where "value" is the selected value (out of the
  * possible track types), and calling "onChange" updates the value.
- * 
+ *
  */
 
-export function TrackTypeDropdown (props) {
-  
-    
-    // dropdown and selections
-    // upon selection of a dropdown option, call onChange function 
-    let dropdown = (
-      <div data-testid={props.testID}>
-        <Select {...props} onChange={o => {
-          props.onChange(o.value)}
-        }
-          options={["graph", "haplotype", "read"].map(o => ({
-            label: o, value: o
-          }))}
-          value={{label: props.value, value: props.value}}
-        />
-      </div>
-    );
-    
-    return (
-      dropdown
-    );
+// TODO: rename TrackTypeDropdown to be generalized dropdown component
+export function TrackTypeDropdown(props) {
+  // dropdown and selections
+  // upon selection of a dropdown option, call onChange function
+  let dropdown = (
+    <div data-testid={props.testID}>
+      <Select
+        {...props}
+        onChange={(o) => {
+          props.onChange(o.value);
+        }}
+        options={props.options.map((o) => ({
+          label: o,
+          value: o,
+        }))}
+        value={{ label: props.value, value: props.value }}
+      />
+    </div>
+  );
+
+  return dropdown;
 }
 
 /* React checks for the type of each prop passed in to ensure that the correct type is being 
@@ -44,15 +44,16 @@ TrackTypeDropdown.propTypes = {
   className: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func.isRequired,
-  testID: PropTypes.string
+  testID: PropTypes.string,
+  options: PropTypes.array,
 };
 
 TrackTypeDropdown.defaultProps = {
   id: undefined,
   className: undefined,
   value: "graph",
-  testID: "file-type-select-component"
+  testID: "file-type-select-component",
+  options: ["graph", "haplotype", "read"],
 };
 
 export default TrackTypeDropdown;
-

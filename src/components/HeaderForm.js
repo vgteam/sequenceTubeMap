@@ -1,17 +1,27 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Container, Row, Col, Label, Alert } from "reactstrap";
+import { Container, Row, Col, Label, Alert, Button } from "reactstrap";
 import { dataOriginTypes } from "../enums";
-import { fetchAndParse } from "../fetchAndParse";
-// import defaultConfig from '../config.default.json';
-import config from "../config.json";
+import "../config-client.js";
+import { config } from "../config-global.mjs";
+import { LocalAPI } from "../api/LocalAPI.mjs";
 import DataPositionFormRow from "./DataPositionFormRow";
-import FileUploadFormRow from "./FileUploadFormRow";
 import ExampleSelectButtons from "./ExampleSelectButtons";
 import RegionInput from "./RegionInput";
 import TrackPicker from "./TrackPicker";
-import SelectionDropdown from "./SelectionDropdown";
-import { parseRegion, stringifyRegion } from "../common.mjs";
+import BedFileDropdown from "./BedFileDropdown";
+import FormHelperText from "@mui/material/FormHelperText";
+import PopupDialog from "./PopupDialog.js";
+import Switch from "react-switch";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGear } from "@fortawesome/free-solid-svg-icons";
+import {
+  parseRegion,
+  stringifyRegion,
+  isEmpty,
+  isValidURL,
+  readsExist,
+} from "../common.mjs";
 
 // See src/Types.ts
 
@@ -19,17 +29,15 @@ const DATA_SOURCES = config.DATA_SOURCES;
 const MAX_UPLOAD_SIZE_DESCRIPTION = "5 MB";
 const dataTypes = {
   BUILT_IN: "built-in",
-  FILE_UPLOAD: "file-upload",
-  MOUNTED_FILES: "mounted files",
+  CUSTOM_FILES: "mounted files",
   EXAMPLES: "examples",
 };
 const fileTypes = {
   GRAPH: "graph",
   HAPLOTYPE: "haplotype",
   READ: "read",
-  BED:"bed",
+  BED: "bed",
 };
-
 
 // We define the subset of the empty state that is safe to apply without
 // clobbering downloaded data from the server which we need
@@ -39,15 +47,38 @@ const CLEAR_STATE = {
   // File: The file name actually used (or undefined)
   bedSelect: "none",
 
-  // This tracks several arrays of BED region data, stored by data type, with
+  // Description for the selected region, is not displayed when empty
+  desc: "",
+
+  // This tracks several arrays (desc, chr, start, end) of BED region data, with
   // one entry in each array per region.
+  // desc: description of region, i.e. "region with no source graph available"
+  // chr: path in graph where the region is on, i.e. in ref:2000-3000, "ref" is the chr
+  // start: start of the region, i.e. in ref:2000-3000, 2000 is the start
+  // end: end of the region, i.e. in ref:2000-3000, 3000 is the end
+  // chunk: url/directory for preexisting cached chunk, or empty string if not available
+  // tracks: object full of tracks to apply when user selects region, or null
+  // so regionInfo might look like: 
+  /*
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+  */
   regionInfo: {},
 
-  pathNames: ["none"],
+  // Names of paths in the graph track. Always kept in sync with the first
+  // graph track. Emptied out if it is to change, to be re-populated.
+  pathNames: [],
 
   tracks: {},
+  // BED file of regions to jump between. Regions may have pre-extracted chunks in the last column.
+  // If not used, may be undefined or may have the sting value "none".
   bedFile: undefined,
-  dataPath: undefined,
   region: "",
   name: undefined,
 
@@ -67,28 +98,19 @@ const EMPTY_STATE = {
 
   // These ones are for selecting entire files and need to be preserved when
   // switching dataType.
-  fileSelectOptions: [],
+  availableTracks: [],
   // This one is for the BED files. It needs to exist when we start up or we
   // will try and draw the BED dropdown without an array of options.
-  bedSelectOptions: []
+  availableBeds: [],
 };
 
-// Creates track to be stored in ViewTarget
-// Modify as the track system changes
-// INPUT: file structure, see Types.ts
-function createTrack(file) {
-  //track properties
-  const files = [file]
-
-  //remove empty files here?
-
-  const track = {
-    files: files,
-  };
-  return track;
+// Return true if file is set to a string file name or URL, and false if it is
+// falsey or the "none" sentinel.
+function isSet(file) {
+  return (file !== "none" && file);
 }
 
-// Checks if all file names in the track are equal
+// Checks if two track objects in the current track set are equal
 function tracksEqual(curr, next) {
   if ((curr === undefined) !== (next === undefined)) {
     // One is undefined and the other isn't
@@ -100,35 +122,38 @@ function tracksEqual(curr, next) {
 
   const curr_settings = curr.trackColorSettings;
   const next_settings = next.trackColorSettings;
-  
+
   // check if color settings are equal
-  if (curr_settings && next_settings){
-    if (curr_settings.mainPalette !== next_settings.mainPalette || 
-        curr_settings.auxPalette !== next_settings.auxPalette ||
-        curr_settings.colorReadsByMappingQuality !== next_settings.colorReadsByMappingQuality) {
-          
-        return false;
+  if (curr_settings && next_settings) {
+    if (
+      curr_settings.mainPalette !== next_settings.mainPalette ||
+      curr_settings.auxPalette !== next_settings.auxPalette ||
+      curr_settings.colorReadsByMappingQuality !==
+        next_settings.colorReadsByMappingQuality
+    ) {
+      return false;
     }
   }
-  //count falsy file names as the same
+  // count falsy file names as the same
   if ((!curr_file && !next_file) || curr_file === next_file) {
     return true;
   }
   return false;
-
 }
 
 // Checks if two view targets are the same. They are the same if they have the
 // same tracks and the same region.
 function viewTargetsEqual(currViewTarget, nextViewTarget) {
-
   // Update if one is undefined and the other isn't
   if ((currViewTarget === undefined) !== (nextViewTarget === undefined)) {
     return false;
   }
 
   // Update if view target tracks are not equal
-  if (Object.keys(currViewTarget.tracks).length !== Object.keys(nextViewTarget.tracks).length) {
+  if (
+    Object.keys(currViewTarget.tracks).length !==
+    Object.keys(nextViewTarget.tracks).length
+  ) {
     // Different lengths so not equal
     return false;
   }
@@ -154,12 +179,173 @@ function viewTargetsEqual(currViewTarget, nextViewTarget) {
 
   // Update if regions are not equal
   if (currViewTarget.region !== nextViewTarget.region) {
-     return false;
+    return false;
+  }
+
+  if (currViewTarget.simplify !== nextViewTarget.simplify) {
+    return false;
+  }
+
+  if (currViewTarget.removeSequences !== nextViewTarget.removeSequences) {
+    return false;
   }
 
   return true;
-
 }
+
+/* determine the current region: accepts a region string and returns the region index
+
+  example of regionInfo:
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+
+  examples: 
+  if the regionString is "17:1-100", it would be parsed into {contig: "17", start: 1, end: 100} -> 0
+  if the regionString is "17:1000-1200", it would be parsed into {contig: "17", start: 1000, end: 1200} -> 1
+  if the regionString is "17:2000-3000", it cannot be found - return null
+
+  The function uses this approach to find the regionIndex given regionString and regionInfo:
+  function (region string){
+    parse(region string) -> return {contig, start, end}
+    loop over chr in region info
+      determine if contig, start, end are present at the current index
+      if present: return index
+    return null
+  }
+*/
+export const determineRegionIndex = (regionString, regionInfo) => {
+  let parsedRegion;
+  try {
+    parsedRegion = parseRegion(regionString);
+  } catch(error) {
+    return null;
+  }
+  if (!regionInfo["chr"]){
+    return null;
+  }
+  for (let i = 0; i < regionInfo["chr"].length; i++){
+    if ((parseInt(regionInfo["start"][i]) === parsedRegion.start) 
+        && (parseInt(regionInfo["end"][i]) === parsedRegion.end)
+        && (regionInfo["chr"][i] === parsedRegion.contig)){
+          return i;
+    }
+  }
+  return null;
+}
+
+/*
+  This function takes in a regionIndex and regionInfo, and reconstructs a regionString from them
+  assumes that index is valid in regionInfo
+
+  example of regionInfo:
+  {
+    chr: [ '17', '17' ],
+    start: [ '1', '1000' ],
+    end: [ '100', '1200' ],
+    desc: [ '17_1_100', '17_1000_1200' ],
+    chunk: [ '', '' ],
+    tracks: [ null, null ]
+  }
+
+  example of regionIndex: 0
+
+  example of regionString: "17:1-100"
+*/
+export const regionStringFromRegionIndex = (regionIndex, regionInfo) => {
+  let regionStart = regionInfo["start"][regionIndex];
+  let regionEnd = regionInfo["end"][regionIndex];
+  let regionContig = regionInfo["chr"][regionIndex];
+  return regionContig + ":" + regionStart + "-" + regionEnd;
+}
+
+// Sadly JS doesn't have any notion of a tuple to key things on, so we need a way to make a string key
+function makeKey(track) {
+  return JSON.stringify([track.trackType, track.trackFile]);
+}
+
+// Get a Set keyed by makeKey() keys for tracks, listing all the available,
+// non-implied tracks from a list of available tracks.
+function makeAvailableTrackSet(availableTracks) {
+  let available = new Set();
+  for (let track of availableTracks) {
+    if (!track.trackIsImplied) {
+      available.add(makeKey(track));
+    }
+  }
+  return available;
+}
+
+// Look up whether a selected track is implied (i.e. not in the given set).
+function trackIsImplied(track, availableTrackSet) {
+  return !availableTrackSet.has(makeKey(track));
+}
+
+// Given an array of available tracks (some of which may already be implied)
+// and an object of currently selected tracks, return an array guaranteed to
+// have entries for the tracks already selected. This ensures the user can
+// switch back to them if they deselect them, even if they don't really exist
+// server-side (which can happen if they are from pre-extracted regions).
+//
+// Removes existing implied tracks in the input.
+function trackListWithImplied(availableTracks, availableTrackSet, currentTracks) {
+  // Identify all available, non-implied tracks
+  let newAvailableTracks = [];
+  for (let track of availableTracks) {
+    if (!track.trackIsImplied) {
+      newAvailableTracks.push(track);
+    }
+  }
+
+  // Identify all the current tracks that are not in the list already
+  let unavailable = [];
+  for (const key in currentTracks) {
+    let track = currentTracks[key];
+    if (trackIsImplied(track, availableTrackSet)) {
+      // This track isn't available, so we'll have to do something for it
+      unavailable.push(track);
+    } 
+  }
+
+  if (unavailable.length === 0) {
+    // No tracks to add
+    return newAvailableTracks;
+  }
+
+  // Now we need to add new entries for the ones we didn't see.
+  for (let track of unavailable) {
+    // For each unavailable track currently selected, make an available tracks
+    // entry that knows it doesn't really exist in the API as a full track.
+    newAvailableTracks.push({
+      trackType: track.trackType,
+      trackFile: track.trackFile,
+      // Don't bring along the color settings.
+      // Do mark it as an "implied" track that we need to remember sort of exists.
+      trackIsImplied: true
+    });
+  }
+
+  return newAvailableTracks;
+}
+
+
+// Get the first graph track in a collection of selected tracks, or a falsey
+// value if there isn't one.
+function firstGraphTrack(tracks) {
+  for (const key in tracks) {
+    let track = tracks[key];
+    if (track.trackType === fileTypes.GRAPH) {
+      return track;
+    }
+  }
+  return null;
+}
+
 
 
 class HeaderForm extends Component {
@@ -187,121 +373,31 @@ class HeaderForm extends Component {
       );
     }
   }
-  DATA_NAMES = DATA_SOURCES.map((source) => source.name);
 
   initState = () => {
     // Populate state with either viewTarget or the first example
     let ds = this.props.defaultViewTarget ?? DATA_SOURCES[0];
-    const bedSelect = ds.bedFile ? ds.bedFile : "none";
-    const dataPath = ds.dataPath;
-    if (bedSelect !== "none") {
-      this.getBedRegions(bedSelect, dataPath);
-    }
-    for (const key in ds.tracks) {
-      if (ds.tracks[key].trackType === fileTypes.GRAPH) {
-        // Load the paths for any graph tracks
-        console.log("Get path names for track: ", ds.tracks[key]);
-        this.getPathNames(ds.tracks[key].trackFile, dataPath);
-      }
-    }
+    const bedSelect = isSet(ds.bedFile) ? ds.bedFile : "none";
     this.setState((state) => {
       const stateVals = {
         tracks: ds.tracks,
         bedFile: ds.bedFile,
         bedSelect: bedSelect,
-        dataPath: dataPath,
         region: ds.region,
         dataType: ds.dataType,
         name: ds.name,
+        simplify: ds.simplify,
+        popupOpen: false,
+        removeSequences: ds.removeSequences
       };
       return stateVals;
     });
   };
 
-  setTrackFile = (type, index, file) => {
-    // Set the nth track of the given type to the given file.
-    // If there is no nth track of that type, create one.
-    // If the file is "none", remove that track.
-    this.setState((state) => {
-      console.log('Set file ' + type + ' index ' + index + ' to ' + file + ' over ' + JSON.stringify(state.tracks));
-
-      // Make a modified copy of the tracks
-      let newTracks = [];
-
-      // Find the nth track of this type, if any.
-      let seenTracksOfType = 0;
-      let maxKey = -1;
-      for (const key in state.tracks) {
-        let track = state.tracks[key];
-        if (track.trackType === type) {
-          if (seenTracksOfType === index) {
-            if (file !== "none") {
-              // We want to adjust it, so keep a modified copy of it
-              let newTrack = JSON.parse(JSON.stringify(track));
-              newTrack.trackFile = file;
-              newTracks[key] = newTrack;
-            }
-            // If the file is "none" we drop the track.
-          } else {
-            // We want to keep it as is
-            newTracks[key] = track;
-          }
-          seenTracksOfType++;
-        } else {
-          // We want to keep all tracks of other types as is
-          newTracks[key] = track;
-        }
-        if (parseInt(key) > maxKey) {
-          maxKey = parseInt(key);
-        }
-      }
-      
-      console.log('Saw ' + seenTracksOfType + ' tracks of type vs index ' + index)
-      if (seenTracksOfType === index && file !== "none") {
-        // We need to add this track
-        console.log('Create track at index ' + (maxKey + 1))
-        newTracks[maxKey + 1] = createTrack({"type": type, "name": file});
-      }
-
-      // Add the new tracks to the state
-      let newState = Object.assign({}, state);
-      newState.tracks = newTracks;
-      console.log('Set result: ' + JSON.stringify(newTracks));
-      return newState;
-    });
-  }
-
-  getTrackFile = (tracks, type, index) => {
-    // Get the file used in the nth track of the gicen type, or "none" if no
-    // such track exists.
-    let seenTracksOfType = 0;
-    for (const key in tracks) {
-      let track = tracks[key];
-      if (track === -1) {
-        continue;
-      }
-      if (track.trackType === type) {
-        if (seenTracksOfType === index) {
-          // This is the one. Return its filename.
-          return track.trackFile;
-        }
-        seenTracksOfType++;
-      } 
-    }
-    // Not found
-    return "none";
-  }
-
   getMountedFilenames = async () => {
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getFilenames`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const json = await this.props.APIInterface.getFilenames(this.cancelSignal);
       if (!json.files || json.files.length === 0) {
         // We did not get back a graph, only (possibly) an error.
         const error =
@@ -310,56 +406,70 @@ class HeaderForm extends Component {
       } else {
         json.bedFiles.unshift("none");
 
-        if (this.state.dataPath === "mounted") {
-          this.setState((state) => {
-            const bedSelect = json.bedFiles.includes(state.bedSelect)
+        // Index the available tracks
+        let availableTrackSet = makeAvailableTrackSet(json.files);
+
+        if (this.state.dataType !== dataTypes.EXAMPLES) {
+          // Work out whether the BED file we were set to exists in the result we got
+          const bedFile = (isValidURL(this.state.bedFile) || json.bedFiles.includes(this.state.bedFile))
+            ? this.state.bedFile
+            : "none";
+          if (isSet(bedFile)) {
+            // If so, kick off a request for BED region metadata
+            console.log("Get BED regions for available BED file")
+            this.getBedRegions(bedFile);
+          } else {
+            console.log("Don't get BED regions for BED", this.state.bedFile)
+          }
+          
+          // Sync up path names for first graph track.
+          let graphTrack = firstGraphTrack(this.state.tracks);
+          if (graphTrack) {
+            if (trackIsImplied(graphTrack, availableTrackSet)) {
+              console.log("Don't get path names for implied track:", graphTrack);
+            } else {
+              // Load the paths for any graph tracks advertised by the server.
+              // TODO: Do we need to do this now?
+              console.log("Get path names for track:", graphTrack);
+              this.getPathNames(graphTrack.trackFile);
+            }
+          }
+        }
+
+        this.setState((state) => {
+          let newState = {
+            // Make sure we have implied track entries for selected tracks not
+            // mentioned by the server
+            availableTracks: trackListWithImplied(json.files, availableTrackSet, state.tracks),
+            availableBeds: json.bedFiles
+          };
+
+          if (state.dataType === dataTypes.CUSTOM) {
+            // See if the BED file vanished and if so clear it out.
+            const bedSelect = (isValidURL(state.bedSelect) || json.bedFiles.includes(state.bedSelect))
               ? state.bedSelect
               : "none";
-            if (bedSelect !== "none") {
-              this.getBedRegions(bedSelect, "mounted");
+            newState.bedSelect = bedSelect;
+            newState.bedFile = isSet(bedSelect) ? bedSelect : undefined;
+            if (!isSet(bedSelect)) {
+              // Switching to no BED so clear the BED-related info
+              newState.regionInfo = {};
+              newState.desc = undefined;
             }
-            for (const key in state.tracks) {
-              if (state.tracks[key].trackType === fileTypes.GRAPH) {
-                // Load the paths for any graph tracks.
-                // TODO: Do we need to do this now?
-                console.log("Get path names for track: ", state.tracks[key]);
-                this.getPathNames(state.tracks[key].trackFile, "mounted");
-              }
-            } 
-            return {
-              fileSelectOptions: json.files,
-              bedSelectOptions: json.bedFiles,
-              bedSelect,
-            };
-          });
-        } else {
-          this.setState((state) => {
-            return {
-              fileSelectOptions: json.files,
-              bedSelectOptions: json.bedFiles,
-            };
-          });
-        }
+          }
+
+          return newState;
+        });
       }
     } catch (error) {
-      this.handleFetchError(
-        error,
-        `GET to ${this.props.apiUrl}/getFilenames failed:`
-      );
+      this.handleFetchError(error, `API getFilenames failed:`);
     }
   };
 
-  getBedRegions = async (bedFile, dataPath) => {
+  getBedRegions = async (bedFile) => {
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getBedRegions`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bedFile, dataPath }),
-      });
+      const json = await this.props.APIInterface.getBedRegions(bedFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       if (!json.bedRegions || !(json.bedRegions["desc"] instanceof Array)) {
         throw new Error(
@@ -367,74 +477,80 @@ class HeaderForm extends Component {
         );
       }
       this.setState((state) => {
-        return {
-          // RegionInfo: object with chr, chunk, desc arrays
-          regionInfo: json.bedRegions ?? {},
-        };
+        if (state.bedFile === bedFile) {
+          // We have the region info for the currently selected BED file.
+          console.log("Apply retrieved BED regions");
+          return {
+            // RegionInfo: object with chr, chunk, desc arrays
+            regionInfo: json.bedRegions ?? {},
+            // Fill in the description from the coordinates when the region info arrives
+            desc: this.getRegionDescByCoords(state.region, json.bedRegions ?? {})
+          };
+        } else {
+          console.log("Discard stale BED regions for " + bedFile + " because we are now looking at " + state.bedFile);
+        }
       });
     } catch (error) {
-      this.handleFetchError(
-        error,
-        `POST to ${this.props.apiUrl}/getBedRegions failed:`
-      );
+      this.handleFetchError(error, `API getBedRegions failed:`);
     }
   };
 
   resetBedRegions = () => {
     this.setState({
       regionInfo: {},
+      desc: undefined
     });
   };
 
-  getPathNames = async (graphFile, dataPath) => {
+  /// Download the list of path names for the given graph file.
+  /// It may be null.
+  /// If the graph file isn't known to actually be an available file, set quiet
+  /// to true to suppress rendering any errors.
+  getPathNames = async (graphFile, quiet) => {
+    if (graphFile === null){
+      return;
+    }
     this.setState({ error: null });
     try {
-      const json = await fetchAndParse(`${this.props.apiUrl}/getPathNames`, {
-        signal: this.cancelSignal, // (so we can cancel the fetch request if we will unmount component)
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ graphFile, dataPath }),
-      });
+      const json = await this.props.APIInterface.getPathNames(graphFile, this.cancelSignal);
       // We need to do all our parsing here, if we expect the catch to catch errors.
       let pathNames = json.pathNames;
       if (!(pathNames instanceof Array)) {
         throw new Error("Server did not send back an array of path names");
       }
       this.setState((state) => {
-        return {
-          pathNames: pathNames,
-        };
+        // Find the then-selected graph file
+        let laterGraphTrack = firstGraphTrack(state.tracks);
+
+        if (laterGraphTrack && laterGraphTrack.trackFile === graphFile) {
+          // The path names we got are for the graph file we currently have selected.
+          console.log("Apply path names");
+          return {
+            pathNames: pathNames,
+          };
+        } else {
+          console.log("Discard stale path names for " + graphFile + " because we are now looking at " + laterGraphTrack);
+        }
       });
     } catch (error) {
-      this.handleFetchError(
-        error,
-        `POST to ${this.props.apiUrl}/getPathNames failed:`
-      );
+      if (!quiet) {
+        // We aren't expecting any errors.
+        this.handleFetchError(error, `API getPathNames failed:`);
+      }
     }
   };
 
   handleDataSourceChange = (event) => {
     const value = event.target.value;
 
-    if (value === dataTypes.FILE_UPLOAD) {
-      const newState = {
-        ...CLEAR_STATE,
-        dataPath: "upload",
-        dataType: dataTypes.FILE_UPLOAD,
-        error: this.state.error,
-      };
-      this.setState(newState, () => {});
-    } else if (value === dataTypes.MOUNTED_FILES) {
+    if (value === dataTypes.CUSTOM_FILES) {
       this.setState((state) => {
         return {
           ...CLEAR_STATE,
           bedFile: "none",
           // not sure why we would like to keep the previous selection when changing data sources. What I know is it creates a bug for the regions, where the tubemap tries to read the previous bedFile (e.g. defaulted to example 1), can't find it and raises an error
           // bedFile: state.bedSelect,
-          dataPath: "mounted",
-          dataType: dataTypes.MOUNTED_FILES,
+          dataType: dataTypes.CUSTOM_FILES,
         };
       });
     } else if (value === dataTypes.EXAMPLES) {
@@ -445,32 +561,38 @@ class HeaderForm extends Component {
       // Find data source whose name matches selection
       DATA_SOURCES.forEach((ds) => {
         if (ds.name === value) {
-          let dataPath = ds.dataPath;
           let bedSelect = "none";
-          if (ds.bedFile) {
-            this.getBedRegions(ds.bedFile, dataPath);
+          if (isSet(ds.bedFile)) {
+            this.getBedRegions(ds.bedFile);
             bedSelect = ds.bedFile;
           } else {
             // Without bedFile, we have no regions
             this.setState({ regionInfo: {} });
           }
-          for (const key in ds.tracks) {
-            if (ds.tracks[key].trackType === fileTypes.GRAPH) {
-              // Load the paths for any graph tracks.
-              console.log("Get path names for track: ", ds.tracks[key]);
-              this.getPathNames(ds.tracks[key].trackFile, dataPath);
-            }
+          let graphTrack = firstGraphTrack(ds.tracks);
+          if (graphTrack) {
+            // Load the paths for any graph tracks.
+            console.log("Get path names for built-in track: ", graphTrack);
+            this.getPathNames(graphTrack.trackFile);
           }
-          this.setState({
-            tracks: ds.tracks, 
-            bedFile: ds.bedFile,
-            bedSelect: bedSelect,
-            dataPath: dataPath,
-            region: ds.region,
-            dataType: dataTypes.BUILT_IN,
-            name: ds.name,
+          this.setState((state) => {
+            let newState = {
+              tracks: ds.tracks,
+              bedFile: ds.bedFile,
+              bedSelect: bedSelect,
+              region: ds.region,
+              dataType: dataTypes.BUILT_IN,
+              name: ds.name,
+            };
+
+            let laterGraphTrack = firstGraphTrack(state.tracks);
+            if (!laterGraphTrack || !graphTrack || laterGraphTrack.trackFile !== graphTrack.trackFile) {
+              // We're changing the graph track file, so clear out the path names until their result comes in.
+              console.log("Discard old path named for", laterGraphTrack);
+              newState.pathNames = [];
+            }
+            return newState;
           });
-          return;
         }
       });
     }
@@ -480,8 +602,9 @@ class HeaderForm extends Component {
     bedFile: this.state.bedFile,
     name: this.state.name,
     region: this.state.region,
-    dataPath: this.state.dataPath,
     dataType: this.state.dataType,
+    simplify: this.state.simplify && !readsExist(this.state.tracks),
+    removeSequences: this.state.removeSequences
   });
 
   handleGoButton = () => {
@@ -493,66 +616,192 @@ class HeaderForm extends Component {
 
     const nextViewTarget = this.getNextViewTarget();
     const currViewTarget = this.props.getCurrentViewTarget();
-    
+
+    // Tracks list is empty
+    if (Object.keys(nextViewTarget["tracks"]).length === 0) {
+      // TODO: put some kind of visual indicator that the tracks list is empty
+      console.log("Tracks must not be empty before go");
+      return;
+    }
+
     if (!viewTargetsEqual(currViewTarget, nextViewTarget)) {
       // Update the view if the view target has changed.
       this.props.setCurrentViewTarget(nextViewTarget);
     }
-
   };
 
-  getRegionCoords = (desc) => {
+  getRegionCoordsByDesc = (desc, regionInfo) => {
     // Given a region description (string), return the actual corresponding coordinates
     // Returns null if there is no corresponding coords
+
+    regionInfo = regionInfo ?? this.state.regionInfo;
+
     // i: number that corresponds to record
     // Find index of given description in regionInfo
-    const i = this.state.regionInfo["desc"].findIndex((d) => d === desc);
+    if (!regionInfo["desc"]) {
+      return null;
+    }
+    const i = regionInfo["desc"].findIndex((d) => d === desc);
     if (i === -1)
       // Not found
       return null;
-    // Find corresponding chr, start, and end
-    const regionChr = this.state.regionInfo["chr"][i];
-    const regionStart = this.state.regionInfo["start"][i];
-    const regionEnd = this.state.regionInfo["end"][i];
-    // Combine chr, start, and end to get region string
-    const regionString = regionChr.concat(":", regionStart, "-", regionEnd);
-    return regionString;
+    return regionStringFromRegionIndex(i, regionInfo);
   };
-  handleRegionChange = (value, tracks) => {
-    // After user selects a region name or coordinates,
-    // update path and region
-    let coords = value;
-
-    if (
-      this.state.regionInfo.hasOwnProperty("desc") &&
-      this.state.regionInfo["desc"].includes(value)
-    ) {
-      // Just a description was selected, get coords
-      coords = this.getRegionCoords(value);
+  
+  // Get the description of the region with the given coordinates, or null if no such region exists.
+  getRegionDescByCoords = (coords, regionInfo) => {
+    regionInfo = regionInfo ?? this.state.regionInfo;
+    for (let i = 0; i < regionInfo["chr"]?.length ?? 0; i++) {
+      if (coords === regionStringFromRegionIndex(i, regionInfo)) {
+        return regionInfo["desc"]?.[i] ?? null;
+      }
     }
-    this.setState({ region: coords });
+    return null;
+  }
 
-    // Override current tracks with new tracks from chunk dir
-    if (tracks) {
-      this.setState({ tracks: tracks });
-      console.log("New tracks have been population");
+  // Function to convert array to object, where the key would be the index and the value
+  //  would be the value at the array index
+  convertArrayToObject = (array) => {
+    let obj = {};
+    for(let i = 0; i < array.length; i++){
+      obj[i] = array[i];
     }
-  };
-
-  handleInputChange = (newTracks) => {
+    return obj;
+  }
+  
+  // Adopt a new region
+  // Update the region description
+  // Update current tracks if the stored tracks for the region are valid
+  // Otherwise check if the current bed file has associated tracks
+  // Tracks remain unchanged if neither condition is met
+  handleRegionChange = async (coords) => {
+    // Update region coords and description
     this.setState((state) => {
-      let newState = Object.assign({}, state);
-      newState.tracks = newTracks;
-      console.log('Set result: ' + JSON.stringify(newTracks));
+      return {
+        region: coords,
+        desc: this.getRegionDescByCoords(coords, state.regionInfo),
+      };
+    });
+
+    let coordsToMetaData = {};
+
+    // Construct a concatenated string of possible coords
+    // Set relative meta data to each coord
+    if (this.state.regionInfo && !isEmpty(this.state.regionInfo)) {
+      for (const [index, path] of this.state.regionInfo["chr"].entries()) {
+        const pathWithRegion =
+          path +
+          ":" +
+          this.state.regionInfo.start[index] +
+          "-" +
+          this.state.regionInfo.end[index];
+        coordsToMetaData[pathWithRegion] = {
+          tracks: this.state.regionInfo.tracks[index],
+          chunk: this.state.regionInfo.chunk[index],
+        };
+      }
+    }
+
+    // Set to null if any properties are undefined
+    let tracks = coordsToMetaData?.[coords]?.tracks ?? null;
+    const chunk = coordsToMetaData?.[coords]?.chunk ?? null;
+
+    if (!tracks && isSet(this.state.bedFile) && chunk) {
+      // Try fetching tracks
+      const json = await this.props.APIInterface.getChunkTracks(
+        this.state.bedFile,
+        chunk,
+        this.cancelSignal
+      );
+
+      // Replace tracks if request returns non-falsey value
+      if (json.tracks) {
+        console.log("json tracks: ", json.tracks);
+        tracks = json.tracks;
+        // TODO: Save downloaded tracks in case the user selects the region again?
+      }
+    }
+
+    // Override current tracks with new tracks
+    if (tracks) {
+      let trackObject = this.convertArrayToObject(tracks);
+      let newGraphTrack = firstGraphTrack(trackObject);
+      this.setState((laterState) => {
+        if (laterState.region === coords) {
+          // The user still has the same region selected, so apply the tracks we now have
+          let availableTrackSet = makeAvailableTrackSet(laterState.availableTracks);
+          let laterGraphTrack = firstGraphTrack(laterState.tracks);
+          let newState = {
+            tracks: trackObject,
+            // Make sure to make implied tracks based on any tracks we are
+            // supposed to have that aren't available.
+            availableTracks: trackListWithImplied(laterState.availableTracks, availableTrackSet, trackObject)
+          };
+
+          if (!newGraphTrack || !laterGraphTrack || newGraphTrack.trackFile !== laterGraphTrack.trackFile) {
+            // Changing the tracks also changes the selected graph, which means we can't keep stored path names.
+            newState.pathNames = [];
+          }
+
+          return newState;
+        }
+        // Otherwise, don't apply the tracks, because they are no longer relevant.
+      });
+
+      let currentGraphTrack = firstGraphTrack(this.state.tracks);
+      if (!newGraphTrack || !currentGraphTrack || newGraphTrack.trackFile !== currentGraphTrack.trackFile) {
+        // Path list will need to be updated.
+
+        // Do indexing to see if the new track is implied.
+        let availableTrackSet = makeAvailableTrackSet(this.state.availableTracks);
+
+        if (newGraphTrack && !trackIsImplied(newGraphTrack, availableTrackSet)) {
+          console.log("Get path names for chunk provided graph track:", newGraphTrack)
+          this.getPathNames(newGraphTrack.trackFile);
+        }
+      }
+    }
+  };
+
+  // Apply new tracks when the user uses the track picker UI. Assumes we're
+  // selecting from the available and implied tracks, but doesn't update to
+  // imply new tracks or un-imply existing tracks because the current tracks
+  // changed.
+  handleInputChange = (newTracks) => {
+    // Find the graph track being selected
+    let newGraphTrack = firstGraphTrack(newTracks);
+
+    this.setState((state) => {
+      // Apply the new tracks
+      let newState = {tracks: newTracks};
+    
+      // See what graph track we're actually overwriting when wer actually get applied.
+      let laterGraphTrack = firstGraphTrack(state.tracks);
+
+      if (!newGraphTrack || !laterGraphTrack || newGraphTrack.trackFile !== laterGraphTrack.trackFile) {
+        // The stored path list can't apply to the new graph track.
+        newState.pathNames = [];
+      }
+
       return newState;
     });
 
-    // update path names
-    const graphFile = this.getTrackFile(newTracks, fileTypes.GRAPH, 0);
-    if (graphFile && graphFile !== "none"){
-      this.getPathNames(graphFile, this.state.dataPath);
+    // After doing the state set, kick off a request for the paths in the new graph if we think we need them.
+    let currentGraphTrack = firstGraphTrack(this.state.tracks);
+    if (!newGraphTrack || !currentGraphTrack || newGraphTrack.trackFile !== currentGraphTrack.trackFile) {
+      // Path list will need to be updated.
+
+      // Do indexing to see if the new track is implied.
+      let availableTrackSet = makeAvailableTrackSet(this.state.availableTracks);
+
+      if (newGraphTrack && !trackIsImplied(newGraphTrack, availableTrackSet)) {
+        console.log("Get path names for newly selected graph track:", newGraphTrack)
+        this.getPathNames(newGraphTrack.trackFile);
+      }
     }
 
+    // TODO: What if we don't kick off the request but we race other updates
+    // such that the graph track changes and we should have?
   };
 
   handleBedChange = (event) => {
@@ -560,16 +809,29 @@ class HeaderForm extends Component {
     const value = event.target.value;
     this.setState({ [id]: value });
 
-    if (value !== "none") {
-      this.getBedRegions(value, this.state.dataPath);
-    }
-    this.setState({ bedFile: value });
+    this.setState((state) => {
+      let newState = { bedFile: value };
+      
+      if (value !== state.bedFile) {
+        // Bed file is changing so old BED regions aren't right anymore.
+        console.log("Clearing outdated BED regions");
+        newState.regionInfo = {};
+        newState.desc = undefined;
+      }
 
-  }
+      return newState;
+    });
+
+    if (isSet(value) && value !== this.state.bedFile) {
+      // Go fetch the BED regions which we will need.
+      this.getBedRegions(value);
+    }
+    
+  };
 
   // Budge the region left or right by the given negative or positive fraction
   // of its width.
-  budgeRegion(fraction) {
+  async budgeRegion(fraction) {
     let parsedRegion = parseRegion(this.state.region);
 
     if (parsedRegion.distance !== undefined) {
@@ -584,35 +846,61 @@ class HeaderForm extends Component {
       parsedRegion.start = Math.max(0, Math.round(parsedRegion.start + shift));
       parsedRegion.end = Math.max(0, Math.round(parsedRegion.end + shift));
     }
-   
+    
+    await this.handleRegionChange(stringifyRegion(parsedRegion));
     this.setState(
-      (state) => ({
-        region: stringifyRegion(parsedRegion),
-      }),
       () => this.handleGoButton()
     );
   }
 
+
+  /* Offset the region left or right by the given negative or positive fraction*/
+  // offset: +1 or -1
+  async jumpRegion(offset) {
+    let regionIndex = determineRegionIndex(this.state.region, this.state.regionInfo) ?? 0;
+    if ((offset === -1 && this.canGoLeft(regionIndex)) || (offset === 1 && this.canGoRight(regionIndex))){
+      regionIndex += offset;
+    }
+    let regionString = regionStringFromRegionIndex(regionIndex, this.state.regionInfo);
+    await this.handleRegionChange(regionString);
+    this.setState(
+      () => this.handleGoButton()
+    );
+  }
+
+  canGoLeft = (regionIndex) => {
+    if (isSet(this.state.bedFile)){
+      return (regionIndex > 0);
+    } else {
+      return true;
+    }
+  }
+
+  canGoRight = (regionIndex) => {
+    if (isSet(this.state.bedFile)){
+      if (!this.state.regionInfo["chr"]){
+        return false;
+      }
+      return (regionIndex < ((this.state.regionInfo["chr"].length) - 1));
+    } else {
+      return true;
+    }
+  }
+
+
   handleGoRight = () => {
-    this.budgeRegion(0.5);
+    if (isSet(this.state.bedFile)){
+      this.jumpRegion(1);
+    } else {
+      this.budgeRegion(0.5);
+    }
   };
 
   handleGoLeft = () => {
-    this.budgeRegion(-0.5);
-  };
-
-  handleFileUpload = (fileType, fileName) => {
-    /// Apply a file that was uploaded as a track.
-    if (fileType === "graphFile") {
-      this.setTrackFile(fileTypes.GRAPH, 0, fileName);
-    } else if (fileType === "gbwtFile") {
-      this.setTrackFile(fileTypes.HAPLOTYPE, 0, fileName);
-    } else if (fileType === "gamFile") {
-      this.setTrackFile(fileTypes.READ, 0, fileName);
-    } else if (fileType === "gamFile2") {
-      this.setTrackFile(fileTypes.READ, 1, fileName);
+    if (isSet(this.state.bedFile)){
+      this.jumpRegion(-1);
     } else {
-      throw new Error("Unknown file type " + fileType + " uploaded: " + fileName);
+      this.budgeRegion(-0.5);
     }
   };
 
@@ -624,17 +912,50 @@ class HeaderForm extends Component {
     this.setState({ uploadInProgress: val });
   };
 
+  // Sends uploaded file to server and returns a path to the file
+  handleFileUpload = async (fileType, file) => {
+    if (!(this.props.APIInterface instanceof LocalAPI) && file.size > config.MAXUPLOADSIZE) {
+      this.showFileSizeAlert();
+      return;
+    }
+
+    this.setUploadInProgress(true);
+
+    try {
+      let fileName = await this.props.APIInterface.putFile(fileType, file, this.cancelSignal);
+      if (fileType === "graph") {
+        // Refresh the graphs right away
+        this.getMountedFilenames();
+      }
+      this.setUploadInProgress(false);
+      return fileName;
+    } catch (e) {
+      if (!this.cancelSignal.aborted) {
+        // Only pass along errors if we haven't canceled our fetches.
+        throw e;
+      }
+    }
+  };
+
   setUpWebsocket = () => {
-    this.ws = new WebSocket(this.props.apiUrl.replace(/^http/, "ws"));
-    this.ws.onmessage = (message) => {
-      this.getMountedFilenames();
-    };
-    this.ws.onclose = (event) => {
-      setTimeout(this.setUpWebsocket, 1000);
-    };
-    this.ws.onerror = (event) => {
-      this.ws.close();
-    };
+    this.subscription = this.props.APIInterface.subscribeToFilenameChanges(
+      this.getMountedFilenames,
+      this.cancelSignal
+    );
+  };
+
+  /* Function for toggling simplify button, enabling vg simplify to be turned on or off */
+  toggleSimplify = () => {
+    this.setState({ simplify: !this.state.simplify });
+  };
+
+  /* Function for toggling display of node sequences */
+  toggleIncludeSequences = () => {
+    this.setState({ removeSequences: !this.state.removeSequences });
+  };
+
+  togglePopup = () => {
+    this.setState({ popupOpen: !this.state.popupOpen });
   };
 
   render() {
@@ -667,37 +988,45 @@ class HeaderForm extends Component {
       <option value={dataTypes.EXAMPLES} key="syntheticExamples">
         synthetic data examples
       </option>,
-      <option value={dataTypes.FILE_UPLOAD} key="customFileUpload">
-        custom (file upload)
-      </option>,
-      <option value={dataTypes.MOUNTED_FILES} key={dataTypes.MOUNTED_FILES}>
-        custom (mounted files)
+      <option value={dataTypes.CUSTOM_FILES} key={dataTypes.CUSTOM_FILES}>
+        custom
       </option>
     );
 
-    const mountedFilesFlag = this.state.dataType === dataTypes.MOUNTED_FILES;
-    const uploadFilesFlag = this.state.dataType === dataTypes.FILE_UPLOAD;
+    const customFilesFlag = this.state.dataType === dataTypes.CUSTOM_FILES;
     const examplesFlag = this.state.dataType === dataTypes.EXAMPLES;
-    const viewTargetHasChange = !viewTargetsEqual(this.getNextViewTarget(), this.props.getCurrentViewTarget());
+    const viewTargetHasChange = !viewTargetsEqual(
+      this.getNextViewTarget(),
+      this.props.getCurrentViewTarget()
+    );
+    const displayDescription = this.state.desc;
 
     console.log(
-      "Rendering header form with fileSelectOptions: ",
-      this.state.fileSelectOptions
+      "Rendering header form with availableTracks: ",
+      this.state.availableTracks
     );
 
-    const DataPositionFormRowComponent = <DataPositionFormRow
-      handleGoLeft={this.handleGoLeft}
-      handleGoRight={this.handleGoRight}
-      handleGoButton={this.handleGoButton}
-      uploadInProgress={this.state.uploadInProgress}
-      getCurrentViewTarget={this.props.getCurrentViewTarget}
-      viewTargetHasChange={viewTargetHasChange}
-    />
+    const DataPositionFormRowComponent = (
+      <DataPositionFormRow
+        handleGoLeft={this.handleGoLeft}
+        handleGoRight={this.handleGoRight}
+        handleGoButton={this.handleGoButton}
+        uploadInProgress={this.state.uploadInProgress}
+        getCurrentViewTarget={this.props.getCurrentViewTarget}
+        viewTargetHasChange={viewTargetHasChange}
+        canGoLeft={this.canGoLeft(determineRegionIndex(this.state.region, this.state.regionInfo))}
+        canGoRight={this.canGoRight(determineRegionIndex(this.state.region, this.state.regionInfo))}
+      />
+    );
+
+    
 
     return (
       <div>
-        {errorDiv}
-        <Container fluid={true}>
+        <Container>
+          <Row>
+            <Col>{errorDiv}</Col>
+          </Row>
           <Row>
             <Col md="auto">
               <img src="./logo.png" alt="Logo" />
@@ -709,7 +1038,6 @@ class HeaderForm extends Component {
               >
                 Data:
               </Label>
-
               <select
                 type="select"
                 value={
@@ -725,7 +1053,7 @@ class HeaderForm extends Component {
                 {dataSourceDropdownOptions}
               </select>
               &nbsp;
-              {mountedFilesFlag && (
+              {customFilesFlag && (
                 <React.Fragment>
                   <Label
                     for="bedSelectInput"
@@ -734,19 +1062,17 @@ class HeaderForm extends Component {
                     BED file:
                   </Label>
                   &nbsp;
-                  <SelectionDropdown
+                  <BedFileDropdown
                     className="customDataMounted dropdown mb-2 mr-sm-4 mb-sm-0"
                     id="bedSelect"
                     inputId="bedSelectInput"
                     value={this.state.bedSelect}
                     onChange={this.handleBedChange}
-                    options={this.state.bedSelectOptions}
+                    options={this.state.availableBeds}
                   />
                   &nbsp;
                 </React.Fragment>
-
               )}
-
               {!examplesFlag && (
                 <RegionInput
                   pathNames={this.state.pathNames}
@@ -755,50 +1081,78 @@ class HeaderForm extends Component {
                   region={this.state.region}
                 />
               )}
-
-              {mountedFilesFlag && 
-                <div style={{display: "flex"}}>
-                  {DataPositionFormRowComponent}
+              
+              {customFilesFlag && (
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    {DataPositionFormRowComponent}
+                  </div>
+                  <div className="d-flex justify-content-end align-items-start flex-shrink-0">
+                  {(
+                    <>
+                      <Button
+                        onClick={this.togglePopup}
+                        outline
+                        active={this.state.simplify || this.state.removeSequences}
+                      >
+                      <FontAwesomeIcon icon={faGear} /> Simplify
+                      </Button>
+                      <PopupDialog open={this.state.popupOpen} close={this.togglePopup} width="400px">
+                        <div style={{ height: "10vh"}}>
+                          {/* Toggle for simplify small variants */}
+                          <label className="d-flex align-items-center justify-content-between" style={{ marginBottom: "10px"}}>
+                            <span>Remove Small Variants</span>
+                            <Switch onChange={this.toggleSimplify} checked={this.state.simplify} />
+                          </label>
+                          {/* Toggle for remove node sequences */}
+                          <label className="d-flex align-items-center justify-content-between">
+                            <span>Remove Node Sequences</span>
+                            <Switch onChange={this.toggleIncludeSequences} checked={this.state.removeSequences} />
+                          </label>
+                        </div>
+                      </PopupDialog>
+                    </>
+                  )}
                   <TrackPicker
                     tracks={this.state.tracks}
-                    availableTracks={this.state.fileSelectOptions}
+                    availableTracks={this.state.availableTracks}
                     onChange={this.handleInputChange}
+                    handleFileUpload={this.handleFileUpload}
                   ></TrackPicker>
+                  </div>
                 </div>
-              }
-
-              {uploadFilesFlag && (
-                <FileUploadFormRow
-                  apiUrl={this.props.apiUrl}
-                  getPathNames={this.getPathNames}
-                  handleInputChange={this.handleInputChange}
-                  handleFileUpload={this.handleFileUpload}
-                  showFileSizeAlert={this.showFileSizeAlert}
-                  setUploadInProgress={this.setUploadInProgress}
-                />
               )}
+              <Row>
+                <Alert
+                  color="danger"
+                  isOpen={this.state.fileSizeAlert}
+                  toggle={() => {
+                    this.setState({ fileSizeAlert: false });
+                  }}
+                  className="mt-3"
+                >
+                  <strong>File size too big! </strong>
+                  You may only upload files with a maximum size of{" "}
+                  {MAX_UPLOAD_SIZE_DESCRIPTION}.
+                </Alert>
 
-              <Alert
-                color="danger"
-                isOpen={this.state.fileSizeAlert}
-                toggle={() => {
-                  this.setState({ fileSizeAlert: false });
-                }}
-                className="mt-3"
-              >
-                <strong>File size too big! </strong>
-                You may only upload files with a maximum size of{" "}
-                {MAX_UPLOAD_SIZE_DESCRIPTION}.
-              </Alert>
-
-              {examplesFlag ? (
-                <ExampleSelectButtons
-                  setDataOrigin={this.props.setDataOrigin}
-                  setColorSetting={this.props.setColorSetting}
-                />
-              ) : (
-                !mountedFilesFlag && DataPositionFormRowComponent 
-              )}
+                {examplesFlag ? (
+                  <ExampleSelectButtons
+                    setDataOrigin={this.props.setDataOrigin}
+                    setColorSetting={this.props.setColorSetting}
+                  />
+                ) : (
+                  !customFilesFlag && DataPositionFormRowComponent
+                )}
+              </Row>
+              {displayDescription ? (
+                <div style={{ marginTop: "10px" }}>
+                  <FormHelperText> {"Region Description: "} </FormHelperText>
+                  <FormHelperText style={{ fontWeight: "bold" }}>
+                    {this.state.desc}
+                  </FormHelperText>
+                </div>
+              ) : null}
             </Col>
           </Row>
         </Container>
@@ -808,12 +1162,12 @@ class HeaderForm extends Component {
 }
 
 HeaderForm.propTypes = {
-  apiUrl: PropTypes.string.isRequired,
   dataOrigin: PropTypes.string.isRequired,
   setColorSetting: PropTypes.func.isRequired,
   setDataOrigin: PropTypes.func.isRequired,
   setCurrentViewTarget: PropTypes.func.isRequired,
   defaultViewTarget: PropTypes.any, // Header Form State, may be null if no params in URL. see Types.ts
+  APIInterface: PropTypes.object.isRequired,
 };
 
 export default HeaderForm;

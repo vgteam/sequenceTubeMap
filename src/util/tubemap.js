@@ -10,7 +10,9 @@
 /* eslint no-return-assign: "off" */
 import * as d3 from "d3";
 import "d3-selection-multi";
-import externalConfig from "../config.json";
+import "../config-client.js";
+import externalConfig from "../config-global.mjs";
+import { defaultTrackColors } from "../common.mjs";
 
 const deepEqual = require("deep-equal");
 
@@ -26,6 +28,7 @@ const greys = [
   "#000000",
 ];
 
+// Greys but with a special color for the first thing.
 const ygreys = [
   "#9467bd",
   "#d9d9d9",
@@ -139,10 +142,11 @@ const config = {
   clickableNodesFlag: false,
   showExonsFlag: false,
   // Options for the width of sequence nodes:
-  // 0...scale node width linear with number of bases within node
-  // 1...scale node width with log2 of number of bases within node
-  // 2...scale node width with log10 of number of bases within node
-  nodeWidthOption: 0,
+  // normal...scale node width linear with number of bases within node
+  // compressed...scale node width with log2 of number of bases within node
+  // small...scale node width with 1% of number of bases within node
+  // fixed...set fixed node width to 1 base
+  nodeWidthOption: "normal",
   showReads: true,
   showSoftClips: true,
   colorSchemes: {},
@@ -150,6 +154,8 @@ const config = {
   exonColors: "lightColors",
   hideLegendFlag: false,
   mappingQualityCutoff: 0,
+  // How far apart can nodes be before making a break in the coordinate bar?
+  nodeIntervalThreshold: 150,
   showInfoCallback: function (info) {
     alert(info);
   },
@@ -314,7 +320,7 @@ export function changeAllTracksVisibility(value) {
   let i = 0;
   while (i < inputTracks.length) {
     inputTracks[i].hidden = !value;
-    var checkbox = document.getElementById(`showTrack${i}`);
+    var checkbox = document.getElementById(`showTrack${inputTracks[i].id}`);
     checkbox.checked = value;
     i += 1;
   }
@@ -373,8 +379,14 @@ export function setColorSet(fileID, newColor) {
 }
 
 // sets which option should be used for calculating the node width from its sequence length
+/*
+  - normal: Node lengths are computed based on the sequence length, and the sequences are displayed
+  - compressed: Node lengths are computed based on the log of the sequence length, and the sequences aren't displayed
+  - small: Node lengths are computed based on the sequence length / 100, and the sequences aren't displayed
+  - fixed: Node lengths are set to 1 base unit, and the sequences aren't displayed
+ */
 export function setNodeWidthOption(value) {
-  if (value === 0 || value === 1 || value === 2) {
+  if (["normal", "compressed", "small", "fixed"].includes(value)) {
     if (config.nodeWidthOption !== value) {
       config.nodeWidthOption = value;
       if (svg !== undefined) {
@@ -383,6 +395,10 @@ export function setNodeWidthOption(value) {
       }
     }
   }
+}
+
+export function setColoredNodes(value) {
+  config.coloredNodes = value;
 }
 
 // sets callback function that would generate React popup of track information. The callback would
@@ -481,7 +497,6 @@ function createTubeMap() {
   generateLaneAssignment();
 
   if (config.showExonsFlag === true && bed !== null) addTrackFeatures();
-  generateNodeXCoords();
 
   if (reads && config.showReads) {
     generateReadOnlyNodeAttributes();
@@ -498,6 +513,8 @@ function createTubeMap() {
     });
   }
 
+  generateNodeXCoords();
+
   generateSVGShapesFromPath(nodes, tracks);
   if (DEBUG) {
     console.log("Tracks:");
@@ -511,20 +528,35 @@ function createTubeMap() {
   alignSVG(nodes, tracks);
   defineSVGPatterns();
 
-  drawTrackRectangles(trackRectangles);
-  drawTrackCurves();
-  drawReversalsByColor(trackCorners, trackVerticalRectangles);
-  drawTrackRectangles(trackRectanglesStep3);
-  drawTrackRectangles(trackRectangles, "read");
-  drawTrackCurves("read");
+  // all drawn tracks are grouped
+  let trackGroup = svg.append("g").attr("class", "track");
+  drawTrackRectangles(trackRectangles, "haplo", trackGroup);
+  drawTrackCurves("haplo", trackGroup);
+  drawReversalsByColor(
+    trackCorners,
+    trackVerticalRectangles,
+    "haplo",
+    trackGroup
+  );
+  drawTrackRectangles(trackRectanglesStep3, "haplo", trackGroup);
+  drawTrackRectangles(trackRectangles, "read", trackGroup);
+  drawTrackCurves("read", trackGroup);
 
   // draw only those nodes which have coords assigned to them
   const dNodes = removeUnusedNodes(nodes);
-  drawReversalsByColor(trackCorners, trackVerticalRectangles, "read");
-  drawNodes(dNodes);
-  if (config.nodeWidthOption === 0) drawLabels(dNodes);
+  drawReversalsByColor(
+    trackCorners,
+    trackVerticalRectangles,
+    "read",
+    trackGroup
+  );
+
+  // all drawn nodes are grouped
+  let nodeGroup = svg.append("g").attr("class", "node");
+  drawNodes(dNodes, nodeGroup);
+  if (config.nodeWidthOption === "normal") drawLabels(dNodes);
   if (trackForRuler !== undefined) drawRuler();
-  if (config.nodeWidthOption === 0) drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
+  if (config.nodeWidthOption === "normal") drawMismatches(); // TODO: call this before drawLabels and fix d3 data/append/enter stuff
   if (DEBUG) {
     console.log(`number of tracks: ${numberOfTracks}`);
     console.log(`number of nodes: ${numberOfNodes}`);
@@ -637,14 +669,16 @@ function placeReads() {
 
   // Space out read tracks if multiple exist
   let topMargin = allSources.length > 1 ? READ_WIDTH : 0;
-  for (let source of allSources) {
-    // Go through all source tracks in order
-    sortedNodes.forEach((node) => {
-      // And for each node, place these reads in it.
+  sortedNodes.forEach((node) => {
+    // For each node
+    for (let source of allSources) {
+      // Go through all source tracks in order
+      
+      // Place the reads from this source in this node.
       // Use a margin to separate multiple read tracks if we have them.
       placeReadSet(readsBySource[source], node, topMargin);
-    });
-  }
+    }
+  });
 
   // place read segments which are without node
   const bottomY = calculateBottomY();
@@ -652,15 +686,53 @@ function placeReads() {
   reads.forEach((read, idx) => {
     read.path.forEach((element, pathIdx) => {
       if (!element.hasOwnProperty("y")) {
+        // previous y value from pathIdx - 1 might not exist yet if that segment is also without node 
+        // use previous y value from last segment with node instead 
+        let lastIndex = pathIdx - 1;
+        let previousVisitToNode;
+        while ((previousVisitToNode?.node === null || !previousVisitToNode?.node) && lastIndex >= 0) {
+          previousVisitToNode = reads[idx].path[lastIndex];
+          lastIndex = lastIndex - 1;
+        }
+
+        let previousValidY = previousVisitToNode?.y;
+        let previousValidNode = previousVisitToNode?.node;
+
+        // sometimes, elements without nodes are between 2 segments going to a node we've already visited, from the same direction
+        // this means we're looping back to a node we've already been to, and we should sort in reverse
+        
+        // Find the next node in our path
+        let nextPathIndex = pathIdx + 1
+        let nextVisitToNode = reads[idx].path[nextPathIndex];
+        while ((nextVisitToNode?.node === null || !nextVisitToNode?.node) && nextPathIndex < reads[idx].path.length) {
+          nextVisitToNode = reads[idx].path[nextPathIndex];
+          nextPathIndex = nextPathIndex + 1;
+        }
+
+        // Specifically referring to segments between a cycle that's traversing from right to left
+        let betweenCycleReverseTraversal = 
+        // A segment can be between a cycle if it there are nodes on both sides
+        (nextVisitToNode && previousVisitToNode) &&
+        // Make sure the visitToNode objects are what we expect
+        (typeof previousVisitToNode.order !== "undefined" && typeof nextVisitToNode.order !== "undefined" && typeof nextVisitToNode.isForward !== "undefined" && typeof previousVisitToNode.isForward !== "undefined") &&
+        // A segment is between a cycle if the next node it visits is behind the previous node it visited
+        ((previousVisitToNode.order > nextVisitToNode.order) ||
+        // A segment can also be between a cycle if it's visiting the same node it just visited in the same direction
+        (nextVisitToNode.order === previousVisitToNode.order && nextVisitToNode.isForward === previousVisitToNode.isForward));
+
+        reads[idx].path[pathIdx].betweenCycleReverseTraversal = betweenCycleReverseTraversal;
+
         elementsWithoutNode.push({
           readIndex: idx,
           pathIndex: pathIdx,
-          previousY: reads[idx].path[pathIdx - 1].y,
+          previousY: previousValidY,
+          previousNode: previousValidNode
         });
       }
     });
   });
-  elementsWithoutNode.sort(compareNoNodeReadsByPreviousY);
+
+  elementsWithoutNode.sort(compareNoNodeReads);
   elementsWithoutNode.forEach((element) => {
     const segment = reads[element.readIndex].path[element.pathIndex];
     segment.y = bottomY[segment.order];
@@ -804,37 +876,82 @@ function setOccupiedUntil(map, read, pathIndex, y, node) {
   }
 }
 
-// compare read segments which are outside of nodes
-// by the y-coord of where they are coming from
-function compareNoNodeReadsByPreviousY(a, b) {
-  const segmentA = reads[a.readIndex].path[a.pathIndex];
-  const segmentB = reads[b.readIndex].path[b.pathIndex];
-  if (segmentA.order === segmentB.order) {
+// compare read segments which are outside of nodes to sort them in a good horizontal
+// and then vertical display order.
+function compareNoNodeReads(a, b) {
+  const readA = reads[a.readIndex];
+  const readB = reads[b.readIndex];
+  const segmentA = readA.path[a.pathIndex];
+  const segmentB = readB.path[b.pathIndex];
+  // Sort by order by segments
+  if (segmentA.order !== segmentB.order) {
+    return segmentA.order - segmentB.order;
+  } 
+  // Sort by reads' source track
+  if (readA.sourceTrackID !== readB.sourceTrackID){
+    return readA.sourceTrackID - readB.sourceTrackID;
+  }
+  // Sort by order of previous node
+  const prevNodeA = nodes[a.previousNode];
+  const prevNodeB = nodes[b.previousNode];
+  if (a.previousNode && b.previousNode){
+    if (prevNodeA.order !== prevNodeB.order){
+      return prevNodeA.order - prevNodeB.order;
+    }
+  }
+  // We want to sort in reverse order when the segment is along the reverse-going part of a cycle.
+  // This ensures a loop that starts on the outside, stays on the outside,
+  // and rolls up in order with other loops.
+  if (segmentA?.betweenCycleReverseTraversal && segmentB?.betweenCycleReverseTraversal) {
+    return b.previousY - a.previousY;
+  } else {
     return a.previousY - b.previousY;
   }
-  return segmentA.order - segmentB.order;
 }
 
 // compare read segments by where they are going to
-function compareReadOutgoingSegmentsByGoingTo(a, b) {
-  let pathIndexA = a[1];
-  let pathIndexB = b[1];
-  // let readA = reads[a[0]]
-  // let nodeIndexA = readA.path[pathIndexA].node;
-  let nodeA = nodes[reads[a[0]].path[pathIndexA].node];
-  let nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+function compareReadOutgoingSegmentsByGoingTo([readIndexA, pathIndexA], [readIndexB, pathIndexB]) {
+  // Expect two arrays both containing 2 integers.
+  // The first index of each array contains the read index
+  // The second index of each array contains the path index
+
+  // Segments are first sorted by the y value of their last node,
+  // then by the node they end on,
+  // then by length in final node
+  let previousValidYA = null;
+  let previousValidYB = null;
+  let lastPathIndexA = reads[readIndexA].path.length - 1;
+  let lastPathIndexB = reads[readIndexB].path.length - 1;
+  while ((previousValidYA === null || !previousValidYA) && lastPathIndexA >= 0) {
+    previousValidYA = reads[readIndexA].path[lastPathIndexA].y;
+    lastPathIndexA -= 1;
+  }
+  while ((previousValidYB === null || !previousValidYB) && lastPathIndexB >= 0) {
+    previousValidYB = reads[readIndexB].path[lastPathIndexB].y;
+    lastPathIndexB -= 1;
+  }
+  
+  if (previousValidYA && previousValidYB) {
+    return previousValidYA - previousValidYB;
+  }
+
+  // Couldn't find a valid y value for at least one of the reads, sort by which node reads end on
+  let nodeA = nodes[reads[readIndexA].path[pathIndexA].node];
+  let nodeB = nodes[reads[readIndexB].path[pathIndexB].node];
+  // Follow the reads' paths until we find the node they diverge at
+  // Or, they go through all the same nodes and we do a tiebreaker at the end
   while (nodeA !== null && nodeB !== null && nodeA === nodeB) {
-    if (pathIndexA < reads[a[0]].path.length - 1) {
+    if (pathIndexA < reads[readIndexA].path.length - 1) {
       pathIndexA += 1;
-      while (reads[a[0]].path[pathIndexA].node === null) pathIndexA += 1; // skip null nodes in path
-      nodeA = nodes[reads[a[0]].path[pathIndexA].node];
+      while (reads[readIndexA].path[pathIndexA].node === null) pathIndexA += 1; // skip null nodes in path
+      nodeA = nodes[reads[readIndexA].path[pathIndexA].node]; // the next node a is going to
     } else {
       nodeA = null;
     }
-    if (pathIndexB < reads[b[0]].path.length - 1) {
+    if (pathIndexB < reads[readIndexB].path.length - 1) {
       pathIndexB += 1;
-      while (reads[b[0]].path[pathIndexB].node === null) pathIndexB += 1; // skip null nodes in path
-      nodeB = nodes[reads[b[0]].path[pathIndexB].node];
+      while (reads[readIndexB].path[pathIndexB].node === null) pathIndexB += 1; // skip null nodes in path
+      nodeB = nodes[reads[readIndexB].path[pathIndexB].node]; // the next node b is going to
     } else {
       nodeB = null;
     }
@@ -845,10 +962,13 @@ function compareReadOutgoingSegmentsByGoingTo(a, b) {
   }
   if (nodeB !== null) return -1; // nodeB not null, nodeA null
   // both nodes are null -> both end in the same node
-  const beginDiff = reads[a[0]].firstNodeOffset - reads[b[0]].firstNodeOffset;
+  const beginDiff = reads[readIndexA].firstNodeOffset - reads[readIndexB].firstNodeOffset;
   if (beginDiff !== 0) return beginDiff;
-  // break tie: both reads cover the same nodes and begin at the same position -> compare by endPosition
-  return reads[a[0]].finalNodeCoverLength - reads[b[0]].finalNodeCoverLength;
+
+  // break tie: both reads cover the same nodes and begin at the same position
+
+  // One or both reads didn't have a previously valid Y value, compare by the endPosition of the read
+  return reads[readIndexA].finalNodeCoverLength - reads[readIndexB].finalNodeCoverLength;
 }
 
 // compare read segments by (y-coord of) where they are coming from
@@ -873,6 +993,37 @@ function compareReadIncomingSegmentsByComingFrom(a, b) {
     [a[0], a[1] - 1],
     [b[0], b[1] - 1]
   ); // neither has y-property
+}
+
+// Compare tracks based on ordering at their first convergence
+function compareTrackByInitialOrdering(trackA, trackB) {
+  // Find the first node where the two tracks converge, sort by layer
+  if (!trackA.hasOwnProperty("path")) return -1;
+  if (!trackB.hasOwnProperty("path")) return 1;
+
+  const pathA = trackA.path;
+  const pathB = trackB.path;
+
+  let AIndex = 0;
+  let BIndex = 0;
+  while (AIndex < pathA.length && BIndex < pathB.length) {
+    let trackAOrder = pathA[AIndex].order;
+    let trackBOrder = pathB[BIndex].order;
+    if (trackAOrder === trackBOrder && pathA[AIndex].node && pathB[BIndex].node) {
+      return pathB[BIndex].y - pathA[AIndex].y;
+    } else if (trackAOrder < trackBOrder) {
+      AIndex += 1;
+    } else if (trackAOrder > trackBOrder) {
+      BIndex += 1;
+    } else {
+      // Orders are equal but are traversing out of nodes
+      AIndex += 1;
+      BIndex += 1;
+    }
+  }
+
+  // Tracks do not converge, keep the same ordering
+  return 0;
 }
 
 // compare 2 reads which are completely within a single node
@@ -1183,6 +1334,30 @@ function getImageDimensions() {
   });
 }
 
+// Minimum zoom is a scaling factor that determines how far the graph can be zoomed out. This function determines
+// how small the graph needs to appear to fully fit onto the screen.
+// This factor is based on maxXCoordinate and maxYCoordinate, and the size of the svg's parent.
+function minZoom() {
+  let svgElement = document.getElementById(svgID.substring(1));
+  if (svgElement === null){
+    return 1;
+  }
+  // And find its parent holding element.
+  let parentElement = svgElement.parentNode;
+  return Math.min(
+    1,
+    parentElement.clientWidth / (maxXCoordinate + 10),
+    parentElement.clientHeight / (maxYCoordinate + 10)
+  );
+}
+
+// This needs to be the width of the ruler.
+// TODO: Tell the ruler drawing code.
+const RULER_WIDTH = 30;
+const NODE_MARGIN = 10;
+// This is how much space to let us pan, around the nodes as measure by getImageDimensions()
+const RAIL_SPACE = RULER_WIDTH + NODE_MARGIN;
+
 // align visualization to the top and left within svg and resize svg to correct size
 // enable zooming and panning
 function alignSVG() {
@@ -1192,48 +1367,54 @@ function alignSVG() {
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
 
-  svg.attr("height", maxYCoordinate - minYCoordinate + 50);
-  svg.attr("width", parentElement.offsetWidth);
-
   function zoomed() {
+    // Apply the panning/zooming transform
     const transform = d3.event.transform;
-    // vertical adjustment so that top of graph is at top of svg
-    // otherwise would violate translateExtent, which leads to graph "jumping" on next pan
-    transform.y = (25 - minYCoordinate) * transform.k;
     svg.attr("transform", transform);
-    const svg2 = d3.select(svgID);
-    // adjust height, so that vertical scroll bar is shown when necessary
-    svg2.attr(
-      "height",
-      (maxYCoordinate - minYCoordinate + 50) * d3.event.transform.k
-    );
-    // adjust width to compensate for verical scroll bar appearing
-    svg2.attr("width", document.getElementById("tubeMapSVG").clientWidth);
   }
 
-  const minZoom = Math.min(
-    1,
-    parentElement.offsetWidth / (maxXCoordinate + 10)
-  );
-  zoom = d3
-    .zoom()
+  zoom = d3.zoom();
+  zoom.on("zoom", zoomed);
+
+  function configureZoomBounds() {
+    // Configure panning and zooming, given the SVG parent's size on the page.
+
+    svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
+    svg.attr("width", parentElement.clientWidth);
+
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
-    .extent([
-      [0, 0],
-      [svg.attr("width"), svg.attr("height")],
-    ])
-    .scaleExtent([minZoom, 8])
-    .translateExtent([
-      [-1, minYCoordinate - 25],
-      [maxXCoordinate + 2, maxYCoordinate + 25],
-    ])
-    .on("zoom", zoomed);
+    zoom
+      .extent([
+        [0, 0],
+        [parentElement.clientWidth, parentElement.clientHeight],
+      ])
+      .scaleExtent([minZoom(), 8])
+      .translateExtent([
+        [0, minYCoordinate - RAIL_SPACE],
+        [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
+      ]);
+  }
 
+  // Initially configure panning and zooming
+  configureZoomBounds();
   svg = svg.call(zoom).on("dblclick.zoom", null).append("g");
+  // Don't let scrolling bubble up from the visualization
+  parentElement.addEventListener("wheel", (e) => {
+    e.preventDefault();
+  });
+
+  // If the view area resizes, reconfigure the zoom
+  if (window.ResizeObserver) {
+    // This feature is in all current major browsers, but not in React's testing environment.
+    const resizeObserver = new window.ResizeObserver((resizes) => {
+      configureZoomBounds();
+    });
+    resizeObserver.observe(parentElement);
+  }
 
   // translate to correct position on initial draw
-  const containerWidth = parentElement.offsetWidth;
+  const containerWidth = parentElement.clientWidth;
   const xOffset =
     maxXCoordinate + 10 < containerWidth
       ? (containerWidth - maxXCoordinate - 10) / 2
@@ -1242,7 +1423,7 @@ function alignSVG() {
     .select(svgID)
     .call(
       zoom.transform,
-      d3.zoomIdentity.translate(xOffset, 25 - minYCoordinate)
+      d3.zoomIdentity.translate(xOffset, RAIL_SPACE - minYCoordinate)
     );
 }
 
@@ -1253,17 +1434,13 @@ export function zoomBy(zoomFactor) {
   // And find its parent holding element.
   let parentElement = svgElement.parentNode;
 
-  const minZoom = Math.min(
-    1,
-    parentElement.offsetWidth / (maxXCoordinate + 10)
-  );
   const maxZoom = 8;
   const width = parentElement.clientWidth;
 
   const transform = d3.zoomTransform(d3.select(svgID).node());
   const translateK = Math.min(
     maxZoom,
-    Math.max(transform.k * zoomFactor, minZoom)
+    Math.max(transform.k * zoomFactor, minZoom())
   );
   let translateX =
     width / 2.0 - ((width / 2.0 - transform.x) * translateK) / transform.k;
@@ -1776,15 +1953,18 @@ function generateNodeXCoords() {
 function calculateExtraSpace() {
   const leftSideEdges = [];
   const rightSideEdges = [];
+  const fallAngleAdjustment = [];
   const extra = [];
 
   for (let i = 0; i <= maxOrder; i += 1) {
     leftSideEdges.push(0);
     rightSideEdges.push(0);
+    fallAngleAdjustment.push(0);
   }
 
   tracks.forEach((track) => {
     for (let i = 1; i < track.path.length; i += 1) {
+      // Track is going to the same node, account for space taken up by edges looping around
       if (track.path[i].order === track.path[i - 1].order) {
         // repeat or translocation
         if (track.path[i].isForward === true) {
@@ -1792,14 +1972,24 @@ function calculateExtraSpace() {
         } else {
           rightSideEdges[track.path[i].order] += 1;
         }
+      } else {
+        // Track is going to a different node; account for space needed to limit rise/fall angle 
+        const yDifference = Math.abs(track.path[i].y - track.path[i - 1].y);
+        //TODO: Extra space should also be accounted when there are too many tracks curving at the nodes
+        fallAngleAdjustment[track.path[i].order] = Math.max(yDifference / 17.5, fallAngleAdjustment[track.path[i].order]);
       }
     }
   });
 
+
   extra.push(Math.max(0, leftSideEdges[0] - 1));
   for (let i = 1; i <= maxOrder; i += 1) {
+    // Extra space uses space needed for edges(tracks looping), or space needed to limit rise/fall angle, whichever is larger
     extra.push(
-      Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1)
+      Math.max(
+        Math.max(0, leftSideEdges[i] - 1) + Math.max(0, rightSideEdges[i - 1] - 1),
+        fallAngleAdjustment[i]
+      )
     );
   }
   return extra;
@@ -2445,14 +2635,7 @@ function generateTrackColor(track, highlight) {
 
   const sourceID = track.sourceTrackID;
   if (!config.colorSchemes[sourceID]) {
-    if (track.hasOwnProperty("type") && track.type === "read") {
-      // Default to read colors
-      config.colorSchemes[sourceID] = externalConfig.defaultReadColorPalette;
-    } else {
-      // Default to haplotype colors
-      config.colorSchemes[sourceID] =
-        externalConfig.defaultHaplotypeColorPalette;
-    }
+    config.colorSchemes[sourceID] = defaultTrackColors(track.type);
   }
 
   if (track.hasOwnProperty("type") && track.type === "read") {
@@ -2475,12 +2658,14 @@ function generateTrackColor(track, highlight) {
       // Don't repeat the color of the first track (reference) to highilight is better.
       // TODO: Allow using color 0 for other schemes not the same as the one for the reference path.
       // TODO: Stop reads from taking this color?
-
-      const colorSet = getColorSet(config.colorSchemes[sourceID].mainPalette);
-      if (track.id === 0 || colorSet.length === 1) {
-        trackColor = colorSet[0];
+      const auxColorSet = getColorSet(config.colorSchemes[sourceID].auxPalette);
+      const primaryColorSet = getColorSet(
+        config.colorSchemes[sourceID].mainPalette
+      );
+      if (track.id === 0) {
+        trackColor = primaryColorSet[0];
       } else {
-        trackColor = colorSet[((track.id - 1) % (colorSet.length - 1)) + 1];
+        trackColor = auxColorSet[(track.id - 1) % auxColorSet.length];
       }
     } else {
       const colorSet = getColorSet(config.exonColors);
@@ -2520,8 +2705,7 @@ function getReadXEnd(read) {
 // position within the given node
 function getXCoordinateOfBaseWithinNode(node, base) {
   if (base > node.sequenceLength) return null; // equality is allowed
-  const nodeLeftX = node.x - 4;
-  const nodeRightX = node.x + node.pixelWidth + 4;
+  const [nodeLeftX, nodeRightX] = nodePixelCoordinatesInX(node);
   return nodeLeftX + (base / node.sequenceLength) * (nodeRightX - nodeLeftX);
 }
 
@@ -2559,6 +2743,9 @@ function generateSVGShapesFromPath() {
     }
   });
 
+  // Helps generation of verticalRectangles, correct increments of extraRight and extraLeft
+  tracks.sort(compareTrackByInitialOrdering);
+  
   tracks.forEach((track) => {
     highlight = "plain";
     trackColor = generateTrackColor(track, highlight);
@@ -2635,6 +2822,8 @@ function generateSVGShapesFromPath() {
             id: track.id,
             name: track.name,
             type: track.type,
+            nodeStart: track.path[i - 1]?.node,
+            nodeEnd: track.path[i]?.node
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -2655,6 +2844,8 @@ function generateSVGShapesFromPath() {
             id: track.id,
             name: track.name,
             type: track.type,
+            nodeStart: track.path[i - 1]?.node,
+            nodeEnd: track.path[i]?.node
           });
           xStart = xEnd;
           yStart = yEnd;
@@ -2893,6 +3084,8 @@ function createFeatureRectangle(
   return { xStart: rectXStart, highlight: currentHighlight };
 }
 
+
+
 const MIN_BEND_WIDTH = 7;
 
 function generateForwardToReverse(
@@ -2910,6 +3103,7 @@ function generateForwardToReverse(
   const yTop = Math.min(yStart, yEnd);
   const yBottom = Math.max(yStart, yEnd);
   const radius = MIN_BEND_WIDTH;
+
 
   trackVerticalRectangles.push({
     // elongate incoming rectangle a bit to the right
@@ -2943,6 +3137,7 @@ function generateForwardToReverse(
     name: trackName,
     type,
   }); // elongate outgoing rectangle a bit to the right
+
 
   let d = `M ${x + 5} ${yBottom}`;
   d += ` Q ${x + 5 + radius} ${yBottom} ${x + 5 + radius} ${yBottom - radius}`;
@@ -3038,8 +3233,7 @@ function generateReverseToForward(
 }
 
 // to avoid problems with wrong overlapping of tracks, draw them in order of their color
-function drawReversalsByColor(corners, rectangles, type) {
-  if (typeof type === "undefined") type = "haplo";
+function drawReversalsByColor(corners, rectangles, type, groupTrack) {
   const co = new Set();
   rectangles.forEach((rect) => {
     co.add(rect.color);
@@ -3047,14 +3241,20 @@ function drawReversalsByColor(corners, rectangles, type) {
   co.forEach((c) => {
     drawTrackRectangles(
       rectangles.filter(filterObjectByAttribute("color", c)),
-      type
+      type,
+      groupTrack
     );
-    drawTrackCorners(corners.filter(filterObjectByAttribute("color", c)), type);
+    drawTrackCorners(
+      corners.filter(filterObjectByAttribute("color", c)),
+      type,
+      groupTrack
+    );
   });
 }
 
 // draws nodes by building svg-path for border and filling it with transparent white
-function drawNodes(dNodes) {
+
+function drawNodes(dNodes, groupNode) {
   let x;
   let y;
 
@@ -3106,8 +3306,10 @@ function drawNodes(dNodes) {
     }
   });
 
-  svg
-    .selectAll(".node")
+  console.log("config:", config);
+
+  groupNode
+    .selectAll("node")
     .data(dNodes)
     .enter()
     .append("path")
@@ -3117,12 +3319,28 @@ function drawNodes(dNodes) {
     .on("mouseout", nodeMouseOut)
     .on("dblclick", nodeDoubleClick)
     .on("click", nodeSingleClick)
-    .style("fill", config.transparentNodesFlag ? "none" : "#fff")
-    .style("fill-opacity", config.showExonsFlag ? "0.4" : "0.6")
-    .style("stroke", "black")
+    .style("fill", (d) => colorNodes(d.name)["fill"])
+    .style("fill-opacity", (d) => colorNodes(d.name)["fill-opacity"])
+    .style("stroke", (d) => colorNodes(d.name)["outline"])
     .style("stroke-width", "2px")
     .append("svg:title")
     .text((d) => getPopUpNodeText(d));
+}
+
+// Given a node name, return an object with "fill", "fill-opacity", and "outline"
+// keys describing what colors should be used to draw it.
+function colorNodes(nodeName) {
+  let nodesColors = {};
+  if (config.coloredNodes.includes(nodeName)) {
+    nodesColors["fill"] = "#ffc0cb";
+    nodesColors["fill-opacity"] = "0.4";
+    nodesColors["outline"] = "#ff0000";
+  } else {
+    nodesColors["fill"] = "#ffffff";
+    nodesColors["fill-opacity"] = "0.4";
+    nodesColors["outline"] = "#000000";
+  }
+  return nodesColors;
 }
 
 function getPopUpNodeText(node) {
@@ -3169,10 +3387,7 @@ function nodeSingleClick() {
       currentNode.internalReads.length +
       currentNode.outgoingReads.length,
   ]);
-  nodeAttributes.push([
-    "Total Visits:",
-    numReadsVisitNode(currentNode),
-  ]);
+  nodeAttributes.push(["Total Visits:", numReadsVisitNode(currentNode)]);
   nodeAttributes.push(["Coverage:", coverage(currentNode, reads)]);
 
   console.log("Single Click");
@@ -3214,6 +3429,15 @@ export function coverage(node, allReads) {
     let readPathIndex = readVisit[1];
     let currRead = allReads[readNum];
     let numNodes = currRead.sequenceNew.length;
+    // identify deletion: if there's a deletion, then those bases must be deleted from total base count
+    for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
+      currRead.sequenceNew[i].mismatches.forEach((mm) => {
+        if (mm.type === "deletion") {
+          console.log("this read has a deletion", currRead);
+          countBases -= mm.length;
+        }
+      });
+    }
     //  if current node is the last node on the read path, add the finalNodeCoverLength number of bases
     if (numNodes === readPathIndex + 1) {
       countBases += currRead.finalNodeCoverLength;
@@ -3228,12 +3452,30 @@ export function coverage(node, allReads) {
     //  indicating read's starting and ending points within the node.
     let readNum = readVisit;
     let currRead = allReads[readNum];
+    // identify deletion: if there's a deletion, then those bases must be deleted from total base count
+    for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
+      currRead.sequenceNew[i].mismatches.forEach((mm) => {
+        if (mm.type === "deletion") {
+          console.log("this read has a deletion", currRead);
+          countBases -= mm.length;
+        }
+      });
+    }
     countBases += currRead.finalNodeCoverLength - currRead.firstNodeOffset;
   }
   // outgoing reads
   for (let readVisit of node.outgoingReads) {
     let readNum = readVisit[0];
     let currRead = allReads[readNum];
+    // identify deletion: if there's a deletion, then those bases must be deleted from total base count
+    for (let i = 0; i < currRead.sequenceNew.length; i += 1) {
+      currRead.sequenceNew[i].mismatches.forEach((mm) => {
+        if (mm.type === "deletion") {
+          console.log("this read has a deletion", currRead);
+          countBases -= mm.length;
+        }
+      });
+    }
     // coverage of outgoing read would be the the distance between the end of the node and the
     //  starting point of the read within the node
     countBases += node.sequenceLength - currRead.firstNodeOffset;
@@ -3244,7 +3486,7 @@ export function coverage(node, allReads) {
 
 // draw seqence labels for nodes
 function drawLabels(dNodes) {
-  if (config.nodeWidthOption === 0) {
+  if (config.nodeWidthOption === "normal") {
     svg
       .selectAll("text")
       .data(dNodes)
@@ -3260,6 +3502,42 @@ function drawLabels(dNodes) {
   }
 }
 
+function nodePixelCoordinatesInX(node) {
+  // Add and subtract 4 to account for stroke width - TODO: figure out what the 4 means
+  const nodeLeftX = node.x - 4;
+  const nodeRightX = node.x + node.pixelWidth + 4;
+  return [nodeLeftX, nodeRightX];
+}
+
+// If nodes are spaced closely together (based on the threshold value) then those nodes would be grouped together
+//  in a larger interval. If the nodes are spaced further apart (based on the threshold) then those nodes would form a 
+//  separate interval. If the distance between the nodes is equal to the threshold, then the nodes would be grouped together
+//  in a larger interval
+export function axisIntervals(nodePixelCoordinates, threshold) {
+  if (nodePixelCoordinates.length === 0){
+    return [];
+  } else if (nodePixelCoordinates.length === 1){
+    return nodePixelCoordinates;
+  }
+  // Sorting an array in ascending order based on first element of subarrays - from https://stackoverflow.com/questions/48634944/sort-an-array-of-arrays-by-the-first-elements-in-the-nested-arrays
+  let nodePixelCoordinatesCopy = nodePixelCoordinates.slice(); // shallow copy
+  nodePixelCoordinatesCopy.sort((a, b) => a[0] - b[0]);
+  // https://keithwilliams-91944.medium.com/merge-intervals-solution-in-javascript-daa61b618ed4
+  let mergedIntervals = [nodePixelCoordinatesCopy[0].slice()];
+  for (let i = 1; i < nodePixelCoordinatesCopy.length; i++){
+    // compute the distance between the current interval and the current coordinate pair's starting x-value, and compare it to a threshold. If it's less than the threshold, merge the intervals.
+    if (nodePixelCoordinatesCopy[i][0] - mergedIntervals[mergedIntervals.length - 1][1] <= threshold) {
+      // update ending position to the maximum of current end value and end of current interval - can be thought of as extending the interval
+      mergedIntervals[mergedIntervals.length - 1][1] = Math.max(mergedIntervals[mergedIntervals.length - 1][1], nodePixelCoordinatesCopy[i][1]);
+    } else {
+      // new interval
+      mergedIntervals.push(nodePixelCoordinatesCopy[i].slice());
+    }
+  }
+  return mergedIntervals;
+}
+
+
 function drawRuler() {
   let rulerTrackIndex = 0;
   while (tracks[rulerTrackIndex].name !== trackForRuler) rulerTrackIndex += 1;
@@ -3267,7 +3545,7 @@ function drawRuler() {
 
   // How often should we have a tick in bp?
   let markingInterval = 100;
-  if (config.nodeWidthOption === 0) markingInterval = 20;
+  if (config.nodeWidthOption === "normal") markingInterval = 20;
   // How close may markings be in image space?
   const markingClearance = 80;
 
@@ -3305,7 +3583,7 @@ function drawRuler() {
       : // Otherwise, add them to the left side
         indexIntoVisitToMark;
 
-    if (config.nodeWidthOption !== 0 && !is_region) {
+    if (config.nodeWidthOption !== "normal" && !is_region) {
       // Actually always mark at an edge of the node, if we are scaling the node nonlinearly
       // and if we are not highlighting the input region
       offsetIntoNodeForward = currentNodeIsReverse
@@ -3323,6 +3601,9 @@ function drawRuler() {
 
   let start_region = Number(inputRegion[0]);
   let end_region = Number(inputRegion[1]);
+
+  let intervalsVisitedByNodes = [];
+
   for (let i = 0; i < rulerTrack.indexSequence.length; i++) {
     // Walk along the ruler track in ascending coordinate order.
     const nodeIndex =
@@ -3332,6 +3613,10 @@ function drawRuler() {
           : i
       ];
     const currentNode = nodes[Math.abs(nodeIndex)];
+
+    // Adding node X start and end positions into an array
+    intervalsVisitedByNodes.push(nodePixelCoordinatesInX(currentNode));
+
     // Each node may actually have the track's coordinates go through it
     // backward. In fact, the whole track may be laid out backward.
     // So xor the reverse flags, which we assume to be bools
@@ -3381,7 +3666,7 @@ function drawRuler() {
         currentNodeIsReverse
       );
 
-      if (config.nodeWidthOption === 0 || !alreadyMarkedNode) {
+      if (config.nodeWidthOption === "normal" || !alreadyMarkedNode) {
         // This is a mark we are not filtering due to node compression.
         // Make the mark
         ticks.push([nextUnmarkedIndex, xCoordOfMarking]);
@@ -3394,6 +3679,9 @@ function drawRuler() {
     // Advance to the next node
     indexOfFirstBaseInNode += currentNode.sequenceLength;
   }
+  
+  // merge intervals
+  var mergedIntervals = axisIntervals(intervalsVisitedByNodes, config.nodeIntervalThreshold);
 
   // Sort ticks on X coordinate
   ticks.sort(([bp1, x1], [bp2, x2]) => x1 > x2);
@@ -3414,30 +3702,83 @@ function drawRuler() {
   // plot ticks highlighting the region
   ticks_region.forEach((tick) => drawRulerMarkingRegion(tick[0], tick[1]));
 
-  // draw horizontal line
-  svg
+  // draw horizontal line for each interval
+  
+  let axisY = minYCoordinate - 10;
+  mergedIntervals.forEach((interval) => {
+    svg
+      .append("line")
+      .attr("x1", interval[0])
+      .attr("y1", axisY)
+      .attr("x2", interval[1])
+      .attr("y2", axisY)
+      .attr("stroke-width", 1)
+      .attr("stroke", "black")
+    
+    // starting vertical line
+    svg
     .append("line")
-    .attr("x1", 0)
-    .attr("y1", minYCoordinate - 10)
-    .attr("x2", maxXCoordinate)
-    .attr("y2", minYCoordinate - 10)
+    .attr("x1", interval[0])
+    .attr("y1", axisY - 5)
+    .attr("x2", interval[0])
+    .attr("y2", axisY + 5)
     .attr("stroke-width", 1)
-    .attr("stroke", "black");
+    .attr("stroke", "black")
 
+    // ending vertical line
+    svg
+    .append("line")
+    .attr("x1", interval[1])
+    .attr("y1", axisY - 5)
+    .attr("x2", interval[1])
+    .attr("y2", axisY + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black")
+  }
+);
+  
   // Plot all the ticks
-  ticks.forEach((tick) => drawRulerMarking(tick[0], tick[1]));
+  for (let i = 0; i < ticks.length; i++){
+    let tick = ticks[i];
+    // Figure out how to align the tick text, to keep the outermost labels inside
+    // the visible area
+    let align;
+    if (i === 0){
+      align = "start";
+    } else if (i === ticks.length - 1){
+      align = "end";
+    } else {
+      align = "middle";
+    }
+    drawRulerMarking(tick[0], tick[1], align);
+  }
 }
 
-function drawRulerMarking(sequencePosition, xCoordinate) {
+/// Draw an axis tick for the given sequence position (in bp) at the given pixel X
+/// coordinate. The text label can be aligned to the tick mark by its "start", "end",
+/// or "middle".
+function drawRulerMarking(sequencePosition, xCoordinate, align) {
+  let axisY = minYCoordinate - 10;
   svg
     .append("text")
+    .attr("text-anchor", align)
     .attr("x", xCoordinate)
-    .attr("y", minYCoordinate - 13)
-    .text(`|${sequencePosition}`)
+    .attr("y", minYCoordinate - 18)
+    .text(`${sequencePosition}`)
     .attr("font-family", fonts)
     .attr("font-size", "12px")
     .attr("fill", "black")
     .style("pointer-events", "none");
+
+    // vertical line
+    svg
+    .append("line")
+    .attr("x1", xCoordinate)
+    .attr("y1", axisY - 5)
+    .attr("x2", xCoordinate)
+    .attr("y2", axisY + 5)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black")
 }
 
 function drawRulerMarkingRegion(sequencePosition, xCoordinate) {
@@ -3455,11 +3796,10 @@ function filterObjectByAttribute(attribute, value) {
   return (item) => item[attribute] === value;
 }
 
-function drawTrackRectangles(rectangles, type) {
-  if (typeof type === "undefined") type = "haplo";
+function drawTrackRectangles(rectangles, type, groupTrack) {
   rectangles = rectangles.filter(filterObjectByAttribute("type", type));
 
-  svg
+  groupTrack
     .selectAll("trackRectangles")
     .data(rectangles)
     .enter()
@@ -3481,9 +3821,11 @@ function drawTrackRectangles(rectangles, type) {
     .text((d) => getPopUpTrackText(d.name));
 }
 
-function compareCurvesByLineChanges(a, b) {
-  if (a[6] < b[6]) return -1;
-  else if (a[6] > b[6]) return 1;
+function compareCurvesByXYStartValue(a, b) {
+  if (a.xStart < b.xStart) return 1;
+  else if (a.xStart > b.xStart) return -1;
+  else if (a.yStart > b.yStart) return 1;
+  else if (a.yStart < b.yStart) return -1;
   return 0;
 }
 
@@ -3675,27 +4017,64 @@ function defineSVGPatterns() {
     .attrs({ x: "4", y: "4", width: "2", height: "2", fill: "#8c564b" });
 }
 
-function drawTrackCurves(type) {
-  if (typeof type === "undefined") type = "haplo";
+function drawTrackCurves(type, groupTrack) {
+
   const myTrackCurves = trackCurves.filter(
     filterObjectByAttribute("type", type)
   );
 
-  myTrackCurves.sort(compareCurvesByLineChanges);
+  const groupedCurves = {};
 
+  // Group track curves based on if they have the same start and end node
   myTrackCurves.forEach((curve) => {
-    const xMiddle = (curve.xStart + curve.xEnd) / 2;
-    let d = `M ${curve.xStart} ${curve.yStart}`;
-    d += ` C ${xMiddle} ${curve.yStart} ${xMiddle} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
-    d += ` V ${curve.yEnd + curve.width}`;
-    d += ` C ${xMiddle} ${curve.yEnd + curve.width} ${xMiddle} ${
-      curve.yStart + curve.width
-    } ${curve.xStart} ${curve.yStart + curve.width}`;
-    d += " Z";
-    curve.path = d;
+    const key = `${curve.nodeStart}-${curve.nodeEnd}`;
+    if (!groupedCurves[key]) {
+      groupedCurves[key] = [];
+    }
+    groupedCurves[key].push(curve);
   });
 
-  svg
+  Object.values(groupedCurves).forEach((curveGroup) => {
+    // Control point adjustment range: 30% to 70% of the original x values
+    let adjustValue = 0.3;
+    let adjustIncrement = 0.4 / curveGroup.length;
+
+    // Ignore Beziar Curve skewing when a group is not too big
+    if (curveGroup.length <= 5) {
+      adjustValue = 0.5;
+      adjustIncrement = 0;
+    }
+
+    // Sort curve groups by their starting y value
+    curveGroup.sort(compareCurvesByXYStartValue);
+
+    curveGroup.forEach((curve) => {
+      let xAdjusted = null;
+      // NextAdjusted is used to try to draw a parallel curve on the way back
+      let xNextAdjusted = null;
+      // Determine if the curve is going up or down
+      if (curve.yStart < curve.yEnd) {
+        xAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * (1 - adjustValue);
+        adjustValue += adjustIncrement;
+        xNextAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * (1 - adjustValue);
+      } else {
+        xAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * adjustValue;
+        adjustValue += adjustIncrement;
+        xNextAdjusted = curve.xStart + (curve.xEnd - curve.xStart) * adjustValue;
+      }
+      let d = `M ${curve.xStart} ${curve.yStart}`;
+      d += ` C ${xAdjusted} ${curve.yStart} ${xAdjusted} ${curve.yEnd} ${curve.xEnd} ${curve.yEnd}`;
+      d += ` V ${curve.yEnd + curve.width}`;
+      d += ` C ${xNextAdjusted} ${curve.yEnd + curve.width} ${xNextAdjusted} ${
+        curve.yStart + curve.width
+      } ${curve.xStart} ${curve.yStart + curve.width}`;
+      d += " Z";
+      curve.path = d;
+
+    })
+  });
+
+  groupTrack
     .selectAll("trackCurves")
     .data(trackCurves)
     .enter()
@@ -3714,11 +4093,10 @@ function drawTrackCurves(type) {
     .text((d) => getPopUpTrackText(d.name));
 }
 
-function drawTrackCorners(corners, type) {
-  if (typeof type === "undefined") type = "haplo";
+function drawTrackCorners(corners, type, groupTrack) {
   corners = corners.filter(filterObjectByAttribute("type", type));
 
-  svg
+  groupTrack
     .selectAll("trackCorners")
     .data(corners)
     .enter()
@@ -3743,6 +4121,7 @@ function drawLegend() {
   content +=
     '<table class="table-sm table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
   const listeners = [];
+  // This is in terms of tracks, but when we change visibility we need to touch inputTracks, so we need to set up listeners by track ID.
   for (let i = 0; i < tracks.length; i += 1) {
     if (tracks[i].type === "haplo") {
       content += `<tr><td style="text-align:right"><div class="color-box" style="background-color: ${generateTrackColor(
@@ -3754,17 +4133,17 @@ function drawLegend() {
       } else {
         content += `<td>${tracks[i].id}</td>`;
       }
-      content += `<td><input type="checkbox" checked=true id="showTrack${i}"></td>`;
-      listeners.push(i);
+      content += `<td><input type="checkbox" checked=true id="showTrack${tracks[i].id}"></td>`;
+      listeners.push(tracks[i].id);
     }
   }
   content += "</table";
   // $('#legendDiv').html(content);
   document.getElementById("legendDiv").innerHTML = content;
-  listeners.forEach((i) => {
+  listeners.forEach((id) => {
     document
-      .getElementById(`showTrack${i}`)
-      .addEventListener("click", () => changeTrackVisibility(i), false);
+      .getElementById(`showTrack${id}`)
+      .addEventListener("click", () => changeTrackVisibility(id), false);
   });
   document
     .getElementById("selectall")
@@ -3808,6 +4187,9 @@ function getTrackByID(trackID) {
 function trackMouseOver() {
   /* jshint validthis: true */
   const trackID = d3.select(this).attr("trackID");
+  // TODO: We want to also .raise() here, but it makes Firefox 124.0.2 on Mac
+  // lose the mouseout and immediately trigger another mouseover, if the mouse
+  // is over a curved section of a read.
   d3.selectAll(`.track${trackID}`).style("fill", "url(#patternA)");
 }
 
@@ -3847,6 +4229,26 @@ function trackDoubleClick() {
   createTubeMap();
 }
 
+// Takes a track and returns a string describing the nodes it passes through
+// In the format of >1>2<3>4, with the intergers being nodeIDs
+function getPathInfo(track) {
+  let result = [];
+  if (!track.sequence) {
+    return result;
+  }
+
+  for (const nodeID of track.sequence) {
+    // Node is approached backwards if "-" is present
+    if (nodeID.startsWith("-")) {
+      result.push("<", nodeID.substring(1));
+    } else {
+      result.push(">", nodeID);
+    }
+  }
+  
+  return result.join("");
+}
+
 function trackSingleClick() {
   /* jshint validthis: true */
   // Get the track ID as a number
@@ -3869,6 +4271,7 @@ function trackSingleClick() {
     track_attributes.push(["Score", current_track.score]);
     track_attributes.push(["CIGAR string", current_track.cigar_string]);
     track_attributes.push(["Mapping Quality", current_track.mapping_quality]);
+    track_attributes.push(["Path Info", getPathInfo(current_track)]);
   }
   console.log("Single Click");
   console.log("read path");
@@ -3901,7 +4304,7 @@ export function vgExtractNodes(vg) {
   vg.node.forEach((node) => {
     result.push({
       name: `${node.id}`,
-      sequenceLength: node.sequence.length,
+      sequenceLength: node.sequenceLength ?? node.sequence.length,
       seq: node.sequence,
     });
   });
@@ -3917,19 +4320,27 @@ function generateNodeWidth() {
   });
 
   switch (config.nodeWidthOption) {
-    case 1:
+    case "compressed":
       nodes.forEach((node) => {
         node.width = 1 + Math.log(node.sequenceLength) / Math.log(2);
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
-    case 2:
+    case "small":
       nodes.forEach((node) => {
         node.width = node.sequenceLength / 100;
         node.pixelWidth = Math.round((node.width - 1) * 8.401);
       });
       break;
-    default:
+    case "fixed":
+      // when there's no reads in the node, it should be a little wider
+      nodes.forEach((node) => {
+        console.log("node.sequenceLength:", node.sequenceLength);
+        node.width = 10;
+        node.pixelWidth = Math.round((node.width) * 8.401);
+      });
+      break;
+    case "normal":
       nodes.forEach((node) => {
         node.width = node.sequenceLength;
 
@@ -3939,7 +4350,7 @@ function generateNodeWidth() {
           .attr("x", 0)
           .attr("y", 100)
           .attr("id", "dummytext")
-          .text(node.seq.substr(1))
+          .text(node.seq ? node.seq.substr(1) : "A")
           .attr("font-family", fonts)
           .attr("font-size", "14px")
           .attr("fill", "black")
@@ -3952,6 +4363,9 @@ function generateNodeWidth() {
         }
         document.getElementById("dummytext").remove();
       });
+      break;
+    default:
+      throw new Error(`${config.nodeWidthOption} not implemented`)
   }
 }
 
@@ -4178,6 +4592,12 @@ export function vgExtractReads(
 
   for (let i = 0; i < myReads.length; i += 1) {
     const read = myReads[i];
+
+    if (!read.path) {
+      // Read does not have a path assigned, this is an unmapped read.
+      continue;
+    }
+
     const sequence = [];
     const sequenceNew = [];
     let firstIndex = -1; // index within mapping of the first node id contained in nodeNames

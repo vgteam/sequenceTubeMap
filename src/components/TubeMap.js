@@ -10,13 +10,16 @@ class TubeMap extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    console.log('Props:', this.props);
+    console.log("New node count:", (this.props.nodes || []).length);
+    console.log("New read count:", (this.props.reads || []).length);
+    console.log("Old node count:", (prevProps.nodes || []).length);
+    console.log("Old read count:", (prevProps.reads || []).length);
     if (!isEqual(this.props, prevProps)) {
-      console.log('Props have changed so re-creating tube map');
+      console.log("Props have changed so re-creating tube map");
       this.updateVisOptions();
       this.createTubeMap();
     } else {
-      console.log('Props have not changed so leaving existing tube map');
+      console.log("Props have not changed so leaving existing tube map");
     }
   }
 
@@ -33,23 +36,33 @@ class TubeMap extends Component {
 
   updateVisOptions() {
     const visOptions = this.props.visOptions;
-    visOptions.compressedView
-      ? tubeMap.setNodeWidthOption(1)
-      : tubeMap.setNodeWidthOption(0);
+    if (this.props.nodeSequences){
+      // If node sequences aren't removed
+      visOptions.compressedView
+      ? tubeMap.setNodeWidthOption("compressed")
+      : tubeMap.setNodeWidthOption("normal");
+    } else{
+      // If node sequences are removed
+      tubeMap.setNodeWidthOption("fixed");
+    }
     tubeMap.setMergeNodesFlag(visOptions.removeRedundantNodes);
     tubeMap.setTransparentNodesFlag(visOptions.transparentNodes);
     tubeMap.setShowReadsFlag(visOptions.showReads);
     tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
+    tubeMap.setColoredNodes(visOptions.coloredNodes);
 
     for (let key of Object.keys(visOptions.colorSchemes)) {
       // Apply color-by-mapping-quality parameter to all the schemes.
       // TODO: When we get individual controls, pass through individual track options.
-      let colorScheme = {...visOptions.colorSchemes[key], colorReadsByMappingQuality: visOptions.colorReadsByMappingQuality};
+      let colorScheme = {
+        ...visOptions.colorSchemes[key],
+        colorReadsByMappingQuality: visOptions.colorReadsByMappingQuality,
+      };
       // update tubemap colors
       tubeMap.setColorSet(key, colorScheme);
     }
     tubeMap.setMappingQualityCutoff(visOptions.mappingQualityCutoff);
-  }  
+  }
 
   render() {
     return <svg id="svg" alt="Rendered sequence tube map visualization" />;
@@ -61,7 +74,12 @@ TubeMap.propTypes = {
   tracks: PropTypes.array.isRequired,
   reads: PropTypes.array.isRequired,
   region: PropTypes.array.isRequired,
-  visOptions: PropTypes.object.isRequired
+  visOptions: PropTypes.object.isRequired,
+  nodeSequences: PropTypes.bool
+};
+
+TubeMap.defaultProps = {
+  nodeSequences: true
 };
 
 export default TubeMap;

@@ -1,24 +1,25 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import Select from "react-select";
+//import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 
 /**
  * A searchable selection dropdown component.
  * Expects a two-way-binding where "value" is the selected value (out of the
  * array in "options"), and calling "onChange" with an event-like object
  * updates the value.
- * 
+ *
  * The onChange argument is meant to look enough like a DOM change event on a
  * "real" <select> to fool most people. It is an object with a "target"
  * property, which then has an "id" property with this component's "id" prop,
  * and a "value" property with the new value.
- * 
+ *
  * So for example:
  * <SelectionDropdown id="box1" value="a" options={["a", "b"]} onChange={(e) => {
  *   // Here e is {"target": {"id": "box1", "value": "b"}}
  * }}>
  */
-export class SelectionDropdown extends Component {
+export class BedFileDropdown extends Component {
   render() {
     // Tweaks to the default react-select styles so that it'll look good with tube maps.
     const styles = {
@@ -48,8 +49,13 @@ export class SelectionDropdown extends Component {
       }),
     };
 
+    function getFilename(fullPath) {
+      const segments = fullPath.split("/");
+      return segments[segments.length - 1];
+    }
+
     const dropdownOptions = this.props.options.map((option) => ({
-      label: option,
+      label: getFilename(option),
       value: option,
     }));
 
@@ -63,25 +69,33 @@ export class SelectionDropdown extends Component {
     };
 
     return (
-      <Select
+      <CreatableSelect
+        getNewOptionData={(inputValue, optionLabel) => ({
+          label: optionLabel,
+          value: inputValue,
+        })}
         id={this.props.id}
         inputId={this.props.inputId}
         className={this.props.className}
         value={
-          dropdownOptions.find((option) => option.value === this.props.value) ||
-          {}
+          dropdownOptions.find(
+            (option) => option.value === this.props.value
+          ) || { label: getFilename(this.props.value), value: this.props.value }
         }
         styles={styles}
         isSearchable={true}
         onChange={onChange}
         options={dropdownOptions}
+        getOptionValue={(o) => {
+          return o["value"];
+        }}
         openMenuOnClick={dropdownOptions.length < 2000}
       />
     );
   }
 }
 
-SelectionDropdown.propTypes = {
+BedFileDropdown.propTypes = {
   id: PropTypes.string,
   inputId: PropTypes.string,
   className: PropTypes.string,
@@ -90,11 +104,11 @@ SelectionDropdown.propTypes = {
   options: PropTypes.array.isRequired,
 };
 
-SelectionDropdown.defaultProps = {
+BedFileDropdown.defaultProps = {
   id: undefined,
   inputId: undefined,
   className: undefined,
   value: undefined,
 };
 
-export default SelectionDropdown;
+export default BedFileDropdown;

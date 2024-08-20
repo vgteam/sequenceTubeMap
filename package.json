@@ -4,6 +4,7 @@
   "author": "Wolfgang Beyer",
   "license": "MIT",
   "dependencies": {
+    "@bjorn3/browser_wasi_shim": "^0.2.17",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",
@@ -12,6 +13,7 @@
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@material-ui/core": "^4.12.4",
     "@mui/material": "^5.13.0",
+    "@streamparser/json": "^0.0.17",
     "@testing-library/dom": "^8.20.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^12.1.5",
@@ -27,9 +29,12 @@
     "es-dirname": "^0.1.0",
     "express": "^4.18.2",
     "fs-extra": "^10.1.0",
+    "gbz-base": "^0.1.0-alpha.1",
     "gh-pages": "^4.0.0",
-    "markdown-to-jsx": "^7.2.0",
-    "multer": "^1.4.4",
+    "markdown-to-jsx": "^7.4.3",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.2",
+    "patch-package": "^8.0.0",
     "path-is-inside": "^1.0.2",
     "polyfill-object.fromentries": "^1.0.1",
     "prop-types": "^15.8.1",
@@ -44,22 +49,27 @@
     "react-scripts": "5.0.1",
     "react-select": "^5.7.3",
     "react-select-event": "^5.5.1",
+    "react-switch": "^7.0.0",
     "reactjs-popup": "^2.0.5",
     "reactstrap": "^9.1.9",
+    "readers-writer-lock": "^1.0.0",
+    "sanitize-filename": "^1.6.3",
     "uuid": "^9.0.0",
     "webpack": "^5.82.0",
     "webpack-dev-server": "4.11.1",
-    "websocket": "^1.0.34"
+    "websocket": "^1.0.34",
+    "worker-rpc": "^0.2.0"
   },
   "scripts": {
     "start": "concurrently -n frontend,backend -c red,green 'HOST=${HOST:=127.0.0.1} PORT=${PORT:=3001} react-scripts start' 'npm:serve'",
     "build": "react-scripts build",
-    "test": "react-scripts test --reporters default jest-compact-reporter --seed=1",
+    "test": "react-scripts test --testResultsProcessor=./node_modules/jest-html-reporter --reporters default jest-compact-reporter --seed=1",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "serve": "node ./src/server.mjs",
-    "format": "prettier --write \"**/*.+(mjs|js|css)\""
+    "format": "prettier --write \"**/*.+(mjs|js|css)\"",
+    "postinstall": "patch-package"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -76,10 +86,14 @@
   "devDependencies": {
     "jest-compact-reporter": "^1.2.9",
     "jest-fetch-mock": "^3.0.3",
+    "jest-html-reporter": "^3.10.2",
     "prettier": "^2.8.8",
     "qs": "^6.11.1"
   },
   "jest": {
-    "resetMocks": false
+    "resetMocks": false,
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@streamparser/json|@bjorn3/browser_wasi_shim)/)"
+    ]
   }
 }
