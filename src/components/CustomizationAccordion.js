@@ -197,6 +197,18 @@ class VisualizationOptions extends Component {
                           Color reads by mapping quality
                         </Label>
                       </FormGroup>
+                      <FormGroup check>
+                        <Label check>
+                          <Input
+                            type="checkbox"
+                            checked={visOptions.alphaReadsByMappingQuality}
+                            onChange={() =>
+                              toggleFlag("alphaReadsByMappingQuality")
+                            }
+                          />
+                          Transparency of reads by mapping quality
+                        </Label>
+                      </FormGroup>
                       <Form>
                         <Label className="mr-sm-2 " for="dataSourceSelect">
                           Mapping Quality Cutoff:

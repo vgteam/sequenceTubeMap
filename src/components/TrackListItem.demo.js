@@ -15,6 +15,7 @@ export default (
           mainPalette: "blues",
           auxPalette: "reds",
           colorReadsByMappingQuality: false,
+          alphaReadsByMappingQuality: false,
         },
       }),
       availableTracks: P.json([

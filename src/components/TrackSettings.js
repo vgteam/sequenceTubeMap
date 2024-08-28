@@ -12,7 +12,8 @@ import ColorPicker from "./ColorPicker";
  * trackColorSettings expects an object in the form of
  * {mainPalette: string,
  *  auxPallate: string,
- *  colorReadsByMappingQuality: boolean}
+ *  colorReadsByMappingQuality: boolean,
+ *  alphaReadsByMappingQuality: boolean}
  *
  * The setTrackColorSetting function expects to be passed a key value pair updating the trackColorSettings object
  *
@@ -156,6 +157,7 @@ TrackSettings.defaultProps = {
     mainPalette: "blues",
     auxPalette: "reds",
     colorReadsByMappingQuality: false,
+    alphaReadsByMappingQuality: false,
   },
 };
 
