@@ -3333,12 +3333,14 @@ function colorNodes(nodeName) {
   let nodesColors = {};
   if (config.coloredNodes.includes(nodeName)) {
     nodesColors["fill"] = "#ffc0cb";
-    nodesColors["fill-opacity"] = "0.4";
     nodesColors["outline"] = "#ff0000";
   } else {
     nodesColors["fill"] = "#ffffff";
-    nodesColors["fill-opacity"] = "0.4";
     nodesColors["outline"] = "#000000";
+  }
+  nodesColors["fill-opacity"] = "0.4";
+  if (config.transparentNodesFlag) {
+    nodesColors["fill"] = "none";
   }
   return nodesColors;
 }
