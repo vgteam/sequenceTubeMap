@@ -633,7 +633,7 @@ async function getChunkedData(req, res, next) {
         anyGam = true;
       }
       if (gamFile.endsWith(".gaf.gz")) {
-        // Use a GAM index
+        // Use a GAF with index
         console.log("pushing gaf file", gamFile);
         anyGaf = true;
       }
