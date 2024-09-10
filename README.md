@@ -69,6 +69,9 @@ The application comes with pre-set demos that you can use to learn the tool's vi
 
 To set up a custom visualization of particular files, you will need to configure a set of "tracks" describing the files you want to visualize, using the "Configure Tracks" dialog in "custom (mounted files)" mode. For information on how to do this, click on the "?" help button, or [read the help documentation online](public/help/help.md).
 
+### Adding your Own Data
+
+To load your own data into the Sequence Tube Map, see the guide to [Adding your Own Data](doc/data.md).
 
 ## Contributing
 
