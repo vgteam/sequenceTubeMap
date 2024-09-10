@@ -16,8 +16,12 @@ RUN apt-get -qq update && apt-get -qq install -y \
 	npm \
 	nano
 
+RUN npm cache clean -f
+
+RUN npm install -g n && n stable
+
 # download vg binary
-RUN wget --quiet --no-check-certificate  https://github.com/vgteam/vg/releases/download/v1.48.0/vg \
+RUN wget --quiet --no-check-certificate  https://github.com/vgteam/vg/releases/download/v1.59.0/vg \
 	&& mv vg /bin/vg && chmod +x /bin/vg
 
 WORKDIR /build
@@ -28,10 +32,6 @@ COPY . /build/sequenceTubeMap/
 COPY docker/config.json /build/sequenceTubeMap/src/
 
 WORKDIR /build/sequenceTubeMap
-
-RUN npm cache clean -f
-
-RUN npm install -g n && n stable
 
 RUN npm install
 

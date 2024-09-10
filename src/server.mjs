@@ -618,16 +618,35 @@ async function getChunkedData(req, res, next) {
     }
 
     // push all gam files
+    let anyGam = false;
+    let anyGaf = false;
     for (const gamFile of gamFiles) {
-      if (!gamFile.endsWith(".gam")) {
-        throw new BadRequestError("GAM file doesn't end in .gam: " + gamFile);
+      if (!gamFile.endsWith(".gam") && !gamFile.endsWith(".gaf.gz")) {
+        throw new BadRequestError("GAM/GAF file doesn't end in .gam or .gaf.gz: " + gamFile);
       }
       if (!isAllowedPath(gamFile)) {
-        throw new BadRequestError("GAM file path not allowed: " + gamFile);
+        throw new BadRequestError("GAM/GAF file path not allowed: " + gamFile);
       }
-      // Use a GAM index
-      console.log("pushing gam file", gamFile);
-      vgChunkParams.push("-a", gamFile, "-g");
+      if (gamFile.endsWith(".gam")) {
+        // Use a GAM index
+        console.log("pushing gam file", gamFile);
+        anyGam = true;
+      }
+      if (gamFile.endsWith(".gaf.gz")) {
+        // Use a GAF with index
+        console.log("pushing gaf file", gamFile);
+        anyGaf = true;
+      }
+      vgChunkParams.push("-a", gamFile);
+    }
+    if (anyGam && anyGaf){
+      throw new BadRequestError("Reads must be either GAM files or GAF files, not mix both.");
+    }
+    if (anyGaf){
+      vgChunkParams.push("-F", "-g");
+    }
+    if (anyGam){
+      vgChunkParams.push("-g");
     }
 
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
@@ -1176,11 +1195,54 @@ function processGamFile(req, res, next, gamFile, gamFileNumber) {
   try {
     if (!isAllowedPath(gamFile)) {
       // This is probably under SCRATCH_DATA_PATH
-      throw new BadRequestError("Path to GAM file not allowed: " + req.gamFile);
+      throw new BadRequestError("Path to GAM/GAF file not allowed: " + req.gamFile);
     }
 
-    const vgViewChild = spawn(`${VG_PATH}vg`, ["view", "-j", "-a", gamFile]);
+    let vgViewParams = ["view", "-j", "-a"];
+    let vgConvertParams = ["convert"];
+    
+    if (gamFile.endsWith(".gaf")) {
+      // if input is GAF, vg convert will be piped into vg view
+      vgViewParams.push("-");
+      // vg convert needs the graph to convert GAF to GAM
+      const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
+      vgConvertParams.push("-F", gamFile, graphFile);
+    }
+    if (gamFile.endsWith(".gam")) {
+      // if input is GAM, no need to convert input to vg view is the file
+      vgViewParams.push(gamFile);
+    }
+    
+    const vgViewChild = spawn(`${VG_PATH}vg`, vgViewParams);
 
+    if (gamFile.endsWith(".gaf")) {
+      // if input was a GAF, run vg convert and pipe stdout to vg view
+      const vgConvertChild = spawn(`${VG_PATH}vg`, vgConvertParams);
+
+      vgConvertChild.stdout.on("data", function (data) {
+        vgViewChild.stdin.write(data);
+      });
+      
+      vgConvertChild.stderr.on("data", (data) => {
+        console.log(`vg convert err data: ${data}`);
+        req.error += data;
+      });
+
+      vgConvertChild.on("close", (code) => {
+        console.log(`vg convert exited with code ${code}`);
+        vgViewChild.stdin.end();
+        if (code !== 0) {
+          console.log("Error from " + VG_PATH + "vg " + vgConvertParams.join(" "));
+          // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg convert failed"));
+          }
+        }
+      });
+      
+    } 
+    
     vgViewChild.stderr.on("data", (data) => {
       console.log(`err data: ${data}`);
     });
@@ -1214,24 +1276,24 @@ function processGamFile(req, res, next, gamFile, gamFileNumber) {
 function processGamFiles(req, res, next) {
   try {
     console.time("processing gam files");
-    // Find gam files
+    // Find gam/gaf files
     let gamFiles = [];
     fs.readdirSync(req.chunkDir).forEach((file) => {
       console.log(file);
-      if (file.endsWith(".gam")) {
+      if (file.endsWith(".gam") || file.endsWith(".gaf")) {
         gamFiles.push(req.chunkDir + "/" + file);
       }
     });
 
     // Parse a GAM chunk name and get the GAM number from it
-    // Names are like:
+    // Names are like, with either .gam or .gaf suffixes:
     // */chunk_*.gam for 0
     // */chunk-1_*.gam for 1, 2, 3, etc.
     let gamNameToNumber = (gamName) => {
-      const pattern = /.*\/chunk(-([0-9])+)?_.*\.gam/;
-      let matches = gamName.match(pattern);
+      const pattern = /.*\/chunk(-([0-9])+)?_.*\.ga[mf]/
+      let matches = gamName.match(pattern)
       if (!matches) {
-        throw new InternalServerError("Bad GAM name " + gamName);
+        throw new InternalServerError("Bad GAM/GAF name " + gamName) 
       }
       if (matches[2] !== undefined) {
         // We have a number
@@ -1502,6 +1564,9 @@ api.get("/getFilenames", (req, res) => {
       }
       if (file.endsWith(".sorted.gam")) {
         result.files.push({ trackFile: clientPath, trackType: "read" });
+      }
+      if (file.endsWith(".gaf.gz")) {
+        result.files.push({"trackFile": file, "trackType": "read"});
       }
       if (file.endsWith(".bed")) {
         result.bedFiles.push(clientPath);
