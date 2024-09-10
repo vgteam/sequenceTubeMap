@@ -8,15 +8,15 @@
 
 No idea what those squiggles are supposed to be? Read the [Introduction](doc/intro.md).
 
-## Online Version: Explore Without Installing Anything
+## Online Version
+**Explore Without Installing Anything**
 
 The easiest way to have a look at some graph visualizations is to check out the online demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/). There you can play with visualizations from a few different data sets as well as look at some examples showcasing different structural features of variation graphs. You can even provide your own [vg](https://github.com/vgteam/vg)-generated data as an input (limited to small file sizes only).
 
-## Local Version: Run the Sequence Tube Map On Your Own
+## Local Version
+**Run the Sequence Tube Map on Your Own**
 
 If you are using vg and want visualize the graphs it generates, the online version is limited to small file sizes. For visualizing bigger data sets you can run the Sequence Tube Map on your own. You can either run the Tube Map completely on your local  machine or use your local browser to access a Tube Map server running on any other machine you have access to.
-
-(Previously we provided a docker image at [https://hub.docker.com/r/wolfib/sequencetubemap/](https://hub.docker.com/r/wolfib/sequencetubemap/), which contained the build of this repo as well as a vg executable for data preprocessing and extraction. We now recommend a different installation approach.)
 
 ### Prerequisites
 
@@ -71,11 +71,15 @@ To set up a custom visualization of particular files, you will need to configure
 
 ### Adding your Own Data
 
-To load your own data into the Sequence Tube Map, see the guide to [Adding your Own Data](doc/data.md).
+To load your own data into the Sequence Tube Map, see the guide to [Adding Your Own Data](doc/data.md).
+
+## Docker
+
+Previously we provided a Docker image at [https://hub.docker.com/r/wolfib/sequencetubemap/](https://hub.docker.com/r/wolfib/sequencetubemap/), which contained the build of this repo as well as a vg executable for data preprocessing and extraction. We now recommend a different installation approach, either using the [online version](#online-version) or a full installation of the [local version](#local-version). However, if you would like to Dockerize the Sequence Tube Map, the repository includes a `Dockerfile`.
 
 ## Contributing
 
-For information on how to develop on the Sequence Tube Map codebase, pleas see [the Development Guide](doc/development.md).
+For information on how to develop on the Sequence Tube Map codebase, pleas see the [Development Guide](doc/development.md).
 
 ## License
 

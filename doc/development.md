@@ -38,7 +38,7 @@ If you want to run all the tests, you can run:
   npm run test -- --watchAll=false
   ```
 
-You can also set the environment variable `CI=true`, or [look sufficiently like a kind of CI environment known to `reach-scripts`](https://create-react-app.dev/docs/running-tests/#command-line-interface).
+You can also set the environment variable `CI=true`, or [look sufficiently like a kind of CI environment known to `react-scripts`](https://create-react-app.dev/docs/running-tests/#command-line-interface).
 
 If you want to run just a single test, based on its `describe` or `it` name argument, you can do something like:
 
