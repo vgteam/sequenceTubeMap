@@ -31,26 +31,27 @@ If you are using vg and want visualize the graphs it generates, the online versi
     ```
     cd sequenceTubeMap
     ```
-5. If you don't already have vg installed, install the latest release of vg.
-    - For Linux, you can drop the vg program file into the `sequenceTubeMap` directory and the Sequence Tube Map will find it.
-        - If you don't have `curl` installed, you may need to do something like `sudo apt update && sudo apt install curl`.
-        - If you have an `x86_64` (i.e. normal Intel or AMD) computer:
+5. If you don't already have vg installed, [install vg](https://github.com/vgteam/vg?tab=readme-ov-file#installation).
+    - For Linux: you can drop the `vg` program file into the `sequenceTubeMap` directory and the Sequence Tube Map will find it.
+        1. If you don't have `curl` installed, you may need to do something like `sudo apt update && sudo apt install curl`.
+        2. Download the `vg` program and make it executable.
+            - If you have an `x86_64` (i.e. normal Intel or AMD) computer:
+                ```
+                curl -LO https://github.com/vgteam/tfsec/vg/latest/download/vg
+                chmod +x vg
+                ```
+            - If instead you have an ARM (i.e. Snapdragon, Raspberry Pi, etc.) computer:
+                ```
+                curl -LO https://github.com/vgteam/tfsec/vg/latest/download/vg-arm64
+                mv vg-arm64 vg
+                chmod +x vg
+                ```
+        3. To use the data preparation scripts in `sequenceTubeMap/scripts/`, you will need to have the directory with vg in your `PATH` environment variable:
             ```
-            curl -LO https://github.com/vgteam/tfsec/vg/latest/download/vg
-            chmod +x vg
-            ```
-            If instead you have an ARM (Apple M1, Snapdragon, Raspberry Pi) computer:
-            ```
-            curl -LO https://github.com/vgteam/tfsec/vg/latest/download/vg-arm64
-            mv vg-arm64 vg
-            chmod +x vg
-            ```
-        - To use the data preparation scripts in `sequenceTubeMap/scripts/`, you will need to have the directory with vg in your `PATH` environment variable:
-            ```
-            echo 'export PATH="${PATH}:'"$(pwd)"'/bin"' >>~/.bashrc
+            echo 'export PATH="${PATH}:'"$(pwd)"'"' >>~/.bashrc
             . ~/.bashrc
             ```
-    - For macOS: Open a new terminal, and follow the [vg instructions for building on MacOS](https://github.com/vgteam/vg?tab=readme-ov-file#building-on-macos). Make sure to do the part about adding vg to your `PATH` environment variable. When you come back to your original terminal, run:
+    - For Mac: Open a new terminal, and follow the [vg instructions for building on MacOS](https://github.com/vgteam/vg?tab=readme-ov-file#building-on-macos). Make sure to do the part about adding vg to your `PATH` environment variable. When you come back to your original terminal, run:
         ```
         . ~/.zshrc
         ```
