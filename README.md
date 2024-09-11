@@ -18,24 +18,6 @@ The easiest way to have a look at some graph visualizations is to check out the 
 
 If you are using vg and want visualize the graphs it generates, the online version is limited to small file sizes. For visualizing bigger data sets you can run the Sequence Tube Map on your own. You can either run the Tube Map completely on your local  machine or use your local browser to access a Tube Map server running on any other machine you have access to.
 
-### Install Prerequisites
-
-The Sequence Tube Map needs NodeJS, NPM, and [vg](https://github.com/vgteam/vg).
-
-1. The simplest 
-
-
-
-* The NodeJS version [specified in the `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc), which as of this writing is **18.7.0**. Several other NodeJS versions will work, or at least mostly work, but only this version is tested. This version of NodeJS can be installed on most systems with [nvm](https://github.com/nvm-sh/nvm).
-* NPM. NPM comes included in most NodeJS installations. Ubuntu packages it as a separate `npm` package.
-* [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
-
-The directory containing the vg executable needs to be added to your environment path:
-
-```
-PATH=/<your_path_to_directory_with_vg>:$PATH
-```
-
 ### Installation
 
 1. Open your terminal. On Mac, hit `Command` + `Space`, type `terminal.app`, and hit `Enter`. On Linux, you can usually hit `Ctrl` + `Alt` + `T`. 
@@ -49,30 +31,54 @@ PATH=/<your_path_to_directory_with_vg>:$PATH
     ```
     cd sequenceTubeMap
     ```
-5. If you don't already have the right version of NodeJS, install [nvm](https://github.com/nvm-sh/nvm) which can install NodeJS:
+5. If you don't already have vg installed, install the latest release of vg.
+    - For Linux, you can drop the vg program file into the `sequenceTubeMap` directory and the Sequence Tube Map will find it.
+        - If you don't have `curl` installed, you may need to do something like `sudo apt update && sudo apt install curl`.
+        - If you have an `x86_64` (i.e. normal Intel or AMD) computer:
+            ```
+            curl -LO https://github.com/vgteam/tfsec/vg/latest/download/vg
+            chmod +x vg
+            ```
+            If instead you have an ARM (Apple M1, Snapdragon, Raspberry Pi) computer:
+            ```
+            curl -LO https://github.com/vgteam/tfsec/vg/latest/download/vg-arm64
+            mv vg-arm64 vg
+            chmod +x vg
+            ```
+        - To use the data preparation scripts in `sequenceTubeMap/scripts/`, you will need to have the directory with vg in your `PATH` environment variable:
+            ```
+            echo 'export PATH="${PATH}:'"$(pwd)"'/bin"' >>~/.bashrc
+            . ~/.bashrc
+            ```
+    - For macOS: Open a new terminal, and follow the [vg instructions for building on MacOS](https://github.com/vgteam/vg?tab=readme-ov-file#building-on-macos). Make sure to do the part about adding vg to your `PATH` environment variable. When you come back to your original terminal, run:
+        ```
+        . ~/.zshrc
+        ```
+6. If you don't already have the right version of NodeJS, install [nvm](https://github.com/nvm-sh/nvm) which can install NodeJS:
     ```
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
     ```
-6. After installing `nvm`, load it into your current terminal session by running:
+    (If you don't have `curl` installed, you may need to do something like `sudo apt update && sudo apt install curl`.)
+7. After installing `nvm`, load it into your current terminal session by running:
     ```
     export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
     ```
     Alternately, you can close and re-opne your terminal, and navigate back to the `sequenceTubeMap` directory.
-7. Install the version of NodeJS that the Sequence Tube Map [asks for in its `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc). As of this writing that is **18.7.0**. You can install the right version automatically with `nvm`:
+8. Install the version of NodeJS that the Sequence Tube Map [asks for in its `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc). As of this writing that is **18.7.0**. You can install the right version automatically with `nvm`:
     ```
     nvm install
     ```
-8. Activate the appropriate version of NodeJS:
+9. Activate the appropriate version of NodeJS:
     ```
     nvm use
     ```
-9. Install the excact versions of NPM dependencies thast the Sequence Tube Map is tested against:
+10. Install the excact versions of NPM dependencies thast the Sequence Tube Map is tested against:
     ```
     npm ci
     ```
     Note that this is using **npm**, not **nvm** as in the previous step.
-10. Build the frontend:
+11. Build the frontend:
     ```
     npm run build
     ```
