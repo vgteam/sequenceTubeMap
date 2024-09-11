@@ -47,7 +47,7 @@
       "dataType": "built-in"
     }
   ],
-  "vgPath": "",
+  "vgPath": [""],
   "dataPath": "/data",
   "internalDataPath": "exampleData/internal/",
   "tempDirPath": "temp",

@@ -18,50 +18,91 @@ The easiest way to have a look at some graph visualizations is to check out the 
 
 If you are using vg and want visualize the graphs it generates, the online version is limited to small file sizes. For visualizing bigger data sets you can run the Sequence Tube Map on your own. You can either run the Tube Map completely on your local  machine or use your local browser to access a Tube Map server running on any other machine you have access to.
 
-### Prerequisites
+### Install Prerequisites
 
-* The NodeJS version [specified in the `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc), which as of this writing is **18.7.0**. Other several other NodeJS versions will work, or at least mostly work, but only this version is tested. This version of NodeJS can be installed on most systems with [nvm](https://github.com/nvm-sh/nvm).
+The Sequence Tube Map needs NodeJS, NPM, and [vg](https://github.com/vgteam/vg).
+
+1. The simplest 
+
+
+
+* The NodeJS version [specified in the `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc), which as of this writing is **18.7.0**. Several other NodeJS versions will work, or at least mostly work, but only this version is tested. This version of NodeJS can be installed on most systems with [nvm](https://github.com/nvm-sh/nvm).
 * NPM. NPM comes included in most NodeJS installations. Ubuntu packages it as a separate `npm` package.
 * [vg](https://github.com/vgteam/vg) (vg can be tricky to compile. If you run into problems, there are docker images for vg at [https://github.com/vgteam/vg_docker](https://github.com/vgteam/vg_docker).)
 
 The directory containing the vg executable needs to be added to your environment path:
 
 ```
-PATH=/<your_path_to_folder_with_vg>:$PATH
+PATH=/<your_path_to_directory_with_vg>:$PATH
 ```
 
 ### Installation
 
-- Clone the repo:
-  ```
-  git clone https://github.com/vgteam/sequenceTubeMap.git
-  ```
-- Switch to the `sequenceTubeMap` folder:
-  ```
-  cd sequenceTubeMap
-  ```
-- Install npm dependencies:
-  ```
-  npm install
-  ```
-- Build the frontend:
-  ```
-  npm run build
-  ```
+1. Open your terminal. On Mac, hit `Command` + `Space`, type `terminal.app`, and hit `Enter`. On Linux, you can usually hit `Ctrl` + `Alt` + `T`. 
+2. If you don't already have Git installed, [install Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
+3. Clone the Git repository by typing:
+    ```
+    git clone https://github.com/vgteam/sequenceTubeMap.git
+    ```
+  Then press `Enter`.
+4. Switch to the `sequenceTubeMap` directory:
+    ```
+    cd sequenceTubeMap
+    ```
+5. If you don't already have the right version of NodeJS, install [nvm](https://github.com/nvm-sh/nvm) which can install NodeJS:
+    ```
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+    ```
+6. After installing `nvm`, load it into your current terminal session by running:
+    ```
+    export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+    ```
+    Alternately, you can close and re-opne your terminal, and navigate back to the `sequenceTubeMap` directory.
+7. Install the version of NodeJS that the Sequence Tube Map [asks for in its `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc). As of this writing that is **18.7.0**. You can install the right version automatically with `nvm`:
+    ```
+    nvm install
+    ```
+8. Activate the appropriate version of NodeJS:
+    ```
+    nvm use
+    ```
+9. Install the excact versions of NPM dependencies thast the Sequence Tube Map is tested against:
+    ```
+    npm ci
+    ```
+    Note that this is using **npm**, not **nvm** as in the previous step.
+10. Build the frontend:
+    ```
+    npm run build
+    ```
 
 ### Execution
 
-- Start the node server:
-  ```
-  npm run serve
-  ```
-- If the node server is running on your local machine, open a browser tab and go to `localhost:3001`.
-- If the node server is running on a different machine, open a local browser tab and go to the server's URL on port 3001 `http://<your server's IP or URL>:3001/`.
-  If you cannot access the server's port 3001 from the browser, instead of configuring firewall rules etc., it's probably easiest to set up an SSH tunnel.
+After installation, you can run the tube map by:
 
-```
-ssh -N -L 3001:localhost:3001 <your username>@<your server>
-```
+1. Open your terminal. On Mac, hit `Command` + `Space`, type `terminal.app`, and hit `Enter`. On Linux, you can usually hit `Ctrl` + `Alt` + `T`.
+2. Switch to the `sequenceTubeMap` directory:
+    ```
+    cd sequenceTubeMap
+    ```
+    If you didn't clone the Git repository immediately inside your home directory, you may need to navigate to another directory first.
+3. Activate the appropriate version of NodeJS. If you installed `nvm` to manage NodeJS versions, you can run:
+    ```
+    nvm use
+    ```
+4. Start the Sequence Tube Map server:
+    ```
+    npm run serve
+    ```
+    Note that this is using **npm**, not **nvm** as in the previous step.
+5. Open the Sequence Tube Map in your browser.
+    - If you are running the Sequence Tube Map on your local computer, you can visit [http://[::]:3001](http://[::]:3001) or [http://localhost:3001](http://localhost:3001).
+    - If you are running the Sequence Tube Map on a *different* computer (for example, one accessed by SSH), you will need to connect to it there. You can try browsing to port 3001 on that machine's hostname. For example, if you connected with `ssh yourname@bigserver.example.edu`, then `bigserver.example.edu` is the hostname, and you want to visit `http://bigserver.example.edu:3001`. If that doesn't work, you can try setting up an SSH tunnel by making a second SSH connection with:
+        ```
+        ssh -L 3001:localhost:3001 yourname@bigserver.example.edu
+        ```
+        While that SSH connection is open, you will be able to see the Sequence Tube Map at [http://localhost:3001](http://localhost:3001).
 
 ### Setting Up a Visualization
 
