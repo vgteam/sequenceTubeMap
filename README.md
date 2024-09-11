@@ -16,7 +16,7 @@ The easiest way to have a look at some graph visualizations is to check out the 
 ## Local Version
 **Run the Sequence Tube Map on Your Own**
 
-If you are using vg and want visualize the graphs it generates, the online version is limited to small file sizes. For visualizing bigger data sets you can run the Sequence Tube Map on your own. You can either run the Tube Map completely on your local  machine or use your local browser to access a Tube Map server running on any other machine you have access to.
+If you are using vg and want visualize the graphs it generates, the online version is limited to small file sizes. For visualizing bigger data sets you can run the Sequence Tube Map on your own Linux or Mac computer. You can either run the Tube Map completely on your local machine, or use your local browser to access a Tube Map server running on any other machine you have access to.
 
 ### Installation
 
@@ -35,18 +35,12 @@ If you are using vg and want visualize the graphs it generates, the online versi
     - For Linux: you can drop the `vg` program file into the `sequenceTubeMap` directory and the Sequence Tube Map will find it.
         1. If you don't have `curl` installed, you may need to do something like `sudo apt update && sudo apt install curl`.
         2. Download the `vg` program and make it executable.
-            - If you have an `x86_64` (i.e. normal Intel or AMD) computer:
-                ```
-                curl -LO https://github.com/vgteam/tfsec/vg/latest/download/vg
-                chmod +x vg
-                ```
-            - If instead you have an ARM (i.e. Snapdragon, Raspberry Pi, etc.) computer:
-                ```
-                curl -LO https://github.com/vgteam/tfsec/vg/latest/download/vg-arm64
-                mv vg-arm64 vg
-                chmod +x vg
-                ```
-        3. To use the data preparation scripts in `sequenceTubeMap/scripts/`, you will need to have the directory with vg in your `PATH` environment variable:
+            ```
+            curl -o vg https://github.com/vgteam/vg/releases/latest/download/vg
+            chmod +x vg
+            ```
+            If you have an ARM computer, use `https://github.com/vgteam/vg/releases/latest/download/vg-arm64` instead.
+        3. To use the data preparation scripts in `sequenceTubeMap/scripts/`, you will need to have the directory with vg in it in your `PATH` environment variable:
             ```
             echo 'export PATH="${PATH}:'"$(pwd)"'"' >>~/.bashrc
             . ~/.bashrc
@@ -86,7 +80,7 @@ If you are using vg and want visualize the graphs it generates, the online versi
 
 ### Execution
 
-After installation, you can run the tube map by:
+After installation, you can run the Sequence Tube Map:
 
 1. Open your terminal. On Mac, hit `Command` + `Space`, type `terminal.app`, and hit `Enter`. On Linux, you can usually hit `Ctrl` + `Alt` + `T`.
 2. Switch to the `sequenceTubeMap` directory:
