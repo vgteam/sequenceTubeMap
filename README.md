@@ -11,7 +11,7 @@ No idea what those squiggles are supposed to be? Read the [Introduction](doc/int
 ## Online Version
 **Explore Without Installing Anything**
 
-The easiest way to have a look at some graph visualizations is to check out the online demo at [https://vgteam.github.io/sequenceTubeMap/](https://vgteam.github.io/sequenceTubeMap/). There you can play with visualizations from a few different data sets as well as look at some examples showcasing different structural features of variation graphs. You can even provide your own [vg](https://github.com/vgteam/vg)-generated data as an input (limited to small file sizes only).
+The easiest way to have a look at some graph visualizations is to check out the [online demo](https://vgteam.github.io/sequenceTubeMap/). There you can play with visualizations from a few different data sets as well as look at some examples showcasing different structural features of variation graphs. You can even provide your own [vg](https://github.com/vgteam/vg)-generated data as an input (limited to small file sizes only).
 
 ## Local Version
 **Run the Sequence Tube Map on Your Own**
@@ -20,7 +20,7 @@ If you are using vg and want visualize the graphs it generates, the online versi
 
 ### Installation
 
-1. Open your terminal. On Mac, hit `Command` + `Space`, type `terminal.app`, and hit `Enter`. On Linux, you can usually hit `Ctrl` + `Alt` + `T`. 
+1. Open your terminal. On Linux, you can usually hit `Ctrl` + `Alt` + `T`. On Mac, hit `Command` + `Space`, type `terminal.app`, and hit `Enter`.
 2. If you don't already have Git installed, [install Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 3. Clone the Git repository by typing:
     ```
@@ -49,31 +49,27 @@ If you are using vg and want visualize the graphs it generates, the online versi
         ```
         . ~/.zshrc
         ```
-6. If you don't already have the right version of NodeJS, install [nvm](https://github.com/nvm-sh/nvm) which can install NodeJS:
+6. If you don't already have the right version of NodeJS, [install nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#install--update-script) which can install NodeJS:
     ```
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+    export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     ```
     (If you don't have `curl` installed, you may need to do something like `sudo apt update && sudo apt install curl`.)
-7. After installing `nvm`, load it into your current terminal session by running:
-    ```
-    export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
-    ```
-    Alternately, you can close and re-opne your terminal, and navigate back to the `sequenceTubeMap` directory.
-8. Install the version of NodeJS that the Sequence Tube Map [asks for in its `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc). As of this writing that is **18.7.0**. You can install the right version automatically with `nvm`:
+7. Install the version of NodeJS that the Sequence Tube Map [asks for in its `.nvmrc` file](https://github.com/vgteam/sequenceTubeMap/blob/master/.nvmrc). As of this writing that is **18.7.0**. You can install the right version automatically with `nvm`:
     ```
     nvm install
     ```
-9. Activate the appropriate version of NodeJS:
+8. Activate the appropriate version of NodeJS:
     ```
     nvm use
     ```
-10. Install the excact versions of NPM dependencies thast the Sequence Tube Map is tested against:
+9. Install the exact versions of NPM dependencies that the Sequence Tube Map is tested against:
     ```
     npm ci
     ```
     Note that this is using **npm**, not **nvm** as in the previous step.
-11. Build the frontend:
+10. Build the frontend:
     ```
     npm run build
     ```
@@ -82,7 +78,7 @@ If you are using vg and want visualize the graphs it generates, the online versi
 
 After installation, you can run the Sequence Tube Map:
 
-1. Open your terminal. On Mac, hit `Command` + `Space`, type `terminal.app`, and hit `Enter`. On Linux, you can usually hit `Ctrl` + `Alt` + `T`.
+1. Open your terminal. On Linux, you can usually hit `Ctrl` + `Alt` + `T`. On Mac, hit `Command` + `Space`, type `terminal.app`, and hit `Enter`.
 2. Switch to the `sequenceTubeMap` directory:
     ```
     cd sequenceTubeMap
