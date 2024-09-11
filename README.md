@@ -94,7 +94,7 @@ After installation, you can run the Sequence Tube Map:
     ```
     Note that this is using **npm**, not **nvm** as in the previous step.
 5. Open the Sequence Tube Map in your browser.
-    - If you are running the Sequence Tube Map on your local computer, you can visit [http://[::]:3001](http://[::]:3001) or [http://localhost:3001](http://localhost:3001).
+    - If you are running the Sequence Tube Map on your local computer, you can visit [http://localhost:3001](http://localhost:3001).
     - If you are running the Sequence Tube Map on a *different* computer (for example, one accessed by SSH), you will need to connect to it there. You can try browsing to port 3001 on that machine's hostname. For example, if you connected with `ssh yourname@bigserver.example.edu`, then `bigserver.example.edu` is the hostname, and you want to visit `http://bigserver.example.edu:3001`. If that doesn't work, you can try setting up an SSH tunnel by making a second SSH connection with:
         ```
         ssh -L 3001:localhost:3001 yourname@bigserver.example.edu
