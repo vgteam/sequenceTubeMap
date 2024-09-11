@@ -26,7 +26,7 @@ If you are using vg and want visualize the graphs it generates, the online versi
     ```
     git clone https://github.com/vgteam/sequenceTubeMap.git
     ```
-  Then press `Enter`.
+    Then press `Enter`.
 4. Switch to the `sequenceTubeMap` directory:
     ```
     cd sequenceTubeMap
