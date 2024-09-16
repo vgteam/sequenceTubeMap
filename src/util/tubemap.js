@@ -4019,14 +4019,14 @@ function defineSVGPatterns() {
 
 function drawTrackCurves(type, groupTrack) {
 
-  const myTrackCurves = trackCurves.filter(
+  const filteredTrackCurves = trackCurves.filter(
     filterObjectByAttribute("type", type)
   );
 
   const groupedCurves = {};
 
   // Group track curves based on if they have the same start and end node
-  myTrackCurves.forEach((curve) => {
+  filteredTrackCurves.forEach((curve) => {
     // We're going to split this back into numbers so we should not use - as a separator.
     // TODO: Do we actually get negative oriented node numbers in here?
     const key = `${curve.nodeStart},${curve.nodeEnd}`;
