@@ -4027,7 +4027,9 @@ function drawTrackCurves(type, groupTrack) {
 
   // Group track curves based on if they have the same start and end node
   myTrackCurves.forEach((curve) => {
-    const key = `${curve.nodeStart}-${curve.nodeEnd}`;
+    // We're going to split this back into numbers so we should not use - as a separator.
+    // TODO: Do we actually get negative oriented node numbers in here?
+    const key = `${curve.nodeStart},${curve.nodeEnd}`;
     if (!groupedCurves[key]) {
       groupedCurves[key] = [];
     }
@@ -4074,9 +4076,36 @@ function drawTrackCurves(type, groupTrack) {
     })
   });
 
+  // Rebuild one flat list of curves ordered by group and then using the within-group sort.
+  let groupKeys = [];
+  for (let key in groupedCurves) {
+    groupKeys.push(key);
+  }
+  groupKeys.sort(function(a, b) {
+    let aParts = a.split(",").map(parseInt);
+    let bParts = b.split(",").map(parseInt);
+    if (aParts[0] < bParts[0]) {
+      return -1;
+    } else if (aParts[0] > bParts[0]) {
+      return 1;
+    } else {
+      if (aParts[1] < bParts[1]) {
+        return -1;
+      } else if (aParts[1] > bParts[1]) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
+  })
+  let flattenedGroups = [];
+  for (let key of groupKeys) {
+    flattenedGroups = flattenedGroups.concat(groupedCurves[key]);
+  }
+
   groupTrack
     .selectAll("trackCurves")
-    .data(trackCurves)
+    .data(flattenedGroups)
     .enter()
     .append("path")
     .attr("d", (d) => d.path)
