@@ -24,6 +24,7 @@ describe("TrackListItem", () => {
     mainPalette: "blues",
     auxPalette: "reds",
     colorReadsByMappingQuality: false,
+    alphaReadsByMappingQuality: false,
   };
 
   it("should render without errors", async () => {
