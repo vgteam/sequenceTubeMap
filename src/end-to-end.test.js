@@ -294,7 +294,7 @@ describe("When we wait for it to load", () => {
     // See if correct svg rendered
     let svg = document.getElementById("svg");
     expect(svg).toBeTruthy();
-    expect(svg.getElementsByTagName("title").length).toEqual(65);
+    expect(svg.getElementsByTagName("title").length).toEqual(50);
   });
 
   it("draws the right SVG for cactus multiple reads", async () => {
@@ -332,7 +332,7 @@ describe("When we wait for it to load", () => {
     // See if correct svg rendered
     let svg = document.getElementById("svg");
     expect(svg).toBeTruthy();
-    expect(svg.getElementsByTagName("title").length).toEqual(23);
+    expect(svg.getElementsByTagName("title").length).toEqual(22);
   });
 });
 

@@ -35,13 +35,65 @@ import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
 import cron from "node-cron";
 import { RWLock, combine } from "readers-writer-lock";
+import which from "which";
 
 if (process.env.NODE_ENV !== "production") {
   // Load any .env file config
   dotenv.config();
 }
 
-const VG_PATH = config.vgPath;
+/// Return the command string to execute to run vg.
+/// Checks config.vgPath.
+/// An entry of "" in config.vgPath means to check PATH.
+function find_vg() {
+  if (find_vg.found_vg !== null) {
+    // Cache the answer and don't re-check all the time.
+    // Nobody shoudl be deleting vg.
+    return find_vg.found_vg;
+  }
+  for (let prefix of config.vgPath) {
+    if (prefix === "") {
+      // Empty string has special meaning of "use PATH".
+      console.log("Check for vg on PATH");
+      try {
+        find_vg.found_vg = which.sync("vg");
+        console.log("Found vg at:", find_vg.found_vg);
+        return find_vg.found_vg;
+      } catch (e) {
+        // vg is not on PATH
+        continue;
+      }
+    }
+    if (prefix.length > 0 && prefix[prefix.length - 1] !== "/") {
+      // Add trailing slash
+      prefix = prefix + "/";
+    }
+    let vg_filename = prefix + "vg";
+    console.log("Check for vg at:", vg_filename);
+    if (fs.existsSync(vg_filename)) {
+      if (!fs.statSync(vg_filename).isFile()) {
+        // This is a directory or something, not a binary we can run.
+        continue;
+      }
+      try {
+        // Pretend we will execute it
+        fs.accessSync(vg_filename, fs.constants.X_OK)
+      } catch (e) {
+        // Not executable
+        continue;
+      }
+      // If we get here it is executable.
+      find_vg.found_vg = vg_filename;
+      console.log("Found vg at:", find_vg.found_vg);
+      return find_vg.found_vg;
+    }
+  }
+  // If we get here we don't see vg at all.
+  throw new InternalServerError("The vg command was not found. Install vg to use the Sequence Tube Map: https://github.com/vgteam/vg?tab=readme-ov-file#installation");
+}
+find_vg.found_vg = null;
+
+
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
 // THis is where we will store uploaded files
@@ -274,7 +326,7 @@ function indexGamSorted(req, res) {
   const sortedGamFile = fs.createWriteStream(prefix + ".sorted.gam", {
     encoding: "binary",
   });
-  const vgIndexChild = spawn(`${VG_PATH}vg`, [
+  const vgIndexChild = spawn(find_vg(), [
     "gamsort",
     "-i",
     prefix + ".sorted.gam.gai",
@@ -618,16 +670,35 @@ async function getChunkedData(req, res, next) {
     }
 
     // push all gam files
+    let anyGam = false;
+    let anyGaf = false;
     for (const gamFile of gamFiles) {
-      if (!gamFile.endsWith(".gam")) {
-        throw new BadRequestError("GAM file doesn't end in .gam: " + gamFile);
+      if (!gamFile.endsWith(".gam") && !gamFile.endsWith(".gaf.gz")) {
+        throw new BadRequestError("GAM/GAF file doesn't end in .gam or .gaf.gz: " + gamFile);
       }
       if (!isAllowedPath(gamFile)) {
-        throw new BadRequestError("GAM file path not allowed: " + gamFile);
+        throw new BadRequestError("GAM/GAF file path not allowed: " + gamFile);
       }
-      // Use a GAM index
-      console.log("pushing gam file", gamFile);
-      vgChunkParams.push("-a", gamFile, "-g");
+      if (gamFile.endsWith(".gam")) {
+        // Use a GAM index
+        console.log("pushing gam file", gamFile);
+        anyGam = true;
+      }
+      if (gamFile.endsWith(".gaf.gz")) {
+        // Use a GAF with index
+        console.log("pushing gaf file", gamFile);
+        anyGaf = true;
+      }
+      vgChunkParams.push("-a", gamFile);
+    }
+    if (anyGam && anyGaf){
+      throw new BadRequestError("Reads must be either GAM files or GAF files, not mix both.");
+    }
+    if (anyGaf){
+      vgChunkParams.push("-F", "-g");
+    }
+    if (anyGam){
+      vgChunkParams.push("-g");
     }
 
     // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
@@ -664,23 +735,22 @@ async function getChunkedData(req, res, next) {
     console.log(`vg ${vgChunkParams.join(" ")}`);
 
     console.time("vg chunk");
-    const vgChunkCall = spawn(`${VG_PATH}vg`, vgChunkParams);
+    const vgChunkCall = spawn(find_vg(), vgChunkParams);
     // vg simplify for gam files
     let vgSimplifyCall = null;
     if (req.simplify) {
-      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", "-"]);
+      vgSimplifyCall = spawn(find_vg(), ["simplify", "-"]);
       console.log("Spawning vg simplify call");
     }
 
-    const vgViewCall = spawn(`${VG_PATH}vg`, ["view", "-j", "-"]);
+    const vgViewCall = spawn(find_vg(), ["view", "-j", "-"]);
     let graphAsString = "";
     req.error = Buffer.alloc(0);
 
     vgChunkCall.on("error", function (err) {
       console.log(
         "Error executing " +
-          VG_PATH +
-          "vg " +
+          find_vg() + " " +
           vgChunkParams.join(" ") +
           ": " +
           err
@@ -713,7 +783,7 @@ async function getChunkedData(req, res, next) {
         vgViewCall.stdin.end();
       }
       if (code !== 0) {
-        console.log("Error from " + VG_PATH + "vg " + vgChunkParams.join(" "));
+        console.log("Error from " + find_vg() + " " + vgChunkParams.join(" "));
         // Execution failed
         if (!sentResponse) {
           sentResponse = true;
@@ -726,7 +796,7 @@ async function getChunkedData(req, res, next) {
     if (req.simplify) {
       vgSimplifyCall.on("error", function (err) {
         console.log(
-          "Error executing " + VG_PATH + "vg " + "simplify " + "- " + ": " + err
+          "Error executing " + find_vg() + " simplify " + "- " + ": " + err
         );
         if (!sentResponse) {
           sentResponse = true;
@@ -748,7 +818,7 @@ async function getChunkedData(req, res, next) {
         console.log(`vg simplify exited with code ${code}`);
         vgViewCall.stdin.end();
         if (code !== 0) {
-          console.log("Error from " + VG_PATH + "vg " + "simplify - ");
+          console.log("Error from " + find_vg() + " " + "simplify - ");
           // Execution failed
           if (!sentResponse) {
             sentResponse = true;
@@ -816,14 +886,14 @@ async function getChunkedData(req, res, next) {
     let vgSimplifyCall = null;
     let vgViewArguments = ["view", "-j"];
     if (req.simplify) {
-      vgSimplifyCall = spawn(`${VG_PATH}vg`, ["simplify", filename]);
+      vgSimplifyCall = spawn(find_vg(), ["simplify", filename]);
       vgViewArguments.push("-");
       console.log("Spawning vg simplify call");
     } else {
       vgViewArguments.push(filename);
     }
 
-    let vgViewCall = spawn(`${VG_PATH}vg`, vgViewArguments);
+    let vgViewCall = spawn(find_vg(), vgViewArguments);
 
     let graphAsString = "";
     req.error = Buffer.alloc(0);
@@ -833,8 +903,7 @@ async function getChunkedData(req, res, next) {
       vgSimplifyCall.on("error", function (err) {
         console.log(
           "Error executing " +
-            VG_PATH +
-            "vg " +
+            find_vg() + " " +
             "simplify " +
             filename +
             ": " +
@@ -860,7 +929,7 @@ async function getChunkedData(req, res, next) {
         console.log(`vg simplify exited with code ${code}`);
         vgViewCall.stdin.end();
         if (code !== 0) {
-          console.log("Error from " + VG_PATH + "vg " + "simplify " + filename);
+          console.log("Error from " + find_vg() + " simplify " + filename);
           // Execution failed
           if (!sentResponse) {
             sentResponse = true;
@@ -1176,11 +1245,54 @@ function processGamFile(req, res, next, gamFile, gamFileNumber) {
   try {
     if (!isAllowedPath(gamFile)) {
       // This is probably under SCRATCH_DATA_PATH
-      throw new BadRequestError("Path to GAM file not allowed: " + req.gamFile);
+      throw new BadRequestError("Path to GAM/GAF file not allowed: " + req.gamFile);
     }
 
-    const vgViewChild = spawn(`${VG_PATH}vg`, ["view", "-j", "-a", gamFile]);
+    let vgViewParams = ["view", "-j", "-a"];
+    let vgConvertParams = ["convert"];
+    
+    if (gamFile.endsWith(".gaf")) {
+      // if input is GAF, vg convert will be piped into vg view
+      vgViewParams.push("-");
+      // vg convert needs the graph to convert GAF to GAM
+      const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
+      vgConvertParams.push("-F", gamFile, graphFile);
+    }
+    if (gamFile.endsWith(".gam")) {
+      // if input is GAM, no need to convert input to vg view is the file
+      vgViewParams.push(gamFile);
+    }
+    
+    const vgViewChild = spawn(find_vg(), vgViewParams);
 
+    if (gamFile.endsWith(".gaf")) {
+      // if input was a GAF, run vg convert and pipe stdout to vg view
+      const vgConvertChild = spawn(find_vg(), vgConvertParams);
+
+      vgConvertChild.stdout.on("data", function (data) {
+        vgViewChild.stdin.write(data);
+      });
+      
+      vgConvertChild.stderr.on("data", (data) => {
+        console.log(`vg convert err data: ${data}`);
+        req.error += data;
+      });
+
+      vgConvertChild.on("close", (code) => {
+        console.log(`vg convert exited with code ${code}`);
+        vgViewChild.stdin.end();
+        if (code !== 0) {
+          console.log("Error from " + find_vg() + " " + vgConvertParams.join(" "));
+          // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg convert failed"));
+          }
+        }
+      });
+      
+    } 
+    
     vgViewChild.stderr.on("data", (data) => {
       console.log(`err data: ${data}`);
     });
@@ -1214,24 +1326,24 @@ function processGamFile(req, res, next, gamFile, gamFileNumber) {
 function processGamFiles(req, res, next) {
   try {
     console.time("processing gam files");
-    // Find gam files
+    // Find gam/gaf files
     let gamFiles = [];
     fs.readdirSync(req.chunkDir).forEach((file) => {
       console.log(file);
-      if (file.endsWith(".gam")) {
+      if (file.endsWith(".gam") || file.endsWith(".gaf")) {
         gamFiles.push(req.chunkDir + "/" + file);
       }
     });
 
     // Parse a GAM chunk name and get the GAM number from it
-    // Names are like:
+    // Names are like, with either .gam or .gaf suffixes:
     // */chunk_*.gam for 0
     // */chunk-1_*.gam for 1, 2, 3, etc.
     let gamNameToNumber = (gamName) => {
-      const pattern = /.*\/chunk(-([0-9])+)?_.*\.gam/;
-      let matches = gamName.match(pattern);
+      const pattern = /.*\/chunk(-([0-9])+)?_.*\.ga[mf]/
+      let matches = gamName.match(pattern)
       if (!matches) {
-        throw new InternalServerError("Bad GAM name " + gamName);
+        throw new InternalServerError("Bad GAM/GAF name " + gamName) 
       }
       if (matches[2] !== undefined) {
         // We have a number
@@ -1503,6 +1615,9 @@ api.get("/getFilenames", (req, res) => {
       if (file.endsWith(".sorted.gam")) {
         result.files.push({ trackFile: clientPath, trackType: "read" });
       }
+      if (file.endsWith(".gaf.gz")) {
+        result.files.push({"trackFile": file, "trackType": "read"});
+      }
       if (file.endsWith(".bed")) {
         result.bedFiles.push(clientPath);
       }
@@ -1543,7 +1658,7 @@ api.post("/getPathNames", (req, res, next) => {
     );
   }
 
-  const vgViewChild = spawn(`${VG_PATH}vg`, ["paths", "-L", "-x", graphFile]);
+  const vgViewChild = spawn(find_vg(), ["paths", "-L", "-x", graphFile]);
 
   vgViewChild.stderr.on("data", (data) => {
     console.log(`err data: ${data}`);

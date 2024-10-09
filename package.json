@@ -58,6 +58,7 @@
     "webpack": "^5.82.0",
     "webpack-dev-server": "4.11.1",
     "websocket": "^1.0.34",
+    "which": "^4.0.0",
     "worker-rpc": "^0.2.0"
   },
   "scripts": {
