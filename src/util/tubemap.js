@@ -3319,10 +3319,10 @@ function drawNodes(dNodes, groupNode) {
     .on("mouseout", nodeMouseOut)
     .on("dblclick", nodeDoubleClick)
     .on("click", nodeSingleClick)
-    .style("fill", (d) => colorNodes(d.name)["fill"])
-    .style("fill-opacity", (d) => colorNodes(d.name)["fill-opacity"])
-    .style("stroke", (d) => colorNodes(d.name)["outline"])
-    .style("stroke-width", "2px")
+    //.style("fill", (d) => colorNodes(d.name)["fill"])
+    //.style("fill-opacity", (d) => colorNodes(d.name)["fill-opacity"])
+    //.style("stroke", (d) => colorNodes(d.name)["outline"])
+    //.style("stroke-width", "2px")
     .append("svg:title")
     .text((d) => getPopUpNodeText(d));
 }
@@ -3498,7 +3498,7 @@ function drawLabels(dNodes) {
       .attr("font-family", fonts)
       .attr("font-size", "14px")
       .attr("fill", "black")
-      .style("pointer-events", "none");
+      //.style("pointer-events", "none");
   }
 }
 
@@ -3768,7 +3768,7 @@ function drawRulerMarking(sequencePosition, xCoordinate, align) {
     .attr("font-family", fonts)
     .attr("font-size", "12px")
     .attr("fill", "black")
-    .style("pointer-events", "none");
+    //.style("pointer-events", "none");
 
     // vertical line
     svg
@@ -3789,7 +3789,7 @@ function drawRulerMarkingRegion(sequencePosition, xCoordinate) {
     .attr("r", 10)
     .attr("opacity", 0.5)
     .attr("fill", "yellow")
-    .style("pointer-events", "none");
+    //.style("pointer-events", "none");
 }
 
 function filterObjectByAttribute(attribute, value) {
@@ -3808,7 +3808,7 @@ function drawTrackRectangles(rectangles, type, groupTrack) {
     .attr("y", (d) => d.yStart)
     .attr("width", (d) => d.xEnd - d.xStart + 1)
     .attr("height", (d) => d.yEnd - d.yStart + 1)
-    .style("fill", (d) => d.color)
+    //.style("fill", (d) => d.color)
     .attr("trackID", (d) => d.id)
     .attr("trackName", (d) => d.name)
     .attr("class", (d) => `track${d.id}`)
@@ -4109,7 +4109,7 @@ function drawTrackCurves(type, groupTrack) {
     .enter()
     .append("path")
     .attr("d", (d) => d.path)
-    .style("fill", (d) => d.color)
+    //.style("fill", (d) => d.color)
     .attr("trackID", (d) => d.id)
     .attr("trackName", (d) => d.name)
     .attr("class", (d) => `track${d.id}`)
@@ -4131,7 +4131,7 @@ function drawTrackCorners(corners, type, groupTrack) {
     .enter()
     .append("path")
     .attr("d", (d) => d.path)
-    .style("fill", (d) => d.color)
+    //.style("fill", (d) => d.color)
     .attr("trackID", (d) => d.id)
     .attr("trackName", (d) => d.name)
     .attr("class", (d) => `track${d.id}`)

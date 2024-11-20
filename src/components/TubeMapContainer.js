@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Container, Row, Alert } from "reactstrap";
 import isEqual from "react-fast-compare";
+import "abortcontroller-polyfill/dist/abortcontroller-polyfill-only.js";
 
 import TubeMap from "./TubeMap";
 import * as tubeMap from "../util/tubemap";

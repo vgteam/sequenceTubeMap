@@ -2,6 +2,8 @@
  * Guts of the local API Web Worker. Runs in a web worker in the browser and in the main thread in Jest.
  */
 
+import "abortcontroller-polyfill/dist/abortcontroller-polyfill-only.js";
+
 import { RpcProvider } from "worker-rpc";
 
 // We are actually a proxying wrapper around this actual implementation.

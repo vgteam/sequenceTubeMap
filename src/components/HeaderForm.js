@@ -13,6 +13,7 @@ import BedFileDropdown from "./BedFileDropdown";
 import FormHelperText from "@mui/material/FormHelperText";
 import PopupDialog from "./PopupDialog.js";
 import Switch from "react-switch";
+import "abortcontroller-polyfill/dist/abortcontroller-polyfill-only.js";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGear } from "@fortawesome/free-solid-svg-icons";
 import {
