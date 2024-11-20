@@ -41,7 +41,14 @@ export class ServerAPI extends APIInterface {
 
     // We make a function to connect the websocket, which we can call to reconnect.
     let connect = () => {
-      subscription.ws = new WebSocket(this.apiUrl.replace(/^http/, "ws"));
+      let ws_url = this.apiUrl.replace(/^http/i, "ws");
+      if (!ws_url.startsWith("ws://") && !ws_url.startsWith("wss://")) {
+        // API URL specifies magical teleportation instead of HTTP; don't try
+        // and open a websocket or we will throw and crash React to a white
+        // page.
+        return subscription;
+      }
+      subscription.ws = new WebSocket(ws_url);
       
       // We make a function to disconnect also and remove all the event handlers.
       subscription.disconnect = () => {

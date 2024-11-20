@@ -63,14 +63,15 @@
   },
   "scripts": {
     "start": "concurrently -n frontend,backend -c red,green 'HOST=${HOST:=127.0.0.1} PORT=${PORT:=3001} react-scripts start' 'npm:serve'",
-    "build": "react-scripts build",
+    "build": "PUBLIC_URL=. react-scripts build",
     "test": "react-scripts test --testResultsProcessor=./node_modules/jest-html-reporter --reporters default jest-compact-reporter --seed=1",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "serve": "node ./src/server.mjs",
     "format": "prettier --write \"**/*.+(mjs|js|css)\"",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "tauri": "tauri"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -85,6 +86,7 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
     "jest-compact-reporter": "^1.2.9",
     "jest-fetch-mock": "^3.0.3",
     "jest-html-reporter": "^3.10.2",
