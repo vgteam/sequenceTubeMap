@@ -449,8 +449,7 @@ function createTubeMap() {
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty("type")) {
-      // TODO: maybe remove "haplo"-property?
-      tracks[i].type = "haplo";
+      tracks[i].type = "haplotype";
     }
     if (tracks[i].hasOwnProperty("hidden")) {
       if (tracks[i].hidden === true) {
@@ -530,15 +529,15 @@ function createTubeMap() {
 
   // all drawn tracks are grouped
   let trackGroup = svg.append("g").attr("class", "track");
-  drawTrackRectangles(trackRectangles, "haplo", trackGroup);
-  drawTrackCurves("haplo", trackGroup);
+  drawTrackRectangles(trackRectangles, "haplotype", trackGroup);
+  drawTrackCurves("haplotype", trackGroup);
   drawReversalsByColor(
     trackCorners,
     trackVerticalRectangles,
-    "haplo",
+    "haplotype",
     trackGroup
   );
-  drawTrackRectangles(trackRectanglesStep3, "haplo", trackGroup);
+  drawTrackRectangles(trackRectanglesStep3, "haplotype", trackGroup);
   drawTrackRectangles(trackRectangles, "read", trackGroup);
   drawTrackCurves("read", trackGroup);
 
@@ -580,7 +579,7 @@ function generateReadOnlyNodeAttributes() {
 
   // for order values where there is no node with haplotypes, orderY is calculated via tracks
   tracks.forEach((track) => {
-    if (track.type === "haplo") {
+    if (track.type === "haplotype") {
       track.path.forEach((step) => {
         setMapToMax(orderY, step.order, step.y + track.width);
       });
@@ -1601,7 +1600,7 @@ function generateNodeOrder() {
       tracksAndReads[i].indexSequence
     ); // calculate order values for all nodes until the first anchor
     if (rightIndex === null) {
-      if (tracksAndReads[i].type === "haplo") {
+      if (tracksAndReads[i].type === "haplotype") {
         generateNodeOrderOfSingleTrack(tracksAndReads[i].indexSequence);
       } else {
         tracksAndReads.splice(i, 1);
@@ -4152,7 +4151,7 @@ function drawLegend() {
   const listeners = [];
   // This is in terms of tracks, but when we change visibility we need to touch inputTracks, so we need to set up listeners by track ID.
   for (let i = 0; i < tracks.length; i += 1) {
-    if (tracks[i].type === "haplo") {
+    if (tracks[i].type === "haplotype") {
       content += `<tr><td style="text-align:right"><div class="color-box" style="background-color: ${generateTrackColor(
         tracks[i],
         "exon"
@@ -4774,7 +4773,7 @@ function mergeNodes() {
             // add 2 predecessors, to make sure there is no node merging in this case
             pred[nodeMap.get(track.sequence[i])].add(forward(nodeName));
           }
-        } else if (track.type === "haplo") {
+        } else if (track.type === "haplotype") {
           pred[nodeMap.get(track.sequence[i])].add("None");
         }
         if (i < track.sequence.length - 1) {
@@ -4784,7 +4783,7 @@ function mergeNodes() {
             // add 2 successors, to make sure there is no node merging in this case
             succ[nodeMap.get(track.sequence[i])].add(forward(nodeName));
           }
-        } else if (track.type === "haplo") {
+        } else if (track.type === "haplotype") {
           succ[nodeMap.get(track.sequence[i])].add("None");
         }
       } else {
@@ -4799,7 +4798,7 @@ function mergeNodes() {
             succ[nodeMap.get(nodeName)].add(nodeName2);
             succ[nodeMap.get(nodeName)].add(reverse(nodeName2));
           }
-        } else if (track.type === "haplo") {
+        } else if (track.type === "haplotype") {
           succ[nodeMap.get(nodeName)].add("None");
         }
         if (i < track.sequence.length - 1) {
@@ -4810,7 +4809,7 @@ function mergeNodes() {
             pred[nodeMap.get(nodeName)].add(nodeName2);
             pred[nodeMap.get(nodeName)].add(reverse(nodeName2));
           }
-        } else if (track.type === "haplo") {
+        } else if (track.type === "haplotype") {
           pred[nodeMap.get(nodeName)].add("None");
         }
       }
