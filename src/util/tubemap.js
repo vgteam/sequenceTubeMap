@@ -2674,6 +2674,19 @@ function generateTrackColor(track, highlight) {
   return trackColor;
 }
 
+function generateTrackAlpha(track, highlight) {
+  if (typeof highlight === "undefined") highlight = "plain";
+  let trackAlpha = 1;
+
+  const sourceID = track.sourceTrackID;
+  if (track.hasOwnProperty("type") && track.type === "read") {
+    if (config.colorSchemes[sourceID].alphaReadsByMappingQuality) {
+      trackAlpha = 0.1 + 0.9 * (Math.min(60, track.mapping_quality) / 60);
+    }
+  }
+  return trackAlpha;
+}
+
 function getReadXStart(read) {
   const node = nodes[read.path[0].node];
   if (read.path[0].isForward) {
@@ -2716,6 +2729,7 @@ function generateSVGShapesFromPath() {
   let yStart;
   let yEnd;
   let trackColor;
+  let trackAlpha;
   let highlight;
   let dummy;
   let reversalFlag;
@@ -2748,6 +2762,7 @@ function generateSVGShapesFromPath() {
   tracks.forEach((track) => {
     highlight = "plain";
     trackColor = generateTrackColor(track, highlight);
+    trackAlpha = generateTrackAlpha(track, highlight);
 
     // start of path
     yStart = track.path[0].y;
@@ -2791,12 +2806,14 @@ function generateSVGShapesFromPath() {
         }
         if (xEnd !== xStart) {
           trackColor = generateTrackColor(track, highlight);
+          trackAlpha = generateTrackAlpha(track, highlight);
           trackRectangles.push({
             xStart: Math.min(xStart, xEnd),
             yStart,
             xEnd: Math.max(xStart, xEnd),
             yEnd: yStart + track.width - 1,
             color: trackColor,
+            alpha: trackAlpha,
             // TODO: This is not actually the index of the track!
             id: track.id,
             name: track.name,
@@ -2810,6 +2827,7 @@ function generateSVGShapesFromPath() {
           xEnd = orderStartX[track.path[i].order];
           yEnd = track.path[i].y;
           trackColor = generateTrackColor(track, highlight);
+          trackAlpha = generateTrackAlpha(track, highlight);
           trackCurves.push({
             xStart,
             yStart,
@@ -2817,6 +2835,7 @@ function generateSVGShapesFromPath() {
             yEnd,
             width: track.width,
             color: trackColor,
+            alpha: trackAlpha,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
             name: track.name,
@@ -2832,6 +2851,7 @@ function generateSVGShapesFromPath() {
           xEnd = orderEndX[track.path[i].order];
           yEnd = track.path[i].y;
           trackColor = generateTrackColor(track, highlight);
+          trackAlpha = generateTrackAlpha(track, highlight);
           trackCurves.push({
             xStart: xStart + 1,
             yStart,
@@ -2839,6 +2859,7 @@ function generateSVGShapesFromPath() {
             yEnd,
             width: track.width,
             color: trackColor,
+            alpha: trackAlpha,
             laneChange: Math.abs(track.path[i].lane - track.path[i - 1].lane),
             id: track.id,
             name: track.name,
@@ -2920,6 +2941,7 @@ function generateSVGShapesFromPath() {
       xEnd: Math.max(xStart, xEnd),
       yEnd: yStart + track.width - 1,
       color: trackColor,
+      alpha: trackAlpha,
       id: track.id,
       name: track.name,
       type: track.type,
@@ -3332,12 +3354,14 @@ function colorNodes(nodeName) {
   let nodesColors = {};
   if (config.coloredNodes.includes(nodeName)) {
     nodesColors["fill"] = "#ffc0cb";
-    nodesColors["fill-opacity"] = "0.4";
     nodesColors["outline"] = "#ff0000";
   } else {
     nodesColors["fill"] = "#ffffff";
-    nodesColors["fill-opacity"] = "0.4";
     nodesColors["outline"] = "#000000";
+  }
+  nodesColors["fill-opacity"] = "0.4";
+  if (config.transparentNodesFlag) {
+    nodesColors["fill"] = "none";
   }
   return nodesColors;
 }
@@ -3808,6 +3832,7 @@ function drawTrackRectangles(rectangles, type, groupTrack) {
     .attr("width", (d) => d.xEnd - d.xStart + 1)
     .attr("height", (d) => d.yEnd - d.yStart + 1)
     .style("fill", (d) => d.color)
+    .style("fill-opacity", (d) => d.alpha)
     .attr("trackID", (d) => d.id)
     .attr("trackName", (d) => d.name)
     .attr("class", (d) => `track${d.id}`)
@@ -4109,6 +4134,7 @@ function drawTrackCurves(type, groupTrack) {
     .append("path")
     .attr("d", (d) => d.path)
     .style("fill", (d) => d.color)
+    .style("fill-opacity", (d) => d.alpha)
     .attr("trackID", (d) => d.id)
     .attr("trackName", (d) => d.name)
     .attr("class", (d) => `track${d.id}`)
