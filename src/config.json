@@ -72,7 +72,7 @@
           }
         }
       ],
-      "bedFile": "https://public.gi.ucsc.edu/~anovak/vg-data/lancet_2023-11-07/index.bed",
+      "bedFile": "https://lancet2-paper.storage.googleapis.com/sequence-tube-map-demo/index.bed",
       "region": "chr1:7290357-7290857",
       "dataType": "built-in"
     }
