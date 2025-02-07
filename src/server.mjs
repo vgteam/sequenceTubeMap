@@ -311,14 +311,23 @@ api.use((req, res, next) => {
 });
 
 // Store files uploaded from trackFilePicker via multer
-api.post("/trackFileSubmission", upload.single("trackFile"), (req, res) => {
-  console.log("/trackFileSubmission");
-  console.log(req.file);
-  if (req.body.fileType === fileTypes["READ"]) {
-    indexGamSorted(req, res);
-  } else {
-    res.json({ path: path.relative(".", req.file.path) });
-  }
+api.post("/trackFileSubmission", upload.single("trackFile"), (req, res, next) => {
+  // We would like this to be an async function, but then Express error
+  // handling doesn't work, because it doesn't detect returned promise
+  // rejections until Express 5. We have to pass an error to next() or else
+  // throw synchronously.
+  captureErrors(next, async () => {
+    console.log("/trackFileSubmission");
+    console.log(req.file);
+    // We don't get a lock because we're putting new files in and so we don't
+    // need to block using them or cleaning old files.
+    
+    if (req.body.fileType === fileTypes["READ"]) {
+      indexGamSorted(req, res, next);
+    } else {
+      res.json({ path: path.relative(".", req.file.path) });
+    }
+  });
 });
 
 function indexGamSorted(req, res, next) {
@@ -375,8 +384,19 @@ function indexGamSorted(req, res, next) {
     sortedReadsFile.write(data);
   });
 
-  vgGamsortChild.on("close", () => {
+  vgGamsortChild.on("close", (code) => {
+    console.log(`vg gamsort exited with code ${code}`);
     sortedReadsFile.end();
+    
+    if (code !== 0) {
+      // Execution failed
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new VgExecutionError("vg gamsort failed"));
+      }
+      return;
+    }
+
     if (!sentResponse) {
       sentResponse = true;
       res.json({ path: path.relative(".", prefix + sortedSuffix) });
