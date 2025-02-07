@@ -7,10 +7,9 @@ import { Input } from "reactstrap";
 
 /*
  * A selection dropdown component that select files.
- * Expects a file type object in the form of {"name": string, "type": string}
+ * Expects a collection of track objects in the form of {"name": string, "type": string}
  *
- * The handleInputChange function expects to be passed an option type object in the form of
- * {"label": string, "value": file}
+ * The handleInputChange function expects to be passed a bare value.
  *
  * See demo and test file for examples of this component.
  */
@@ -30,11 +29,23 @@ export const TrackFilePicker = ({
   let acceptedExtensions = config.fileTypeToExtensions[fileType];
 
   async function uploadOnChange() {
-    const file = uploadFileInput.current.files[0];
-
-    const completePath = await handleFileUpload(fileType, file);
-    console.log("TrackFilePicker got an upload result:", completePath);
-    handleInputChange(completePath);
+    // TODO: we have a ref here for a reason, but the ref's value can be null
+    // when the upload await finishes. So we capture it to a local.
+    const uploadingInput = uploadFileInput.current;
+    const file = uploadingInput.files[0];
+    
+    try {
+      const completePath = await handleFileUpload(fileType, file);
+      console.log("TrackFilePicker got an upload result:", completePath);
+      // This will be nothing if the upoload was canceled.
+      handleInputChange(completePath);
+    } catch (e) {
+      console.error("TrackFilePicker could not upload: ", e);
+      // TODO: Display error to user in a better way
+      alert(e.toString());
+      // Clear out the uploaded file to show it didn't work.
+      uploadingInput.value = null; 
+    }
   }
 
   function mountedOnChange(option) {

@@ -912,7 +912,8 @@ class HeaderForm extends Component {
     this.setState({ uploadInProgress: val });
   };
 
-  // Sends uploaded file to server and returns a path to the file
+  // Sends uploaded file to server and returns a path to the file, or raises an exception if the upload fails or is rejected.
+  // If the file upload is canceled, returns nothing.
   handleFileUpload = async (fileType, file) => {
     if (!(this.props.APIInterface instanceof LocalAPI) && file.size > config.MAXUPLOADSIZE) {
       this.showFileSizeAlert();
@@ -927,11 +928,14 @@ class HeaderForm extends Component {
         // Refresh the graphs right away
         this.getMountedFilenames();
       }
+      // TODO: Is only one upload actually ever in progress at a time? Probably
+      // it's possible to have several!!!
       this.setUploadInProgress(false);
       return fileName;
     } catch (e) {
       if (!this.cancelSignal.aborted) {
         // Only pass along errors if we haven't canceled our fetches.
+        this.setUploadInProgress(false);
         throw e;
       }
     }
