@@ -1726,12 +1726,26 @@ api.post("/getPathNames", (req, res, next) => {
   vgViewChild.stderr.on("data", (data) => {
     console.log(`err data: ${data}`);
   });
-
-  let pathNames = "";
-  vgViewChild.stdout.on("data", function (data) {
-    pathNames += data.toString();
+  
+  // We want to avoid dealing with a giant string of path names; it's possible
+  // there are more than fit in a Node string.
+  let pathNames = [];
+  const lineReader = rl.createInterface({
+    input: fs.createReadStream(vgViewChild.stdout),
   });
 
+  
+  lineReader.on("line", function (line) {
+    try {
+      pathNames.push(line);
+    } catch (e) {
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new InternalServerError("Internal error: " + e));
+      }
+    }
+  });
+  
   vgViewChild.on("error", function (err) {
     console.log('Error executing "vg view": ' + err);
     if (!sentResponse) {
@@ -1741,27 +1755,54 @@ api.post("/getPathNames", (req, res, next) => {
     return;
   });
 
-  vgViewChild.on("close", (code) => {
-    if (code !== 0) {
-      // Execution failed
+  // It's not clear if there's a guaranteed order between the line reader
+  // close/last line and the child process close, so we wait for both.
+  let returnCode = null;
+  let lineStreamClosed = false;
+
+  let handleFinish = function() {
+    try {
+      if (returnCode === null || lineStreamClosed === false) {
+        // Not ready yet. Wait for the other event.
+        return;
+      }
+
+      if (returnCode !== 0) {
+        // Execution failed
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("vg view failed"));
+        }
+        return;
+      }
+      result.pathNames = pathNames
+        .filter(function (a) {
+          // Eliminate empty names or underscore-prefixed internal names (like _alt paths)
+          return a !== "" && !a.startsWith("_");
+        })
+        .sort();
+      console.log(`Found ${result.pathNames.length} paths`);
       if (!sentResponse) {
         sentResponse = true;
-        return next(new VgExecutionError("vg view failed"));
+        res.json(result);
       }
-      return;
+    } catch (e) {
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new InternalServerError("Internal error: " + e));
+      }
     }
-    result.pathNames = pathNames
-      .split("\n")
-      .filter(function (a) {
-        // Eliminate empty names or underscore-prefixed internal names (like _alt paths)
-        return a !== "" && !a.startsWith("_");
-      })
-      .sort();
-    console.log(result);
-    if (!sentResponse) {
-      sentResponse = true;
-      res.json(result);
-    }
+  };
+
+
+  vgViewChild.on("close", (code) => {
+    returnCode = code;
+    handleFinish();
+  });
+
+  lineReader.on("close", () => {
+    lineStreamClosed = true;
+    handleFinish();
   });
 });
 
