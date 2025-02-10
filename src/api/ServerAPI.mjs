@@ -111,7 +111,7 @@ export class ServerAPI extends APIInterface {
     // Make sure server can identify a Read file
     formData.append("fileType", fileType);
 
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.responseType = "json";
       xhr.onreadystatechange = () => {
@@ -121,21 +121,28 @@ export class ServerAPI extends APIInterface {
           reject(new Error("Upload aborted"));
           return;
         }
-
+        
         if (xhr.readyState === 4) {
           if (xhr.status === 200 && xhr.response.path) {
             // Every thing ok, file uploaded, and we got a path.
             resolve(xhr.response.path);
           } else {
             // Something weird happened.
-            reject(
-              new Error(
-                "Failed to upload file: status " +
-                  xhr.status +
-                  " and response: " +
-                  xhr.response
-              )
-            );
+            
+            if (xhr.response.error) {
+              // The server sent us a particular message.
+              reject(new Error(xhr.response.error))
+            } else {
+              // The server did not help us. Compose a message.
+              reject( 
+                new Error(
+                  "Failed to upload file: status " +
+                    xhr.status +
+                    " and response: " +
+                    JSON.stringify(xhr.response)
+                )
+              );
+            }
           }
         }
       };

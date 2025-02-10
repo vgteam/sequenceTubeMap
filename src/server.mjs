@@ -311,39 +311,96 @@ api.use((req, res, next) => {
 });
 
 // Store files uploaded from trackFilePicker via multer
-api.post("/trackFileSubmission", upload.single("trackFile"), (req, res) => {
-  console.log("/trackFileSubmission");
-  console.log(req.file);
-  if (req.body.fileType === fileTypes["READ"]) {
-    indexGamSorted(req, res);
-  } else {
-    res.json({ path: path.relative(".", req.file.path) });
-  }
+api.post("/trackFileSubmission", upload.single("trackFile"), (req, res, next) => {
+  // We would like this to be an async function, but then Express error
+  // handling doesn't work, because it doesn't detect returned promise
+  // rejections until Express 5. We have to pass an error to next() or else
+  // throw synchronously.
+  captureErrors(next, async () => {
+    console.log("/trackFileSubmission");
+    console.log(req.file);
+    // We don't get a lock because we're putting new files in and so we don't
+    // need to block using them or cleaning old files.
+    
+    if (req.body.fileType === fileTypes["READ"]) {
+      indexGamSorted(req, res, next);
+    } else {
+      res.json({ path: path.relative(".", req.file.path) });
+    }
+  });
 });
 
-function indexGamSorted(req, res) {
-  const prefix = req.file.path.substring(0, req.file.path.lastIndexOf("."));
-  const sortedGamFile = fs.createWriteStream(prefix + ".sorted.gam", {
+function indexGamSorted(req, res, next) {
+  let readsPath = req.file.path;
+  let prefix;
+  let sortedSuffix;
+  let indexSuffix;
+  if (readsPath.endsWith(".gaf") || readsPath.endsWith(".gaf.gz")) {
+    throw new BadRequestError(`Server-side sorting and indexing not yet implemented for GAF: ${readsPath}`);
+  } else if (readsPath.endsWith(".gam")) {
+    prefix = readsPath.substring(0, req.file.path.lastIndexOf(".gam"));
+    sortedSuffix = ".sorted.gam";
+    indexSuffix = ".sorted.gam.gai";
+  } else {
+    throw new BadRequestError(`Read file is not a GAF or GAM: ${readsPath}`);
+  }
+
+  const sortedReadsFile = fs.createWriteStream(prefix + sortedSuffix, {
     encoding: "binary",
   });
-  const vgIndexChild = spawn(find_vg(), [
+
+  let vgGamsortParams = [
     "gamsort",
     "-i",
-    prefix + ".sorted.gam.gai",
+    prefix + indexSuffix,
     req.file.path,
-  ]);
+  ];
+  const vgGamsortChild = spawn(find_vg(), vgGamsortParams);
 
-  vgIndexChild.stderr.on("data", (data) => {
+  req.error = Buffer.alloc(0);
+
+  let sentResponse = false;
+
+  vgGamsortChild.on("error", function (err) {
+    console.log(
+      "Error executing " +
+        find_vg() + " " +
+        vgGamsortParams.join(" ") +
+        ": " +
+        err
+    );
+    if (!sentResponse) {
+      sentResponse = true;
+      return next(new VgExecutionError("vg gamsort failed"));
+    }
+  });
+
+  vgGamsortChild.stderr.on("data", (data) => {
     console.log(`err data: ${data}`);
+    req.error += data;
   });
 
-  vgIndexChild.stdout.on("data", function (data) {
-    sortedGamFile.write(data);
+  vgGamsortChild.stdout.on("data", function (data) {
+    sortedReadsFile.write(data);
   });
 
-  vgIndexChild.on("close", () => {
-    sortedGamFile.end();
-    res.json({ path: path.relative(".", prefix + ".sorted.gam") });
+  vgGamsortChild.on("close", (code) => {
+    console.log(`vg gamsort exited with code ${code}`);
+    sortedReadsFile.end();
+    
+    if (code !== 0) {
+      // Execution failed
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new VgExecutionError("vg gamsort failed"));
+      }
+      return;
+    }
+
+    if (!sentResponse) {
+      sentResponse = true;
+      res.json({ path: path.relative(".", prefix + sortedSuffix) });
+    }
   });
 }
 
@@ -673,20 +730,25 @@ async function getChunkedData(req, res, next) {
     let anyGam = false;
     let anyGaf = false;
     for (const gamFile of gamFiles) {
-      if (!gamFile.endsWith(".gam") && !gamFile.endsWith(".gaf.gz")) {
-        throw new BadRequestError("GAM/GAF file doesn't end in .gam or .gaf.gz: " + gamFile);
+      if (!gamFile.endsWith(".gam") && !gamFile.endsWith(".gaf") && !gamFile.endsWith(".gaf.gz")) {
+        throw new BadRequestError("GAM/GAF file doesn't end in .gam, .gaf, or .gaf.gz: " + gamFile);
       }
       if (!isAllowedPath(gamFile)) {
         throw new BadRequestError("GAM/GAF file path not allowed: " + gamFile);
       }
       if (gamFile.endsWith(".gam")) {
-        // Use a GAM index
+        // Use a GAM
         console.log("pushing gam file", gamFile);
         anyGam = true;
       }
+      if (gamFile.endsWith(".gaf")) {
+        // Use a small GAF without an index
+        console.log("pushing gaf file", gamFile);
+        anyGaf = true;
+      }
       if (gamFile.endsWith(".gaf.gz")) {
         // Use a GAF with index
-        console.log("pushing gaf file", gamFile);
+        console.log("pushing hopefully indexed gaf file", gamFile);
         anyGaf = true;
       }
       vgChunkParams.push("-a", gamFile);
@@ -1615,6 +1677,7 @@ api.get("/getFilenames", (req, res) => {
       if (file.endsWith(".sorted.gam")) {
         result.files.push({ trackFile: clientPath, trackType: "read" });
       }
+      // We don't allow un-sorted-and-indexed plain GAF files here
       if (file.endsWith(".gaf.gz")) {
         result.files.push({"trackFile": file, "trackType": "read"});
       }
