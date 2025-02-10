@@ -1731,7 +1731,7 @@ api.post("/getPathNames", (req, res, next) => {
   // there are more than fit in a Node string.
   let pathNames = [];
   const lineReader = rl.createInterface({
-    input: fs.createReadStream(vgViewChild.stdout),
+    input: vgViewChild.stdout,
   });
 
   
