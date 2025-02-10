@@ -1061,11 +1061,17 @@ async function getChunkedData(req, res, next) {
 /// to the requested region are first, and return a re-ordered array of paths.
 function organizePathsTargetFirst(region, pathList) {
   if (region.contig !== "node") {
+    
+    // We pull the subrange off the path names when comparing them
+    let subrange_regex = /\[[0-9]+(-[0-9]+)?\]$/;
+    let targetBasePath = region.contig.replace(subrange_regex, "");
+
     // Make sure that path 0 is the path we actually asked about
     let refPaths = [];
     let otherPaths = [];
     for (let path of pathList) {
-      if (path.name === region.contig) {
+      let pathBasePath = path.name.replace(subrange_regex, "");
+      if (pathBasePath === targetBasePath) {
         // This is the path we asked about, so it goes first
         refPaths.push(path);
       } else {
