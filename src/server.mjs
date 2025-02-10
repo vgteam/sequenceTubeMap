@@ -931,7 +931,10 @@ async function getChunkedData(req, res, next) {
         removeNodeSequencesInPlace(req.graph)
       } 
       req.region = [rangeRegion.start, rangeRegion.end];
-      // vg chunk always puts the path we reference on first automatically
+      
+      // We might not have the path we are referencing on appearing first.
+      req.graph.path = organizePathsTargetFirst(parsedRegion, req.graph.path);
+
       if (!sentResponse) {
         sentResponse = true;
         processAnnotationFile(req, res, next);
@@ -1044,27 +1047,36 @@ async function getChunkedData(req, res, next) {
       req.region = [rangeRegion.start, rangeRegion.end];
 
       // We might not have the path we are referencing on appearing first.
-      if (parsedRegion.contig !== "node") {
-        // Make sure that path 0 is the path we actually asked about
-        let refPaths = [];
-        let otherPaths = [];
-        for (let path of req.graph.path) {
-          if (path.name === parsedRegion.contig) {
-            // This is the path we asked about, so it goes first
-            refPaths.push(path);
-          } else {
-            // Then we put each other path
-            otherPaths.push(path);
-          }
-        }
-        req.graph.path = refPaths.concat(otherPaths);
-      }
+      req.graph.path = organizePathsTargetFirst(parsedRegion, req.graph.path);
 
       if (!sentResponse) {
         sentResponse = true;
         processAnnotationFile(req, res, next);
       }
     });
+  }
+}
+
+/// Given an array of paths, organize them so that the paths(s) corresponding
+/// to the requested region are first, and return a re-ordered array of paths.
+function organizePathsTargetFirst(region, pathList) {
+  if (region.contig !== "node") {
+    // Make sure that path 0 is the path we actually asked about
+    let refPaths = [];
+    let otherPaths = [];
+    for (let path of pathList) {
+      if (path.name === region.contig) {
+        // This is the path we asked about, so it goes first
+        refPaths.push(path);
+      } else {
+        // Then we put each other path
+        otherPaths.push(path);
+      }
+    }
+    return refPaths.concat(otherPaths);
+  } else {
+    // No target path
+    return pathList;
   }
 }
 
@@ -1437,7 +1449,7 @@ function processGamFiles(req, res, next) {
 // Function to do the step of reading the "region" file, a BED inside the chunk
 // that records the path and start offset that were used to define the chunk.
 //
-// Calls out to the next step, cleanUpAndSendResult
+// Calls out to the next step, processNodeColorsFile
 function processRegionFile(req, res, next) {
   try {
     console.time("processing region file");

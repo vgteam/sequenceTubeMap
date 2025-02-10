@@ -2654,7 +2654,7 @@ function generateTrackColor(track, highlight) {
     }
   } else {
     if (config.showExonsFlag === false || highlight !== "plain") {
-      // Don't repeat the color of the first track (reference) to highilight is better.
+      // Don't repeat the color of the first track (reference) to highlight is better.
       // TODO: Allow using color 0 for other schemes not the same as the one for the reference path.
       // TODO: Stop reads from taking this color?
       const auxColorSet = getColorSet(config.colorSchemes[sourceID].auxPalette);
