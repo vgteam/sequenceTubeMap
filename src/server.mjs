@@ -6,6 +6,9 @@
 
 import "./config-server.mjs";
 import { config } from "./config-global.mjs";
+import { find_vg } from "./vg.mjs"
+import { TubeMapError, BadRequestError, InternalServerError, VgExecutionError } from "./errors.mjs"
+
 import assert from "assert";
 import { spawn } from "child_process";
 import express from "express";
@@ -35,64 +38,11 @@ import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
 import cron from "node-cron";
 import { RWLock, combine } from "readers-writer-lock";
-import which from "which";
 
 if (process.env.NODE_ENV !== "production") {
   // Load any .env file config
   dotenv.config();
 }
-
-/// Return the command string to execute to run vg.
-/// Checks config.vgPath.
-/// An entry of "" in config.vgPath means to check PATH.
-function find_vg() {
-  if (find_vg.found_vg !== null) {
-    // Cache the answer and don't re-check all the time.
-    // Nobody shoudl be deleting vg.
-    return find_vg.found_vg;
-  }
-  for (let prefix of config.vgPath) {
-    if (prefix === "") {
-      // Empty string has special meaning of "use PATH".
-      console.log("Check for vg on PATH");
-      try {
-        find_vg.found_vg = which.sync("vg");
-        console.log("Found vg at:", find_vg.found_vg);
-        return find_vg.found_vg;
-      } catch (e) {
-        // vg is not on PATH
-        continue;
-      }
-    }
-    if (prefix.length > 0 && prefix[prefix.length - 1] !== "/") {
-      // Add trailing slash
-      prefix = prefix + "/";
-    }
-    let vg_filename = prefix + "vg";
-    console.log("Check for vg at:", vg_filename);
-    if (fs.existsSync(vg_filename)) {
-      if (!fs.statSync(vg_filename).isFile()) {
-        // This is a directory or something, not a binary we can run.
-        continue;
-      }
-      try {
-        // Pretend we will execute it
-        fs.accessSync(vg_filename, fs.constants.X_OK)
-      } catch (e) {
-        // Not executable
-        continue;
-      }
-      // If we get here it is executable.
-      find_vg.found_vg = vg_filename;
-      console.log("Found vg at:", find_vg.found_vg);
-      return find_vg.found_vg;
-    }
-  }
-  // If we get here we don't see vg at all.
-  throw new InternalServerError("The vg command was not found. Install vg to use the Sequence Tube Map: https://github.com/vgteam/vg?tab=readme-ov-file#installation");
-}
-find_vg.found_vg = null;
-
 
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
@@ -1083,43 +1033,6 @@ function organizePathsTargetFirst(region, pathList) {
   } else {
     // No target path
     return pathList;
-  }
-}
-
-// We can throw this error to trigger our error handling code instead of
-// Express's default. It covers input validation failures, and vaguely-expected
-// server-side errors we want to report in a controlled way (because they could
-// be caused by bad user input to vg).
-class TubeMapError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
-
-// We can throw this error to make Express respond with a bad request error
-// message. We should throw it whenever we detect that user input is
-// unacceptable.
-class BadRequestError extends TubeMapError {
-  constructor(message) {
-    super(message);
-    this.status = 400;
-  }
-}
-
-// We can throw this error to make Express respond with an internal server
-// error message
-class InternalServerError extends TubeMapError {
-  constructor(message) {
-    super(message);
-    this.status = 500;
-  }
-}
-
-// We can throw this error to make Express respond with an internal server
-// error message about vg.
-class VgExecutionError extends InternalServerError {
-  constructor(message) {
-    super(message);
   }
 }
 
