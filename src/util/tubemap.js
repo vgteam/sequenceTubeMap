@@ -3598,8 +3598,10 @@ function drawRuler() {
     return xCoordOfMarking;
   }
 
-  let start_region = Number(inputRegion[0]);
-  let end_region = Number(inputRegion[1]);
+  // Get the region in bp in the scale bar's coordinate space to highlight as
+  // the target region. Will be null if we're using node IDs.
+  let start_region = inputRegion[0] !== null ? Number(inputRegion[0]) : null;
+  let end_region = inputRegion[1] !== null ? Number(inputRegion[1]) : null;
 
   let intervalsVisitedByNodes = [];
 
@@ -3626,6 +3628,7 @@ function drawRuler() {
     let alreadyMarkedNode = false;
 
     if (
+      start_region !== null &&
       start_region >= indexOfFirstBaseInNode &&
       start_region < indexOfFirstBaseInNode + currentNode.sequenceLength
     ) {
@@ -3639,6 +3642,7 @@ function drawRuler() {
       ticks_region.push([start_region, xCoordOfMarking]);
     }
     if (
+      end_region !== null &&
       end_region >= indexOfFirstBaseInNode &&
       end_region < indexOfFirstBaseInNode + currentNode.sequenceLength
     ) {

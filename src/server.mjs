@@ -879,9 +879,16 @@ async function getChunkedData(req, res, next) {
       req.graph = JSON.parse(graphAsString);
       if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
-      } 
-      req.region = [rangeRegion.start, rangeRegion.end];
-      
+      }
+      if (rangeRegion.contig === "node") {
+        req.region = [null, null];
+      } else {
+        // If the query came in on a path with a subrange defined already,
+        // translate it into base path coordinates.
+        let subrangeStart = getSubrangeStart(rangeRegion.contig);
+        req.region = [rangeRegion.start + subrangeStart, rangeRegion.end + subrangeStart];
+      }
+
       // We might not have the path we are referencing on appearing first.
       req.graph.path = organizePathsTargetFirst(parsedRegion, req.graph.path);
 
@@ -993,8 +1000,15 @@ async function getChunkedData(req, res, next) {
       req.graph = JSON.parse(graphAsString);
       if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
-      } 
-      req.region = [rangeRegion.start, rangeRegion.end];
+      }
+      if (rangeRegion.contig === "node") {
+        req.region = [null, null];
+      } else {
+        // If the query came in on a path with a subrange defined already,
+        // translate it into base path coordinates.
+        let subrangeStart = getSubrangeStart(rangeRegion.contig);
+        req.region = [rangeRegion.start + subrangeStart, rangeRegion.end + subrangeStart];
+      }
 
       // We might not have the path we are referencing on appearing first.
       req.graph.path = organizePathsTargetFirst(parsedRegion, req.graph.path);
@@ -1007,20 +1021,30 @@ async function getChunkedData(req, res, next) {
   }
 }
 
+const SUBRANGE_REGEX = /\[([0-9]+)(-([0-9]+))?\]$/;
+
+/// Given a path name, get the start position of its subrange as a number, or 0.
+function getSubrangeStart(pathName) {
+  let match = pathName.match(SUBRANGE_REGEX);
+  if (!match) {
+    return 0;
+  }
+  return Number(match[1]);
+}
+
 /// Given an array of paths, organize them so that the paths(s) corresponding
 /// to the requested region are first, and return a re-ordered array of paths.
 function organizePathsTargetFirst(region, pathList) {
   if (region.contig !== "node") {
     
     // We pull the subrange off the path names when comparing them
-    let subrange_regex = /\[[0-9]+(-[0-9]+)?\]$/;
-    let targetBasePath = region.contig.replace(subrange_regex, "");
+    let targetBasePath = region.contig.replace(SUBRANGE_REGEX, "");
 
     // Make sure that path 0 is the path we actually asked about
     let refPaths = [];
     let otherPaths = [];
     for (let path of pathList) {
-      let pathBasePath = path.name.replace(subrange_regex, "");
+      let pathBasePath = path.name.replace(SUBRANGE_REGEX, "");
       if (pathBasePath === targetBasePath) {
         // This is the path we asked about, so it goes first
         refPaths.push(path);
@@ -1370,6 +1394,8 @@ function processGamFiles(req, res, next) {
 //
 // Calls out to the next step, processNodeColorsFile
 function processRegionFile(req, res, next) {
+  // TODO: With subpaths in vg chunk we no longer really need the concept of a
+  // region file. Now we just use it to find the targeted path and mark it.
   try {
     console.time("processing region file");
     const regionFile = `${req.chunkDir}/regions.tsv`;
@@ -1386,8 +1412,19 @@ function processRegionFile(req, res, next) {
     lineReader.on("line", (line) => {
       console.log("Region: " + line);
       const arr = line.replace(/\s+/g, " ").split(" ");
+      
+      // First 3 fields are path base name, start, and end.
+      // Build the subpath string we are talking about
+      let subpathName = arr[0] + "[" + arr[1] + "-" + arr[2] + "]";
+
       req.graph.path.forEach((p) => {
-        if (p.name === arr[0]) p.indexOfFirstBase = arr[1];
+        if (p.name === subpathName) {
+          // Remove subpath from name and store indexOfFirstBase instead, so
+          // the frontend draws the ruler on the base path.
+          console.log("Rename " + subpathName + " to " + arr[0] + " and mark start as " + arr[1]);
+          p.name = arr[0];
+          p.indexOfFirstBase = arr[1];
+        }
       });
     });
 
