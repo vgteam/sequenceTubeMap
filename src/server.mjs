@@ -6,6 +6,9 @@
 
 import "./config-server.mjs";
 import { config } from "./config-global.mjs";
+import { find_vg } from "./vg.mjs"
+import { TubeMapError, BadRequestError, InternalServerError, VgExecutionError } from "./errors.mjs"
+
 import assert from "assert";
 import { spawn } from "child_process";
 import express from "express";
@@ -35,64 +38,11 @@ import sanitize from "sanitize-filename";
 import { createHash } from "node:crypto";
 import cron from "node-cron";
 import { RWLock, combine } from "readers-writer-lock";
-import which from "which";
 
 if (process.env.NODE_ENV !== "production") {
   // Load any .env file config
   dotenv.config();
 }
-
-/// Return the command string to execute to run vg.
-/// Checks config.vgPath.
-/// An entry of "" in config.vgPath means to check PATH.
-function find_vg() {
-  if (find_vg.found_vg !== null) {
-    // Cache the answer and don't re-check all the time.
-    // Nobody shoudl be deleting vg.
-    return find_vg.found_vg;
-  }
-  for (let prefix of config.vgPath) {
-    if (prefix === "") {
-      // Empty string has special meaning of "use PATH".
-      console.log("Check for vg on PATH");
-      try {
-        find_vg.found_vg = which.sync("vg");
-        console.log("Found vg at:", find_vg.found_vg);
-        return find_vg.found_vg;
-      } catch (e) {
-        // vg is not on PATH
-        continue;
-      }
-    }
-    if (prefix.length > 0 && prefix[prefix.length - 1] !== "/") {
-      // Add trailing slash
-      prefix = prefix + "/";
-    }
-    let vg_filename = prefix + "vg";
-    console.log("Check for vg at:", vg_filename);
-    if (fs.existsSync(vg_filename)) {
-      if (!fs.statSync(vg_filename).isFile()) {
-        // This is a directory or something, not a binary we can run.
-        continue;
-      }
-      try {
-        // Pretend we will execute it
-        fs.accessSync(vg_filename, fs.constants.X_OK)
-      } catch (e) {
-        // Not executable
-        continue;
-      }
-      // If we get here it is executable.
-      find_vg.found_vg = vg_filename;
-      console.log("Found vg at:", find_vg.found_vg);
-      return find_vg.found_vg;
-    }
-  }
-  // If we get here we don't see vg at all.
-  throw new InternalServerError("The vg command was not found. Install vg to use the Sequence Tube Map: https://github.com/vgteam/vg?tab=readme-ov-file#installation");
-}
-find_vg.found_vg = null;
-
 
 const MOUNTED_DATA_PATH = config.dataPath;
 const INTERNAL_DATA_PATH = config.internalDataPath;
@@ -929,9 +879,19 @@ async function getChunkedData(req, res, next) {
       req.graph = JSON.parse(graphAsString);
       if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
-      } 
-      req.region = [rangeRegion.start, rangeRegion.end];
-      // vg chunk always puts the path we reference on first automatically
+      }
+      if (rangeRegion.contig === "node") {
+        req.region = [null, null];
+      } else {
+        // If the query came in on a path with a subrange defined already,
+        // translate it into base path coordinates.
+        let subrangeStart = getSubrangeStart(rangeRegion.contig);
+        req.region = [rangeRegion.start + subrangeStart, rangeRegion.end + subrangeStart];
+      }
+
+      // We might not have the path we are referencing on appearing first.
+      req.graph.path = organizePathsTargetFirst(parsedRegion, req.graph.path);
+
       if (!sentResponse) {
         sentResponse = true;
         processAnnotationFile(req, res, next);
@@ -1040,25 +1000,18 @@ async function getChunkedData(req, res, next) {
       req.graph = JSON.parse(graphAsString);
       if (req.removeSequences){
         removeNodeSequencesInPlace(req.graph)
-      } 
-      req.region = [rangeRegion.start, rangeRegion.end];
+      }
+      if (rangeRegion.contig === "node") {
+        req.region = [null, null];
+      } else {
+        // If the query came in on a path with a subrange defined already,
+        // translate it into base path coordinates.
+        let subrangeStart = getSubrangeStart(rangeRegion.contig);
+        req.region = [rangeRegion.start + subrangeStart, rangeRegion.end + subrangeStart];
+      }
 
       // We might not have the path we are referencing on appearing first.
-      if (parsedRegion.contig !== "node") {
-        // Make sure that path 0 is the path we actually asked about
-        let refPaths = [];
-        let otherPaths = [];
-        for (let path of req.graph.path) {
-          if (path.name === parsedRegion.contig) {
-            // This is the path we asked about, so it goes first
-            refPaths.push(path);
-          } else {
-            // Then we put each other path
-            otherPaths.push(path);
-          }
-        }
-        req.graph.path = refPaths.concat(otherPaths);
-      }
+      req.graph.path = organizePathsTargetFirst(parsedRegion, req.graph.path);
 
       if (!sentResponse) {
         sentResponse = true;
@@ -1068,40 +1021,42 @@ async function getChunkedData(req, res, next) {
   }
 }
 
-// We can throw this error to trigger our error handling code instead of
-// Express's default. It covers input validation failures, and vaguely-expected
-// server-side errors we want to report in a controlled way (because they could
-// be caused by bad user input to vg).
-class TubeMapError extends Error {
-  constructor(message) {
-    super(message);
+const SUBRANGE_REGEX = /\[([0-9]+)(-([0-9]+))?\]$/;
+
+/// Given a path name, get the start position of its subrange as a number, or 0.
+function getSubrangeStart(pathName) {
+  let match = pathName.match(SUBRANGE_REGEX);
+  if (!match) {
+    return 0;
   }
+  return Number(match[1]);
 }
 
-// We can throw this error to make Express respond with a bad request error
-// message. We should throw it whenever we detect that user input is
-// unacceptable.
-class BadRequestError extends TubeMapError {
-  constructor(message) {
-    super(message);
-    this.status = 400;
-  }
-}
+/// Given an array of paths, organize them so that the paths(s) corresponding
+/// to the requested region are first, and return a re-ordered array of paths.
+function organizePathsTargetFirst(region, pathList) {
+  if (region.contig !== "node") {
+    
+    // We pull the subrange off the path names when comparing them
+    let targetBasePath = region.contig.replace(SUBRANGE_REGEX, "");
 
-// We can throw this error to make Express respond with an internal server
-// error message
-class InternalServerError extends TubeMapError {
-  constructor(message) {
-    super(message);
-    this.status = 500;
-  }
-}
-
-// We can throw this error to make Express respond with an internal server
-// error message about vg.
-class VgExecutionError extends InternalServerError {
-  constructor(message) {
-    super(message);
+    // Make sure that path 0 is the path we actually asked about
+    let refPaths = [];
+    let otherPaths = [];
+    for (let path of pathList) {
+      let pathBasePath = path.name.replace(SUBRANGE_REGEX, "");
+      if (pathBasePath === targetBasePath) {
+        // This is the path we asked about, so it goes first
+        refPaths.push(path);
+      } else {
+        // Then we put each other path
+        otherPaths.push(path);
+      }
+    }
+    return refPaths.concat(otherPaths);
+  } else {
+    // No target path
+    return pathList;
   }
 }
 
@@ -1437,8 +1392,10 @@ function processGamFiles(req, res, next) {
 // Function to do the step of reading the "region" file, a BED inside the chunk
 // that records the path and start offset that were used to define the chunk.
 //
-// Calls out to the next step, cleanUpAndSendResult
+// Calls out to the next step, processNodeColorsFile
 function processRegionFile(req, res, next) {
+  // TODO: With subpaths in vg chunk we no longer really need the concept of a
+  // region file. Now we just use it to find the targeted path and mark it.
   try {
     console.time("processing region file");
     const regionFile = `${req.chunkDir}/regions.tsv`;
@@ -1455,8 +1412,19 @@ function processRegionFile(req, res, next) {
     lineReader.on("line", (line) => {
       console.log("Region: " + line);
       const arr = line.replace(/\s+/g, " ").split(" ");
+      
+      // First 3 fields are path base name, start, and end.
+      // Build the subpath string we are talking about
+      let subpathName = arr[0] + "[" + arr[1] + "-" + arr[2] + "]";
+
       req.graph.path.forEach((p) => {
-        if (p.name === arr[0]) p.indexOfFirstBase = arr[1];
+        if (p.name === subpathName) {
+          // Remove subpath from name and store indexOfFirstBase instead, so
+          // the frontend draws the ruler on the base path.
+          console.log("Rename " + subpathName + " to " + arr[0] + " and mark start as " + arr[1]);
+          p.name = arr[0];
+          p.indexOfFirstBase = arr[1];
+        }
       });
     });
 
@@ -1726,12 +1694,26 @@ api.post("/getPathNames", (req, res, next) => {
   vgViewChild.stderr.on("data", (data) => {
     console.log(`err data: ${data}`);
   });
-
-  let pathNames = "";
-  vgViewChild.stdout.on("data", function (data) {
-    pathNames += data.toString();
+  
+  // We want to avoid dealing with a giant string of path names; it's possible
+  // there are more than fit in a Node string.
+  let pathNames = [];
+  const lineReader = rl.createInterface({
+    input: vgViewChild.stdout,
   });
 
+  
+  lineReader.on("line", function (line) {
+    try {
+      pathNames.push(line);
+    } catch (e) {
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new InternalServerError("Internal error: " + e));
+      }
+    }
+  });
+  
   vgViewChild.on("error", function (err) {
     console.log('Error executing "vg view": ' + err);
     if (!sentResponse) {
@@ -1741,27 +1723,54 @@ api.post("/getPathNames", (req, res, next) => {
     return;
   });
 
-  vgViewChild.on("close", (code) => {
-    if (code !== 0) {
-      // Execution failed
+  // It's not clear if there's a guaranteed order between the line reader
+  // close/last line and the child process close, so we wait for both.
+  let returnCode = null;
+  let lineStreamClosed = false;
+
+  let handleFinish = function() {
+    try {
+      if (returnCode === null || lineStreamClosed === false) {
+        // Not ready yet. Wait for the other event.
+        return;
+      }
+
+      if (returnCode !== 0) {
+        // Execution failed
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("vg view failed"));
+        }
+        return;
+      }
+      result.pathNames = pathNames
+        .filter(function (a) {
+          // Eliminate empty names or underscore-prefixed internal names (like _alt paths)
+          return a !== "" && !a.startsWith("_");
+        })
+        .sort();
+      console.log(`Found ${result.pathNames.length} paths`);
       if (!sentResponse) {
         sentResponse = true;
-        return next(new VgExecutionError("vg view failed"));
+        res.json(result);
       }
-      return;
+    } catch (e) {
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new InternalServerError("Internal error: " + e));
+      }
     }
-    result.pathNames = pathNames
-      .split("\n")
-      .filter(function (a) {
-        // Eliminate empty names or underscore-prefixed internal names (like _alt paths)
-        return a !== "" && !a.startsWith("_");
-      })
-      .sort();
-    console.log(result);
-    if (!sentResponse) {
-      sentResponse = true;
-      res.json(result);
-    }
+  };
+
+
+  vgViewChild.on("close", (code) => {
+    returnCode = code;
+    handleFinish();
+  });
+
+  lineReader.on("close", () => {
+    lineStreamClosed = true;
+    handleFinish();
   });
 });
 
