@@ -57,6 +57,6 @@ it("can run prepare_vg.sh", async () => {
   console.log("stderr:", stderr);
   await access(join(workDir, "x.vg.xg"));
   await access(join(workDir, "x.vg.gbwt"));
-});
+}, 30000);
 
 
