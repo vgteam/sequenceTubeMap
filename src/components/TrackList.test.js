@@ -12,6 +12,7 @@ describe("TrackList", () => {
         mainPalette: "blues",
         auxPalette: "reds",
         colorReadsByMappingQuality: false,
+        alphaReadsByMappingQuality: false,
       },
     },
     2: {
@@ -21,6 +22,7 @@ describe("TrackList", () => {
         mainPalette: "blues",
         auxPalette: "reds",
         colorReadsByMappingQuality: false,
+        alphaReadsByMappingQuality: false,
       },
     },
     3: {
@@ -30,6 +32,7 @@ describe("TrackList", () => {
         mainPalette: "blues",
         auxPalette: "reds",
         colorReadsByMappingQuality: false,
+        alphaReadsByMappingQuality: false,
       },
     },
   };
