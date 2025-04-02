@@ -42,13 +42,45 @@ if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
 
+/// Return the python script chunkix.py
+/// Checks config.chunkixPath.
+/// An entry of "" in config.chunkixPath means to check current working
+///      directory '.' (better to avoid this and specify a path though).
+function find_chunkix() {
+  if (find_chunkix.found_chunkix !== null) {
+    // Cache the answer and don't re-check all the time.
+    // Nobody should be deleting it.
+    return find_chunkix.found_chunkix;
+  }
+  for (let prefix of config.chunkixPath) {
+    if (prefix === "") {
+      // Add trailing slash
+      prefix = "./";
+    }
+    if (prefix.length > 0 && prefix[prefix.length - 1] !== "/") {
+      // Add trailing slash
+      prefix = prefix + "/";
+    }
+    let chunkix_filename = prefix + "chunkix.py";
+    console.log("Check for chunkix.py at:", chunkix_filename);
+    if (fs.existsSync(chunkix_filename)) {
+      find_chunkix.found_chunkix = chunkix_filename;
+      console.log("Found chunkix at:", find_chunkix.found_chunkix);
+      return find_chunkix.found_chunkix;
+    }
+  }
+  // If we get here we don't see chunkix at all.
+  throw new InternalServerError("The chunkix.py script was not found. Check that chunkixPath is correct in the config");
+}
+find_chunkix.found_chunkix = null;
+
 /// Return the command string to execute to run vg.
 /// Checks config.vgPath.
 /// An entry of "" in config.vgPath means to check PATH.
 function find_vg() {
   if (find_vg.found_vg !== null) {
     // Cache the answer and don't re-check all the time.
-    // Nobody shoudl be deleting vg.
+    // Nobody should be deleting vg.
     return find_vg.found_vg;
   }
   for (let prefix of config.vgPath) {
@@ -116,13 +148,15 @@ const ALLOWED_DATA_DIRECTORIES = [
   DOWNLOAD_DATA_PATH,
 ].map((p) => path.resolve(p));
 
-const GRAPH_EXTENSIONS = [".xg", ".vg", ".pg", ".hg", ".gbz"];
+const GRAPH_EXTENSIONS = [".xg", ".vg", ".pg", ".hg", ".gbz", ".pos.bed.gz"];
 
-const HAPLOTYPE_EXTENSIONS = [".gbwt", ".gbz"];
+const HAPLOTYPE_EXTENSIONS = [".gbwt", ".gbz", ".haps.gaf.gz"];
+const HAPLOTYPE_EXTENSIONS_VG = [".gbwt", ".gbz"];
 
 const fileTypes = {
   GRAPH: "graph",
   HAPLOTYPE: "haplotype",
+  NODE: "node",
   READ: "read",
   BED: "bed",
 };
@@ -556,6 +590,8 @@ async function getChunkedData(req, res, next) {
   const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
   // We sometimes have a GBWT with haplotypes that override any in the graph file
   const gbwtFile = getFirstFileOfType(req.body.tracks, fileTypes.HAPLOTYPE);
+  // We sometimes have a node tabix index
+  const nodeFile = getFirstFileOfType(req.body.tracks, fileTypes.NODE);
   // We sometimes have a BED file with regions to look at
   const bedFile = req.body.bedFile;
 
@@ -563,6 +599,7 @@ async function getChunkedData(req, res, next) {
 
   console.log("graphFile ", graphFile);
   console.log("gbwtFile ", gbwtFile);
+  console.log("nodeFile ", nodeFile);
   console.log("bedFile ", bedFile);
   console.log("gamFiles ", gamFiles);
 
@@ -576,6 +613,12 @@ async function getChunkedData(req, res, next) {
   if (!gbwtFile || gbwtFile === "none") {
     req.withGbwt = false;
     console.log("no gbwt file provided.");
+  }
+
+  req.withNode = true;
+  if (!nodeFile || nodeFile === "none") {
+    req.withNode = false;
+    console.log("no node file provided.");
   }
 
   req.withBed = true;
@@ -616,8 +659,7 @@ async function getChunkedData(req, res, next) {
   let rangeRegion = convertRegionToRangeRegion(parsedRegion);
 
   if (chunkPath === "") {
-    // call 'vg chunk' to generate graph
-    let vgChunkParams = ["chunk"];
+    
     // double-check that the file has a valid graph extension and is allowed
     if (!endsWithExtensions(graphFile, GRAPH_EXTENSIONS)) {
       throw new BadRequestError(
@@ -627,254 +669,384 @@ async function getChunkedData(req, res, next) {
     if (!isAllowedPath(graphFile)) {
       throw new BadRequestError("Graph file path not allowed: " + graphFile);
     }
-    // TODO: Use same variable for check and command line?
 
-    // Maybe check using file types in the future
+    if (graphFile.endsWith(".pos.bed.gz")) {
+      // use tabix-based pangenome (experimental)
+      
+      if (!req.withGbwt) {
+        throw new BadRequestError("Need to specify tabix-indexed haplotype file, ending with .haps.gaf.gz, paired with " + graphFile);
+      }
+      if (!req.withNode) {
+        throw new BadRequestError("Need to specify tabix-indexed node file, ending with .nodes.tsv.gz, paired with " + graphFile);
+      }
+      
+      let chunkixParams = [find_chunkix(),
+                           "-n", nodeFile,
+                           "-p", graphFile,
+                           "-g", gbwtFile,
+                           "-j", "-s",
+                           "-o", `${req.chunkDir}/chunk`];
 
-    // See if we need to ignore haplotypes in gbz graph file
-
-    if (req.withGbwt) {
-      //either push gbz with graph and haplotype or push seperate graph and gbwt file
-      if (
-        graphFile.endsWith(".gbz") &&
-        gbwtFile.endsWith(".gbz") &&
-        graphFile === gbwtFile
-      ) {
-        // use gbz haplotype
-        vgChunkParams.push("-x", graphFile);
-      } else if (!graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz")) {
-        throw new BadRequestError("Cannot use gbz as haplotype alone.");
-      } else {
-        // ignoring haplotype from graph file and using haplotype from gbwt file
-        vgChunkParams.push("--no-embedded-haplotypes", "-x", graphFile);
-
-        // double-check that the file is a .gbwt and allowed
-        if (!endsWithExtensions(gbwtFile, HAPLOTYPE_EXTENSIONS)) {
-          throw new BadRequestError(
-            "GBWT file doesn't end in .gbwt or .gbz: " + gbwtFile
-          );
+      // push all indexed gaf files
+      for (const gafFile of gamFiles) {
+        if (!gafFile.endsWith(".gaf.gz")) {
+          if (gafFile.endsWith(".gam")) {
+            // slightly different message if GAM provided instead of GAF
+            throw new BadRequestError("Tabix-index mode only works with indexed GAF files");
+          } else {
+            throw new BadRequestError("GAF file doesn't end .gaf.gz: " + gafFile);
+          }
         }
-        if (!isAllowedPath(gbwtFile)) {
-          throw new BadRequestError("GBWT file path not allowed: " + gbwtFile);
+        if (!isAllowedPath(gafFile)) {
+          throw new BadRequestError("GAF file path not allowed: " + gafFile);
         }
-        // Use a GBWT haplotype database
-        vgChunkParams.push("--gbwt-name", gbwtFile);
+        console.log("pushing gaf file", gafFile);
+        chunkixParams.push("-a", gafFile);
       }
-    } else {
-      // push graph file
-      if (graphFile.endsWith(".gbz")) {
-        vgChunkParams.push("-x", graphFile, "--no-embedded-haplotypes");
-      } else {
-        vgChunkParams.push("-x", graphFile);
-      }
-    }
+      chunkixParams.push("-r", stringifyRangeRegion(rangeRegion));
 
-    // push all gam files
-    let anyGam = false;
-    let anyGaf = false;
-    for (const gamFile of gamFiles) {
-      if (!gamFile.endsWith(".gam") && !gamFile.endsWith(".gaf.gz")) {
-        throw new BadRequestError("GAM/GAF file doesn't end in .gam or .gaf.gz: " + gamFile);
-      }
-      if (!isAllowedPath(gamFile)) {
-        throw new BadRequestError("GAM/GAF file path not allowed: " + gamFile);
-      }
-      if (gamFile.endsWith(".gam")) {
-        // Use a GAM index
-        console.log("pushing gam file", gamFile);
-        anyGam = true;
-      }
-      if (gamFile.endsWith(".gaf.gz")) {
-        // Use a GAF with index
-        console.log("pushing gaf file", gamFile);
-        anyGaf = true;
-      }
-      vgChunkParams.push("-a", gamFile);
-    }
-    if (anyGam && anyGaf){
-      throw new BadRequestError("Reads must be either GAM files or GAF files, not mix both.");
-    }
-    if (anyGaf){
-      vgChunkParams.push("-F", "-g");
-    }
-    if (anyGam){
-      vgChunkParams.push("-g");
-    }
+      console.log(`python3 ${chunkixParams.join(" ")}`);
+      console.time("chunkix");
 
-    // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
-    if (parsedRegion.contig === "node") {
-      if (parsedRegion.distance !== undefined) {
-        // Start and distance of node IDs, so send that idiomatically.
-        vgChunkParams.push(
-          "-r",
-          parsedRegion.start,
-          "-c",
-          parsedRegion.distance
-        );
-      } else {
-        // Start and end of node IDs
-        vgChunkParams.push(
-          "-r",
-          "".concat(parsedRegion.start, ":", parsedRegion.end),
-          "-c",
-          20
-        );
-      }
-    } else {
-      // Ask for the whole region by start - end range.
-      vgChunkParams.push("-c", "20", "-p", stringifyRangeRegion(rangeRegion));
-    }
-    vgChunkParams.push(
-      "-T",
-      "-b",
-      `${req.chunkDir}/chunk`,
-      "-E",
-      `${req.chunkDir}/regions.tsv`
-    );
+      const chunkixCall = spawn("python3", chunkixParams);
+      req.error = Buffer.alloc(0);
 
-    console.log(`vg ${vgChunkParams.join(" ")}`);
-
-    console.time("vg chunk");
-    const vgChunkCall = spawn(find_vg(), vgChunkParams);
-    // vg simplify for gam files
-    let vgSimplifyCall = null;
-    if (req.simplify) {
-      vgSimplifyCall = spawn(find_vg(), ["simplify", "-"]);
-      console.log("Spawning vg simplify call");
-    }
-
-    const vgViewCall = spawn(find_vg(), ["view", "-j", "-"]);
-    let graphAsString = "";
-    req.error = Buffer.alloc(0);
-
-    vgChunkCall.on("error", function (err) {
-      console.log(
-        "Error executing " +
-          find_vg() + " " +
-          vgChunkParams.join(" ") +
-          ": " +
-          err
-      );
-      if (!sentResponse) {
-        sentResponse = true;
-        return next(new VgExecutionError("vg chunk failed"));
-      }
-      return;
-    });
-
-    vgChunkCall.stderr.on("data", (data) => {
-      console.log(`vg chunk err data: ${data}`);
-      req.error += data;
-    });
-
-    vgChunkCall.stdout.on("data", function (data) {
-      if (req.simplify) {
-        vgSimplifyCall.stdin.write(data);
-      } else {
-        vgViewCall.stdin.write(data);
-      }
-    });
-
-    vgChunkCall.on("close", (code) => {
-      console.log(`vg chunk exited with code ${code}`);
-      if (req.simplify) {
-        vgSimplifyCall.stdin.end();
-      } else {
-        vgViewCall.stdin.end();
-      }
-      if (code !== 0) {
-        console.log("Error from " + find_vg() + " " + vgChunkParams.join(" "));
-        // Execution failed
-        if (!sentResponse) {
-          sentResponse = true;
-          return next(new VgExecutionError("vg chunk failed"));
-        }
-      }
-    });
-
-    // vg simplify
-    if (req.simplify) {
-      vgSimplifyCall.on("error", function (err) {
-        console.log(
-          "Error executing " + find_vg() + " simplify " + "- " + ": " + err
+      chunkixCall.on("error", function (err) {
+        console.log("Error executing " + "python3 ", chunkixParams.join(" ") +
+            ": " + err
         );
         if (!sentResponse) {
           sentResponse = true;
-          return next(new VgExecutionError("vg simplify failed"));
+          return next(new VgExecutionError("chunkix failed"));
         }
         return;
       });
 
-      vgSimplifyCall.stderr.on("data", (data) => {
-        console.log(`vg simplify err data: ${data}`);
+      chunkixCall.stderr.on("data", (data) => {
+        console.log(`chunkix err data: ${data}`);
         req.error += data;
       });
 
-      vgSimplifyCall.stdout.on("data", function (data) {
-        vgViewCall.stdin.write(data);
+      chunkixCall.stdout.on("data", function (data) {
+        console.log(`chunkix out data: ${data}`);
       });
 
-      vgSimplifyCall.on("close", (code) => {
-        console.log(`vg simplify exited with code ${code}`);
-        vgViewCall.stdin.end();
+      chunkixCall.on("close", (code) => {
+        console.log(`chunkix exited with code ${code}`);
         if (code !== 0) {
-          console.log("Error from " + find_vg() + " " + "simplify - ");
+          console.log("Error from python3 " + chunkixParams.join(" "));
           // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("chunkix failed"));
+          }
+        }
+        
+        // read json graph output
+        const catCall = spawn("cat", [`${req.chunkDir}/chunk.graph.json`]);
+        let graphAsString = "";
+
+        catCall.on("error", function (err) {
+          console.log('Error executing "cat": ' + err);
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("cat graph.json failed"));
+          }
+          return;
+        });
+
+        catCall.stderr.on("data", (data) => {
+          console.log(`cat graph.json err data: ${data}`);
+        });
+
+        catCall.stdout.on("data", function (data) {
+          graphAsString += data.toString();
+        });
+
+        catCall.on("close", (code) => {
+          console.log(`cat graph.json exited with code ${code}`);
+          console.timeEnd("chunkix");
+          if (code !== 0) {
+            // Execution failed
+            if (!sentResponse) {
+              sentResponse = true;
+              return next(new VgExecutionError("cat graph.json failed"));
+            }
+            return;
+          }
+          if (graphAsString === "") {
+            if (!sentResponse) {
+              sentResponse = true;
+              return next(new VgExecutionError("cat graph.json produced empty graph"));
+            }
+            return;
+          }
+          req.graph = JSON.parse(graphAsString);
+          if (req.removeSequences){
+            removeNodeSequencesInPlace(req.graph)
+          } 
+          req.region = [rangeRegion.start, rangeRegion.end];
+          // vg chunk always puts the path we reference on first automatically
+          if (!sentResponse) {
+            sentResponse = true;
+            processAnnotationFile(req, res, next);
+          }
+        });
+      });      
+    } else {
+      // use vg-based pangenome
+    
+      // call 'vg chunk' to generate graph
+      let vgChunkParams = ["chunk"];
+      // TODO: Use same variable for check and command line?
+
+      // Maybe check using file types in the future
+
+      // See if we need to ignore haplotypes in gbz graph file
+
+      if (req.withGbwt) {
+        //either push gbz with graph and haplotype or push seperate graph and gbwt file
+        if (
+          graphFile.endsWith(".gbz") &&
+            gbwtFile.endsWith(".gbz") &&
+            graphFile === gbwtFile
+        ) {
+          // use gbz haplotype
+          vgChunkParams.push("-x", graphFile);
+        } else if (!graphFile.endsWith(".gbz") && gbwtFile.endsWith(".gbz")) {
+          throw new BadRequestError("Cannot use gbz as haplotype alone.");
+        } else {
+          // ignoring haplotype from graph file and using haplotype from gbwt file
+          vgChunkParams.push("--no-embedded-haplotypes", "-x", graphFile);
+
+          // double-check that the file is a .gbwt and allowed
+          if (!endsWithExtensions(gbwtFile, HAPLOTYPE_EXTENSIONS_VG)) {
+            throw new BadRequestError(
+              "GBWT file doesn't end in .gbwt or .gbz: " + gbwtFile
+            );
+          }
+          if (!isAllowedPath(gbwtFile)) {
+            throw new BadRequestError("GBWT file path not allowed: " + gbwtFile);
+          }
+          // Use a GBWT haplotype database
+          vgChunkParams.push("--gbwt-name", gbwtFile);
+        }
+      } else {
+        // push graph file
+        if (graphFile.endsWith(".gbz")) {
+          vgChunkParams.push("-x", graphFile, "--no-embedded-haplotypes");
+        } else {
+          vgChunkParams.push("-x", graphFile);
+        }
+      }
+
+      // push all gam files
+      let anyGam = false;
+      let anyGaf = false;
+      for (const gamFile of gamFiles) {
+        if (!gamFile.endsWith(".gam") && !gamFile.endsWith(".gaf.gz")) {
+          throw new BadRequestError("GAM/GAF file doesn't end in .gam or .gaf.gz: " + gamFile);
+        }
+        if (!isAllowedPath(gamFile)) {
+          throw new BadRequestError("GAM/GAF file path not allowed: " + gamFile);
+        }
+        if (gamFile.endsWith(".gam")) {
+          // Use a GAM index
+          console.log("pushing gam file", gamFile);
+          anyGam = true;
+        }
+        if (gamFile.endsWith(".gaf.gz")) {
+          // Use a GAF with index
+          console.log("pushing gaf file", gamFile);
+          anyGaf = true;
+        }
+        vgChunkParams.push("-a", gamFile);
+      }
+      if (anyGam && anyGaf){
+        throw new BadRequestError("Reads must be either GAM files or GAF files, not mix both.");
+      }
+      if (anyGaf){
+        vgChunkParams.push("-F", "-g");
+      }
+      if (anyGam){
+        vgChunkParams.push("-g");
+      }
+
+      // to seach by node ID use "node" for the sequence name, e.g. 'node:1-10'
+      if (parsedRegion.contig === "node") {
+        if (parsedRegion.distance !== undefined) {
+          // Start and distance of node IDs, so send that idiomatically.
+          vgChunkParams.push(
+            "-r",
+            parsedRegion.start,
+            "-c",
+            parsedRegion.distance
+          );
+        } else {
+          // Start and end of node IDs
+          vgChunkParams.push(
+            "-r",
+            "".concat(parsedRegion.start, ":", parsedRegion.end),
+            "-c",
+            20
+          );
+        }
+      } else {
+        // Ask for the whole region by start - end range.
+        vgChunkParams.push("-c", "20", "-p", stringifyRangeRegion(rangeRegion));
+      }
+      vgChunkParams.push(
+        "-T",
+        "-b",
+        `${req.chunkDir}/chunk`,
+        "-E",
+        `${req.chunkDir}/regions.tsv`
+      );
+
+      console.log(`vg ${vgChunkParams.join(" ")}`);
+
+      console.time("vg chunk");
+      const vgChunkCall = spawn(find_vg(), vgChunkParams);
+      // vg simplify for gam files
+      let vgSimplifyCall = null;
+      if (req.simplify) {
+        vgSimplifyCall = spawn(find_vg(), ["simplify", "-"]);
+        console.log("Spawning vg simplify call");
+      }
+
+      const vgViewCall = spawn(find_vg(), ["view", "-j", "-"]);
+      let graphAsString = "";
+      req.error = Buffer.alloc(0);
+
+      vgChunkCall.on("error", function (err) {
+        console.log(
+          "Error executing " +
+            find_vg() + " " +
+            vgChunkParams.join(" ") +
+            ": " +
+            err
+        );
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("vg chunk failed"));
+        }
+        return;
+      });
+
+      vgChunkCall.stderr.on("data", (data) => {
+        console.log(`vg chunk err data: ${data}`);
+        req.error += data;
+      });
+
+      vgChunkCall.stdout.on("data", function (data) {
+        if (req.simplify) {
+          vgSimplifyCall.stdin.write(data);
+        } else {
+          vgViewCall.stdin.write(data);
+        }
+      });
+
+      vgChunkCall.on("close", (code) => {
+        console.log(`vg chunk exited with code ${code}`);
+        if (req.simplify) {
+          vgSimplifyCall.stdin.end();
+        } else {
+          vgViewCall.stdin.end();
+        }
+        if (code !== 0) {
+          console.log("Error from " + find_vg() + " " + vgChunkParams.join(" "));
+          // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg chunk failed"));
+          }
+        }
+      });
+
+      // vg simplify
+      if (req.simplify) {
+        vgSimplifyCall.on("error", function (err) {
+          console.log(
+            "Error executing " + find_vg() + " simplify " + "- " + ": " + err
+          );
           if (!sentResponse) {
             sentResponse = true;
             return next(new VgExecutionError("vg simplify failed"));
           }
-        }
-      });
-    }
+          return;
+        });
 
-    // vg view
-    vgViewCall.on("error", function (err) {
-      console.log('Error executing "vg view": ' + err);
-      if (!sentResponse) {
-        sentResponse = true;
-        return next(new VgExecutionError("vg view failed"));
+        vgSimplifyCall.stderr.on("data", (data) => {
+          console.log(`vg simplify err data: ${data}`);
+          req.error += data;
+        });
+
+        vgSimplifyCall.stdout.on("data", function (data) {
+          vgViewCall.stdin.write(data);
+        });
+
+        vgSimplifyCall.on("close", (code) => {
+          console.log(`vg simplify exited with code ${code}`);
+          vgViewCall.stdin.end();
+          if (code !== 0) {
+            console.log("Error from " + find_vg() + " " + "simplify - ");
+            // Execution failed
+            if (!sentResponse) {
+              sentResponse = true;
+              return next(new VgExecutionError("vg simplify failed"));
+            }
+          }
+        });
       }
-      return;
-    });
 
-    vgViewCall.stderr.on("data", (data) => {
-      console.log(`vg view err data: ${data}`);
-    });
-
-    vgViewCall.stdout.on("data", function (data) {
-      graphAsString += data.toString();
-    });
-
-    vgViewCall.on("close", (code) => {
-      console.log(`vg view exited with code ${code}`);
-      console.timeEnd("vg chunk");
-      if (code !== 0) {
-        // Execution failed
+      // vg view
+      vgViewCall.on("error", function (err) {
+        console.log('Error executing "vg view": ' + err);
         if (!sentResponse) {
           sentResponse = true;
           return next(new VgExecutionError("vg view failed"));
         }
         return;
-      }
-      if (graphAsString === "") {
+      });
+
+      vgViewCall.stderr.on("data", (data) => {
+        console.log(`vg view err data: ${data}`);
+      });
+
+      vgViewCall.stdout.on("data", function (data) {
+        graphAsString += data.toString();
+      });
+
+      vgViewCall.on("close", (code) => {
+        console.log(`vg view exited with code ${code}`);
+        console.timeEnd("vg chunk");
+        if (code !== 0) {
+          // Execution failed
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg view failed"));
+          }
+          return;
+        }
+        if (graphAsString === "") {
+          if (!sentResponse) {
+            sentResponse = true;
+            return next(new VgExecutionError("vg view produced empty graph"));
+          }
+          return;
+        }
+        req.graph = JSON.parse(graphAsString);
+        if (req.removeSequences){
+          removeNodeSequencesInPlace(req.graph)
+        } 
+        req.region = [rangeRegion.start, rangeRegion.end];
+        // vg chunk always puts the path we reference on first automatically
         if (!sentResponse) {
           sentResponse = true;
-          return next(new VgExecutionError("vg view produced empty graph"));
+          processAnnotationFile(req, res, next);
         }
-        return;
-      }
-      req.graph = JSON.parse(graphAsString);
-      if (req.removeSequences){
-        removeNodeSequencesInPlace(req.graph)
-      } 
-      req.region = [rangeRegion.start, rangeRegion.end];
-      // vg chunk always puts the path we reference on first automatically
-      if (!sentResponse) {
-        sentResponse = true;
-        processAnnotationFile(req, res, next);
-      }
-    });
+      });
+    }
   } else {
     // chunk has already been pre-fetched and is saved in chunkPath
     req.chunkDir = chunkPath;
@@ -1217,7 +1389,9 @@ function processAnnotationFile(req, res, next) {
 
     let i = 0;
     lineReader.on("line", (line) => {
-      const arr = line.replace(/\s+/g, " ").split(" ");
+      // WARNING may break normal vg chunk output if it doesn't use tabs
+      const arr = line.split("\t");
+      // const arr = line.replace(/\s+/g, " ").split(" ");
       if (req.graph.path[i].name === arr[0]) {
         req.graph.path[i].freq = arr[1];
       } else {
@@ -1248,76 +1422,107 @@ function processGamFile(req, res, next, gamFile, gamFileNumber) {
       throw new BadRequestError("Path to GAM/GAF file not allowed: " + req.gamFile);
     }
 
-    let vgViewParams = ["view", "-j", "-a"];
-    let vgConvertParams = ["convert"];
-    
-    if (gamFile.endsWith(".gaf")) {
-      // if input is GAF, vg convert will be piped into vg view
-      vgViewParams.push("-");
-      // vg convert needs the graph to convert GAF to GAM
-      const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
-      vgConvertParams.push("-F", gamFile, graphFile);
-    }
-    if (gamFile.endsWith(".gam")) {
-      // if input is GAM, no need to convert input to vg view is the file
-      vgViewParams.push(gamFile);
-    }
-    
-    const vgViewChild = spawn(find_vg(), vgViewParams);
-
-    if (gamFile.endsWith(".gaf")) {
-      // if input was a GAF, run vg convert and pipe stdout to vg view
-      const vgConvertChild = spawn(find_vg(), vgConvertParams);
-
-      vgConvertChild.stdout.on("data", function (data) {
-        vgViewChild.stdin.write(data);
-      });
-      
-      vgConvertChild.stderr.on("data", (data) => {
-        console.log(`vg convert err data: ${data}`);
-        req.error += data;
+    if (gamFile.endsWith(".json")){
+      const catCall = spawn("cat", [gamFile]);
+      catCall.stderr.on("data", (data) => {
+        console.log(`err data: ${data}`);
       });
 
-      vgConvertChild.on("close", (code) => {
-        console.log(`vg convert exited with code ${code}`);
-        vgViewChild.stdin.end();
-        if (code !== 0) {
-          console.log("Error from " + find_vg() + " " + vgConvertParams.join(" "));
-          // Execution failed
-          if (!sentResponse) {
-            sentResponse = true;
-            return next(new VgExecutionError("vg convert failed"));
-          }
+      let gamJSON = "";
+      catCall.stdout.on("data", function (data) {
+        gamJSON += data.toString();
+      });
+
+      catCall.on("close", () => {
+        const gamArr = gamJSON
+              .split("\n")
+              .filter(function (a) {
+                return a !== "";
+              })
+              .map(function (a) {
+                return JSON.parse(a);
+              });
+        // Organize the results by number
+        req.gamResults[gamFileNumber] = gamArr;
+        req.gamRemaining -= 1;
+        if (req.gamRemaining == 0) {
+          processRegionFile(req, res, next);
         }
       });
       
-    } 
+    } else {
     
-    vgViewChild.stderr.on("data", (data) => {
-      console.log(`err data: ${data}`);
-    });
-
-    let gamJSON = "";
-    vgViewChild.stdout.on("data", function (data) {
-      gamJSON += data.toString();
-    });
-
-    vgViewChild.on("close", () => {
-      const gamArr = gamJSON
-        .split("\n")
-        .filter(function (a) {
-          return a !== "";
-        })
-        .map(function (a) {
-          return JSON.parse(a);
-        });
-      // Organize the results by number
-      req.gamResults[gamFileNumber] = gamArr;
-      req.gamRemaining -= 1;
-      if (req.gamRemaining == 0) {
-        processRegionFile(req, res, next);
+      let vgViewParams = ["view", "-j", "-a"];
+      let vgConvertParams = ["convert"];
+      
+      if (gamFile.endsWith(".gaf")) {
+        // if input is GAF, vg convert will be piped into vg view
+        vgViewParams.push("-");
+        // vg convert needs the graph to convert GAF to GAM
+        const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
+        vgConvertParams.push("-F", gamFile, graphFile);
       }
-    });
+      if (gamFile.endsWith(".gam")) {
+        // if input is GAM, no need to convert input to vg view is the file
+        vgViewParams.push(gamFile);
+      }
+      
+      const vgViewChild = spawn(find_vg(), vgViewParams);
+
+      if (gamFile.endsWith(".gaf")) {
+        // if input was a GAF, run vg convert and pipe stdout to vg view
+        const vgConvertChild = spawn(find_vg(), vgConvertParams);
+
+        vgConvertChild.stdout.on("data", function (data) {
+          vgViewChild.stdin.write(data);
+        });
+        
+        vgConvertChild.stderr.on("data", (data) => {
+          console.log(`vg convert err data: ${data}`);
+          req.error += data;
+        });
+
+        vgConvertChild.on("close", (code) => {
+          console.log(`vg convert exited with code ${code}`);
+          vgViewChild.stdin.end();
+          if (code !== 0) {
+            console.log("Error from " + find_vg() + " " + vgConvertParams.join(" "));
+            // Execution failed
+            if (!sentResponse) {
+              sentResponse = true;
+              return next(new VgExecutionError("vg convert failed"));
+            }
+          }
+        });
+        
+      } 
+      
+      vgViewChild.stderr.on("data", (data) => {
+        console.log(`err data: ${data}`);
+      });
+
+      let gamJSON = "";
+      vgViewChild.stdout.on("data", function (data) {
+        gamJSON += data.toString();
+      });
+
+      vgViewChild.on("close", () => {
+        const gamArr = gamJSON
+              .split("\n")
+              .filter(function (a) {
+                return a !== "";
+              })
+              .map(function (a) {
+                return JSON.parse(a);
+              });
+        // Organize the results by number
+        req.gamResults[gamFileNumber] = gamArr;
+        req.gamRemaining -= 1;
+        if (req.gamRemaining == 0) {
+          processRegionFile(req, res, next);
+        }
+      });
+    }
   } catch (error) {
     return next(error);
   }
@@ -1326,28 +1531,50 @@ function processGamFile(req, res, next, gamFile, gamFileNumber) {
 function processGamFiles(req, res, next) {
   try {
     console.time("processing gam files");
+    const graphFile = getFirstFileOfType(req.body.tracks, fileTypes.GRAPH);
     // Find gam/gaf files
     let gamFiles = [];
-    fs.readdirSync(req.chunkDir).forEach((file) => {
-      console.log(file);
-      if (file.endsWith(".gam") || file.endsWith(".gaf")) {
-        gamFiles.push(req.chunkDir + "/" + file);
-      }
-    });
+    if (graphFile.endsWith(".pos.bed.gz")) {
+      // use tabix-based pangenome (experimental)
+      // look for json files
+      fs.readdirSync(req.chunkDir).forEach((file) => {
+        console.log(file);
+        if (file.endsWith("annot.json")) {
+          gamFiles.push(req.chunkDir + "/" + file);
+        }
+      });
+    } else {
+      // look for typical GAM or GAF files
+      fs.readdirSync(req.chunkDir).forEach((file) => {
+        console.log(file);
+        if (file.endsWith(".gam") || file.endsWith(".gaf")) {
+          gamFiles.push(req.chunkDir + "/" + file);
+        }
+      });
+    }
 
     // Parse a GAM chunk name and get the GAM number from it
     // Names are like, with either .gam or .gaf suffixes:
     // */chunk_*.gam for 0
     // */chunk-1_*.gam for 1, 2, 3, etc.
     let gamNameToNumber = (gamName) => {
-      const pattern = /.*\/chunk(-([0-9])+)?_.*\.ga[mf]/
-      let matches = gamName.match(pattern)
-      if (!matches) {
-        throw new InternalServerError("Bad GAM/GAF name " + gamName) 
-      }
-      if (matches[2] !== undefined) {
-        // We have a number
-        return parseInt(matches[2]);
+      if(gamName.endsWith('.json')){
+        const pattern = /.*\/chunk.([0-9]+).annot.json/
+        let matches = gamName.match(pattern)
+        if (!matches) {
+          throw new InternalServerError("Bad GAF/JSON name " + gamName) 
+        }
+        return parseInt(matches[1]);
+      } else {
+        const pattern = /.*\/chunk(-([0-9])+)?_.*\.ga[mf]/
+        let matches = gamName.match(pattern)
+        if (!matches) {
+          throw new InternalServerError("Bad GAM/GAF name " + gamName) 
+        }
+        if (matches[2] !== undefined) {
+          // We have a number
+          return parseInt(matches[2]);
+        }
       }
       // If there's no number we are chunk 0
       return 0;
@@ -1379,7 +1606,14 @@ function processGamFiles(req, res, next) {
 function processRegionFile(req, res, next) {
   try {
     console.time("processing region file");
-    const regionFile = `${req.chunkDir}/regions.tsv`;
+    let regionFile = `${req.chunkDir}/regions.tsv`;
+    if (!fs.existsSync(regionFile)) {
+      fs.readdirSync(req.chunkDir).forEach((file) => {
+        if (file.endsWith("regions.tsv")) {
+          regionFile = req.chunkDir + "/" + file;
+        }
+      });
+    }
     if (!isAllowedPath(regionFile)) {
       throw new BadRequestError(
         "Path to region file not allowed: " + regionFile
@@ -1618,6 +1852,9 @@ api.get("/getFilenames", (req, res) => {
       if (file.endsWith(".gaf.gz")) {
         result.files.push({"trackFile": file, "trackType": "read"});
       }
+      if (file.endsWith(".nodes.tsv.gz")) {
+        result.files.push({"trackFile": file, "trackType": "node"});
+      }
       if (file.endsWith(".bed")) {
         result.bedFiles.push(clientPath);
       }
@@ -1658,48 +1895,89 @@ api.post("/getPathNames", (req, res, next) => {
     );
   }
 
-  const vgViewChild = spawn(find_vg(), ["paths", "-L", "-x", graphFile]);
+  if (graphFile.endsWith('.pos.bed.gz')) {
+    const tabixCall = spawn("tabix", ["-l", graphFile]);
 
-  vgViewChild.stderr.on("data", (data) => {
-    console.log(`err data: ${data}`);
-  });
+    let pathNames = "";
+    tabixCall.stdout.on("data", function (data) {
+      pathNames += data.toString();
+    });
 
-  let pathNames = "";
-  vgViewChild.stdout.on("data", function (data) {
-    pathNames += data.toString();
-  });
+    tabixCall.on("error", function (err) {
+      console.log('Error executing "tabix -l": ' + err);
+      if (!sentResponse) {
+        sentResponse = true;
+        return next(new VgExecutionError("tabix path names failed"));
+      }
+      return;
+    });
 
-  vgViewChild.on("error", function (err) {
-    console.log('Error executing "vg view": ' + err);
-    if (!sentResponse) {
-      sentResponse = true;
-      return next(new VgExecutionError("vg view failed"));
-    }
-    return;
-  });
+    tabixCall.on("close", (code) => {
+      if (code !== 0) {
+        // Execution failed
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("tabix path names failed"));
+        }
+        return;
+      }
+      result.pathNames = pathNames
+        .split("\n")
+        .filter(function (a) {
+          // Eliminate empty names or underscore-prefixed internal names (like _alt paths)
+          return a !== "" && !a.startsWith("_");
+        })
+        .sort();
+      console.log(result);
+      if (!sentResponse) {
+        sentResponse = true;
+        res.json(result);
+      }
+    });
+  } else {
+    const vgViewChild = spawn(find_vg(), ["paths", "-L", "-x", graphFile]);
 
-  vgViewChild.on("close", (code) => {
-    if (code !== 0) {
-      // Execution failed
+    vgViewChild.stderr.on("data", (data) => {
+      console.log(`err data: ${data}`);
+    });
+
+    let pathNames = "";
+    vgViewChild.stdout.on("data", function (data) {
+      pathNames += data.toString();
+    });
+
+    vgViewChild.on("error", function (err) {
+      console.log('Error executing "vg view": ' + err);
       if (!sentResponse) {
         sentResponse = true;
         return next(new VgExecutionError("vg view failed"));
       }
       return;
-    }
-    result.pathNames = pathNames
-      .split("\n")
-      .filter(function (a) {
-        // Eliminate empty names or underscore-prefixed internal names (like _alt paths)
-        return a !== "" && !a.startsWith("_");
-      })
-      .sort();
-    console.log(result);
-    if (!sentResponse) {
-      sentResponse = true;
-      res.json(result);
-    }
-  });
+    });
+
+    vgViewChild.on("close", (code) => {
+      if (code !== 0) {
+        // Execution failed
+        if (!sentResponse) {
+          sentResponse = true;
+          return next(new VgExecutionError("vg view failed"));
+        }
+        return;
+      }
+      result.pathNames = pathNames
+        .split("\n")
+        .filter(function (a) {
+          // Eliminate empty names or underscore-prefixed internal names (like _alt paths)
+          return a !== "" && !a.startsWith("_");
+        })
+        .sort();
+      console.log(result);
+      if (!sentResponse) {
+        sentResponse = true;
+        res.json(result);
+      }
+    });
+  }
 });
 
 // Given a string, return a filename-safe string that is a hash of that string.

@@ -3401,7 +3401,7 @@ function nodeSingleClick() {
   let nodeAttributes = [];
   nodeAttributes.push([
     "Node ID:",
-    currentNode.name + currentNode.switched ? "(reversed)" : "",
+    currentNode.name + (currentNode.switched ? "(reversed)" : ""),
   ]);
   nodeAttributes.push(["Node Length:", currentNode.sequenceLength + " bases"]);
   nodeAttributes.push(["Haplotypes:", currentNode.degree]);

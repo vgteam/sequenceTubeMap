@@ -35,6 +35,7 @@ const dataTypes = {
 const fileTypes = {
   GRAPH: "graph",
   HAPLOTYPE: "haplotype",
+  NODE: "node",
   READ: "read",
   BED: "bed",
 };

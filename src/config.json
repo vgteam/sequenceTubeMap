@@ -78,6 +78,7 @@
     }
   ],
   "vgPath": ["./", "./bin", "./vg/bin", ""],
+  "chunkixPath": ["scripts"],
   "dataPath": "exampleData",
   "internalDataPath": "exampleData/internal/",
   "tempDirPath": "temp",

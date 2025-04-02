@@ -107,6 +107,8 @@ export function defaultTrackColors(trackType) {
     return config.defaultReadColorPalette;
   } else if (trackType === "haplotype") {
     return config.defaultHaplotypeColorPalette;
+  } else if (trackType === "node") {
+    return config.defaultHaplotypeColorPalette;
   } else {
     throw new Error("Invalid track type: " + trackType);
   }
