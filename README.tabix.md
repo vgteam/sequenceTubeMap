@@ -18,19 +18,31 @@ The version on this `tabix` branch can use those index files, for example when m
 - the `nodes.tsv.gz` index in the *node* field
 - the `haps.gaf.gz` index in the *haplotype* field
 
+---
+
 ![](images/mount.tabix.index.png)
+
+---
 
 Once the index files are mounted, one can query any region on any haplotype in the form *HAPNAME_CONTIG:START-END*.
 
 Other tracks, for example reads or annotations in bgzipped/indexed GAF files, can be added as *reads* in the menu.
 
+---
+
 ![](images/mount.tabix.index.annot.png)
+
+---
 
 Of note, you can set a color for each track using the existing palettes or by picking a specific color.
 
+---
+
 ![](images/mount.tabix.index.annot.color.png)
 
-## +Installation+ Using the docker container
+---
+
+## ~~Installation~~ Using the docker container
 
 A docker container with this new sequenceTubeMap version, and all the dependencies necessary, is available at `quay.io/jmonlong/sequencetubemap:tabix_dev`.
 
