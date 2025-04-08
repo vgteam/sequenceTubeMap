@@ -1655,6 +1655,7 @@ function processNodeColorsFile(req, res, next) {
 
     // check if file exists
     if (!fs.existsSync(nodeColorsFile)) {
+      console.timeEnd("processing node colors file");
       cleanUpAndSendResult(req, res, next);
       return;
     }
