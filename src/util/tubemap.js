@@ -1673,6 +1673,7 @@ function generateNodeOrder() {
               currentOrder = nodes[modifiedSequence[leftIndex]].order - 1; // start with order value of leftAnchor - 1
               for (let j = leftIndex + 1; j < rightIndex; j += 1) {
                 nodes[modifiedSequence[j]].order = currentOrder; // assign order values
+                minOrder = Math.min(minOrder, currentOrder);
                 currentOrder -= 1;
               }
             }
