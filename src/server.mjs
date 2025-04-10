@@ -53,7 +53,7 @@ const SCRATCH_DATA_PATH = "tmp/";
 // This is where data downloaded from URLs is cached.
 // This directory will be recursively removed!
 const DOWNLOAD_DATA_PATH = config.tempDirPath;
-const SERVER_PORT = process.env.SERVER_PORT || config.serverPort || 3001;
+const SERVER_PORT = process.env.SERVER_PORT || config.serverPort || 3000;
 const SERVER_BIND_ADDRESS = config.serverBindAddress || undefined;
 
 // This holds a collection of all the absolute path root directories that the

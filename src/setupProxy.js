@@ -23,7 +23,7 @@ module.exports = function (app) {
       "http://" +
       addressToHost(config.serverBindAddress) +
       ":" +
-      (process.env.SERVER_PORT || config.serverPort || "3001");
+      (process.env.SERVER_PORT || config.serverPort || "3000");
     app.use(createProxyMiddleware(serverBase + "/api"));
     // Websockets don't seem to get through unless we ask for them explicitly.
     // They can just go to the root because the server ignores websocket paths.

@@ -62,13 +62,13 @@
     "worker-rpc": "^0.2.0"
   },
   "scripts": {
-    "start": "SERVER_PORT=3000 concurrently -n frontend,backend -c red,green 'HOST=${HOST:=127.0.0.1} PORT=${PORT:=3001} react-scripts start' 'npm:serve'",
+    "start": "SERVER_PORT=${SERVER_PORT:=3000} concurrently -n frontend,backend -c red,green 'HOST=${HOST:=127.0.0.1} PORT=${PORT:=3001} react-scripts start' 'npm:serve'",
     "build": "react-scripts build",
     "test": "react-scripts test --testResultsProcessor=./node_modules/jest-html-reporter --reporters default jest-compact-reporter --seed=1",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "serve": "node ./src/server.mjs",
+    "serve": "SERVER_PORT=${SERVER_PORT:=3001} node ./src/server.mjs",
     "format": "prettier --write \"**/*.+(mjs|js|css)\"",
     "postinstall": "patch-package"
   },
