@@ -93,13 +93,18 @@ After installation, you can run the Sequence Tube Map:
     npm run serve
     ```
     Note that this is using **npm**, not **nvm** as in the previous step.
+
+    If you get an `EADDRINUSE` error, try picking a different server port (and update all the numbers below from 3000 to whatever you picked).
+    ```
+    SERVER_PORT=3001 npm run serve
+    ```
 5. Open the Sequence Tube Map in your browser.
-    - If you are running the Sequence Tube Map on your local computer, you can visit [http://localhost:3001](http://localhost:3001).
-    - If you are running the Sequence Tube Map on a *different* computer (for example, one accessed by SSH), you will need to connect to it there. You can try browsing to port 3001 on that machine's hostname. For example, if you connected with `ssh yourname@bigserver.example.edu`, then `bigserver.example.edu` is the hostname, and you want to visit `http://bigserver.example.edu:3001`. If that doesn't work, you can try setting up an SSH tunnel by making a second SSH connection with:
+    - If you are running the Sequence Tube Map on your local computer, you can visit [http://localhost:3000](http://localhost:3000).
+    - If you are running the Sequence Tube Map on a *different* computer (for example, one accessed by SSH), you will need to connect to it there. You can try browsing to port 3000 on that machine's hostname. For example, if you connected with `ssh yourname@bigserver.example.edu`, then `bigserver.example.edu` is the hostname, and you want to visit `http://bigserver.example.edu:3000`. If that doesn't work, you can try setting up an SSH tunnel by making a second SSH connection with:
         ```
-        ssh -L 3001:localhost:3001 yourname@bigserver.example.edu
+        ssh -L 3000:localhost:3000 yourname@bigserver.example.edu
         ```
-        While that SSH connection is open, you will be able to see the Sequence Tube Map at [http://localhost:3001](http://localhost:3001).
+        While that SSH connection is open, you will be able to see the Sequence Tube Map at [http://localhost:3000](http://localhost:3000).
 
 ### Setting Up a Visualization
 
