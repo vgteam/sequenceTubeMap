@@ -83,7 +83,7 @@ export const TrackListItem = ({
       style={{ width: "900px", marginLeft: 0, marginRight: 15 }}
     >
       <Row className="g-0">
-        <Col className="tracklist-dropdown">
+        <Col sm="2" className="tracklist-dropdown type">
           <TrackTypeDropdown
             value={propChanges["trackType"] || trackProps["trackType"]}
             onChange={trackTypeOnChange}
@@ -91,7 +91,7 @@ export const TrackListItem = ({
             options={["graph", "haplotype", "read"]}
           />
         </Col>
-        <Col className="tracklist-dropdown">
+        <Col sm="2" className="tracklist-dropdown source">
           <TrackTypeDropdown
             value={pickerType}
             onChange={setPickerType}
