@@ -7,7 +7,7 @@ Three files are used, each one indexed with tabix (additional `.tbi` file):
 3. `haps.gaf.gz` contains the path followed by each haplotype (split in pieces).
 
 Briefly, these three index files can be quickly queried to extract a subgraph covering a region of interest: the `pos.bed.gz` index can first tell us which nodes are covered, then the `nodes.tsv.gz` index gives us the sequence of these nodes, and finally we can stitch the haplotype pieces in those nodes from the `haps.gaf.gz` index.
-This approach was implemented in a `chunkix.py` script which can produce a GFA file or files used by the sequenceTubeMap. 
+This approach was implemented in a [`chunkix.py`](scripts/chunkix.py) script which can produce a GFA file or files used by the sequenceTubeMap. 
 The sequenceTubeMap uses this script internally when given tabix-based index files.
 
 ## Using tabix-based index files in the sequenceTubeMap
@@ -45,9 +45,10 @@ In practice, pick an unused port.
 
 Then open: http://localhost:3210/
 
-Note: This assumes all files (pangenomes, reads, annotations) are in the current working directory or in subdirectories.
-To test with the files that are already prepared, download all the files (see below), then pick *???* in the menu. 
-For info, the files used were defined in the [config.json file](docker/config.json) used to build the docker.
+Note: For mounted files, this assumes all files (pangenomes, reads, annotations) are in the current working directory or in subdirectories.
+To test with the files that are already prepared, download all the files (see below). 
+Then, either use them as *custom* Data adding the tracks with the *Configure Tracks* button, or use the prepared Data set "HPRC Minigraph-Cactus v1.1".
+For info, the files for this Dataset were defined in the [config.json file](docker/config.json) used to build the docker.
 
 ## Available tabix-based index files for the Minigraph-Cactus v1.1 pangenome
 

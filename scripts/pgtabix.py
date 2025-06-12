@@ -5,7 +5,7 @@ import datetime
 # from subprocess import Popen,PIPE
 import subprocess
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description='Build tabix index files for a pangenome.')
 parser.add_argument('-g', help='pangenome in GFA', required=True)
 parser.add_argument('-o', help='output prefix', default='pg')
 parser.add_argument('-s', help='size of haplotype blocks to save', default=100)
@@ -214,7 +214,5 @@ idx_cmd = ['tabix', '-p', 'gaf', args.o + ".haps.gaf.gz"]
 subprocess.run(idx_cmd, check=True)
 print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
       '- Haplotype GAF indexed.', file=sys.stderr)
-
-
 
 exit(0)

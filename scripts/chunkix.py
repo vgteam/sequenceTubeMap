@@ -1,6 +1,7 @@
 import argparse
 import subprocess
 import json
+import sys
 
 
 def parsePath(path_raw):
@@ -171,9 +172,16 @@ qend = int(qint.split('-')[1])
 
 # extract nodes in region
 cmd = ['tabix', args.p, args.r]
-cmd_o = subprocess.run(cmd, check=True, capture_output=True)
+try:
+    cmd_o = subprocess.run(cmd, check=True, capture_output=True)
+except subprocess.CalledProcessError as e:
+    sys.exit(e.stderr.decode())
 nodes_bed = cmd_o.stdout.decode().rstrip().split('\n')
 nodes_bed = [line.split('\t') for line in nodes_bed]
+
+# stop if no nodes were found in that region
+if len(nodes_bed) == 1 and len(nodes_bed[0]) == 1 and nodes_bed[0][0] == '':
+    sys.exit('No nodes overlap this region.')
 
 # find minimum and maximum node IDs and reference positions
 min_node = int(nodes_bed[0][3])
@@ -188,7 +196,10 @@ max_node += 1
 
 # extract haplotypes in region
 cmd = ['tabix', args.g, '{{node}}:{}-{}'.format(min_node, max_node)]
-cmd_o = subprocess.run(cmd, check=True, capture_output=True)
+try:
+    cmd_o = subprocess.run(cmd, check=True, capture_output=True)
+except subprocess.CalledProcessError as e:
+    sys.exit(e.stderr.decode())
 haps_gaf = cmd_o.stdout.decode().rstrip().split('\n')
 haps_gaf = [line.split('\t') for line in haps_gaf]
 
@@ -299,7 +310,10 @@ if args.a != '':
     for annot_idx, annot_fn in enumerate(args.a):
         # extract with tabix
         cmd = ['tabix', annot_fn, '{{node}}:{}-{}'.format(min_node, max_node)]
-        cmd_o = subprocess.run(cmd, check=True, capture_output=True)
+        try:
+            cmd_o = subprocess.run(cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            sys.exit(e.stderr.decode())
         annot_gaf = cmd_o.stdout.decode().rstrip().split('\n')
         agaf_of = open(args.o + '.{}.annot.gaf'.format(annot_idx), 'wt')
         annot_forjson = []
@@ -371,7 +385,10 @@ for node in sorted_nodes:
 for ncl in node_cls:
     print('Searching for {}-{} node sequences.'.format(ncl[0], ncl[-1]))
     cmd = ['tabix', args.n, 'n:{}-{}'.format(ncl[0], ncl[-1])]
-    cmd_o = subprocess.run(cmd, check=True, capture_output=True)
+    try:
+        cmd_o = subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        sys.exit(e.stderr.decode())
     pos_tsv = cmd_o.stdout.decode().rstrip().split('\n')
     for posr in pos_tsv:
         posr = posr.split('\t')

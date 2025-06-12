@@ -676,8 +676,14 @@ async function getChunkedData(req, res, next) {
       if (!req.withGbwt) {
         throw new BadRequestError("Need to specify tabix-indexed haplotype file, ending with .haps.gaf.gz, paired with " + graphFile);
       }
+      if (!isAllowedPath(gbwtFile)) {
+        throw new BadRequestError("Tabix-indexed haplotype file path not allowed: " + gbwtFile);
+      }
       if (!req.withNode) {
         throw new BadRequestError("Need to specify tabix-indexed node file, ending with .nodes.tsv.gz, paired with " + graphFile);
+      }
+      if (!isAllowedPath(nodeFile)) {
+        throw new BadRequestError("Tabix-indexed node file path not allowed: " + nodeFile);
       }
       
       let chunkixParams = [find_chunkix(),
