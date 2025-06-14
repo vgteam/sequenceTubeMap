@@ -57,6 +57,7 @@ class TubeMap extends Component {
       let colorScheme = {
         ...visOptions.colorSchemes[key],
         colorReadsByMappingQuality: visOptions.colorReadsByMappingQuality,
+        alphaReadsByMappingQuality: visOptions.alphaReadsByMappingQuality,
       };
       // update tubemap colors
       tubeMap.setColorSet(key, colorScheme);

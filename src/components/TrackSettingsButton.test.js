@@ -13,6 +13,7 @@ describe("TrackSettingsButton", () => {
           mainPalette: "blues",
           auxPalette: "reds",
           colorReadsByMappingQuality: false,
+          alphaReadsByMappingQuality: false,
         }}
         setTrackColorSetting={function (a, b) {}}
       ></TrackSettingsButton>
