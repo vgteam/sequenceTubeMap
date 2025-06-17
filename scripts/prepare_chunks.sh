@@ -81,7 +81,7 @@ jq -n --arg trackFile "${GRAPH_FILE_PATH}" --arg trackType "graph" --argjson tra
 HAPLOTYPE_PALETTE="$(cat "$(dirname ${BASH_SOURCE[0]})/../src/config.json" | jq '.defaultHaplotypeColorPalette')"
 if [[ ! -z "${HAPLOTYPE_FILE}" ]] ; then
     HAPLOTYPE_FILE_PATH=$(realpath --relative-to $(dirname ${BASH_SOURCE[0]})/../ $HAPLOTYPE_FILE)
-    echo ${HAPLOTYPE_FILE_PATH}
+    echo >&2 "Haplotype file: ${HAPLOTYPE_FILE_PATH}"
     jq -n --arg trackFile "${HAPLOTYPE_FILE_PATH}" --arg trackType "haplotype" --argjson trackColorSettings "$HAPLOTYPE_PALETTE" '$ARGS.named' >> $OUTDIR/temp.json
 fi
 
