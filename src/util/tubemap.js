@@ -1345,8 +1345,8 @@ function minZoom() {
   let parentElement = svgElement.parentNode;
   return Math.min(
     1,
-    parentElement.clientWidth / (maxXCoordinate + 10),
-    parentElement.clientHeight / (maxYCoordinate + 10)
+    parentElement.clientWidth / maxXCoordinate,
+    parentElement.clientHeight / (maxYCoordinate + RAIL_SPACE)
   );
 }
 
@@ -1378,20 +1378,33 @@ function alignSVG() {
   function configureZoomBounds() {
     // Configure panning and zooming, given the SVG parent's size on the page.
 
-    svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
+    svg.attr("height", parentElement.clientHeight);
     svg.attr("width", parentElement.clientWidth);
+
+    let minScaleFactor = minZoom();
 
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
+    //
+    // We also need the translate extent to always be larger than the zoom
+    // extent. See <https://stackoverflow.com/a/53784776>.
+    //
+    // Really we would like to say that, given the zoom level, some part of the
+    // drawing should always be on the screen. But that requires redefining the
+    // translate extent (the area that d3 stops us from seeing out of) to be
+    // smaller when zoomed in and larger when zoomed out. We can't let the
+    // translate extent ever be smaller than the viewport at any zoom level, or
+    // d3 will lock it to the center along that axis but content will go out of
+    // bounds on the SVG image download.
     zoom
       .extent([
         [0, 0],
         [parentElement.clientWidth, parentElement.clientHeight],
       ])
-      .scaleExtent([minZoom(), 8])
+      .scaleExtent([minScaleFactor, 8])
       .translateExtent([
         [0, minYCoordinate - RAIL_SPACE],
-        [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
+        [Math.max(maxXCoordinate, parentElement.clientWidth / minScaleFactor), Math.max(maxYCoordinate, parentElement.clientHeight / minScaleFactor)],
       ]);
   }
 
