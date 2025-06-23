@@ -129,7 +129,9 @@ function tracksEqual(curr, next) {
       curr_settings.mainPalette !== next_settings.mainPalette ||
       curr_settings.auxPalette !== next_settings.auxPalette ||
       curr_settings.colorReadsByMappingQuality !==
-        next_settings.colorReadsByMappingQuality
+        next_settings.colorReadsByMappingQuality ||
+      curr_settings.alphaReadsByMappingQuality !==
+        next_settings.alphaReadsByMappingQuality
     ) {
       return false;
     }
