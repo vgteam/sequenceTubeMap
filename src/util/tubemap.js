@@ -449,8 +449,7 @@ function createTubeMap() {
 
   for (let i = tracks.length - 1; i >= 0; i -= 1) {
     if (!tracks[i].hasOwnProperty("type")) {
-      // TODO: maybe remove "haplo"-property?
-      tracks[i].type = "haplo";
+      tracks[i].type = "haplotype";
     }
     if (tracks[i].hasOwnProperty("hidden")) {
       if (tracks[i].hidden === true) {
@@ -530,15 +529,15 @@ function createTubeMap() {
 
   // all drawn tracks are grouped
   let trackGroup = svg.append("g").attr("class", "track");
-  drawTrackRectangles(trackRectangles, "haplo", trackGroup);
-  drawTrackCurves("haplo", trackGroup);
+  drawTrackRectangles(trackRectangles, "haplotype", trackGroup);
+  drawTrackCurves("haplotype", trackGroup);
   drawReversalsByColor(
     trackCorners,
     trackVerticalRectangles,
-    "haplo",
+    "haplotype",
     trackGroup
   );
-  drawTrackRectangles(trackRectanglesStep3, "haplo", trackGroup);
+  drawTrackRectangles(trackRectanglesStep3, "haplotype", trackGroup);
   drawTrackRectangles(trackRectangles, "read", trackGroup);
   drawTrackCurves("read", trackGroup);
 
@@ -580,7 +579,7 @@ function generateReadOnlyNodeAttributes() {
 
   // for order values where there is no node with haplotypes, orderY is calculated via tracks
   tracks.forEach((track) => {
-    if (track.type === "haplo") {
+    if (track.type === "haplotype") {
       track.path.forEach((step) => {
         setMapToMax(orderY, step.order, step.y + track.width);
       });
@@ -1346,8 +1345,8 @@ function minZoom() {
   let parentElement = svgElement.parentNode;
   return Math.min(
     1,
-    parentElement.clientWidth / (maxXCoordinate + 10),
-    parentElement.clientHeight / (maxYCoordinate + 10)
+    parentElement.clientWidth / maxXCoordinate,
+    parentElement.clientHeight / (maxYCoordinate + RAIL_SPACE)
   );
 }
 
@@ -1379,20 +1378,33 @@ function alignSVG() {
   function configureZoomBounds() {
     // Configure panning and zooming, given the SVG parent's size on the page.
 
-    svg.attr("height", maxYCoordinate - minYCoordinate + RAIL_SPACE * 2);
+    svg.attr("height", parentElement.clientHeight);
     svg.attr("width", parentElement.clientWidth);
+
+    let minScaleFactor = minZoom();
 
     // We need to set an extent here because auto-determination of the region
     // to zoom breaks on the React testing jsdom
+    //
+    // We also need the translate extent to always be larger than the zoom
+    // extent. See <https://stackoverflow.com/a/53784776>.
+    //
+    // Really we would like to say that, given the zoom level, some part of the
+    // drawing should always be on the screen. But that requires redefining the
+    // translate extent (the area that d3 stops us from seeing out of) to be
+    // smaller when zoomed in and larger when zoomed out. We can't let the
+    // translate extent ever be smaller than the viewport at any zoom level, or
+    // d3 will lock it to the center along that axis but content will go out of
+    // bounds on the SVG image download.
     zoom
       .extent([
         [0, 0],
         [parentElement.clientWidth, parentElement.clientHeight],
       ])
-      .scaleExtent([minZoom(), 8])
+      .scaleExtent([minScaleFactor, 8])
       .translateExtent([
         [0, minYCoordinate - RAIL_SPACE],
-        [maxXCoordinate, maxYCoordinate + RAIL_SPACE],
+        [Math.max(maxXCoordinate, parentElement.clientWidth / minScaleFactor), Math.max(maxYCoordinate, parentElement.clientHeight / minScaleFactor)],
       ]);
   }
 
@@ -1601,7 +1613,7 @@ function generateNodeOrder() {
       tracksAndReads[i].indexSequence
     ); // calculate order values for all nodes until the first anchor
     if (rightIndex === null) {
-      if (tracksAndReads[i].type === "haplo") {
+      if (tracksAndReads[i].type === "haplotype") {
         generateNodeOrderOfSingleTrack(tracksAndReads[i].indexSequence);
       } else {
         tracksAndReads.splice(i, 1);
@@ -2656,7 +2668,7 @@ function generateTrackColor(track, highlight) {
     }
   } else {
     if (config.showExonsFlag === false || highlight !== "plain") {
-      // Don't repeat the color of the first track (reference) to highilight is better.
+      // Don't repeat the color of the first track (reference) to highlight is better.
       // TODO: Allow using color 0 for other schemes not the same as the one for the reference path.
       // TODO: Stop reads from taking this color?
       const auxColorSet = getColorSet(config.colorSchemes[sourceID].auxPalette);
@@ -3624,8 +3636,10 @@ function drawRuler() {
     return xCoordOfMarking;
   }
 
-  let start_region = Number(inputRegion[0]);
-  let end_region = Number(inputRegion[1]);
+  // Get the region in bp in the scale bar's coordinate space to highlight as
+  // the target region. Will be null if we're using node IDs.
+  let start_region = inputRegion[0] !== null ? Number(inputRegion[0]) : null;
+  let end_region = inputRegion[1] !== null ? Number(inputRegion[1]) : null;
 
   let intervalsVisitedByNodes = [];
 
@@ -3652,6 +3666,7 @@ function drawRuler() {
     let alreadyMarkedNode = false;
 
     if (
+      start_region !== null &&
       start_region >= indexOfFirstBaseInNode &&
       start_region < indexOfFirstBaseInNode + currentNode.sequenceLength
     ) {
@@ -3665,6 +3680,7 @@ function drawRuler() {
       ticks_region.push([start_region, xCoordOfMarking]);
     }
     if (
+      end_region !== null &&
       end_region >= indexOfFirstBaseInNode &&
       end_region < indexOfFirstBaseInNode + currentNode.sequenceLength
     ) {
@@ -4179,7 +4195,7 @@ function drawLegend() {
   const listeners = [];
   // This is in terms of tracks, but when we change visibility we need to touch inputTracks, so we need to set up listeners by track ID.
   for (let i = 0; i < tracks.length; i += 1) {
-    if (tracks[i].type === "haplo") {
+    if (tracks[i].type === "haplotype") {
       content += `<tr><td style="text-align:right"><div class="color-box" style="background-color: ${generateTrackColor(
         tracks[i],
         "exon"
@@ -4801,7 +4817,7 @@ function mergeNodes() {
             // add 2 predecessors, to make sure there is no node merging in this case
             pred[nodeMap.get(track.sequence[i])].add(forward(nodeName));
           }
-        } else if (track.type === "haplo") {
+        } else if (track.type === "haplotype") {
           pred[nodeMap.get(track.sequence[i])].add("None");
         }
         if (i < track.sequence.length - 1) {
@@ -4811,7 +4827,7 @@ function mergeNodes() {
             // add 2 successors, to make sure there is no node merging in this case
             succ[nodeMap.get(track.sequence[i])].add(forward(nodeName));
           }
-        } else if (track.type === "haplo") {
+        } else if (track.type === "haplotype") {
           succ[nodeMap.get(track.sequence[i])].add("None");
         }
       } else {
@@ -4826,7 +4842,7 @@ function mergeNodes() {
             succ[nodeMap.get(nodeName)].add(nodeName2);
             succ[nodeMap.get(nodeName)].add(reverse(nodeName2));
           }
-        } else if (track.type === "haplo") {
+        } else if (track.type === "haplotype") {
           succ[nodeMap.get(nodeName)].add("None");
         }
         if (i < track.sequence.length - 1) {
@@ -4837,7 +4853,7 @@ function mergeNodes() {
             pred[nodeMap.get(nodeName)].add(nodeName2);
             pred[nodeMap.get(nodeName)].add(reverse(nodeName2));
           }
-        } else if (track.type === "haplo") {
+        } else if (track.type === "haplotype") {
           pred[nodeMap.get(nodeName)].add("None");
         }
       }

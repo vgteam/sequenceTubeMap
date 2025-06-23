@@ -34,14 +34,14 @@ This will save some time during the interactive visualization, especially if the
 
 The net result needs to be one or more chunk directories on disk, referenced from a BED file.
 
-To generate each chunk, you can use the ``sequenceTubeMap/scripts/prepare_chunks.sh` script. You ought to run it from the directory containing your input files and where your output chunks will be stored (i.e. the `dataPath` in `sequenceTubeMaps/src/config.json`), which defaults to the `sequenceTubeMap/exampleData/` directory in the repo.
+To generate each chunk, you can use the `sequenceTubeMap/scripts/prepare_chunks.sh` script. You ought to run it from the directory containing your input files and where your output chunks will be stored (i.e. the `dataPath` in `sequenceTubeMaps/src/config.json`), which defaults to the `sequenceTubeMap/exampleData/` directory in the repo.
 
 For example:
 
 ```
 cd exampleData/
 ../scripts/prepare_chunks.sh -x mygraph.xg -h mygraph.gbwt -r chr1:1-100 -d 'Region A' -o chunk-chr1-1-100 -g mygam1.gam -g mygam2.gam >> mychunks.bed
-../scripts/prepare_chunks.sh -x mygraph.xg -h mygraph.gbwt -r chr1:101-200 -d 'Region B' -o chunk-chr1-100-200 -g mygam1.gam -g mygam2.gam >> mychunks.bed
+../scripts/prepare_chunks.sh -x mygraph.gbz -r chr1:101-200 -d 'Region B' -o chunk-chr1-100-200 -g mygam1.gam -g mygam2.gam >> mychunks.bed
 ```
 
 The BED file linking to the chunks has two additional nonstandard columns: 

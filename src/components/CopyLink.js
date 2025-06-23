@@ -31,18 +31,21 @@ export function CopyLink(props) {
     // https://github.com/ljharb/qs#stringifying
     const params = qs.stringify(viewTarget, { encodeValuesOnly: true });
     console.log("params ", params);
-    // complete url
-    const full = window.location.origin + "?" + params;
-    console.log(full);
+    
+    // Make a new URL based off the current one
+    let url = new URL(window.location.toString());
+    url.search = "?" + params;
+    url.hash = "";
+    console.log(url);
 
     try {
       // copy full to clipboard
-      copyCallback(full);
+      copyCallback(url.toString());
       // change text
       setText(CLICKED_TEXT);
     } catch (err) {
       setText(UNCLICKED_TEXT);
-      setDialogLink(full);
+      setDialogLink(url.toString());
       console.log("copy error");
     }
   };
@@ -79,11 +82,11 @@ export const urlParamsToViewTarget = (url) => {
   // and turn to object to populate in HeaderForm state and viewTarget
   // Returns: Object (viewTarget) - see App.js
 
-  var result = null;
-  const s = url.href.split("?");
+  let parsed = new URL(url);
+  let result = null;
   // If url contains information on viewObject
-  if (s[1]) {
-    result = qs.parse(s[1]);
+  if (parsed.search) {
+    result = qs.parse(parsed.search.substr(1));
   }
 
   
