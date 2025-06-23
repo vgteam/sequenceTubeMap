@@ -120,6 +120,10 @@ To load your own data into the Sequence Tube Map, see the guide to [Adding Your 
 
 Previously we provided a Docker image at [https://hub.docker.com/r/wolfib/sequencetubemap/](https://hub.docker.com/r/wolfib/sequencetubemap/), which contained the build of this repo as well as a vg executable for data preprocessing and extraction. We now recommend a different installation approach, either using the [online version](#online-version) or a full installation of the [local version](#local-version). However, if you would like to Dockerize the Sequence Tube Map, the repository includes a `Dockerfile`.
 
+## Using tabix-based index files
+
+More information about using this faster alternative in [README.tabix.md](README.tabix.md).
+
 ## Contributing
 
 For information on how to develop on the Sequence Tube Map codebase, pleas see the [Development Guide](doc/development.md).

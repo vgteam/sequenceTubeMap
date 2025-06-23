@@ -88,7 +88,7 @@ export const TrackListItem = ({
             value={propChanges["trackType"] || trackProps["trackType"]}
             onChange={trackTypeOnChange}
             testID={"file-type-select-component".concat(trackID)}
-            options={["graph", "haplotype", "read"]}
+            options={["graph", "haplotype", "read", "node"]}
           />
         </Col>
         <Col sm="2" className="tracklist-dropdown source">
