@@ -1,9 +1,10 @@
 // Type file for documentation
 // (not actually enforced by Typescript)
 
-// Possible filestypes taken from the request
-// Files like GBZ contains graph and maybe haplotype and so can be either
-type filetype = "graph" | "haplotype" | "read" | "bed";
+// Possible filestypes taken from the request.
+// Files like GBZ contains graph and maybe haplotype and so can be either.
+// Tabix-indexed TSV/BED needs a "node" and "graph" file pair to produce graph data.
+type filetype = "graph" | "node" | "haplotype" | "read" | "bed";
 
 // The basic concept of a track
 type BaseTrack = {
@@ -82,7 +83,8 @@ type ReactColor = {
 type ColorScheme = {
     mainPalette: ColorPalette | ColorHex ,
     auxPalette: ColorPalette | ColorHex ,
-    colorReadsByMappingQuality: boolean
+    colorReadsByMappingQuality: boolean,
+    alphaReadsByMappingQuality: boolean
 }
 
 // Stores the assigned colorschemes of all tracks
