@@ -11,6 +11,7 @@ export default (
         mainPalette: "blues",
         auxPalette: "reds",
         colorReadsByMappingQuality: false,
+        alphaReadsByMappingQuality: false,
       }),
       availableColors: P.json([
         "greys",

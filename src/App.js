@@ -65,6 +65,7 @@ class App extends Component {
         showReads: true,
         showSoftClips: true,
         colorReadsByMappingQuality: false,
+        alphaReadsByMappingQuality: false,
         colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
         mappingQualityCutoff: 0,
       },

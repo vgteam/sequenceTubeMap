@@ -78,6 +78,7 @@
     }
   ],
   "vgPath": ["./", "./bin", "./vg/bin", ""],
+  "chunkixPath": ["scripts"],
   "dataPath": "exampleData",
   "internalDataPath": "exampleData/internal/",
   "tempDirPath": "temp",
@@ -87,19 +88,22 @@
   "defaultGraphColorPalette" : {
     "mainPalette": "#000000", 
     "auxPalette": "greys", 
-    "colorReadsByMappingQuality": false
+    "colorReadsByMappingQuality": false,
+    "alphaReadsByMappingQuality": false
   },
 
   "defaultHaplotypeColorPalette" : {
     "mainPalette": "plainColors", 
     "auxPalette": "lightColors", 
-    "colorReadsByMappingQuality": false
+    "colorReadsByMappingQuality": false,
+    "alphaReadsByMappingQuality": false
   },
   
   "defaultReadColorPalette" : {
     "mainPalette": "blues", 
     "auxPalette": "reds", 
-    "colorReadsByMappingQuality": false
+    "colorReadsByMappingQuality": false,
+    "alphaReadsByMappingQuality": false
   },
 
   "defaultTrackProps" : {
@@ -107,7 +111,8 @@
     "trackColorSettings": {
       "mainPalette": "#000000",
       "auxPalette": "greys",
-      "colorReadsByMappingQuality": false
+      "colorReadsByMappingQuality": false,
+      "alphaReadsByMappingQuality": false
     }
   },
 

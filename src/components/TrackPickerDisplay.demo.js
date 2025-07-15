@@ -16,6 +16,7 @@ export default (
             mainPalette: "blues",
             auxPalette: "reds",
             colorReadsByMappingQuality: false,
+            alphaReadsByMappingQuality: false,
           },
         },
         2: {
@@ -25,6 +26,7 @@ export default (
             mainPalette: "blues",
             auxPalette: "reds",
             colorReadsByMappingQuality: false,
+            alphaReadsByMappingQuality: false,
           },
         },
         3: {
@@ -34,6 +36,7 @@ export default (
             mainPalette: "blues",
             auxPalette: "reds",
             colorReadsByMappingQuality: false,
+            alphaReadsByMappingQuality: false,
           },
         },
       }),

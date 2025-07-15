@@ -80,6 +80,8 @@ class VisualizationOptions extends Component {
         );
       } else if (type === "haplotype") {
         // TODO: Do nothing for now. Haplotypes get assigned to the graph as their source track right now.
+      } else if (type === "node") {
+        // TODO: Do nothing for now. Haplotypes get assigned to the graph as their source track right now.
       } else if (type === "read") {
         if (visOptions.showReads) {
           trackSettingsList.push(
@@ -195,6 +197,18 @@ class VisualizationOptions extends Component {
                             }
                           />
                           Color reads by mapping quality
+                        </Label>
+                      </FormGroup>
+                      <FormGroup check>
+                        <Label check>
+                          <Input
+                            type="checkbox"
+                            checked={visOptions.alphaReadsByMappingQuality}
+                            onChange={() =>
+                              toggleFlag("alphaReadsByMappingQuality")
+                            }
+                          />
+                          Transparency of reads by mapping quality
                         </Label>
                       </FormGroup>
                       <Form>
