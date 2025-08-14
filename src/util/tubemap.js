@@ -3716,7 +3716,7 @@ function drawRuler() {
   ticks = separatedTicks;
 
   // plot ticks highlighting the region
-  ticks_region.forEach((tick) => drawRulerMarkingRegion(tick[0], tick[1]));
+  drawRulerMarkingRegion(ticks_region);
 
   // draw horizontal line for each interval
   
@@ -3797,14 +3797,38 @@ function drawRulerMarking(sequencePosition, xCoordinate, align) {
     .attr("stroke", "black")
 }
 
-function drawRulerMarkingRegion(sequencePosition, xCoordinate) {
+function drawRulerMarkingRegion(ticks_region) {
+  // Each tick is a base coordinate and an image coordinate
+  ticks_region.forEach((tick) => drawRulerMarkingEndpoint(tick[0], tick[1]));
+  
+  let lineY = minYCoordinate - NODE_MARGIN - 6;
+
   svg
-    .append("circle")
-    .attr("cx", xCoordinate + 3)
-    .attr("cy", minYCoordinate - 13)
-    .attr("r", 10)
-    .attr("opacity", 0.5)
-    .attr("fill", "yellow")
+    .append("line")
+    .attr("x1", ticks_region[0][1])
+    .attr("y1", lineY)
+    .attr("x2", ticks_region[1][1])
+    .attr("y2", lineY)
+    .attr("stroke-width", 4)
+    .attr("stroke", "#FFFE3A");
+}
+
+function drawRulerMarkingEndpoint(sequencePosition, xCoordinate) {
+  
+  let pointX = xCoordinate;
+  let pointY = minYCoordinate - NODE_MARGIN - 1;
+  let arrowWidth = 8;
+  let arrowHeight = 10;
+
+  svg
+    .append("path")
+    .attr("d", `M${pointX - arrowWidth} ${pointY - arrowHeight}`
+      + ` L${pointX} ${pointY}`
+      + ` L${pointX + arrowWidth} ${pointY - arrowHeight}`
+    )
+    .attr("stroke-width", 0)
+    .attr("fill", "#FFFE3A")
+    .attr("stroke", "none")
     .style("pointer-events", "none");
 }
 
