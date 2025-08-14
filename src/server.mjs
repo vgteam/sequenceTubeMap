@@ -2355,7 +2355,10 @@ async function getBedRegions(bed) {
     }
     bed_info["chr"].push(records[0]);
     bed_info["start"].push(records[1]);
-    bed_info["end"].push(records[2]);
+    
+    // BED files are half open, subtract 1 to close
+    bed_info["end"].push(String(parseInt(records[2], 10) - 1));
+    
     let desc = records.join("_");
     if (records.length > 3) {
       desc = records[3];
