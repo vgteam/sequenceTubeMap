@@ -1424,6 +1424,11 @@ function processRegionFile(req, res, next) {
           console.log("Rename " + subpathName + " to " + arr[0] + " and mark start as " + arr[1]);
           p.name = arr[0];
           p.indexOfFirstBase = arr[1];
+        } else if (p.name === arr[0]) {
+          // We might be looking at a pre-extracted region that predates real
+          // subpath support (like the Lancet paper data), in which case we
+          // need to grab the real start point from the regions file.
+          p.indexOfFirstBase = arr[1];
         }
       });
     });
