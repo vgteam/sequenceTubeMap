@@ -3715,7 +3715,7 @@ function drawRuler() {
   });
   ticks = separatedTicks;
 
-  // plot ticks highlighting the region
+  // plot ticks highlighting the region (if it is filled in)
   drawRulerMarkingRegion(ticks_region);
 
   // draw horizontal line for each interval
@@ -3797,20 +3797,27 @@ function drawRulerMarking(sequencePosition, xCoordinate, align) {
     .attr("stroke", "black")
 }
 
+/// Draw ruler markings for the given requested region.
+///
+/// The requested region should be an array of 2 items, each of which is an
+/// array of a sequence position and an image X coordinate. If the array is not
+/// 2 items, no connecting line is drawn.
 function drawRulerMarkingRegion(ticks_region) {
   // Each tick is a base coordinate and an image coordinate
   ticks_region.forEach((tick) => drawRulerMarkingEndpoint(tick[0], tick[1]));
   
   let lineY = minYCoordinate - NODE_MARGIN - 6;
 
-  svg
-    .append("line")
-    .attr("x1", ticks_region[0][1])
-    .attr("y1", lineY)
-    .attr("x2", ticks_region[1][1])
-    .attr("y2", lineY)
-    .attr("stroke-width", 4)
-    .attr("stroke", "#FFFE3A");
+  if (ticks_region && ticks_region.length == 2) {
+    svg
+      .append("line")
+      .attr("x1", ticks_region[0][1])
+      .attr("y1", lineY)
+      .attr("x2", ticks_region[1][1])
+      .attr("y2", lineY)
+      .attr("stroke-width", 4)
+      .attr("stroke", "#FFFE3A");
+  }
 }
 
 function drawRulerMarkingEndpoint(sequencePosition, xCoordinate) {
