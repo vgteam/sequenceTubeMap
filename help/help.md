@@ -5,14 +5,14 @@ The Sequence Tube Map is used to generate visualizations of genomic sequence gra
 ##### Selecting Tracks
 The following procedure describes adding and updating settings of custom tracks. You can use a custom track to load your own graph file, haplotype database, or file of aligned reads.
 
-1. From the "Data" dropdown box, select "custom (mounted files)"  
+1. From the "Data" dropdown box, select "custom"
 ![Selecting Custom Files](helpGuideImages/img1.png)  
 2. Select the button that says "Configure Tracks".  
 ![Configure Tracks Button](helpGuideImages/img2.png)
 3. Once the button is clicked on, a popup with a "+" button will be displayed. Click on this button to add tracks.  
 ![Track Add Button](helpGuideImages/img3.png)  
-4. Select a graph, read, or haplotype track from the first dropdown. Make sure to always have at least 1 graph track. Select a data file from the list of files of that type in the second dropdown.  
-![Track Selection](helpGuideImages/img4.png)  
+4. Select whether you want a graph, read, or haplotype track from the first dropdown. Make sure to always have at least 1 graph track. Select a data file from the list of files of that type in the last dropdown. In the default Tube Map configuration, these files come from the `exampleData/` folder on the system where the Tube Map server is running. If you want to upload a file instead of selecting one that's already available, change the middle dropdown to "upload". 
+![Track Selection](helpGuideImages/img4.png)
 5. Click on the settings button, where there are options to color the tracks from an existing color palette, or select any other color.  
 ![Track Settings Button](helpGuideImages/img5.png)  
 7. To delete a track, click on the button with the "x" icon.  
