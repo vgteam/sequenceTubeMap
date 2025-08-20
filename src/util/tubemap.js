@@ -3808,7 +3808,7 @@ function drawRulerMarkingRegion(ticks_region) {
   
   let lineY = minYCoordinate - NODE_MARGIN - 6;
 
-  if (ticks_region && ticks_region.length == 2) {
+  if (ticks_region && ticks_region.length === 2) {
     svg
       .append("line")
       .attr("x1", ticks_region[0][1])
