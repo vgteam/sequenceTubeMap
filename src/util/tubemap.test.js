@@ -1,4 +1,11 @@
-import { cigar_string, coverage, axisIntervals } from "./tubemap";
+import {
+  cigar_string,
+  coverage,
+  axisIntervals,
+  setHiddenTrackIds,
+  getHiddenTrackIds,
+  setVisibilityChangedCallback,
+} from "./tubemap";
 
 // cigar string test
 describe("cigar_string", () => {
@@ -864,6 +871,54 @@ describe("coverage", () => {
   });
 });
 
+
+describe("hiddenTrackIds", () => {
+  it("starts empty", async () => {
+    expect(getHiddenTrackIds()).toStrictEqual([]);
+  });
+
+  it("can set and get hidden track IDs", async () => {
+    setHiddenTrackIds([1, 3, 5]);
+    expect(getHiddenTrackIds()).toStrictEqual([1, 3, 5]);
+  });
+
+  it("can set empty list", async () => {
+    setHiddenTrackIds([]);
+    expect(getHiddenTrackIds()).toStrictEqual([]);
+  });
+
+  it("can set null/undefined to empty", async () => {
+    setHiddenTrackIds(null);
+    expect(getHiddenTrackIds()).toStrictEqual([]);
+    setHiddenTrackIds(undefined);
+    expect(getHiddenTrackIds()).toStrictEqual([]);
+  });
+
+  it("deduplicates IDs via Set", async () => {
+    setHiddenTrackIds([1, 1, 2, 2, 3]);
+    const result = getHiddenTrackIds();
+    expect(result.sort((a, b) => a - b)).toStrictEqual([1, 2, 3]);
+  });
+
+  it("replaces previous values on set", async () => {
+    setHiddenTrackIds([1, 2]);
+    setHiddenTrackIds([3, 4]);
+    expect(getHiddenTrackIds()).toStrictEqual([3, 4]);
+  });
+});
+
+describe("visibilityChangedCallback", () => {
+  it("can set callback", async () => {
+    const cb = () => {};
+    setVisibilityChangedCallback(cb);
+    // No error thrown
+  });
+
+  it("can clear callback with null", async () => {
+    setVisibilityChangedCallback(null);
+    // No error thrown
+  });
+});
 
 describe("axisIntervals", () => {
   // TEST 1

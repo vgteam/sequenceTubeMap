@@ -68,6 +68,7 @@ class App extends Component {
         alphaReadsByMappingQuality: false,
         colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
         mappingQualityCutoff: 0,
+        hiddenTracks: [],
       },
       APIInterface: new ServerAPI(props.apiUrl)
     };
@@ -95,6 +96,7 @@ class App extends Component {
             visOptions: {
               ...state.visOptions,
               colorSchemes: [],
+              hiddenTracks: [],
             },
           };
         } else if (mode === "server") {
@@ -107,6 +109,7 @@ class App extends Component {
             visOptions: {
               ...state.visOptions,
               colorSchemes: getColorSchemesFromTracks(this.defaultViewTarget.tracks),
+              hiddenTracks: [],
             },
           };
         } else {
@@ -199,6 +202,15 @@ class App extends Component {
     }));
   };
 
+  handleTrackVisibilityChanged = (hiddenTrackIds) => {
+    this.setState((state) => ({
+      visOptions: {
+        ...state.visOptions,
+        hiddenTracks: hiddenTrackIds,
+      },
+    }));
+  };
+
   // Set a color scheme setting for a particular track.
   //
   // key is the name of the setting to set, and may be "mainPalette", "auxPalette", or "colorByMappingQuality".
@@ -251,6 +263,7 @@ class App extends Component {
           dataOrigin={this.state.dataOrigin}
           visOptions={this.state.visOptions}
           APIInterface={this.state.APIInterface}
+          onTrackVisibilityChanged={this.handleTrackVisibilityChanged}
         />
         <CustomizationAccordion
           enableCompressedNodes={this.state.viewTarget.removeSequences}

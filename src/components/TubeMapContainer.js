@@ -126,6 +126,7 @@ class TubeMapContainer extends Component {
               ...this.props.visOptions,
             }}
             nodeSequences={!this.props.viewTarget.removeSequences}
+            onTrackVisibilityChanged={this.props.onTrackVisibilityChanged}
           />
         </div>
       </div>
@@ -326,6 +327,7 @@ TubeMapContainer.propTypes = {
   viewTarget: PropTypes.object.isRequired,
   visOptions: PropTypes.object.isRequired,
   APIInterface: PropTypes.object.isRequired,
+  onTrackVisibilityChanged: PropTypes.func,
 };
 
 export default TubeMapContainer;
