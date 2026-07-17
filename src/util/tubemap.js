@@ -159,6 +159,8 @@ const config = {
   showInfoCallback: function (info) {
     alert(info);
   },
+  hiddenTrackIds: new Set(),
+  visibilityChangedCallback: null,
 };
 
 // variables for storing info which can be directly translated into drawing instructions
@@ -191,6 +193,13 @@ export function create(params) {
   // And then leave a hole in the array at 0 which we won't iterate over.
   delete inputNodes[0];
   inputTracks = deepCopy(params.tracks); // deep copy
+  inputTracks.forEach((t) => {
+    if (!t.type) t.type = "haplotype";
+  });
+  config.hiddenTrackIds.forEach((id) => {
+    const track = inputTracks.find((t) => t.id === id);
+    if (track) track.hidden = true;
+  });
   inputReads = params.reads || null;
   inputRegion = params.region;
   bed = params.bed || null;
@@ -311,6 +320,14 @@ export function changeTrackVisibility(trackID) {
     } else {
       inputTracks[i].hidden = true;
     }
+    if (inputTracks[i].hidden) {
+      config.hiddenTrackIds.add(trackID);
+    } else {
+      config.hiddenTrackIds.delete(trackID);
+    }
+    if (config.visibilityChangedCallback) {
+      config.visibilityChangedCallback(Array.from(config.hiddenTrackIds));
+    }
   }
   createTubeMap();
 }
@@ -318,11 +335,18 @@ export function changeTrackVisibility(trackID) {
 // to select/deselect all
 export function changeAllTracksVisibility(value) {
   let i = 0;
+  config.hiddenTrackIds.clear();
   while (i < inputTracks.length) {
     inputTracks[i].hidden = !value;
+    if (!value) {
+      config.hiddenTrackIds.add(inputTracks[i].id);
+    }
     var checkbox = document.getElementById(`showTrack${inputTracks[i].id}`);
     checkbox.checked = value;
     i += 1;
+  }
+  if (config.visibilityChangedCallback) {
+    config.visibilityChangedCallback(Array.from(config.hiddenTrackIds));
   }
   createTubeMap();
 }
@@ -416,6 +440,18 @@ export function setMappingQualityCutoff(value) {
       createTubeMap();
     }
   }
+}
+
+export function setHiddenTrackIds(ids) {
+  config.hiddenTrackIds = new Set(ids || []);
+}
+
+export function setVisibilityChangedCallback(callback) {
+  config.visibilityChangedCallback = callback;
+}
+
+export function getHiddenTrackIds() {
+  return Array.from(config.hiddenTrackIds);
 }
 
 // main
@@ -4224,24 +4260,23 @@ function drawLegend() {
   content +=
     '<table class="table-sm table-condensed table-nonfluid"><thead><tr><th>Color</th><th>Trackname</th><th>Show Track</th></tr></thead>';
   const listeners = [];
-  // This is in terms of tracks, but when we change visibility we need to touch inputTracks, so we need to set up listeners by track ID.
-  for (let i = 0; i < tracks.length; i += 1) {
-    if (tracks[i].type === "haplotype") {
+  for (let i = 0; i < inputTracks.length; i += 1) {
+    if (inputTracks[i].type === "haplotype") {
       content += `<tr><td style="text-align:right"><div class="color-box" style="background-color: ${generateTrackColor(
-        tracks[i],
+        inputTracks[i],
         "exon"
       )};"></div></td>`;
-      if (tracks[i].hasOwnProperty("name")) {
-        content += `<td>${tracks[i].name}</td>`;
+      if (inputTracks[i].hasOwnProperty("name")) {
+        content += `<td>${inputTracks[i].name}</td>`;
       } else {
-        content += `<td>${tracks[i].id}</td>`;
+        content += `<td>${inputTracks[i].id}</td>`;
       }
-      content += `<td><input type="checkbox" checked=true id="showTrack${tracks[i].id}"></td>`;
-      listeners.push(tracks[i].id);
+      const isChecked = !config.hiddenTrackIds.has(inputTracks[i].id);
+      content += `<td><input type="checkbox" ${isChecked ? 'checked=true' : ''} id="showTrack${inputTracks[i].id}"></td>`;
+      listeners.push(inputTracks[i].id);
     }
   }
   content += "</table";
-  // $('#legendDiv').html(content);
   document.getElementById("legendDiv").innerHTML = content;
   listeners.forEach((id) => {
     document

@@ -5,6 +5,7 @@ import isEqual from "react-fast-compare";
 
 class TubeMap extends Component {
   componentDidMount() {
+    this.setupCallback();
     this.updateVisOptions();
     this.createTubeMap();
   }
@@ -16,10 +17,17 @@ class TubeMap extends Component {
     console.log("Old read count:", (prevProps.reads || []).length);
     if (!isEqual(this.props, prevProps)) {
       console.log("Props have changed so re-creating tube map");
+      this.setupCallback();
       this.updateVisOptions();
       this.createTubeMap();
     } else {
       console.log("Props have not changed so leaving existing tube map");
+    }
+  }
+
+  setupCallback() {
+    if (this.props.onTrackVisibilityChanged) {
+      tubeMap.setVisibilityChangedCallback(this.props.onTrackVisibilityChanged);
     }
   }
 
@@ -50,6 +58,7 @@ class TubeMap extends Component {
     tubeMap.setShowReadsFlag(visOptions.showReads);
     tubeMap.setSoftClipsFlag(visOptions.showSoftClips);
     tubeMap.setColoredNodes(visOptions.coloredNodes);
+    tubeMap.setHiddenTrackIds(visOptions.hiddenTracks || []);
 
     for (let key of Object.keys(visOptions.colorSchemes)) {
       // Apply color-by-mapping-quality parameter to all the schemes.
@@ -76,7 +85,8 @@ TubeMap.propTypes = {
   reads: PropTypes.array.isRequired,
   region: PropTypes.array.isRequired,
   visOptions: PropTypes.object.isRequired,
-  nodeSequences: PropTypes.bool
+  nodeSequences: PropTypes.bool,
+  onTrackVisibilityChanged: PropTypes.func,
 };
 
 TubeMap.defaultProps = {
