@@ -29,9 +29,5 @@ export function findJestState() {
 export function timeoutAtLeast(ms) {
   // Use the configured Jest test timeout, or a default value if it is
   // unavailable.
-  let configured = findJestState()?.testTimeout;
-  if (typeof configured !== "number") {
-    configured = JEST_BUILTIN_TIMEOUT;
-  }
-  return Math.max(ms, configured);
+  return Math.max(ms, findJestState()?.testTimeout || JEST_BUILTIN_TIMEOUT);
 }
