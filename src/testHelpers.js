@@ -24,15 +24,14 @@ export function findJestState() {
   return stateSymbol && globalThis[stateSymbol];
 }
 
-// Get the configured Jest test timeout, or a default value if it is
-// unavailable.
-function configuredTimeout() {
-  const timeout = findJestState()?.testTimeout;
-  return typeof timeout === "number" ? timeout : JEST_BUILTIN_TIMEOUT;
-}
-
 // Get a per-test timeout of at least ms, or longer if Jest's default is
 // longer.
 export function timeoutAtLeast(ms) {
-  return Math.max(ms, configuredTimeout());
+  // Use the configured Jest test timeout, or a default value if it is
+  // unavailable.
+  let configured = findJestState()?.testTimeout;
+  if (typeof configured !== "number") {
+    configured = JEST_BUILTIN_TIMEOUT;
+  }
+  return Math.max(ms, configured);
 }
