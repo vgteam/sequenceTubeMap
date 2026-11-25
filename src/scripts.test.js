@@ -3,7 +3,7 @@
 import "./config-server.mjs";
 
 import { find_vg } from "./vg.mjs";
-import { atLeast } from "./testTimeout";
+import { timeoutAtLeast } from "./testHelpers";
 
 import { mkdtemp, rm, cp, open, access } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -58,6 +58,6 @@ it("can run prepare_vg.sh", async () => {
   console.log("stderr:", stderr);
   await access(join(workDir, "x.vg.xg"));
   await access(join(workDir, "x.vg.gbwt"));
-}, atLeast(30000));
+}, timeoutAtLeast(30000));
 
 

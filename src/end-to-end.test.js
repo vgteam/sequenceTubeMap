@@ -23,7 +23,7 @@ import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
 import selectEvent from "react-select-event";
 import App from "./App";
-import { atLeast } from "./testTimeout";
+import { timeoutAtLeast } from "./testHelpers";
 
 const getRegionInput = () => {
   // Helper function to select the Region input box
@@ -377,7 +377,7 @@ it("produces correct link for view before & after go is pressed", async () => {
     "http://localhost/?tracks[0][trackFile]=exampleData%2Fcactus.vg.xg&tracks[0][trackType]=graph&tracks[1][trackFile]=exampleData%2Fcactus-NA12879.sorted.gam&tracks[1][trackType]=read&bedFile=exampleData%2Fcactus.bed&name=cactus&region=ref%3A1-100&dataType=built-in&simplify=false&removeSequences=false";
   // Make sure link has changed after pressing go
   expect(fakeClipboard).toEqual(expectedLinkCactus);
-}, atLeast(20000));
+}, timeoutAtLeast(20000));
 
 it("can retrieve the list of mounted graph files", async () => {
   // Wait for everything to settle so we don't stop the server while it is thinking
@@ -528,5 +528,5 @@ it("can accept uploaded files", async () => {
   expect(svg.getElementsByTagName("title").length).toEqual(5);
 
   console.log("Test over");
-}, atLeast(50000)); // We need to allow a long time for the slow vg test machines.
+}, timeoutAtLeast(50000)); // We need to allow a long time for the slow vg test machines.
 // TODO: Is this slow because of unnecessary re-renders caused by the new color schemes taking effect and being rendered with the old data, before the new data downloads?

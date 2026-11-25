@@ -5,7 +5,7 @@ import "@testing-library/jest-dom";
 import "../config-client.js";
 import { config } from "../config-global.mjs";
 import { defaultTrackColors } from "../common.mjs";
-import { atLeast } from "../testTimeout";
+import { timeoutAtLeast } from "../testHelpers";
 
 describe("TrackPicker", () => {
   const tracks = {
@@ -185,7 +185,7 @@ describe("TrackPicker", () => {
 
     expect(fakeOnChange).toHaveBeenCalledTimes(2);
     expect(fakeOnChange).toHaveBeenCalledWith(newTracks);
-  }, atLeast(50000));
+  }, timeoutAtLeast(50000));
 
   it("should close when the exit button is pressed", async () => {
     const fakeOnChange = jest.fn();
